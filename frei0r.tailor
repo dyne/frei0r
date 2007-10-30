@@ -1,0 +1,17 @@
+[DEFAULT]
+verbose = True
+
+[project]
+target = git:target
+start-revision = INITIAL
+root-directory = /home/jaromil/devel/frei0r.tmp
+state-file = tailor.state
+source = darcs:source
+subdir = .
+
+[darcs:source]
+repository = http://propirate.net/repos/frei0r-autoconf/
+
+[git:target]
+repository = file://frei0r
+
