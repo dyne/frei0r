@@ -18,8 +18,7 @@ alphaover.la  darken.la      gamma.la          ising0r.la      overlay.la    sof
 alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur.la  contrast0r.la\
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
-water.la cartoon.la
-# glow.la
+water.la cartoon.la  glow.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -33,6 +32,7 @@ facedetect_la_SOURCES = filter/facedetect/facedetect.c
 facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
 endif
 
+glow_la_SOURCES = filter/glow/glow.c filter/glow/blur.h
 cartoon_la_SOURCES = filter/cartoon/cartoon.cpp
 water_la_SOURCES = filter/water/water.cpp
 R_la_SOURCES = filter/RGB/R.c
