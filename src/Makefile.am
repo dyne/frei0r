@@ -17,8 +17,8 @@ alphaout.la   color_only.la  flippo.la         invert0r.la     onecol0r.la   sob
 alphaover.la  darken.la      gamma.la          ising0r.la      overlay.la    softlight.la   xfade0r.la\
 alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur.la  contrast0r.la\
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
-subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la
-# scale0tilt.la
+subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
+water.la
 # cartoon.la
 # water.la
 # glow.la
@@ -35,6 +35,7 @@ facedetect_la_SOURCES = filter/facedetect/facedetect.c
 facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
 endif
 
+water_la_SOURCES = filter/water/water.cpp
 R_la_SOURCES = filter/RGB/R.c
 G_la_SOURCES = filter/RGB/G.c
 B_la_SOURCES = filter/RGB/B.c
