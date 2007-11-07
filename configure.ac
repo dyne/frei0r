@@ -47,6 +47,8 @@ AC_CONFIG_FILES([
   Makefile
   include/Makefile
   src/Makefile
+  doc/Makefile
+  doc/html/Makefile
 ])
 
 AC_OUTPUT
