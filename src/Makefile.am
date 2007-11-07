@@ -17,7 +17,7 @@ alphaout.la   color_only.la  flippo.la         invert0r.la     onecol0r.la   sob
 alphaover.la  darken.la      gamma.la          ising0r.la      overlay.la    softlight.la   xfade0r.la\
 alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur.la  contrast0r.la\
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
-subtract.la letterb0xed.la
+subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la
 # scale0tilt.la
 # cartoon.la
 # water.la
@@ -35,6 +35,9 @@ facedetect_la_SOURCES = filter/facedetect/facedetect.c
 facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
 endif
 
+R_la_SOURCES = filter/RGB/R.c
+G_la_SOURCES = filter/RGB/G.c
+B_la_SOURCES = filter/RGB/B.c
 letterb0xed_la_SOURCES = filter/letterb0xed/letterb0xed.c
 contrast0r_la_SOURCES = filter/contrast0r/contrast0r.c
 3dflippo_la_SOURCES = filter/3dflippo/3dflippo.c
@@ -61,6 +64,8 @@ ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
 nois0r_la_SOURCES = generator/nois0r/nois0r.cpp
 onecol0r_la_SOURCES = generator/onecol0r/onecol0r.cpp
+composition_la_SOURCES = mixer2/composition/composition.c
+alphainjection_la_SOURCES = mixer2/alphainjection/alphainjection.c
 addition_la_SOURCES = mixer2/addition/addition.cpp
 alphaout_la_SOURCES = mixer2/alphaout/alphaout.cpp
 blend_la_SOURCES = mixer2/blend/blend.cpp
@@ -87,6 +92,7 @@ grain_merge_la_SOURCES = mixer2/grain_merge/grain_merge.cpp
 lighten_la_SOURCES = mixer2/lighten/lighten.cpp
 saturation_la_SOURCES = mixer2/saturation/saturation.cpp
 subtract_la_SOURCES = mixer2/subtract/subtract.cpp
+RGB_la_SOURCES = mixer3/RGB/RGB.c
 
 
 AM_CPPFLAGS = -I@top_srcdir@/include 
