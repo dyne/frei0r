@@ -38,7 +38,7 @@ public:
     c[0]=static_cast<unsigned char>(color.b*255);
     c[1]=static_cast<unsigned char>(color.g*255);
     c[2]=static_cast<unsigned char>(color.r*255);
-    c[3]=0;
+    c[3]=255;
     
     std::fill(out, out+width*height, col);
   }
