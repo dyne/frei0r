@@ -135,7 +135,6 @@ void f0r_set_param_value(f0r_instance_t instance,
 			break;
 		}
 	}
-	update_mask( inst );
 }
 void f0r_get_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
