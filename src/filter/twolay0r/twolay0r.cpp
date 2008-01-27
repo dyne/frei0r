@@ -84,7 +84,7 @@ public:
       while(pixel != in+(width*height))
 	{
 	  if ( grey(*pixel)<th )
-	    *outpixel=0x00000000;
+	    *outpixel=0xFF000000;
 	  else
 	    *outpixel=0xFFFFFFFF;
 	  ++outpixel;
