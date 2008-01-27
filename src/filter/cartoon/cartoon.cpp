@@ -75,7 +75,7 @@ public:
       yprecal[c] = geo->w*c;
     for(c=0;c<256;c++) 
       powprecal[c] = c*c;
-    black = 0x00000000;
+    black = 0xFF000000;
 
     triplevel = 1000;
     diffspace = 1;
@@ -101,7 +101,7 @@ public:
 	if (t > triplevel) {
 	  
 	  //  Make a border pixel 
-	  *(out+x+yprecal[y]) = 0x0;
+	  *(out+x+yprecal[y]) = black;
 	  
 	} else {
 	  
