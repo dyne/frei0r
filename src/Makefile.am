@@ -25,12 +25,14 @@ if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
 scale0tilt_la_SOURCES = filter/scale0tilt/scale0tilt.c
 scale0tilt_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
+scale0tilt_la_LIBADD = @GAVL_LIBS@
 endif
 
 if HAVE_OPENCV
 plugin_LTLIBRARIES += facedetect.la
 facedetect_la_SOURCES = filter/facedetect/facedetect.c
 facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
+facedetect_la_LIBADD = @OPENCV_LIBS@
 endif
 
 perspective_la_SOURCES = filter/perspective/perspective.c
