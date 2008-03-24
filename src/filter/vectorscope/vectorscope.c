@@ -27,6 +27,10 @@
 #define OFFSET_B        16
 #define OFFSET_A        24
 
+#define GRID_COLOR	0xFF8E8E8E //144D7D
+#define SCOPE_COLOR	0xFFFF917F
+#define SCOPE_STEPS	10
+
 typedef struct {
 	double hue, sat, val;
 } hsv_t;
@@ -136,6 +140,52 @@ coord_rect_t pol_to_rect(coord_pol_t pol)
 	return rect;
 }
 
+long pixel_offset(coord_pol_t pol, int width, int height)
+{
+	coord_rect_t rect;
+	long offset;
+	
+	rect = pol_to_rect(pol);
+	rect.x = width/2+rect.x*height/2;
+	rect.y = height/2+rect.y*height/2;
+	offset = (height-(int)(rect.y))*width+(int)(rect.x);
+	return offset;
+}
+
+void draw_grid(unsigned char* scope, int width, int height)
+{
+	int i, j;
+	coord_pol_t pol;
+	long offset;
+	long len = width * height;
+	
+
+	for(j=1;j<6;j++)
+	{
+		pol.r = j*0.20;
+		for(i=0;i<2000;++i)
+		{
+			pol.phi = (double)i/2000*2*M_PI;
+			offset = pixel_offset(pol, width, height);
+			if ( offset < len ) {
+				scope[offset] = 255;
+			}
+		}
+	}
+	for(j=0;j<6;j++)
+	{
+		pol.phi = j*M_PI/3;
+		for(i=0;i<1000;i++)
+		{
+			pol.r = (double)i/1000*0.7+0.3;
+			offset = pixel_offset(pol, width, height);
+			if ( offset < len ) {
+				scope[offset] = 255;
+			}
+		}
+	}
+}
+
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 	assert(instance);
@@ -148,14 +198,16 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	int height = inst->h;	
 	int len = inst->w * inst->h;
 	
-	long i;
-	rgb_t rgb;
+	long i,j;
+	rgb_t rgb, pixel;
 	hsv_t hsv;
 	coord_pol_t pol;
 	coord_rect_t rect;
 	long offset;
-	
-	for(i=0;i<len;++i) dst[i] = 0xFF000000;
+	unsigned char scope[len];
+	unsigned char pixel_val;
+
+	for(i=0;i<len;++i) scope[i] = 0;
 	for(i=0;i<len;++i)
 	{
 		rgb.red = (((*src) & 0x000000FF) >> OFFSET_R);
@@ -166,11 +218,26 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 		hsv = rgb_to_hsv(rgb);
 		pol.phi = hsv.hue/180*M_PI;
 		pol.r = hsv.sat/100;
-		rect = pol_to_rect(pol);
-		rect.x = width/2+rect.x*height/2;
-		rect.y = height/2+rect.y*height/2;
-		offset = (height-(int)(rect.y))*width+(int)(rect.x);
-		if(dst[offset]<0xFFFFFFFF) dst[offset] += 0x00333333;
+		offset = pixel_offset(pol, width, height);
+		if ( offset < len ) {
+			scope[offset]++;
+		}
+	}
+	draw_grid(&scope, width, height);
+	rgb.red = ((SCOPE_COLOR & 0x000000FF) >> OFFSET_R);
+	rgb.green = ((SCOPE_COLOR & 0x0000FF00) >> OFFSET_G);
+	rgb.blue = ((SCOPE_COLOR & 0x00FF0000) >> OFFSET_B);
+	for(i=0;i<len;++i)
+	{
+		if(scope[i]==255) dst[i] = GRID_COLOR;
+		else		
+		{		
+			if(scope[i]>SCOPE_STEPS) scope[i] = SCOPE_STEPS;
+			pixel.red = scope[i]*rgb.red/SCOPE_STEPS;
+			pixel.green = scope[i]*rgb.green/SCOPE_STEPS;
+			pixel.blue = scope[i]*rgb.blue/SCOPE_STEPS;			
+			dst[i] = 0xFF000000 | ((int)pixel.blue<<OFFSET_B) | ((int)pixel.green<<OFFSET_G) | ((int)pixel.red<<OFFSET_R);
+		}
 	}
 }
 
