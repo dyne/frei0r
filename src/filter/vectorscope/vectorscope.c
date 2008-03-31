@@ -24,6 +24,10 @@
 #include "frei0r.h"
 #include <stdio.h>
 
+#include <gavl/gavl.h>
+
+#include "vectorscope_image.c"
+
 #define OFFSET_R        0
 #define OFFSET_G        8
 #define OFFSET_B        16
@@ -55,7 +59,7 @@ typedef struct {
 
 typedef struct vectorscope_instance {
 	int w, h;
-	double scale;
+	unsigned char* scala;
 } vectorscope_instance_t;
 
 int f0r_init()
@@ -74,78 +78,128 @@ void f0r_get_plugin_info( f0r_plugin_info_t* info )
 	info->frei0r_version = FREI0R_MAJOR_VERSION;
 	info->major_version = 0; 
 	info->minor_version = 1; 
-	info->num_params =  1; 
+	info->num_params =  0; 
 	info->explanation = "Displays the vectorscope of the video-data";
 }
 
 void f0r_get_param_info( f0r_param_info_t* info, int param_index )
 {
-
-	switch(param_index)
-	{
-		case 0:
-			info->name = "Scale";
-			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "";
-			break;
-	}
+	/* empty */
 }
-
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
 	vectorscope_instance_t* inst = (vectorscope_instance_t*)malloc(sizeof(vectorscope_instance_t));
 	inst->w = width;
 	inst->h = height;
-	inst->scale = 1.0;
+
+
+	inst->scala = (unsigned char*)malloc( width * height * 4 );
+
+	gavl_video_scaler_t* video_scaler;
+	gavl_video_frame_t* frame_src;
+	gavl_video_frame_t* frame_dst;
+
+	video_scaler = gavl_video_scaler_create();
+	frame_src = gavl_video_frame_create( 0 );
+	frame_dst = gavl_video_frame_create( 0 );
+	frame_dst->strides[0] = width * 4;
+	frame_src->strides[0] = vectorscope_image.width * 4;
+
+	gavl_video_options_t* options = gavl_video_scaler_get_options( video_scaler );
+	gavl_video_format_t format_src;
+	gavl_video_format_t format_dst;
+
+	format_dst.frame_width  = inst->w;
+	format_dst.frame_height = inst->h;
+	format_dst.image_width  = inst->w;
+	format_dst.image_height = inst->h;
+	format_dst.pixel_width = 1;
+	format_dst.pixel_height = 1;
+	format_dst.pixelformat = GAVL_RGBA_32;
+
+
+
+	
+	format_src.frame_width  = vectorscope_image.width;
+	format_src.frame_height = vectorscope_image.height;
+	format_src.image_width  = vectorscope_image.width;
+	format_src.image_height = vectorscope_image.height;
+	format_src.pixel_width = 1;
+	format_src.pixel_height = 1;
+	format_src.pixelformat = GAVL_RGBA_32;
+
+	gavl_rectangle_f_t src_rect;
+	gavl_rectangle_i_t dst_rect;
+
+	src_rect.x = 0;
+	src_rect.y = 0;
+	src_rect.w = vectorscope_image.width;
+	src_rect.h = vectorscope_image.height;
+
+	float dst_x, dst_y, dst_w, dst_h;
+	if ( (float)inst->w / inst->h > (float)vectorscope_image.width / vectorscope_image.height ) {
+		dst_y = 0;
+		dst_h = inst->h;
+		dst_w = ((float)vectorscope_image.width / vectorscope_image.height) * inst->h;
+		dst_x = ( inst->w - dst_w ) / 2.0;
+	} else {
+		dst_x = 0;
+		dst_w = inst->w;
+		dst_h = ((float)vectorscope_image.height / vectorscope_image.width) * inst->w;
+		dst_y = ( inst->h - dst_h ) / 2.0;
+	}
+	dst_rect.x = (int)(dst_x);
+	dst_rect.y = (int)(dst_y);
+	dst_rect.w = (int)(dst_w);
+	dst_rect.h = (int)(dst_h);
+
+
+	gavl_video_options_set_rectangles( options, &src_rect, &dst_rect );
+	gavl_video_scaler_init( video_scaler, &format_src, &format_dst );
+
+	frame_src->planes[0] = (uint8_t *)vectorscope_image.pixel_data;
+	frame_dst->planes[0] = (uint8_t *)inst->scala;
+
+	float transparent[4] = { 0.0, 0.0, 0.0, 0.0 };
+	gavl_video_frame_fill( frame_dst, &format_dst, transparent );
+	//gavl_video_frame_clear( frame_dst, &format_dst );
+
+	gavl_video_scaler_scale( video_scaler, frame_src, frame_dst );
+
+	gavl_video_scaler_destroy(video_scaler);
+	gavl_video_frame_null( frame_src );
+	gavl_video_frame_destroy( frame_src );
+	gavl_video_frame_null( frame_dst );
+	gavl_video_frame_destroy( frame_dst );
+
 	return (f0r_instance_t)inst;
 }
 
 void f0r_destruct(f0r_instance_t instance)
 {
 	vectorscope_instance_t* inst = (vectorscope_instance_t*)instance;
+	free(inst->scala);
 	free(instance);
 }
 
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {   
-	assert(instance);
-	vectorscope_instance_t* inst = (vectorscope_instance_t*)instance;
-	switch(param_index)
-	{
-		case 0:
-			*((double*)param) = (double)inst->scale;
-			break;
-	}
+	/* empty */
 }
 
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
-	assert(instance);
-	vectorscope_instance_t* inst = (vectorscope_instance_t*)instance;
-	switch(param_index)
-	{
-		int val;
-		case 0:
-		inst->scale = *((double*)param);
-		break;
-	}
+	/* empty */
 }
 
  /* RGB to YCbCr range 0-255 */
 YCbCr_t rgb_to_YCbCr(rgb_t rgb)
 {
 	YCbCr_t dest;
-	//dest[0] = (float)0.257*data[0] + (float)0.504*data[1] + (float)0.098*data[2] + 16;
-	//dest[1] = (float)-0.148*data[0] - (float)0.291*data[1] + (float)0.439*data[2] + 128;
-	//dest[2] = (float)0.439*data[0] - (float)0.368*data[1] - (float)0.071*data[2] + 128;
-
 	dest.Y = (float)((0.299 * (float)rgb.red + 0.587 * (float)rgb.green + 0.114 * (float)rgb.blue));
 	dest.Cb = 128 + (float)((-0.16874 * (float)rgb.red - 0.33126 * (float)rgb.green + 0.5 * (float)rgb.blue));
 	dest.Cr = 128 + (float)((0.5 * (float)rgb.red - 0.41869 * (float)rgb.green - 0.08131 * (float)rgb.blue));
-
-
 	return dest;
-
 }
 
 hsv_t rgb_to_hsv(rgb_t rgb)
@@ -266,21 +320,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	}
 	dst = outframe;
 
-	double scale;
-	if ( width > height ) {
-		scale = height/(inst->scale);
-	} else {
-		scale = width/(inst->scale);
-	}
-	
 	while ( src < src_end ) {
 		rgb.red = (((*src) & 0x000000FF) >> OFFSET_R);
 		rgb.green = (((*src) & 0x0000FF00) >> OFFSET_G);
 		rgb.blue = (((*src) & 0x00FF0000) >> OFFSET_B);
 		src++;
 		YCbCr = rgb_to_YCbCr(rgb);
-		x = lrint((width/2)+((YCbCr.Cb/255.0-0.5) * scale));
-		y = lrint((height/2)-((YCbCr.Cr/255.0-0.5) * scale));
+		x = lrint((width/2)+((YCbCr.Cb/255.0-0.5) * height));
+		y = lrint((height/2)-((YCbCr.Cr/255.0-0.5) * width));
 		//printf ("Cb: %d, Cr: %d\n", x, y );
 		if ( x >= 0 && x < width && y >= 0 && y < height ) {
 			pixel = (uint8_t*)&dst[x+width*y];
@@ -292,6 +339,21 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			//dst[x+width*y] += 1;//0xFFFFFFFF;
 		}
 	}
+
+	unsigned char *scala8, *dst8, *dst8_end;
+
+	scala8 = inst->scala;
+	dst8 = (unsigned char*)outframe;
+	dst8_end = dst8 + ( len * 4 );
+	while ( dst8 < dst8_end ) {
+		dst8[0] = ( ( ( scala8[0] - dst8[0] ) * 255 * scala8[3] ) >> 16 ) + dst8[0];
+		dst8[1] = ( ( ( scala8[1] - dst8[1] ) * 255 * scala8[3] ) >> 16 ) + dst8[1];
+		dst8[2] = ( ( ( scala8[2] - dst8[2] ) * 255 * scala8[3] ) >> 16 ) + dst8[2];
+		scala8 += 4;
+		dst8 += 4;
+
+	}
+
 
 	
 /*

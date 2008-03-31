@@ -19,13 +19,18 @@ alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
 water.la cartoon.la  glow.la lenscorrection.la transparency.la \
-colordistance.la perspective.la vectorscope.la rgbparade.la
+colordistance.la perspective.la rgbparade.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
 scale0tilt_la_SOURCES = filter/scale0tilt/scale0tilt.c
 scale0tilt_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
 scale0tilt_la_LIBADD = @GAVL_LIBS@
+
+plugin_LTLIBRARIES += vectorscope.la
+vectorscope_la_SOURCES = filter/vectorscope/vectorscope.c
+vectorscope_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
+vectorscope_la_LIBADD = @GAVL_LIBS@
 endif
 
 if HAVE_OPENCV
@@ -36,7 +41,6 @@ facedetect_la_LIBADD = @OPENCV_LIBS@
 endif
 
 rgbparade_la_SOURCES = filter/rgbparade/rgbparade.c
-vectorscope_la_SOURCES = filter/vectorscope/vectorscope.c
 perspective_la_SOURCES = filter/perspective/perspective.c
 colordistance_la_SOURCES = filter/colordistance/colordistance.c
 transparency_la_SOURCES = filter/transparency/transparency.c
