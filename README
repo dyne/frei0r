@@ -19,6 +19,6 @@ http://www.piksel.org/frei0r/
 
 
 Optional Dependencies:
-gavl, required for scale0tilt plugin, available at http://gmerlin.sourceforge.net/
+gavl, required for scale0tilt and vectorscope plugin, available at http://gmerlin.sourceforge.net/
 
 OpenCV, required for facedetect plugin, available at http://opencvlibrary.sourceforge.net/

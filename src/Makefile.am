@@ -28,7 +28,7 @@ scale0tilt_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
 scale0tilt_la_LIBADD = @GAVL_LIBS@
 
 plugin_LTLIBRARIES += vectorscope.la
-vectorscope_la_SOURCES = filter/vectorscope/vectorscope.c
+vectorscope_la_SOURCES = filter/vectorscope/vectorscope.c filter/vectorscope/vectorscope_image.h
 vectorscope_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
 vectorscope_la_LIBADD = @GAVL_LIBS@
 endif

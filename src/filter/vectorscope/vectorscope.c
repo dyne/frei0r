@@ -26,7 +26,7 @@
 
 #include <gavl/gavl.h>
 
-#include "vectorscope_image.c"
+#include "vectorscope_image.h"
 
 #define OFFSET_R        0
 #define OFFSET_G        8
