@@ -108,17 +108,11 @@ void f0r_destruct(f0r_instance_t instance)
 void f0r_set_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
-  assert(instance);
-  facedetect_instance_t* inst = (facedetect_instance_t*)instance;
-
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
-  assert(instance);
-  facedetect_instance_t* inst = (facedetect_instance_t*)instance;
-
 }
 
 void f0r_get_plugin_info(f0r_plugin_info_t* facedetectInfo)
@@ -178,7 +172,7 @@ void f0r_update(f0r_instance_t instance, double time,
 
   }
 
-  CvSeq* faces = detect_and_draw( inst->frame_copy,
+  /*CvSeq* faces =*/ detect_and_draw( inst->frame_copy,
                                   inst->storage,
                                   inst->cascade );
 

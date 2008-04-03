@@ -10,6 +10,8 @@
 #include "frei0r.h"
 
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct flippo_instance
 {

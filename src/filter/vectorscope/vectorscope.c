@@ -37,6 +37,10 @@
 #define SCOPE_COLOR	0xFFFF917F
 #define SCOPE_STEPS	10
 
+/* c99 seems to be extra clever, and removes the definition of M_PI,
+ * this adds it again */
+#define M_PI            3.14159265358979323846
+
 typedef struct {
 	double Y, Cb, Cr;
 } YCbCr_t;

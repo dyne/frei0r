@@ -30,6 +30,7 @@ unsigned char CLAMP0255(int32_t a)
  *	printmat -	
  *		print a 4 by 4 matrix
  */
+void
 printmat(mat)
   float mat[4][4];
 {
@@ -48,6 +49,7 @@ printmat(mat)
  *	applymatrix -	
  *		use a matrix to transform colors.
  */
+void
 applymatrix(lptr,mat,n)
   unsigned long *lptr;
 float mat[4][4];
@@ -75,6 +77,7 @@ int n;
  *	matrixmult -	
  *		multiply two matricies
  */
+void
 matrixmult(a,b,c)
   float a[4][4], b[4][4], c[4][4];
 {
@@ -97,6 +100,7 @@ matrixmult(a,b,c)
  *	identmat -	
  *		make an identity matrix
  */
+void
 identmat(matrix)
   float *matrix;
 {
@@ -122,6 +126,7 @@ identmat(matrix)
  *	xformpnt -	
  *		transform a 3D point using a matrix
  */
+void
 xformpnt(matrix,x,y,z,tx,ty,tz)
   float matrix[4][4];
 float x,y,z;
@@ -136,6 +141,7 @@ float *tx,*ty,*tz;
  *	cscalemat -	
  *		make a color scale marix
  */
+void
 cscalemat(mat,rscale,gscale,bscale)
   float mat[4][4];
 float rscale, gscale, bscale;
@@ -169,6 +175,7 @@ float rscale, gscale, bscale;
  *	lummat -	
  *		make a luminance marix
  */
+void
 lummat(mat)
   float mat[4][4];
 {
@@ -204,6 +211,7 @@ lummat(mat)
  *	saturatemat -	
  *		make a saturation marix
  */
+void
 saturatemat(mat,sat)
   float mat[4][4];
 float sat;
@@ -251,6 +259,7 @@ float sat;
  *	offsetmat -	
  *		offset r, g, and b
  */
+void
 offsetmat(mat,roffset,goffset,boffset)
   float mat[4][4];
 float roffset, goffset, boffset;
@@ -283,6 +292,7 @@ float roffset, goffset, boffset;
  *	xrotate -	
  *		rotate about the x (red) axis
  */
+void
 xrotatemat(mat,rs,rc)
   float mat[4][4];
 float rs, rc;
@@ -315,6 +325,7 @@ float rs, rc;
  *	yrotate -	
  *		rotate about the y (green) axis
  */
+void
 yrotatemat(mat,rs,rc)
   float mat[4][4];
 float rs, rc;
@@ -347,6 +358,7 @@ float rs, rc;
  *	zrotate -	
  *		rotate about the z (blue) axis
  */
+void
 zrotatemat(mat,rs,rc)
   float mat[4][4];
 float rs, rc;
@@ -379,6 +391,7 @@ float rs, rc;
  *	zshear -	
  *		shear z using x and y.
  */
+void
 zshearmat(mat,dx,dy)
   float mat[4][4];
 float dx, dy;
@@ -411,6 +424,7 @@ float dx, dy;
  *	simplehuerotatemat -	
  *		simple hue rotation. This changes luminance 
  */
+void
 simplehuerotatemat(mat,rot)
   float mat[4][4];
 float rot;
@@ -445,6 +459,7 @@ float rot;
  *	huerotatemat -	
  *		rotate the hue, while maintaining luminance.
  */
+void
 huerotatemat(mat,rot)
   float mat[4][4];
 float rot;

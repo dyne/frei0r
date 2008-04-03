@@ -79,7 +79,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
 	rgbparade_t* inst = (rgbparade_t*)instance;
-	free(instance);
+	free(inst);
 }
 
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)

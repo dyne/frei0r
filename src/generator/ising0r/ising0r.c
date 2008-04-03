@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include "frei0r.h"
 
 //-------------------------------------------------------------------------
@@ -167,9 +168,6 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   assert(instance);
   ising0r_instance_t* inst = (ising0r_instance_t*)instance;
-  unsigned int w = inst->width;
-  unsigned int h = inst->height;
-  unsigned int x,y;
   
   set_bf(inst->bf, inst->temp, inst->border_growth, inst->spont_growth);
   

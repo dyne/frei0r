@@ -173,22 +173,18 @@ void f0r_update(f0r_instance_t instance, double time,
 	int x, y;
 	assert(instance);
 	lenscorrection_instance_t* inst = (lenscorrection_instance_t*)instance;
-	unsigned int len = inst->width * inst->height;
 
 	double xcenter = inst->xcenter;
 	double ycenter = inst->ycenter;
 	double correctionnearcenter = inst->correctionnearcenter;
 	double correctionnearedges = inst->correctionnearedges;
-	double brightness = inst->brightness;
+	/* double brightness = inst->brightness; */
 
 	double normallise_radius_sq = 4.0 / (inst->width * inst->width + inst->height * inst->height );
 	xcenter = inst->width * xcenter;
 	ycenter = inst->height * ycenter;
 	double mult_sq = ( correctionnearcenter - 0.5 );
 	double mult_qd = ( correctionnearedges - 0.5);
-
-	unsigned char* dst = (unsigned char*)outframe;
-	const unsigned char* src = (unsigned char*)inframe;
 
 	for ( y = 0; y < inst->height; y++ ) {
 		for ( x = 0; x < inst->width; x++ ) {
@@ -197,12 +193,13 @@ void f0r_update(f0r_instance_t instance, double time,
 			double radius_sq = ( (off_x * off_x) + (off_y * off_y) ) * normallise_radius_sq;
 
 			double radius_mult = radius_sq * mult_sq + radius_sq * radius_sq * mult_qd;
-			double mag = radius_mult;
+			/* double mag = radius_mult; */
 			radius_mult += 1.0;
 			double srcX = xcenter + radius_mult * off_x;
 			double srcY = ycenter + radius_mult * off_y;
 
-			double brighten = 1.0 + mag * brightness;
+			/* double brighten = 1.0 + mag * brightness; */
+				// Disabled to avoid compiler warnings
 			
 			int sx;
 			int sy;
@@ -233,6 +230,7 @@ uint32_t interpolate_pixel( uint8_t* frame, int w, int h, double x, double y ) {
 	0.75 interpolate to right pixel
 */
 
+/*  //Disabled to avoid warnings when compiling
 double xoff = x - floor(x);
 
 int xc = (int)floor(x);
@@ -243,7 +241,10 @@ uint8_t color1_r = (uint8_t)( xoff * frame[i] + ( 1.0 - xoff ) * frame[i] );
 uint8_t color1_g = (uint8_t)( xoff * frame[i+1] + ( 1.0 - xoff ) * frame[i+1] );
 uint8_t color1_b = (uint8_t)( xoff * frame[i+2] + ( 1.0 - xoff ) * frame[i+2] );
 uint8_t color1_a = (uint8_t)( xoff * frame[i+3] + ( 1.0 - xoff ) * frame[i+3] );
+*/
 
 
+
+return 0;
 }
 
