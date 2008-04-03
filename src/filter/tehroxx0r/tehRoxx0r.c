@@ -19,7 +19,7 @@ typedef struct teh_roxx0r
   double last_time;
   double time_stack;
 
-  int32_t* small_block;    // buffer to write downscaled frame
+  uint32_t* small_block;    // buffer to write downscaled frame
   
 } tehRoxx0r_instance_t;
 
