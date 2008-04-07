@@ -51,6 +51,9 @@ typedef struct {
 typedef struct vectorscope_instance {
 	int w, h;
 	unsigned char* scala;
+	gavl_video_scaler_t* scope_scaler;
+	gavl_video_frame_t* scope_frame_src;
+	gavl_video_frame_t* scope_frame_dst;
 } vectorscope_instance_t;
 
 int f0r_init()
@@ -107,6 +110,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	format_dst.pixel_width = 1;
 	format_dst.pixel_height = 1;
 	format_dst.pixelformat = GAVL_RGBA_32;
+	format_dst.interlace_mode = GAVL_INTERLACE_NONE;
 
 	format_src.frame_width  = vectorscope_image.width;
 	format_src.frame_height = vectorscope_image.height;
@@ -115,6 +119,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	format_src.pixel_width = 1;
 	format_src.pixel_height = 1;
 	format_src.pixelformat = GAVL_RGBA_32;
+	format_src.interlace_mode = GAVL_INTERLACE_NONE;
 
 	gavl_rectangle_f_t src_rect;
 	gavl_rectangle_i_t dst_rect;
@@ -159,6 +164,44 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	gavl_video_frame_null( frame_dst );
 	gavl_video_frame_destroy( frame_dst );
 
+	inst->scope_scaler = gavl_video_scaler_create();
+	inst->scope_frame_src = gavl_video_frame_create(0);
+	inst->scope_frame_dst = gavl_video_frame_create(0);
+	inst->scope_frame_src->strides[0] = SCOPE_WIDTH * 4;
+	inst->scope_frame_dst->strides[0] = width * 4;
+	options = gavl_video_scaler_get_options( inst->scope_scaler );
+
+	format_src.frame_width  = SCOPE_WIDTH;
+	format_src.frame_height = SCOPE_HEIGHT;
+	format_src.image_width  = SCOPE_WIDTH;
+	format_src.image_height = SCOPE_HEIGHT;
+	format_src.pixel_width = 1;
+	format_src.pixel_height = 1;
+	format_src.pixelformat = GAVL_RGBA_32;
+	format_dst.frame_width  = width;
+	format_dst.frame_height = height;
+	format_dst.image_width  = width;
+	format_dst.image_height = height;
+	format_dst.pixel_width = 1;
+	format_dst.pixel_height = 1;
+	format_dst.pixelformat = GAVL_RGBA_32;
+
+	gavl_rectangle_f_set_all( &src_rect, &format_src );
+	if (width > height) {
+		dst_rect.x = (width-height)/2;
+		dst_rect.y = 0;
+		dst_rect.w = height;
+		dst_rect.h = height;	
+	}
+	else {
+		dst_rect.x = 0;
+		dst_rect.y = (height-width)/2;
+		dst_rect.w = width;
+		dst_rect.h = width;
+	}
+	gavl_video_options_set_rectangles( options, &src_rect, &dst_rect );
+	gavl_video_scaler_init( inst->scope_scaler, &format_src, &format_dst );
+
 	return (f0r_instance_t)inst;
 }
 
@@ -166,6 +209,11 @@ void f0r_destruct(f0r_instance_t instance)
 {
 	vectorscope_instance_t* inst = (vectorscope_instance_t*)instance;
 	free(inst->scala);
+	gavl_video_scaler_destroy( inst->scope_scaler );
+	gavl_video_frame_null( inst->scope_frame_src );
+	gavl_video_frame_destroy( inst->scope_frame_src );
+	gavl_video_frame_null( inst->scope_frame_dst );
+	gavl_video_frame_destroy( inst->scope_frame_dst );
 	free(instance);
 }
 
@@ -243,68 +291,10 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 		}
 	}
 
-	gavl_video_scaler_t* video_scaler;
-	gavl_video_frame_t* frame_src;
-	gavl_video_frame_t* frame_dst;
+	inst->scope_frame_src->planes[0] = (uint8_t *)scope;
+	inst->scope_frame_dst->planes[0] = (uint8_t *)dst;
 
-	video_scaler = gavl_video_scaler_create();
-	frame_src = gavl_video_frame_create(0);
-	frame_dst = gavl_video_frame_create(0);
-	frame_src->strides[0] = SCOPE_WIDTH * 4;
-	frame_dst->strides[0] = width * 4;
-
-	gavl_video_options_t* options = gavl_video_scaler_get_options( video_scaler );
-	gavl_video_format_t format_src;
-	gavl_video_format_t format_dst;
-
-	format_src.frame_width  = SCOPE_WIDTH;
-	format_src.frame_height = SCOPE_HEIGHT;
-	format_src.image_width  = SCOPE_WIDTH;
-	format_src.image_height = SCOPE_HEIGHT;
-	format_src.pixel_width = 1;
-	format_src.pixel_height = 1;
-	format_src.pixelformat = GAVL_RGBA_32;
-	format_dst.frame_width  = width;
-	format_dst.frame_height = height;
-	format_dst.image_width  = width;
-	format_dst.image_height = height;
-	format_dst.pixel_width = 1;
-	format_dst.pixel_height = 1;
-	format_dst.pixelformat = GAVL_RGBA_32;
-
-	gavl_rectangle_f_t src_rect;
-	gavl_rectangle_i_t dst_rect;
-
-	src_rect.x = 0;
-	src_rect.y = 0;
-	src_rect.w = SCOPE_WIDTH;
-	src_rect.h = SCOPE_HEIGHT;
-	if (width > height) {
-		dst_rect.x = (width-height)/2;
-		dst_rect.y = 0;
-		dst_rect.w = height;
-		dst_rect.h = height;	
-	}
-	else {
-		dst_rect.x = 0;
-		dst_rect.y = (height-width)/2;
-		dst_rect.w = width;
-		dst_rect.h = width;
-	}
-
-	gavl_video_options_set_rectangles( options, &src_rect, &dst_rect );
-	gavl_video_scaler_init( video_scaler, &format_src, &format_dst );
-
-	frame_src->planes[0] = (uint8_t *)scope;
-	frame_dst->planes[0] = (uint8_t *)dst;
-
-	gavl_video_scaler_scale( video_scaler, frame_src, frame_dst );
-
-	gavl_video_scaler_destroy(video_scaler);
-	gavl_video_frame_null( frame_src );
-	gavl_video_frame_destroy( frame_src );
-	gavl_video_frame_null( frame_dst );
-	gavl_video_frame_destroy( frame_dst );
+	gavl_video_scaler_scale( inst->scope_scaler, inst->scope_frame_src, inst->scope_frame_dst );
 
 	unsigned char *scala8, *dst8, *dst8_end;
 
