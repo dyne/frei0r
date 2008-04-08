@@ -22,27 +22,28 @@
 #include <assert.h>
 #include "frei0r.h"
 
+#include <gavl/gavl.h>
+
+#include "rgbparade_image.h"
+
 #define OFFSET_R        0
 #define OFFSET_G        8
 #define OFFSET_B        16
 #define OFFSET_A        24
 
-#define GRID_COLOR	0xFF8E8E8E
-#define SCOPE_R_COLOR	0xFF0000FF
-#define SCOPE_G_COLOR	0xFF00FF00
-#define SCOPE_B_COLOR	0xFFFF0000
-#define SCOPE_STEPS	60
+#define PARADE_HEIGHT	256
+#define PARADE_STEP	5
 
 typedef struct {
 	double red, green, blue;
 } rgb_t;
 
-typedef struct {
-	double x, y;
-} coord_rect_t;
-
 typedef struct rgbparade {
 	int w, h;
+	unsigned char* scala;
+	gavl_video_scaler_t* parade_scaler;
+	gavl_video_frame_t* parade_frame_src;
+	gavl_video_frame_t* parade_frame_dst;
 } rgbparade_t;
 
 int f0r_init()
@@ -73,12 +74,114 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	rgbparade_t* inst = (rgbparade_t*)malloc(sizeof(rgbparade_t));
 	inst->w = width;
 	inst->h = height;
+
+	inst->scala = (unsigned char*)malloc( width * height * 4 );
+
+	gavl_video_scaler_t* video_scaler;
+	gavl_video_frame_t* frame_src;
+	gavl_video_frame_t* frame_dst;
+
+	video_scaler = gavl_video_scaler_create();
+	frame_src = gavl_video_frame_create( 0 );
+	frame_dst = gavl_video_frame_create( 0 );
+	frame_dst->strides[0] = width * 4;
+	frame_src->strides[0] = rgbparade_image.width * 4;
+
+	gavl_video_options_t* options = gavl_video_scaler_get_options( video_scaler );
+	gavl_video_format_t format_src;
+	gavl_video_format_t format_dst;
+
+	format_dst.frame_width  = inst->w;
+	format_dst.frame_height = inst->h;
+	format_dst.image_width  = inst->w;
+	format_dst.image_height = inst->h;
+	format_dst.pixel_width = 1;
+	format_dst.pixel_height = 1;
+	format_dst.pixelformat = GAVL_RGBA_32;
+	format_dst.interlace_mode = GAVL_INTERLACE_NONE;
+
+	format_src.frame_width  = rgbparade_image.width;
+	format_src.frame_height = rgbparade_image.height;
+	format_src.image_width  = rgbparade_image.width;
+	format_src.image_height = rgbparade_image.height;
+	format_src.pixel_width = 1;
+	format_src.pixel_height = 1;
+	format_src.pixelformat = GAVL_RGBA_32;
+	format_src.interlace_mode = GAVL_INTERLACE_NONE;
+
+	gavl_rectangle_f_t src_rect;
+	gavl_rectangle_i_t dst_rect;
+
+	src_rect.x = 0;
+	src_rect.y = 0;
+	src_rect.w = rgbparade_image.width;
+	src_rect.h = rgbparade_image.height;
+	dst_rect.x = 0;
+	dst_rect.y = 0;
+	dst_rect.w = width;
+	dst_rect.h = height * 0.995;
+
+	gavl_video_options_set_rectangles( options, &src_rect, &dst_rect );
+	gavl_video_scaler_init( video_scaler, &format_src, &format_dst );
+
+	frame_src->planes[0] = (uint8_t *)rgbparade_image.pixel_data;
+	frame_dst->planes[0] = (uint8_t *)inst->scala;
+
+	float transparent[4] = { 0.0, 0.0, 0.0, 0.0 };
+	gavl_video_frame_fill( frame_dst, &format_dst, transparent );
+
+	gavl_video_scaler_scale( video_scaler, frame_src, frame_dst );
+
+	gavl_video_scaler_destroy(video_scaler);
+	gavl_video_frame_null( frame_src );
+	gavl_video_frame_destroy( frame_src );
+	gavl_video_frame_null( frame_dst );
+	gavl_video_frame_destroy( frame_dst );
+
+	options = gavl_video_scaler_get_options( inst->parade_scaler );
+
+	inst->parade_scaler = gavl_video_scaler_create();
+	inst->parade_frame_src = gavl_video_frame_create(0);
+	inst->parade_frame_dst = gavl_video_frame_create(0);
+	inst->parade_frame_src->strides[0] = width * 4;
+	inst->parade_frame_dst->strides[0] = width * 4;
+	options = gavl_video_scaler_get_options( inst->parade_scaler );
+
+	format_src.frame_width  = width;
+	format_src.frame_height = PARADE_HEIGHT;
+	format_src.image_width  = width;
+	format_src.image_height = PARADE_HEIGHT;
+	format_src.pixel_width = 1;
+	format_src.pixel_height = 1;
+	format_src.pixelformat = GAVL_RGBA_32;
+	format_dst.frame_width  = width;
+	format_dst.frame_height = height;
+	format_dst.image_width  = width;
+	format_dst.image_height = height;
+	format_dst.pixel_width = 1;
+	format_dst.pixel_height = 1;
+	format_dst.pixelformat = GAVL_RGBA_32;
+
+	gavl_rectangle_f_set_all( &src_rect, &format_src );
+	dst_rect.x = width * 0.05;
+	dst_rect.y = height * 0.011;
+	dst_rect.w = width * 0.9;
+	dst_rect.h = height * 0.978;
+
+	gavl_video_options_set_rectangles( options, &src_rect, &dst_rect );
+	gavl_video_scaler_init( inst->parade_scaler, &format_src, &format_dst );
+
 	return (f0r_instance_t)inst;
 }
 
 void f0r_destruct(f0r_instance_t instance)
 {
 	rgbparade_t* inst = (rgbparade_t*)instance;
+	gavl_video_scaler_destroy( inst->parade_scaler );
+	gavl_video_frame_null( inst->parade_frame_src );
+	gavl_video_frame_destroy( inst->parade_frame_src );
+	gavl_video_frame_null( inst->parade_frame_dst );
+	gavl_video_frame_destroy( inst->parade_frame_dst );
 	free(inst);
 }
 
@@ -87,35 +190,6 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 { /* empty */ }
-
-void pixel_draw(unsigned char* scope, coord_rect_t rect, double width, double height)
-{
-	long offset, inter_offset;
-	long len;
-	
-	len = width*height;
-	offset = (height-(int)(rect.y))*width+(int)(rect.x);
-	if(scope[offset]<253) scope[offset]++;
-	inter_offset = offset-width;
-	if(inter_offset>=0) if(scope[inter_offset]<253) scope[inter_offset]++;
-	inter_offset = offset+width;
-	if(inter_offset<=len) if(scope[inter_offset]<253) scope[inter_offset]++;
-}
-
-void pixel_parade(unsigned char* scope, rgb_t pixel, double pixel_x, double width, double height)
-{
-	coord_rect_t rect;
-
-	rect.x = pixel_x/3;
-	rect.y = pixel.red/255*(height-1)+1;
-	pixel_draw(scope, rect, width, height);
-	rect.x = pixel_x/3+width/3;
-	rect.y = pixel.green/255*(height-1)+1;
-	pixel_draw(scope, rect, width, height);
-	rect.x = pixel_x/3+2*width/3;
-	rect.y = pixel.blue/255*(height-1)+1;
-	pixel_draw(scope, rect, width, height);
-}
 
 void draw_grid(unsigned char* scope, double width, double height)
 {
@@ -145,64 +219,79 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	assert(instance);
 	rgbparade_t* inst = (rgbparade_t*)instance;
 
-	uint32_t* dst = outframe;
-	const uint32_t* src = inframe;
-
 	int width = inst->w;
 	int height = inst->h;	
 	int len = inst->w * inst->h;
-	
-	long i,j;
-	rgb_t pixel;
-	long offset;
-	unsigned char scope[len];
+	int parade_len = width * PARADE_HEIGHT;
 
-	for(i=0;i<len;++i) scope[i] = 0;
-	for(i=0;i<height;++i)
-	{
-		for(j=0;j<width;++j)
-		{
-			pixel.red = (((*src) & 0x000000FF) >> OFFSET_R);
-			pixel.green = (((*src) & 0x0000FF00) >> OFFSET_G);
-			pixel.blue = (((*src) & 0x00FF0000) >> OFFSET_B);
-			src++;
-			pixel_parade(scope, pixel, j, width, height);
-		}
+	uint32_t* dst = outframe;
+	uint32_t* dst_end;
+	const uint32_t* src = inframe;
+	const uint32_t* src_end;
+	uint32_t* parade = (uint32_t*)malloc( parade_len * 4 );
+	uint32_t* parade_end;
+
+	long src_x, src_y;
+	long x, y;
+	rgb_t rgb;
+	uint8_t* pixel;
+
+	dst_end = dst + len;
+	src_end = src + len;
+	parade_end = parade + parade_len;
+
+	while ( dst < dst_end ) {
+		*(dst++) = 0xFF000000;
 	}
-	draw_grid(scope, width, height);
-	for(i=0;i<height;++i)
-	{
-		for(j=0;j<width;++j)
-		{
-			offset = i*width+j;
-			if(scope[offset]==255) dst[offset] = GRID_COLOR;
-			else	
-			{		
-				if(j<width/3)
-				{
-					pixel.red = ((SCOPE_R_COLOR & 0x000000FF) >> OFFSET_R);
-					pixel.green = ((SCOPE_R_COLOR & 0x0000FF00) >> OFFSET_G);
-					pixel.blue = ((SCOPE_R_COLOR & 0x00FF0000) >> OFFSET_B);
-				}
-				else if(j<width*2/3)
-				{
-					pixel.red = ((SCOPE_G_COLOR & 0x000000FF) >> OFFSET_R);
-					pixel.green = ((SCOPE_G_COLOR & 0x0000FF00) >> OFFSET_G);
-					pixel.blue = ((SCOPE_G_COLOR & 0x00FF0000) >> OFFSET_B);
-				}
-				else
-				{
-					pixel.red = ((SCOPE_B_COLOR & 0x000000FF) >> OFFSET_R);
-					pixel.green = ((SCOPE_B_COLOR & 0x0000FF00) >> OFFSET_G);
-					pixel.blue = ((SCOPE_B_COLOR & 0x00FF0000) >> OFFSET_B);
-				}
-				if(scope[offset]>SCOPE_STEPS) scope[offset] = SCOPE_STEPS;
-				pixel.red = scope[offset]*pixel.red/SCOPE_STEPS;
-				pixel.green = scope[offset]*pixel.green/SCOPE_STEPS;
-				pixel.blue = scope[offset]*pixel.blue/SCOPE_STEPS;			
-				dst[offset] = 0xFF000000 | ((int)pixel.blue<<OFFSET_B) | ((int)pixel.green<<OFFSET_G) | ((int)pixel.red<<OFFSET_R);
+	dst = outframe;
+	while ( parade < parade_end ) {
+		*(parade++) = 0xFF000000;
+	}
+	parade -= parade_len;
+	
+	for ( src_y = 0; src_y < height; src_y++ ) {
+		for ( src_x = 0; src_x < width; src_x++ ) {
+			rgb.red = (((*src) & 0x000000FF) >> OFFSET_R);
+			rgb.green = (((*src) & 0x0000FF00) >> OFFSET_G);
+			rgb.blue = (((*src) & 0x00FF0000) >> OFFSET_B);
+			src++;		
+			x = src_x / 3;
+			y = PARADE_HEIGHT - rgb.red - 1;
+			if ( x >= 0 && x < width && y >= 0 && y < PARADE_HEIGHT ) {
+				pixel = (uint8_t*)&parade[x+width*y];
+				if ( pixel[0] < (255-PARADE_STEP) ) pixel[0] += PARADE_STEP;
+			}
+			x += width / 3;
+			y = PARADE_HEIGHT - rgb.green - 1;
+			if ( x >= 0 && x < width && y >= 0 && y < PARADE_HEIGHT ) {
+				pixel = (uint8_t*)&parade[x+width*y];
+				if ( pixel[1] < (255-PARADE_STEP) ) pixel[1] += PARADE_STEP;
+			}
+			x += width / 3;
+			y = PARADE_HEIGHT - rgb.blue - 1;
+			if ( x >= 0 && x < width && y >= 0 && y < PARADE_HEIGHT ) {
+				pixel = (uint8_t*)&parade[x+width*y];
+				if ( pixel[2] < (255-PARADE_STEP) ) pixel[2] += PARADE_STEP;
 			}
 		}
+	}
+	
+	inst->parade_frame_src->planes[0] = (uint8_t *)parade;
+	inst->parade_frame_dst->planes[0] = (uint8_t *)dst;
+
+	gavl_video_scaler_scale( inst->parade_scaler, inst->parade_frame_src, inst->parade_frame_dst );
+
+	unsigned char *scala8, *dst8, *dst8_end;
+
+	scala8 = inst->scala;
+	dst8 = (unsigned char*)outframe;
+	dst8_end = dst8 + ( len * 4 );
+	while ( dst8 < dst8_end ) {
+		dst8[0] = ( ( ( scala8[0] - dst8[0] ) * 255 * scala8[3] ) >> 16 ) + dst8[0];
+		dst8[1] = ( ( ( scala8[1] - dst8[1] ) * 255 * scala8[3] ) >> 16 ) + dst8[1];
+		dst8[2] = ( ( ( scala8[2] - dst8[2] ) * 255 * scala8[3] ) >> 16 ) + dst8[2];
+		scala8 += 4;
+		dst8 += 4;
 	}
 }
 
