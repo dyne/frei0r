@@ -19,7 +19,7 @@ alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
 water.la cartoon.la  glow.la lenscorrection.la transparency.la \
-colordistance.la perspective.la
+colordistance.la perspective.la uvmap.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -81,6 +81,7 @@ ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
 nois0r_la_SOURCES = generator/nois0r/nois0r.cpp
 onecol0r_la_SOURCES = generator/onecol0r/onecol0r.cpp
+uvmap_la_SOURCES = mixer2/uvmap/uvmap.c
 composition_la_SOURCES = mixer2/composition/composition.c
 alphainjection_la_SOURCES = mixer2/alphainjection/alphainjection.c
 addition_la_SOURCES = mixer2/addition/addition.cpp
