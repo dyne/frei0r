@@ -33,7 +33,7 @@ struct wnoise
   {
     seed *= 3039177861U; // parameter for LCG
     unsigned char rd = seed >> 24;
-    return (rd | rd << 8 | rd << 16);
+    return (rd | rd << 8 | rd << 16 | 0xff000000);
   }
 
 
