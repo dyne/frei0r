@@ -67,10 +67,12 @@ public:
     geo->h = height;
     geo->size =  width*height*sizeof(uint32_t);
 
-    prePixBuffer = (int32_t*)malloc(geo->size);
-    conBuffer = (int32_t*)malloc(geo->size);
+    if ( geo->size > 0 ) {
+        prePixBuffer = (int32_t*)malloc(geo->size);
+        conBuffer = (int32_t*)malloc(geo->size);
 
-    yprecal = (int*)malloc(geo->h*2*sizeof(int));
+        yprecal = (int*)malloc(geo->h*2*sizeof(int));
+    }
     for(c=0;c<geo->h*2;c++)
       yprecal[c] = geo->w*c;
     for(c=0;c<256;c++) 
@@ -83,9 +85,11 @@ public:
   }
   
   ~Cartoon() {
-    free(prePixBuffer);
-    free(conBuffer);
-    free(yprecal);
+    if ( geo->size > 0 ) {
+        free(prePixBuffer);
+        free(conBuffer);
+        free(yprecal);
+    }
   }
 
   virtual void update() {

@@ -116,12 +116,16 @@ public:
     swirlangle = fastrand()%2048;
     
     /* buffer allocation tango */
-    Height[0] = (uint32_t*)calloc(width*height, sizeof(uint32_t));
-    Height[1] = (uint32_t*)calloc(width*height, sizeof(uint32_t));
+    if ( width*height > 0 ) {
+        Height[0] = (uint32_t*)calloc(width*height, sizeof(uint32_t));
+        Height[1] = (uint32_t*)calloc(width*height, sizeof(uint32_t));
+    }
     //    buffer =    (uint32_t*)    malloc(geo->size);
-    BkGdImagePre = (uint32_t*) malloc(geo->size);
-    BkGdImage =    (uint32_t*) malloc(geo->size);
-    BkGdImagePost = (uint32_t*)malloc(geo->size);
+    if ( geo->size > 0 ) {
+        BkGdImagePre = (uint32_t*) malloc(geo->size);
+        BkGdImage =    (uint32_t*) malloc(geo->size);
+        BkGdImagePost = (uint32_t*)malloc(geo->size);
+    }
 
 
     swirl = 1;
