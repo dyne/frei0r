@@ -18,6 +18,7 @@
  */
 
 #include "frei0r.hpp"
+#include <stdlib.h>
 
 /* Clamps a int32-range int between 0 and 255 inclusive. */
 unsigned char CLAMP0255(int32_t a)

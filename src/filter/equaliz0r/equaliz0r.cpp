@@ -18,6 +18,7 @@
  */
 
 #include "frei0r.hpp"
+#include <string.h>
 
 #include <cstring>
 
