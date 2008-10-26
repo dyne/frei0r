@@ -90,6 +90,9 @@ public:
     oy = 80;
     done = 0;
     mode = 0x4000;
+
+    BkGdImagePre = BkGdImage = BkGdImagePost = 0;
+    Height[0] = Height[1] = 0;
     
     /* default physics */
     density = 4;
