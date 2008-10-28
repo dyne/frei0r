@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(frei0r-plugins, [1.1.21], [richard.spindler@gmail.com])
+AC_INIT(frei0r-plugins, [1.1.22], [richard.spindler@gmail.com])
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
