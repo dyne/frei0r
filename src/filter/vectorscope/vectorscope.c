@@ -86,6 +86,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	vectorscope_instance_t* inst = (vectorscope_instance_t*)malloc(sizeof(vectorscope_instance_t));
 	inst->w = width;
 	inst->h = height;
+	if ( width == 0 || height == 0 ) {
+		return;
+	}
 
 	inst->scala = (unsigned char*)malloc( width * height * 4 );
 
@@ -208,6 +211,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
 	vectorscope_instance_t* inst = (vectorscope_instance_t*)instance;
+	if ( inst->w == 0 || inst->h == 0 ) {
+		free(instance);
+		return;
+	}
 	free(inst->scala);
 	gavl_video_scaler_destroy( inst->scope_scaler );
 	gavl_video_frame_null( inst->scope_frame_src );
