@@ -31,5 +31,5 @@ htmldocs_DATA = \
 	structf0r__plugin__info.html \
 	tabs.css
 
-htmldocsdir=${prefix}/share/doc/${PACKAGE}-${VERSION}/html
+htmldocsdir=${prefix}/share/doc/${PACKAGE}-1.1/html
 
