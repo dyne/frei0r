@@ -87,6 +87,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	inst->w = width;
 	inst->h = height;
 	if ( width == 0 || height == 0 ) {
+		free(inst);
 		return;
 	}
 

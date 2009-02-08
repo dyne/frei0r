@@ -90,8 +90,8 @@ void f0r_destruct(f0r_instance_t instance)
 void f0r_set_param_value(f0r_instance_t instance, 
 			 f0r_param_t param, int param_index)
 { 
-  tehRoxx0r_instance_t* inst = 
-    (tehRoxx0r_instance_t*)malloc(sizeof(tehRoxx0r_instance_t));
+  tehRoxx0r_instance_t* inst = (tehRoxx0r_instance_t *)instance;
+  //  (tehRoxx0r_instance_t*)malloc(sizeof(tehRoxx0r_instance_t));
 
   switch(param_index)
     {
@@ -104,8 +104,8 @@ void f0r_set_param_value(f0r_instance_t instance,
 void f0r_get_param_value(f0r_instance_t instance,
 			 f0r_param_t param, int param_index)
 { 
-  tehRoxx0r_instance_t* inst = 
-    (tehRoxx0r_instance_t*)malloc(sizeof(tehRoxx0r_instance_t));
+  tehRoxx0r_instance_t* inst = (tehRoxx0r_instance_t *)instance;
+  //  (tehRoxx0r_instance_t*)malloc(sizeof(tehRoxx0r_instance_t));
 
   switch(param_index)
     {
