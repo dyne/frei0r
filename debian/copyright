@@ -1,0 +1,20 @@
+This package was debianized by Christian Marillat <marillat@debian.org> on
+Wed, 22 Oct 2008 16:06:34 +0200.
+
+It was downloaded from http://www.piksel.org/frei0r
+
+Upstream Authors:
+
+    See the AUTHORS in /usr/share/doc/<package>
+
+Copyright:
+
+    <Copyright © 2008 /usr/share/doc/<package>/AUTHORS
+
+License:
+
+    You should have received a copy of the GNU General Public License with the
+    Debian GNU/Linux distribution in file /usr/share/common-licenses/GPL-2; if
+    not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth
+    Floor, Boston, MA 02110-1301, USA.
+

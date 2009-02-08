@@ -1,0 +1,9 @@
+Document: frei0r
+Title: A minimalistic plugin API for video effects
+Author: doxygen
+Abstract: A minimalistic plugin API for video effects
+Section: Graphics
+
+Format: HTML
+Index: /usr/share/doc/frei0r-plugins-1.1/html/index.html
+Files: /usr/share/doc/frei0r-plugins-1.1/html/*.html

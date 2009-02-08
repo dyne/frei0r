@@ -1,0 +1,52 @@
+Source: frei0r
+Section: graphics
+Priority: optional
+Maintainer: Luca Bigliardi <shammash@artha.org>
+Uploaders: Denis Rojo <jaromil@dyne.org>, Filippo Giunchedi <filippo@debian.org>
+DM-Upload-Allowed: yes
+Vcs-Git: git://git.dyne.org/frei0r.git
+Vcs-Browser: http://git.dyne.org/?r=frei0r
+Homepage: http://www.piksel.org/frei0r
+Build-Depends: cdbs, debhelper (>> 5.0.0), libcv-dev, libgavl-dev (>= 1.1.0)
+Standards-Version: 3.8.0.1
+
+Package: frei0r-plugins
+Section: graphics
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: video effects plugin
+ frei0r is a minimalistic plugin API for video sources and filters. The
+ behavior of the effects can be controlled from the host by simple
+ parameters. The intent is to solve the recurring reimplementation or
+ adaptation issue of standard effects. It is not meant as a generic API for
+ all kinds of video applications.
+ .
+ This package contains various plugins.
+
+Package: frei0r-plugins-dev
+Section: devel
+Architecture: any
+Depends: ${misc:Depends}
+Description: a minimalistic plugin API for video effects
+ frei0r is a minimalistic plugin API for video sources and filters. The
+ behavior of the effects can be controlled from the host by simple
+ parameters. The intent is to solve the recurring reimplementation or
+ adaptation issue of standard effects. It is not meant as a generic API for
+ all kinds of video applications.
+ .
+ This package contains the header needed to enable frei0r in other package
+ at build time.
+
+Package: frei0r-plugins-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: a minimalistic plugin API for video effects
+ frei0r is a minimalistic plugin API for video sources and filters. The
+ behavior of the effects can be controlled from the host by simple
+ parameters. The intent is to solve the recurring reimplementation or
+ adaptation issue of standard effects. It is not meant as a generic API for
+ all kinds of video applications.
+ .
+ This package contains the API documentation.
+

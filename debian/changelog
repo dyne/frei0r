@@ -1,0 +1,43 @@
+frei0r (1.1.22git20090208-1) unstable; urgency=low
+
+  * Import some fixes from upstream.
+  * Switch to cdbs.
+  * Remove watch file.
+  * Rename source package in frei0r.
+  * Rename plugins binary package in frei0r-plugins.
+  * Rename libfrei0r-* in frei0r-plugins-*.
+
+ -- Luca Bigliardi <shammash@artha.org>  Sun, 08 Feb 2009 23:53:26 +0100
+
+frei0r-plugins (1.1.22-0.2) unstable; urgency=low
+
+  * Rebuild against the latest libgavl-dev 1.1.0
+
+ -- Christian Marillat <marillat@debian.org>  Mon, 02 Feb 2009 12:21:15 +0100
+
+frei0r-plugins (1.1.22-0.1) unstable; urgency=low
+
+  * Update watch file.
+  * Build against the latest libgavl-dev 1.0.1
+
+ -- Christian Marillat <marillat@debian.org>  Thu, 11 Dec 2008 23:56:33 +0100
+
+frei0r-plugins (1.1.22-0.0) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Christian Marillat <marillat@debian.org>  Wed, 29 Oct 2008 08:23:52 +0100
+
+frei0r (1.1.21git20081022-0.0) unstable; urgency=low
+
+  * Update the version number to the real version 1.1.21
+  * Remove the water plugin who doesn't work. I'll add this plugin later.
+
+ -- Christian Marillat <marillat@debian.org>  Thu, 23 Oct 2008 10:50:10 +0200
+
+frei0r (1.1git20081022-0.0) unstable; urgency=low
+
+  * Initial release.
+
+ -- Christian Marillat <marillat@debian.org>  Wed, 22 Oct 2008 16:06:34 +0200
+
