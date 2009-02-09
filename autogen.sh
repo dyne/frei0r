@@ -10,6 +10,14 @@ echo aclocal...
 
 aclocal || exit 1
 
+echo autoheader...
+(autoheader --version) < /dev/null > /dev/null 2>&1 || {
+    echo autoheader not found
+    exit 1
+}
+
+autoheader || exit 1
+
 echo automake...
 (automake --version) < /dev/null > /dev/null 2>&1 || {
     echo automake not found
