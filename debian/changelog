@@ -1,13 +1,16 @@
 frei0r (1.1.22git20090209-1) UNRELEASED; urgency=low
 
+  * First official debian package (Closes: #514639).
   * Import some fixes from upstream.
   * Switch to cdbs.
+  * Build-depend on pkg-config.
+  * Use installed documentation.
   * Remove watch file.
   * Rename source package in frei0r.
   * Rename plugins binary package in frei0r-plugins.
   * Rename libfrei0r-* in frei0r-plugins-*.
 
- -- Luca Bigliardi <shammash@artha.org>  Sun, 08 Feb 2009 23:53:26 +0100
+ -- Luca Bigliardi <shammash@artha.org>  Mon, 09 Feb 2009 19:52:16 +0100
 
 frei0r-plugins (1.1.22-0.2) unstable; urgency=low
 
