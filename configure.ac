@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.59c)
 AC_INIT(frei0r-plugins, [1.1.22], [richard.spindler@gmail.com])
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
@@ -9,6 +9,7 @@ AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
 AC_CONFIG_HEADERS(config.h)

@@ -88,7 +88,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	inst->h = height;
 	if ( width == 0 || height == 0 ) {
 		free(inst);
-		return;
+		return NULL;
 	}
 
 	inst->scala = (unsigned char*)malloc( width * height * 4 );
