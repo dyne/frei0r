@@ -122,7 +122,7 @@ RGB_la_SOURCES = mixer3/RGB/RGB.c
 
 AM_CPPFLAGS = -I@top_srcdir@/include 
 AM_CFLAGS = -I@top_srcdir@/include 
-AM_LDFLAGS = -module -avoid-version -Wc,-nostartfiles
+AM_LDFLAGS = -module -avoid-version -Wc,-nostartfiles -lm
 
 plugindir = @prefix@/lib/frei0r-1
 
