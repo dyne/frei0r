@@ -2,7 +2,7 @@ Source: frei0r
 Section: graphics
 Priority: optional
 Maintainer: Luca Bigliardi <shammash@artha.org>
-Uploaders: Denis Rojo <jaromil@dyne.org>, Filippo Giunchedi <filippo@debian.org>
+Uploaders: Denis Rojo <jaromil@dyne.org>
 DM-Upload-Allowed: yes
 Vcs-Git: git://git.dyne.org/frei0r.git
 Vcs-Browser: http://git.dyne.org/?r=frei0r
