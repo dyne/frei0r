@@ -12,7 +12,7 @@ AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
-AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_HEADERS([include/config.h])
 
 dnl cpu flags detection
      CPUFLAGS=`cat /proc/cpuinfo | grep flags`

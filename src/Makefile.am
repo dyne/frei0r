@@ -8,8 +8,6 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-INCLUDES = -I$(top_srcdir)
-
 plugin_LTLIBRARIES = \
 3dflippo.la   brightness.la  distort0r.la      grain_merge.la  mask0mate.la  saturation.la  tehroxx0r.la\
 addition.la   burn.la        divide.la         hardlight.la    multiply.la     threshold0r.la\
