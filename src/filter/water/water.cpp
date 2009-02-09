@@ -189,7 +189,7 @@ private:
 
   void water_clear();
   void water_distort();
-  void water_setphysics(int physics);
+  void water_setphysics(double physics);
   void water_update();
   void water_drop(int x, int y);
   void water_bigsplash(int x, int y);
@@ -298,28 +298,27 @@ void Water::water_distort() {
   memset(Height[Hpage], 0, water_surfacesize);
 }
 
-void Water::water_setphysics(int physics) {
-  switch(physics) {
-  case WATER:
+void Water::water_setphysics(double physics) {
+  if(physics<0.25) {
+    // case WATER:
     mode |= 0x4000;
     density=4;
     pheight=600;
-    break;
-  case JELLY:
+  } else if(physics<0.50) {
+    // case JELLY:
     mode &= 0xBFFF;
     density=3;
     pheight=400;
-    break;
-  case SLUDGE:
+  } else if(physics<0.75) {
+    // case SLUDGE:
     mode &= 0xBFFF;
     density=6;
     pheight=400;
-    break;
-  case SUPER_SLUDGE:
+  } else {
+    //  case SUPER_SLUDGE:
     mode &=0xBFFF;
     density=8;
     pheight=400;
-    break;
   }
 }
 
