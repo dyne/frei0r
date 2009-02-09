@@ -1,4 +1,4 @@
-frei0r (1.1.22git20090208-1) unstable; urgency=low
+frei0r (1.1.22git20090209-1) UNRELEASED; urgency=low
 
   * Import some fixes from upstream.
   * Switch to cdbs.
