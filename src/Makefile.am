@@ -8,6 +8,8 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+INCLUDES = -I$(top_srcdir)
+
 plugin_LTLIBRARIES = \
 3dflippo.la   brightness.la  distort0r.la      grain_merge.la  mask0mate.la  saturation.la  tehroxx0r.la\
 addition.la   burn.la        divide.la         hardlight.la    multiply.la     threshold0r.la\
@@ -18,9 +20,9 @@ alphaover.la  darken.la      gamma.la          ising0r.la      overlay.la    sof
 alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur.la  contrast0r.la\
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
-water.la cartoon.la  glow.la lenscorrection.la transparency.la \
+water.la partik0l.la cartoon.la  glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
-cluster.la
+cluster.la 
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -56,6 +58,7 @@ lenscorrection_la_SOURCES = filter/lenscorrection/lenscorrection.c
 glow_la_SOURCES = filter/glow/glow.c filter/glow/blur.h
 cartoon_la_SOURCES = filter/cartoon/cartoon.cpp
 water_la_SOURCES = filter/water/water.cpp
+partik0l_la_SOURCES = generator/partik0l/partik0l.cpp
 R_la_SOURCES = filter/RGB/R.c
 G_la_SOURCES = filter/RGB/G.c
 B_la_SOURCES = filter/RGB/B.c
