@@ -11,6 +11,28 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
+AC_CONFIG_HEADERS(config.h)
+
+dnl cpu flags detection
+     CPUFLAGS=`cat /proc/cpuinfo | grep flags`
+     if grep "^flags.* mmx" /proc/cpuinfo > /dev/null; then
+       have_mmx=yes
+       AC_DEFINE(HAVE_MMX,1,[define if enabling MMX acceleration])
+     fi
+     if grep "^flags.* sse" /proc/cpuinfo > /dev/null; then
+       have_sse=yes
+       AC_DEFINE(HAVE_SSE,1,[define if enabling SSE acceleration])
+     fi
+     if grep "^flags.* sse2" /proc/cpuinfo > /dev/null; then
+       have_sse=yes
+       AC_DEFINE(HAVE_SSE2,1,[define if enabling SSE2 acceleration])
+     fi
+     if grep "^flags.* ssse3" /proc/cpuinfo > /dev/null; then
+       have_ssse3=yes
+       AC_DEFINE(HAVE_SSSE3,1,[define if enabling SSSE3 acceleration])
+     fi
+
+
 HAVE_OPENCV=false
 PKG_CHECK_MODULES(OPENCV, opencv >= 1.0.0, [HAVE_OPENCV=true], [true])
 if test x$HAVE_OPENCV = xfalse; then
