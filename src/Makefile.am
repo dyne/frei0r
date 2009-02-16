@@ -20,7 +20,7 @@ blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
 water.la partik0l.la cartoon.la  glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
-cluster.la 
+cluster.la balanc0r.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -82,6 +82,7 @@ invert0r_la_SOURCES = filter/invert0r/invert0r.c
 pixeliz0r_la_SOURCES = filter/pixeliz0r/pixeliz0r.c
 scanline0r_la_SOURCES = filter/scanline0r/scanline0r.cpp
 tehroxx0r_la_SOURCES = filter/tehroxx0r/tehRoxx0r.c
+balanc0r_la_SOURCES = filter/balanc0r/balanc0r.c
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
 nois0r_la_SOURCES = generator/nois0r/nois0r.cpp
