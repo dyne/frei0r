@@ -8,7 +8,7 @@ Vcs-Git: git://git.dyne.org/frei0r.git
 Vcs-Browser: http://git.dyne.org/?r=frei0r
 Homepage: http://www.piksel.org/frei0r
 Build-Depends: cdbs, debhelper (>> 5.0.0), pkg-config, libcv-dev, libgavl-dev (>= 1.1.0)
-Standards-Version: 3.8.0.1
+Standards-Version: 3.8.0
 
 Package: frei0r-plugins
 Section: graphics
