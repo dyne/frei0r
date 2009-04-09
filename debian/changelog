@@ -1,3 +1,9 @@
+frei0r (1.1.22git20090409-1) UNRELEASED; urgency=low
+
+  * Sync with upstream git to add pkg-config file.
+
+ -- Luca Bigliardi <shammash@artha.org>  Thu, 09 Apr 2009 17:39:36 +0200
+
 frei0r (1.1.22git20090209-1) unstable; urgency=low
 
   * First official debian package (Closes: #514639).
