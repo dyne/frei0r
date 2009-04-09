@@ -10,3 +10,7 @@
 
 SUBDIRS=src include doc
 EXTRA_DIST = Doxyfile
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = frei0r.pc
+

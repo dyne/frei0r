@@ -27,3 +27,4 @@ Makefile
 .libs
 TAGS
 ylwrap
+frei0r.pc

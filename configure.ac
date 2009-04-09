@@ -67,6 +67,7 @@ fi
 AM_CONDITIONAL([HAVE_GAVL], [test x$HAVE_GAVL = xtrue])
 
 AC_CONFIG_FILES([
+  frei0r.pc
   Makefile
   include/Makefile
   src/Makefile
