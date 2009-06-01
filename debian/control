@@ -14,6 +14,7 @@ Package: frei0r-plugins
 Section: video
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: frei0r (<= 1.1.22)
 Description: minimalistic plugin API for video effects, plugins collection
  frei0r is a minimalistic plugin API for video sources and filters. The
  behavior of the effects can be controlled from the host by simple
@@ -30,6 +31,7 @@ Package: frei0r-plugins-dev
 Section: devel
 Architecture: any
 Depends: ${misc:Depends}
+Conflicts: frei0r-dev (<= 1.1.22)
 Description: minimalistic plugin API for video effects, header files
  frei0r is a minimalistic plugin API for video sources and filters. The
  behavior of the effects can be controlled from the host by simple
@@ -47,6 +49,7 @@ Package: frei0r-plugins-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}
+Conflicts: frei0r-doc (<= 1.1.22)
 Description: minimalistic plugin API for video effects, API documentation
  frei0r is a minimalistic plugin API for video sources and filters. The
  behavior of the effects can be controlled from the host by simple
