@@ -8,6 +8,8 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+ACLOCAL_AMFLAGS= -I m4
+
 SUBDIRS=src include doc
 EXTRA_DIST = Doxyfile
 

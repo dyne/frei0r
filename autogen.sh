@@ -64,8 +64,8 @@ fi
 
 echo "Generating configuration files for $package, please wait...."
 
-echo "  $ACLOCAL -I $srcdir/m4"
-$ACLOCAL -I $srcdir/m4 || exit -1
+echo "  $ACLOCAL"
+$ACLOCAL || exit -1
 echo "  $AUTOHEADER"
 $AUTOHEADER || exit -1
 echo "  $LIBTOOLIZE --automake -c"

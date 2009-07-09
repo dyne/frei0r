@@ -3,6 +3,7 @@
 
 AC_PREREQ(2.59c)
 AC_INIT(frei0r-plugins, [1.1.22], [richard.spindler@gmail.com])
+AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
