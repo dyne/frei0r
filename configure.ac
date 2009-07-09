@@ -15,7 +15,36 @@ AC_PROG_LIBTOOL
 
 AC_CONFIG_HEADERS([include/config.h])
 
-dnl cpu flags detection
+AC_MSG_CHECKING([host platform])
+case $host_os in
+    *linux*)
+        AC_MSG_RESULT([Linux])
+        have_linux=yes
+	;;
+    *freebsd*)
+        AC_MSG_RESULT([FreeBSD])
+        have_freebsd=yes
+	;;
+    *darwin*)
+        AC_MSG_RESULT([Darwin/OSX])
+        have_darwin=yes
+	;;
+    *)
+        AC_MSG_RESULT([ $host_os ? ... let us try])
+	;;
+esac
+
+AC_ARG_ENABLE(cpuflags,
+	       [  --enable-cpuflags       compile with advanced cpu instructions (yes)],
+	       [
+		if test ! x$enableval = xyes; then
+		    have_cpuflags=no
+		else
+		    have_cpuflags=yes;
+		fi ],[ have_cpuflags=yes ])
+
+if test x$have_cpuflags = xyes; then
+  if test x$have_linux = xyes; then
      CPUFLAGS=`cat /proc/cpuinfo | grep flags`
      if grep "^flags.* mmx" /proc/cpuinfo > /dev/null; then
        have_mmx=yes
@@ -33,6 +62,14 @@ dnl cpu flags detection
        have_ssse3=yes
        AC_DEFINE(HAVE_SSSE3,1,[define if enabling SSSE3 acceleration])
      fi
+  fi
+  if test x$have_freebsd = xyes; then
+        if sysctl -n hw.instruction_sse; then
+            have_mmx=yes
+            AC_DEFINE(HAVE_MMX,1,[define if enabling MMX acceleration])
+        fi
+  fi
+fi
 
 
 HAVE_OPENCV=false
@@ -77,3 +114,32 @@ AC_CONFIG_FILES([
 ])
 
 AC_OUTPUT
+
+echo
+echo
+echo "Compile $PACKAGE $VERSION for ${host}"
+echo
+echo "    - INSTALL prefix: $prefix"
+
+if test x$have_cpuflags = xyes; then
+echo "    - CPU optimization: YES"
+else
+echo "    - CPU optimization: NO"
+fi
+
+if test x$HAVE_OPENCV = xtrue; then
+echo "    - opencv: YES"
+else
+echo "    - opencv: NO"
+fi
+
+if test x$HAVE_GAVL = xtrue; then
+echo "    - gavl: YES"
+else
+echo "    - gavl: NO"
+fi
+
+echo
+echo "Now you can run make."
+echo
+echo
