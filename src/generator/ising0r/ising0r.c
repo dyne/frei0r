@@ -44,7 +44,7 @@ static void copy_field(const struct IsingField* f, uint32_t* framebuffer);
 
 static uint32_t rnd_lcg1_xn = 1;
 
-__inline static uint32_t rnd_lcg1()
+inline static uint32_t rnd_lcg1()
 {
   rnd_lcg1_xn *= 3039177861U;
 

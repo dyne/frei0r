@@ -131,7 +131,7 @@ void f0r_get_param_value(f0r_instance_t instance,
 
 /* this will compute a displacement value such that 
    0<=x_retval<xsize and 0<=y_retval<ysize. */ 
-static __inline void plasmaFunction
+static inline void plasmaFunction
 (int32_t* x_retval, int32_t* y_retval, 
  unsigned int x, unsigned int y,
  unsigned int w, unsigned int h,

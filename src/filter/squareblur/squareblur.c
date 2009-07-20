@@ -27,31 +27,31 @@
 
 #define SIZE_RGBA 4
 
-__inline int MAX(int a, int b)
+static inline int MAX(int a, int b)
 {
   return (a > b ? a : b);
 }
 
-__inline int MIN(int a, int b)
+static inline int MIN(int a, int b)
 {
   return (a < b ? a : b);
 }
 
-__inline void subtract_acc(uint32_t *dst, const uint32_t *src)
+static inline void subtract_acc(uint32_t *dst, const uint32_t *src)
 {
   int n=SIZE_RGBA;
   while (n--)
     *dst++ -= *src++;
 }
 
-__inline void add_acc(uint32_t *dst, const uint32_t *src)
+static inline void add_acc(uint32_t *dst, const uint32_t *src)
 {
   int n=SIZE_RGBA;
   while (n--)
     *dst++ += *src++;
 }
 
-__inline void divide(unsigned char *dst, const uint32_t *src, const unsigned int val)
+static inline void divide(unsigned char *dst, const uint32_t *src, const unsigned int val)
 {
   int n=SIZE_RGBA;
   while (n--)
