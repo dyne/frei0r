@@ -75,8 +75,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-  hueshift0r_instance_t* inst = 
-    (hueshift0r_instance_t*)malloc(sizeof(hueshift0r_instance_t));
+  hueshift0r_instance_t* inst = calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
   /* init transformation matrix */
   inst->hueshift = 0;

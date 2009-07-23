@@ -143,9 +143,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width,unsigned int height)
 {
-  tdflippo_instance_t *inst=
-    (tdflippo_instance_t*)malloc(sizeof(tdflippo_instance_t));
-
+  tdflippo_instance_t *inst=calloc(1, sizeof(*inst));
   inst->width=width;
   inst->height=height;
   inst->fsize=width*height;
@@ -153,8 +151,6 @@ f0r_instance_t f0r_construct(unsigned int width,unsigned int height)
   inst->flip[0]=inst->flip[1]=inst->flip[2]=inst->rate[0]=inst->rate[1]=inst->rate[2]=0.5;
   
   inst->mask=malloc(sizeof(int)*inst->fsize);
-
-  inst->invertrot=inst->dontblank=inst->fillblack=inst->mustrecompute=0;
 
   return (f0r_instance_t)inst;
 }

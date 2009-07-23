@@ -59,12 +59,9 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
   int blocksize;
-  tehRoxx0r_instance_t* inst = 
-    (tehRoxx0r_instance_t*)malloc(sizeof(tehRoxx0r_instance_t));
+  tehRoxx0r_instance_t* inst = calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
   inst->change_speed = 0.01;
-  inst->last_time = 0.0;
-  inst->time_stack = 0.0;
 
   // get greatest common divisor
   blocksize = gcd(width, height);

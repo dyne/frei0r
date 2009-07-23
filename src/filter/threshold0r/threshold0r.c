@@ -85,11 +85,9 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-  threshold0r_instance_t* inst = 
-    (threshold0r_instance_t*)malloc(sizeof(threshold0r_instance_t));
+  threshold0r_instance_t* inst = calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
   /* init look-up-table */
-  inst->threshold = 0;
   update_lut(inst);
   return (f0r_instance_t)inst;
 }

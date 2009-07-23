@@ -136,15 +136,13 @@ void f0r_get_param_info( f0r_param_info_t* info, int param_index )
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-	mask0mate_instance_t* inst = (mask0mate_instance_t*)malloc(sizeof(mask0mate_instance_t));
+	mask0mate_instance_t* inst = calloc(1, sizeof(*inst));
 	inst->w = width;
 	inst->h = height;
 	inst->left = 0.2;
 	inst->right = 0.2;
 	inst->top = 0.2;
 	inst->bottom = 0.2;
-	inst->invert = 0;
-	inst->blur = 0.0;
 	inst->mask = (uint32_t*)malloc( width * height * sizeof(uint32_t) );
 	inst->mask_blurred = (uint32_t*)malloc( width * height * sizeof(uint32_t) );
 	inst->blur_instance = blur_construct( width, height );
