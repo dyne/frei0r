@@ -125,7 +125,7 @@ AM_CFLAGS = -I@top_srcdir@/include
 AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
 AM_LIBTOOLFLAGS = --tag=disable-static
 
-plugindir = @prefix@/lib/frei0r-1
+plugindir = @libdir@/frei0r-1
 
 
 install-pluginLTLIBRARIES: $(plugin_LTLIBRARIES)
