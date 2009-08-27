@@ -18,7 +18,7 @@ alphaover.la  darken.la      gamma.la          ising0r.la      overlay.la    sof
 alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur.la  contrast0r.la\
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
-water.la nervous.la baltan.la partik0l.la cartoon.la vertigo.la \
+water.la nervous.la baltan.la partik0l.la cartoon.la vertigo.la delaygrab.la \
 glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
 cluster.la balanc0r.la
@@ -59,6 +59,7 @@ cartoon_la_SOURCES = filter/cartoon/cartoon.cpp
 water_la_SOURCES = filter/water/water.cpp
 nervous_la_SOURCES = filter/nervous/nervous.cpp
 baltan_la_SOURCES = filter/baltan/baltan.cpp
+delaygrab_la_SOURCES = filter/delaygrab/delaygrab.cpp
 vertigo_la_SOURCES = filter/vertigo/vertigo.c
 partik0l_la_SOURCES = generator/partik0l/partik0l.cpp
 R_la_SOURCES = filter/RGB/R.c
