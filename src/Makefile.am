@@ -21,7 +21,7 @@ subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.l
 water.la nervous.la baltan.la partik0l.la cartoon.la vertigo.la delaygrab.la \
 glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
-cluster.la balanc0r.la
+cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -88,6 +88,10 @@ pixeliz0r_la_SOURCES = filter/pixeliz0r/pixeliz0r.c
 scanline0r_la_SOURCES = filter/scanline0r/scanline0r.cpp
 tehroxx0r_la_SOURCES = filter/tehroxx0r/tehRoxx0r.c
 balanc0r_la_SOURCES = filter/balanc0r/balanc0r.c
+tint0r_la_SOURCES = filter/tint0r/tint0r.c
+levels_la_SOURCES = filter/levels/levels.c
+curves_la_SOURCES = filter/curves/curves.c
+three_point_balance_la_SOURCES = filter/three_point_balance/three_point_balance.c
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
 nois0r_la_SOURCES = generator/nois0r/nois0r.cpp

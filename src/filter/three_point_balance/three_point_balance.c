@@ -236,9 +236,9 @@ void f0r_update(f0r_instance_t instance, double time,
   int mapGreen[256];
   int mapBlue[256];
 
-  double redPoints[6] = {0, 0 - inst->blackColor.r, .5, 1 - inst->grayColor.r, 1, 2 - inst->whiteColor.r};
-  double greenPoints[6] = {0, 0 - inst->blackColor.g, .5, 1 - inst->grayColor.g, 1, 2 - inst->whiteColor.g};
-  double bluePoints[6] = {0, 0 - inst->blackColor.b, .5, 1 - inst->grayColor.b, 1, 2 - inst->whiteColor.b};
+  double redPoints[6] = {inst->blackColor.r, 0, inst->grayColor.r, 0.5, inst->whiteColor.r, 1};
+  double greenPoints[6] = {inst->blackColor.g, 0, inst->grayColor.g, 0.5, inst->whiteColor.g, 1};
+  double bluePoints[6] = {inst->blackColor.b, 0, inst->grayColor.b, 0.5, inst->whiteColor.b, 1};
   double *redCoeffs = calcParabolaCoeffs(redPoints);
   double *greenCoeffs = calcParabolaCoeffs(greenPoints);
   double *blueCoeffs = calcParabolaCoeffs(bluePoints);

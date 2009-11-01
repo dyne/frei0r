@@ -231,8 +231,7 @@ void f0r_update(f0r_instance_t instance, double time,
 	double v = i / 255.;
 	double w = pow((v - inst->inputMin) / inScale, exp) * outScale + inst->outputMin;
 	map[i] = CLAMP(w,0,1) * 255;
-	w = i == 0?0:w / v;
-	mapLuma[i] = w;	
+	mapLuma[i] = i == 0?w:w / v;
   }
 
   if (inst->showHistogram)
@@ -276,9 +275,15 @@ void f0r_update(f0r_instance_t instance, double time,
 	  *dst++ = map[b];
 	  break;
 	case CHANNEL_LUMA:
-	  *dst++ = CLAMP0255((unsigned int)(r * mapLuma[luma]));
-	  *dst++ = CLAMP0255((unsigned int)(g * mapLuma[luma]));
-	  *dst++ = CLAMP0255((unsigned int)(b * mapLuma[luma]));
+	  if (luma == 0) {
+		*dst++ = mapLuma[luma];
+		*dst++ = mapLuma[luma];
+		*dst++ = mapLuma[luma];
+	  } else {
+		*dst++ = CLAMP0255((unsigned int)(r * mapLuma[luma]));
+		*dst++ = CLAMP0255((unsigned int)(g * mapLuma[luma]));
+		*dst++ = CLAMP0255((unsigned int)(b * mapLuma[luma]));
+	  }
 	  break;
 	}
 
