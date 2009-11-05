@@ -79,10 +79,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
   tint0r_instance_t* inst = calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
-  inst->amount = .5;
-  inst->whiteColor.r = 1.0;
+  inst->amount = .25;
+  inst->whiteColor.r = .5;
   inst->whiteColor.g = 1.0;
-  inst->whiteColor.b = 1.0;
+  inst->whiteColor.b = .5;
   inst->blackColor.r = 0.0;
   inst->blackColor.g = 0.0;
   inst->blackColor.b = 0.0;
@@ -103,7 +103,7 @@ void f0r_set_param_value(f0r_instance_t instance,
   switch(param_index)
   {
 	case 0:
-	  /* blakc color */
+	  /* black color */
 	  inst->blackColor =  *((f0r_param_color_t *)param);
 	  break;
 	case 1:
@@ -167,9 +167,6 @@ void f0r_update(f0r_instance_t instance, double time,
 	*dst++ = map_color(amount, comp_amount, r, luma, inst->blackColor.r, inst->whiteColor.r);
 	*dst++ = map_color(amount, comp_amount, g, luma, inst->blackColor.g, inst->whiteColor.g);
 	*dst++ = map_color(amount, comp_amount, b, luma, inst->blackColor.b, inst->whiteColor.b);
-//	*dst++ = map_color(amount, comp_amount, b, luma, 0, 1);
-//	*dst++ = map_color(amount, comp_amount, g, luma, 0, .5);
-//	*dst++ = map_color(amount, comp_amount, r, luma, 0, 0);
 
 	*dst++ = *src++;  // copy alpha
   }
