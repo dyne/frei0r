@@ -159,7 +159,7 @@ Plasma::~Plasma() {
 
 }
 
-void. Plasma::update() {
+void Plasma::update() {
   uint16_t i, j;
   uint8_t index;
   int x;
