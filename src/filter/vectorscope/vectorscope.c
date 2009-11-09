@@ -23,6 +23,7 @@
 #include <assert.h>
 #include "frei0r.h"
 #include <stdio.h>
+#include <string.h>
 
 #include <gavl/gavl.h>
 
@@ -106,6 +107,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	gavl_video_options_t* options = gavl_video_scaler_get_options( video_scaler );
 	gavl_video_format_t format_src;
 	gavl_video_format_t format_dst;
+
+        memset(&format_src, 0, sizeof(format_src));
+        memset(&format_dst, 0, sizeof(format_dst));
 
 	format_dst.frame_width  = inst->w;
 	format_dst.frame_height = inst->h;

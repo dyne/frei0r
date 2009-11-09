@@ -21,6 +21,7 @@
 #include "frei0r.h"
 #include <gavl/gavl.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct scale0tilt_instance {
 	double cl, ct, cr, cb;
@@ -71,6 +72,9 @@ void update_scaler( scale0tilt_instance_t* inst )
 
 	gavl_video_format_t format_src;
 	gavl_video_format_t format_dst;
+
+        memset(&format_src, 0, sizeof(format_src));
+        memset(&format_dst, 0, sizeof(format_dst));
 
 	format_dst.frame_width  = inst->w;
 	format_dst.frame_height = inst->h;
