@@ -22,6 +22,7 @@ water.la nervous.la baltan.la partik0l.la cartoon.la vertigo.la delaygrab.la \
 glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
 cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la \
+bluescreen0r.la primaries.la threelay0r.la \
 plasma.la
 
 if HAVE_GAVL
@@ -92,6 +93,9 @@ balanc0r_la_SOURCES = filter/balanc0r/balanc0r.c
 tint0r_la_SOURCES = filter/tint0r/tint0r.c
 levels_la_SOURCES = filter/levels/levels.c
 curves_la_SOURCES = filter/curves/curves.c
+bluescreen0r_la_SOURCES = filter/bluescreen0r/bluescreen0r.cpp
+primaries_la_SOURCES = filter/primaries/primaries.cpp
+threelay0r_la_SOURCES = filter/threelay0r/threelay0r.cpp
 
 three_point_balance_la_SOURCES = filter/three_point_balance/three_point_balance.c
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
