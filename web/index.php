@@ -3,7 +3,7 @@
 require_once("config.php");
 
 
-$smarty->assign("page_class",  "software");
+$smarty->assign("page_class",  "software org-mode");
 $smarty->assign("page_hgroup", "<h1>Frei0r</h1>");
 $smarty->assign("page_title",  "free video effect plugins");
 

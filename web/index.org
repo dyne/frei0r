@@ -13,7 +13,7 @@
 
 * Information
 
-#+HTML: <div id="logo"><img src="http://tbt.dyne.org/pics/tbt-wheel.png"></div>
+#+HTML: <div id="logo"><img src="http://www.piksel.no/piksel08/piksel/images/piksel_penquin_transparant.png"></div>
 
 ** What Frei0r is
 

@@ -14,7 +14,7 @@ rm -f templates/body.tpl
 cat index.html | \
     awk '
 BEGIN       { body_found=0; title_found=0; }
-/^<body>/             { body_found=1; next; }
+/<body>/             { body_found=1; next; }
 /^<h1 class="title">/ { title_found=1; next; }
 
 {
