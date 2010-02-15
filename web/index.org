@@ -1,0 +1,64 @@
+#+TITLE:     Frei0r - free video plugins
+#+AUTHOR:    Pikselites
+#+EMAIL:     frei0r-dev@dyne.org
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:nil toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t
+#+OPTIONS:   TeX:t LaTeX:t skip:t d:nil tags:not-in-toc
+
+#+INFOJS_OPT: path:org-info.js
+#+INFOJS_OPT: toc:nil localtoc:nil view:content sdepth:2 mouse:underline buttons:nil
+#+INFOJS_OPT: home:http://frei0r.dyne.org
+
+
+
+* Information
+
+#+HTML: <div id="logo"><img src="http://tbt.dyne.org/pics/tbt-wheel.png"></div>
+
+** What Frei0r is
+
+This is frei0r - a minimalistic plugin API for video effects.
+
+The  main  emphasis  is  on  simplicity -  there  are  many  different
+applications  that use  video  effects, and  they  all have  different
+requirements  regarding  their internal  plugin  API.  And that's  why
+frei0r does not  try to be a one-in-all general  video plugin API, but
+instead  an API  for the  most common  video effects:  simple filters,
+sources and mixers that can be controlled by parameters.
+
+It's our hope that this way these simple effects can be shared between
+many  applications,  avoiding   their  reimplementation  by  different
+projects.
+
+** What Frei0r is not
+
+On the other  hand, this is not meant as a  competing standard to more
+ambitious  efforts that  try to  satisfy the  needs of  many different
+applications and more complex effects.
+
+** Overview
+
+If you  are new to frei0r (but  not to programming) the  best thing is
+probably to have a look at the [[/codedoc/html/frei0r_8h-source.html][frei0r header]], which is quite simple.
+
+After that,  you might want  to look at  the frei0r functions  in more
+detail.
+
+When developing a new frei0r effect, you have to choose
+
+ - which effect type to use (Type of the Plugin),
+ - which color model to use (Color Models), and
+ - which parameter types (Parameter Types) your effect will support.
+
+To round things up, you  should decide whether your effect should have
+an associated  icon (Icons for frei0r  effects), and where  it will be
+installed (Plugin Locations).
+
+** History
+
+bla bla bla
+
+
+* Download
+* Documentation
+* Communication
