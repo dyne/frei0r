@@ -11,7 +11,7 @@
 
 
 
-* Information
+* Introduction
 
 #+HTML: <div id="logo"><img src="http://www.piksel.no/piksel08/piksel/images/piksel_penquin_transparant.png"></div>
 
@@ -19,12 +19,9 @@
 
 This is frei0r - a minimalistic plugin API for video effects.
 
-The  main  emphasis  is  on  simplicity -  there  are  many  different
-applications  that use  video  effects, and  they  all have  different
-requirements  regarding  their internal  plugin  API.  And that's  why
-frei0r does not  try to be a one-in-all general  video plugin API, but
-instead  an API  for the  most common  video effects:  simple filters,
-sources and mixers that can be controlled by parameters.
+The main emphasis  is on simplicity for an API that  will round up the
+most common video effects into simple filters, sources and mixers that
+can be controlled by parameters.
 
 It's our hope that this way these simple effects can be shared between
 many  applications,  avoiding   their  reimplementation  by  different
@@ -32,33 +29,76 @@ projects.
 
 ** What Frei0r is not
 
-On the other  hand, this is not meant as a  competing standard to more
-ambitious  efforts that  try to  satisfy the  needs of  many different
-applications and more complex effects.
+This is  not meant as a  competing standard to  more ambitious efforts
+that try to satisfy the  needs of many different applications and more
+complex effects.
 
-** Overview
+Eventually  the  frei0r  API  can  be wrapped  by  higher  level  APIs
+expanding its functionalities (for instance, gstreamer does).
 
-If you  are new to frei0r (but  not to programming) the  best thing is
-probably to have a look at the [[/codedoc/html/frei0r_8h-source.html][frei0r header]], which is quite simple.
+** Current status
 
-After that,  you might want  to look at  the frei0r functions  in more
-detail.
+Frei0r  has been around  since 2006,  born from  yearly brainstormings
+held at the  [[http://www.piksel.no][Piksel]] conference with the participation  of various free
+and open source video software developers.
 
-When developing a new frei0r effect, you have to choose
+It is mostly adopted on GNU/Linux and OSX platforms, counts more than
+80  effects implemented  and is  used  by free  video applications  as
+[[http://www.gephex.org/][Gephex]],  [[http://lives.sf.net][LiVES]],  [[http://freej.dyne.org][FreeJ]], [[http://mob.bek.no/][MøB]],  [[http://veejayhq.net][VeeJay]],  [[http://openmovieeditor.sourceforge.net/][Open  Movie Editor]],  [[http://www.artefacte.org/pd/][pdvjtools]],
+[[http://www.freenet.org.nz/dvedit][DVEdit]], [[http://www.mltframework.org/][MLT]] and [[http://www.kdenlive.org/][KDEnLive]] among the others.
 
- - which effect type to use (Type of the Plugin),
- - which color model to use (Color Models), and
- - which parameter types (Parameter Types) your effect will support.
-
-To round things up, you  should decide whether your effect should have
-an associated  icon (Icons for frei0r  effects), and where  it will be
-installed (Plugin Locations).
-
-** History
-
-bla bla bla
+Developers  are sporadically  contributing and  we are  happy  if more
+people like to get involved, spare some code and port new effects, for
+instance there  is a lot of code  to be ported from  [[http://effectv.sf.net][EffecTV]], the [[http://demo-effects.sourceforge.net/][Demo
+Effects  Collection]], [[ftp://ftp.dyne.org/freej/plugins/petespluginslinux_070114.tar.gz][Pete's  plugins]] and  the XScreensavers...  let us
+now!
 
 
 * Download
+
+If you are using Debian or Ubuntu, 
+
+
+Binary packages  are mantained  for Debian ([[http://packages.qa.debian.org/f/frei0r.html][QA]])  and Ubuntu  ([[http://packages.ubuntu.com/search?searchon=names&keywords=frei0r][pkg]]), to
+install the stable version distributed use *apt-get* or *synaptic*:
+
+<example>
+  sudo apt-get install frei0r-plugins
+</example>
+
+The  latest   source  for  frei0r  plugins  is   available  using  our
+revisioning system *GIT*
+
+<example>
+  git clone git://code.dyne.org/frei0r.git
+</example>
+
+Daily  snapshots  are also  packed  ready  to  "./configure; make"  on
+[[http://ftp.dyne.org/frei0r/][FTP.dyne.org]]
+
+
+
+
+can be attained via 
+
 * Documentation
+
+If you  are new to frei0r (but  not to programming) the  best thing is
+probably to  have a look at  the [[/codedoc/html/frei0r_8h-source.html][frei0r header]], which  is quite simple
+and well documented
+
+After that,  you might want  to look at  the frei0r functions  in more
+detail and have a look at the existing effects.
+
+The sourcecode is well  commented: see its full [[http://frei0r.dyne.org/codedoc/html][doxyfied documentation]]
+online.
+
+
 * Communication
+
+You  can get  in touch  with our  developer community,  send  your new
+effects and share your intentions with us.
+
+We have a  free mailinglist open to subscription  on [[https://piksel.no/mailman/listinfo/frei0r-devel][frei0r-devel]] with
+[[http://piksel.no/pipermail/frei0r-devel/][public archives]] that are also indexed by popular search engines.
+
