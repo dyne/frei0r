@@ -23,6 +23,16 @@ if (!is_dir(constant("SMARTY_DIR")) || !require_once("smarty/Smarty.class.php"))
     exit;
 }
 
+function showfile($f) {
+  $fd = fopen("$f","r");
+  if(!$fd) { $text = "<h1>ERROR: $f not found</h1>";
+ } else {	 
+    $st = fstat($fd);
+    $text = fread($fd,$st[size]); fclose($fd);
+  }
+  echo($text);
+}
+
 global $smarty;
 $smarty = new Smarty;
 $smarty->compile_check = true; 
@@ -43,10 +53,11 @@ $smarty->display("PARTIALS/_header.tpl");
 
 // sidebar
 $smarty->display("software/doctypes.tpl");
-$smarty->display("toc.tpl");
+showfile("toc.html");
 
 // page content
-$smarty->display("body.tpl");
-
+showfile("body.html");
 
 $smarty->display("PARTIALS/_footer.tpl");
+
+?>
