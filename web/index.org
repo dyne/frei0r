@@ -38,6 +38,14 @@ expanding its functionalities (for instance, gstreamer does).
 
 ** Current status
 
+#+BEGIN_HTML:
+<table width="90%" align="center" cellpadding="5"><tr><td>
+ <script type="text/javascript" src="http://www.ohloh.net/p/294225/widgets/project_basic_stats.js"></script>
+</td><td>
+ <script type="text/javascript" src="http://www.ohloh.net/p/294225/widgets/project_languages.js"></script>
+</td></tr></table>
+#+END_HTML:
+
 Frei0r  has been around  since 2006,  born from  yearly brainstormings
 held at the  [[http://www.piksel.no][Piksel]] conference with the participation  of various free
 and open source video software developers.
@@ -56,30 +64,23 @@ now!
 
 * Download
 
-If you are using Debian or Ubuntu, 
-
+** Debian / Ubuntu
 
 Binary packages  are mantained  for Debian ([[http://packages.qa.debian.org/f/frei0r.html][QA]])  and Ubuntu  ([[http://packages.ubuntu.com/search?searchon=names&keywords=frei0r][pkg]]), to
 install the stable version distributed use *apt-get* or *synaptic*:
 
-<example>
-  sudo apt-get install frei0r-plugins
-</example>
+:  sudo apt-get install frei0r-plugins
 
-The  latest   source  for  frei0r  plugins  is   available  using  our
+** Source code
+
+The  latest  source for  frei0r  plugins  can  be attained  using  our
 revisioning system *GIT*
 
-<example>
-  git clone git://code.dyne.org/frei0r.git
-</example>
+:  git clone git://code.dyne.org/frei0r.git
 
 Daily  snapshots  are also  packed  ready  to  "./configure; make"  on
 [[http://ftp.dyne.org/frei0r/][FTP.dyne.org]]
 
-
-
-
-can be attained via 
 
 * Documentation
 
