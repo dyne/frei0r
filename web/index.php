@@ -49,15 +49,15 @@ $smarty->assign("page_class",  "software org-mode");
 $smarty->assign("page_hgroup", "<h1>Frei0r</h1>");
 $smarty->assign("page_title",  "free video effect plugins");
 
-$smarty->display("PARTIALS/_header.tpl");
+$smarty->display("_header.tpl");
 
 // sidebar
 $smarty->display("software/doctypes.tpl");
-showfile("toc.html");
+showfile("index-toc.html");
 
 // page content
-showfile("body.html");
+showfile("index-body.html");
 
-$smarty->display("PARTIALS/_footer.tpl");
+$smarty->display("_footer.tpl");
 
 ?>
