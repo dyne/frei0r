@@ -41,9 +41,9 @@
 <header>
   <nav><ul id="dyne_links">
     <li><a href="http://dyne.org/">dyne</a> //</li>
-    <li><a href="software">software</a></li>
-    <li>:: <a href="culture">culture</a></li>
-    <li>:: <a href="events">events</a></li>
+    <li><a href="http://dyne.org/software">software</a></li>
+    <li>:: <a href="http://dyne.org/culture">culture</a></li>
+    <li>:: <a href="http://dyne.org/events">events</a></li>
     <li>:: <a href="http://planet.dyne.org/">news</a></li>
     <li>:: <a href="http://lists.dyne.org/">discussion</a></li>
     <li>:: <a href="http://museum.dyne.org/">museum</a></li>

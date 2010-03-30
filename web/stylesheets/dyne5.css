@@ -26,7 +26,7 @@ a:active         { color: #fed }
 img { border: 0}
 
 header {
-  background: #fed url(http://dyne.org/images/bg.png) top left repeat-x;
+  background: #fed url(/images/bg.png) top left repeat-x;
   margin-top: 10px;
 }
 
@@ -507,7 +507,7 @@ html.events section.list article { margin-top: 0.5em; text-align: left; }
 html.events #google_calendar { border: 0; text-align: center; }
 
 #syndicate {
-  background: transparent url(http://dyne.org/images/icons/feed_64x64.png) 0em 2em no-repeat;
+  background: transparent url(/images/icons/feed_64x64.png) 0em 2em no-repeat;
   height: 96px;
 }
 #syndicate ul {
