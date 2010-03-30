@@ -7,12 +7,9 @@
    
    THIS PHP FILE CONTAINS NO RELEVANT CONTENT */
 
+require_once("helpers.inc.php");
 
 define("DYNE_DEBUG_RENDERING_TIME", false);
-if (DYNE_DEBUG_RENDERING_TIME) {
-    require_once "include/simple_timer.class.php";
-    $smarty->assign("timer", new SimpleTimer);
-}
 
 /* Smarty template class configuration */
 if (!defined('SMARTY_DIR')) {
@@ -23,15 +20,6 @@ if (!is_dir(constant("SMARTY_DIR")) || !require_once("smarty/Smarty.class.php"))
     exit;
 }
 
-function showfile($f) {
-  $fd = fopen("$f","r");
-  if(!$fd) { $text = "<h1>ERROR: $f not found</h1>";
- } else {	 
-    $st = fstat($fd);
-    $text = fread($fd,$st[size]); fclose($fd);
-  }
-  echo($text);
-}
 
 global $smarty;
 $smarty = new Smarty;
@@ -49,11 +37,14 @@ $smarty->assign("page_class",  "software org-mode");
 $smarty->assign("page_hgroup", "<h1>Frei0r</h1>");
 $smarty->assign("page_title",  "free video effect plugins");
 
+$smarty->assign("pagename","software");
 $smarty->display("_header.tpl");
 
 // sidebar
+div("menu");
 $smarty->display("software/doctypes.tpl");
 showfile("index-toc.html");
+echo("</div>");
 
 // page content
 showfile("index-body.html");

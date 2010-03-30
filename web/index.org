@@ -50,10 +50,10 @@ Frei0r  has been around  since 2006,  born from  yearly brainstormings
 held at the  [[http://www.piksel.no][Piksel]] conference with the participation  of various free
 and open source video software developers.
 
-It is mostly adopted on GNU/Linux and OSX platforms, counts more than
+It is mostly adopted on  GNU/Linux and OSX platforms, counts more than
 80  effects implemented  and is  used  by free  video applications  as
-[[http://www.gephex.org/][Gephex]],  [[http://lives.sf.net][LiVES]],  [[http://freej.dyne.org][FreeJ]], [[http://mob.bek.no/][MøB]],  [[http://veejayhq.net][VeeJay]],  [[http://openmovieeditor.sourceforge.net/][Open  Movie Editor]],  [[http://www.artefacte.org/pd/][pdvjtools]],
-[[http://www.freenet.org.nz/dvedit][DVEdit]], [[http://www.mltframework.org/][MLT]] and [[http://www.kdenlive.org/][KDEnLive]] among the others.
+[[http://www.artefacte.org/pd/][PureData]],  [[http://openmovieeditor.sourceforge.net/][Open  Movie  Editor]],  [[http://www.freenet.org.nz/dvedit][DVEdit]], [[http://www.gephex.org/][Gephex]],  [[http://lives.sf.net][LiVES]],  [[http://freej.dyne.org][FreeJ]],  [[http://mob.bek.no/][MøB]],
+[[http://veejayhq.net][VeeJay]], [[http://www.mltframework.org/][MLT]] and [[http://www.kdenlive.org/][KDEnLive]] among the others.
 
 Developers  are sporadically  contributing and  we are  happy  if more
 people like to get involved, spare some code and port new effects, for
@@ -142,11 +142,49 @@ frei0r::construct<MyExample>
 
 #+END_SRC
 
+
 * Communication
 
 You  can get  in touch  with our  developer community,  send  your new
 effects and share your intentions with us.
 
 We have a  free mailinglist open to subscription  on [[https://piksel.no/mailman/listinfo/frei0r-devel][frei0r-devel]] with
-[[http://piksel.no/pipermail/frei0r-devel/][public archives]] that are also indexed by popular search engines.
+[[http://piksel.no/pipermail/frei0r-devel/][public archives]] that are also [[http://blog.gmane.org/gmane.comp.video.frei0r.devel][searchable and indexed]] online.
 
+For   effective   and   indexed   bug   reporting   regarding   plugin
+implementations  and platform  builds,  here is  a publicly  available
+[[http://www.piksel.no/projects/frei0r/report][issue tracker]].
+
+* Acknowledgments
+
+#+HTML: <img src="images/livido_pikselites01.jpg" alt="pikselites pic1" align="left" hspace="5">
+
+Frei0r  is the  result of  a  collective effort  in coordination  with
+several software developers meeting at [[http://www.piksel.no][Piksel]] between 2003 and 2005 to
+find a common standard for video effect plugins to be used among their
+applications:    Andraz   Tori    (Cinelerra/CVS),    Daniel   Fischer
+(Pakt/GStreamet), Denis Jaromil  Rojo (FreeJ/Dyne), Gabriel "Salsaman"
+Finch  (LiVES),  Kentaro  Fukuchi  (EffecTV), Niels  Elburg  (VeeJay),
+Øyvind  Kolås  (Gegl/Babl/Gimp),  Tom Schouten  (PDP/PureData),  Georg
+Seidel, Martin Bayer and Phillip Promesberger (Gephex).
+
+#+HTML: <img src="images/livido_pikselites02.jpg" alt="pikselites pic1" align="right" hspace="5">
+
+We first aimed at the realisation of a comprehensive specification for
+dynamically  loaded  plugins  named  [[http://livido.dyne.org/codedoc/][LiViDO]], which  then  spawned  two
+implementations:  one  being  Frei0r,  a  minimalistic  implementation
+contributed  by the  Gephex  team and  the  other one  being the  [[http://lives.cvs.sourceforge.net/lives/lives/weed-docs/][WEED]]
+implementation by LiVES developer Salsaman, sporting more features for
+GUI integration and scriptability.
+
+#+HTML: <img src="images/livido_pikselites03.jpg" alt="pikselites pic1" align="left" hspace="5">
+
+Within the span of a  few years, the minimalistic approach of *frei0r*
+has been widely adopted among more applications and became a *de-facto
+standard*.   Maintenance and further  refinements were  contributed by
+Carlo Prelz  (MøB/BEK), Richard Spindler  (Open Movie Editor)  and Dan
+Dennedy (MLT/KDEnLive), while Debian/Ubuntu packaging and build system
+standardization  were taken  care  of by  dyne.org developers  Filippo
+Giunchedi and Luca Bigliardi.
+
+---------------------------------------------------------------------
