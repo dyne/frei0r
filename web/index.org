@@ -99,11 +99,11 @@ If you  are new to frei0r (but  not to programming) the  best thing is
 probably to  have a look at  the [[/codedoc/html/frei0r_8h-source.html][frei0r header]], which  is quite simple
 and well documented
 
-After that,  you might want  to look at  the frei0r functions  in more
-detail and have a look at the existing effects.
+** API explanation
 
-The sourcecode is well  commented: see its full [[http://frei0r.dyne.org/codedoc/html][doxyfied documentation]]
-online.
+While  the main  source of  documentation for  the Frei0r  API  is the
+header, the  sourcecode is  well commented so  you can study  its full
+[[http://frei0r.dyne.org/codedoc/html][doxyfied documentation]] online.
 
 ** C++ Filter example
 
@@ -152,6 +152,11 @@ frei0r::construct<MyExample>
 	       "Who did it", 1, 0);
 
 #+END_SRC
+
+** Code gallery
+ 
+You might  want to  look at the  code in  frei0r more in  detail, then
+browse the existing effects by visiting the [[/gallery][Frei0r plugin gallery]].
 
 
 * Communication

@@ -36,7 +36,6 @@
       font-family: monospace, courier;
       font-size: 90%
       overflow: auto;
-      width: 90%
       }
 .org-mode table { border-collapse: collapse; }
 .org-mode td, .org-mode th { vertical-align: top; }

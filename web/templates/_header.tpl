@@ -7,6 +7,10 @@
   <link rel="stylesheet" type="text/css" href="stylesheets/org-mode.css" />
   <link rel="stylesheet" type="text/css" href="stylesheets/org-htmlize-src.css" />
 
+{if isset($stylesheet) && $stylesheet neq ""}
+  <link rel="stylesheet" type="text/css" href="stylesheets/{$stylesheet}" />
+{/if}
+
   <link rel="icon"       type="image/png" href="{$moebius_png}" />
   <link rel="alternate"  type="application/rss+xml" title="RSS 2.0" href="http://feeds.dyne.org/planet_dyne" />
   <link rel="alternate"  type="application/ical+xml" title="Ical 1.0" href="http://dyne.org/events/dyne.ics" />
