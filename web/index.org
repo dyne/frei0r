@@ -9,6 +9,17 @@
 #+INFOJS_OPT: toc:nil localtoc:nil view:content sdepth:2 mouse:underline buttons:nil
 #+INFOJS_OPT: home:http://frei0r.dyne.org
 
+#+LATEX_HEADER: \documentclass[final,a4paper,10pt,onecolumn,twoside]{memoir}
+#+LATEX_HEADER: \usepackage[english]{babel}
+#+LATEX_HEADER: \usepackage{amsfonts, amsmath, amssymb}
+#+LATEX_HEADER: \usepackage{ucs}
+#+LATEX_HEADER: \usepackage[utf8x]{inputenc}
+#+LATEX_HEADER: \usepackage[T1]{fontenc}
+#+LATEX_HEADER: \usepackage{hyperref}
+#+LATEX_HEADER: \usepackage[pdftex]{graphicx}
+#+LATEX_HEADER: \usepackage{fullpage}
+#+LATEX_HEADER: \usepackage{lmodern}
+
 
 
 * Introduction
