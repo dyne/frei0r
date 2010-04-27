@@ -400,7 +400,7 @@ f0r_instance_t  f0r_construct(unsigned int width, unsigned int height)
 {
 param *p;
 
-p=malloc(sizeof(param));
+p=calloc(1, sizeof(param));
 
 p->w=width;
 p->h=height;
@@ -414,7 +414,7 @@ p->aspt=0;		//square pixels
 p->par=1.0;		//square pixels
 p->mpar=1.0;
 
-p->map=malloc(sizeof(float)*(p->w*p->h*2+2));
+p->map=calloc(1, sizeof(float)*(p->w*p->h*2+2));
 p->interpol=set_intp(*p);
 
 make_map(*p);
@@ -447,7 +447,7 @@ p->intp=intp;
 if ((w!=p->w)||(h!=p->h))
 	{
 	free(p->map);
-	p->map=malloc(sizeof(float)*(w*h*2+2));
+	p->map=calloc(1, sizeof(float)*(w*h*2+2));
 	p->w=w;
 	p->h=h;
 	}
