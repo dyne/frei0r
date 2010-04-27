@@ -90,6 +90,7 @@ public:
         free(conBuffer);
         free(yprecal);
     }
+    delete geo;
   }
 
   virtual void update() {
