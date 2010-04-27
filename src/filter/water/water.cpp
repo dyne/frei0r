@@ -136,6 +136,7 @@ public:
   }
 
   ~Water() {
+    delete geo;
     free(Height[0]);
     free(Height[1]);
     free(BkGdImagePre);
