@@ -23,6 +23,7 @@
 //compile: gcc -Wall -std=c99 -c -fPIC c0rners.c -o c0rners.o
 //link: gcc -shared -lm -o c0rners.so c0rners.o
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <frei0r.h>
 #include <string.h>
@@ -944,7 +945,7 @@ p=(inst*)instance;
 //if (p->transb==0) bkgr=0xFF000000; else bkgr=0;
 bkgr=0xFF000000;
 
-remap32(p->w, p->h, p->w, p->h, inframe, outframe, p->map, bkgr, p->interp);
+remap32(p->w, p->h, p->w, p->h, (unsigned char*) inframe, (unsigned char *) outframe, p->map, bkgr, p->interp);
 
 if (p->transb!=0)
 	apply_alphamap(outframe, p->w, p->h, p->amap);
