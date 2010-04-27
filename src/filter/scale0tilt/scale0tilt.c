@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define EPSILON 1e-6
+
 typedef struct scale0tilt_instance {
 	double cl, ct, cr, cb;
 	double sx, sy;
@@ -31,13 +33,15 @@ typedef struct scale0tilt_instance {
 	gavl_video_scaler_t* video_scaler;
 	gavl_video_frame_t* frame_src;
 	gavl_video_frame_t* frame_dst;
+	int do_scale;
 } scale0tilt_instance_t;
 
 void update_scaler( scale0tilt_instance_t* inst )
 {
 	float dst_x, dst_y, dst_w, dst_h;
 	float src_x, src_y, src_w, src_h;
-
+        
+	inst->do_scale = 1;
 	src_x = inst->w * inst->cl;
 	src_y = inst->h * inst->ct;
 	src_w = inst->w * (1.0 - inst->cl - inst->cr );
@@ -47,6 +51,12 @@ void update_scaler( scale0tilt_instance_t* inst )
 	dst_y = inst->h * inst->ct * inst->sy + inst->ty * inst->h;
 	dst_w = inst->w * (1.0 - inst->cl - inst->cr) * inst->sx;
 	dst_h = inst->h * (1.0 - inst->ct - inst->cb) * inst->sy;
+
+	if((dst_w < EPSILON) || (dst_h < EPSILON) || 
+	   (src_w < EPSILON) || (src_h < EPSILON)) {
+		inst->do_scale = 0;
+		return;
+	}
 
 	if ( dst_x + dst_w > inst->w ) {
 		src_w = src_w * ( (inst->w-dst_x) / dst_w );
@@ -68,13 +78,20 @@ void update_scaler( scale0tilt_instance_t* inst )
 		dst_h = dst_h + dst_y;
 		dst_y = 0;
 	}
+
+	if((dst_w < EPSILON) || (dst_h < EPSILON) ||
+	   (src_w < EPSILON) || (src_h < EPSILON)) {
+		inst->do_scale = 0;
+		return;
+	}
+
 	gavl_video_options_t* options = gavl_video_scaler_get_options( inst->video_scaler );
 
 	gavl_video_format_t format_src;
 	gavl_video_format_t format_dst;
 
-        memset(&format_src, 0, sizeof(format_src));
-        memset(&format_dst, 0, sizeof(format_dst));
+	memset(&format_src, 0, sizeof(format_src));
+	memset(&format_dst, 0, sizeof(format_dst));
 
 	format_dst.frame_width  = inst->w;
 	format_dst.frame_height = inst->h;
@@ -274,6 +291,7 @@ void f0r_update(f0r_instance_t instance, double time,
 	for ( i = 0; i < len; i++ ) {
 		outframe[i] = 0;
 	}
-	gavl_video_scaler_scale( inst->video_scaler, inst->frame_src, inst->frame_dst );
+	if(inst->do_scale)
+		gavl_video_scaler_scale( inst->video_scaler, inst->frame_src, inst->frame_dst );
 }
 
