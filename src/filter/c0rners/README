@@ -1,4 +1,5 @@
-"c0rners" is an attempt to introduce a new, more intuitive way (at least in some cases) of specifying geometrical image transforms.
+"c0rners" is an attempt to introduce a new, more intuitive way (at least in some
+cases) of specifying geometrical image transforms.
 "c0rners" is a Frei0r plugin.
 
 
@@ -20,7 +21,8 @@ TODO:
 
 SOME NOTES ABOUT THE PLUGIN
 
-"c0rners" is a rather universal "geometry engine". It can do even more things than the usual affine matrix transform.
+"c0rners" is a rather universal "geometry engine". It can do even more things
+than the usual affine matrix transform.
 
 It can do:
 
@@ -31,12 +33,14 @@ It can do:
 -perspective correction in any direction
 -shears, distorts...etc...
 
-...and arbitrary combinations of these, in a single, time and quality preserving step!
+...and arbitrary combinations of these, in a single, time and quality preserving
+step!
 
 
 Its advantages are best explained in an example:
 
-Say, you have video1 which is a wideangle shot of a room with a picture frame on a side wall. You want video2 to display as if it was played inside that frame.
+Say, you have video1 which is a wideangle shot of a room with a picture frame on
+a side wall. You want video2 to display as if it was played inside that frame.
 
 Now, with "classic" tools, you would need to do:
 1 - scale down
@@ -44,13 +48,19 @@ Now, with "classic" tools, you would need to do:
 3 - shift to the right place
 4 - and maybe some rotation
 
-Tweaking all of the parameters of these transforms, to get the desired size, shape and position of video2, would be quite a chore.
+Tweaking all of the parameters of these transforms, to get the desired size,
+shape and position of video2, would be quite a chore.
 
-With c0rners, you simply pull the corners of video2 to where you want them, and it will do all of the above in a single step!
+With c0rners, you simply pull the corners of video2 to where you want them, and
+it will do all of the above in a single step!
 
-My goal while programming it, was to make it survive ANY crazy combination of corner positions the user might throw at it.
-I'm not sure if I achieved that, but remember that if all corners are outside of the frame to one side, or if you specify a zero area degenerate quadrangle, there will be no output! This is not a bug - it is as should be.
-If you happen onto a set of parameters that will crash it, please document carefully the parameter values and video format, and let me know about it.
+My goal while programming it, was to make it survive ANY crazy combination of
+corner positions the user might throw at it.
+I'm not sure if I achieved that, but remember that if all corners are outside of
+the frame to one side, or if you specify a zero area degenerate quadrangle,
+there will be no output! This is not a bug - it is as should be.
+If you happen onto a set of parameters that will crash it, please document
+carefully the parameter values and video format, and let me know about it.
 
 
 
@@ -58,32 +68,56 @@ PARAMETERS
 
 1. Corner positions
 
-For now, the user interface is not as nice as I would like... While the Frei0r specification includes a "position" type parameter, it seems that host apps like Kdenlive and Openmovieeditor currently do not pass such parameters to Frei0r plugins.
+For now, the user interface is not as nice as I would like... While the Frei0r
+specification includes a "position" type parameter, it seems that host apps like
+Kdenlive and Openmovieeditor currently do not pass such parameters to Frei0r
+plugins.
 Therefore, I just used two sliders (x,y) for each of the four corners.
-This is rather clumsy, so as soon as I will figure out a better way, I will change this.
+This is rather clumsy, so as soon as I will figure out a better way, I will
+change this.
 
-Corner 1 is the top left of the original picture, and the others follow clockwise.
+Corner 1 is the top left of the original picture, and the others follow
+clockwise.
 
-Since it should be possible to pull the corners outside of the picture area, the range of the parameters goes one picture width to the left and right, and one picture height above and under the original picture.
-Therefore, in the unscaled Frei0r 0...1 parameter range, the top left corner is x=0.333... y=0.333..., the top right x=0.666... y=0.333... and so on.
-The supplied Kdenlive effect description XML file should change this range to 0...3000, so that the original image lies between 1000 and 2000, with the upper left corner x=1000, y=1000, the upper right corner x=2000, y=1000 and so on. It should also set the defaults so that the undistorted input picture is displayed. If you have no image, check that the corners specify a nonzero area at least partly overlaping the output window.
+Since it should be possible to pull the corners outside of the picture area, the
+range of the parameters goes one picture width to the left and right, and one
+picture height above and under the original picture.
+Therefore, in the unscaled Frei0r 0...1 parameter range, the top left corner is
+x=0.333... y=0.333..., the top right x=0.666... y=0.333... and so on.
+The supplied Kdenlive effect description XML file should change this range to
+0...3000, so that the original image lies between 1000 and 2000, with the upper
+left corner x=1000, y=1000, the upper right corner x=2000, y=1000 and so on. It
+should also set the defaults so that the undistorted input picture is displayed.
+If you have no image, check that the corners specify a nonzero area at least
+partly overlaping the output window.
 
 2. Stretch, x and y
 
-These allow additional exaggeration of the perspective, when simulating a tilted plane. The default (undistorted) position is in the middle. I have included a boolean checkbox parameter to disable this (default). These can also be used alone (without moving the corners), to do funny things, like stretch people's legs.
+These allow additional exaggeration of the perspective, when simulating a tilted
+plane. The default (undistorted) position is in the middle. I have included a
+boolean checkbox parameter to disable this (default). These can also be used
+alone (without moving the corners), to do funny things, like stretch people's
+legs.
 
 3. Interpolation
 
-This allows one to choose a tradeoff between speed and quality. Low values = high speed with low quality.
-Default is bilinear, which is reasonably fast and should give enough quality in most cases.
+This allows one to choose a tradeoff between speed and quality. Low values =
+high speed with low quality.
+Default is bilinear, which is reasonably fast and should give enough quality in
+most cases.
 
 4. Transparent background
 
-This fills the area outside of the transformed image with a "transparent" alpha value.
-This can be used to make a composite image - for example, in Kdenlive, use the "Composite" transition with this.
-Making the corner positions keyframable would allow one to create those "fly away" transitions that were once so popular.
+This fills the area outside of the transformed image with a "transparent" alpha
+value.
+This can be used to make a composite image - for example, in Kdenlive, use the
+"Composite" transition with this.
+Making the corner positions keyframable would allow one to create those "fly
+away" transitions that were once so popular.
 
 5. Alpha Feather
 
-This can be used to make the transition between transparent and opaque gradual. It should specify the width of the transition in pixels, 0 to 20.
-For now it does not feather the "caustics" (those curved lines in the concave and crossed settings, which are not edges of the input picture).
+This can be used to make the transition between transparent and opaque gradual.
+It should specify the width of the transition in pixels, 0 to 20.
+For now it does not feather the "caustics" (those curved lines in the concave
+and crossed settings, which are not edges of the input picture).
