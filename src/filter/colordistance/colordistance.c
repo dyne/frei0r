@@ -50,7 +50,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* colordistance_info)
 	colordistance_info->major_version = 0; 
 	colordistance_info->minor_version = 2; 
 	colordistance_info->num_params = 1; 
-	colordistance_info->explanation = "";//"Calculates the distance between the selected color and the current pixel and uses that value as new pixel value";
+	colordistance_info->explanation = "Calculates the distance between the selected color and the current pixel and uses that value as new pixel value";
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
