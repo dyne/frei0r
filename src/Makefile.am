@@ -23,7 +23,7 @@ glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
 cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la \
 bluescreen0r.la primaries.la threelay0r.la \
-plasma.la c0rners.la
+plasma.la c0rners.la defish0r.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -96,9 +96,10 @@ curves_la_SOURCES = filter/curves/curves.c
 bluescreen0r_la_SOURCES = filter/bluescreen0r/bluescreen0r.cpp
 primaries_la_SOURCES = filter/primaries/primaries.cpp
 threelay0r_la_SOURCES = filter/threelay0r/threelay0r.cpp
-c0rners_la_SOURCES = filter/c0rners/c0rners.c filter/c0rners/interp.h
-
 three_point_balance_la_SOURCES = filter/three_point_balance/three_point_balance.c
+c0rners_la_SOURCES = filter/c0rners/c0rners.c filter/c0rners/interp.h
+defish0r_la_SOURCES = filter/defish0r/defish0r.c filter/defish0r/interp.h
+
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
 nois0r_la_SOURCES = generator/nois0r/nois0r.cpp
