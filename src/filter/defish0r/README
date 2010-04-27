@@ -34,7 +34,9 @@ TODO:
 
 SOME NOTES ABOUT THE PLUGIN
 
-This plugin has quite a few adjustable parameters, but don't be afraid - tweaking just the first one ("Amount") will usually bring you quite close to the desired result...
+This plugin has quite a few adjustable parameters, but don't be afraid -
+tweaking just the first one ("Amount") will usually bring you quite close to the
+desired result...
 
 
 Multiple Choice Parameters:
@@ -136,7 +138,8 @@ SOME APPLICATION NOTES
 
 Take a shot of something like a brick wall or bathroom tiles, that has
 a lot of horizontal and vertical straight lines. Be careful to keep
-the optical axis as perpendicular as possible to the wall (=keep a maximally symmetrical image in the viewfinder). Use this
+the optical axis as perpendicular as possible to the wall (=keep a maximally
+symmetrical image in the viewfinder). Use this
 image to tweak the parameters.
 
 
@@ -160,7 +163,8 @@ Type = 1000
 Scaling = 1000 (manual)
 Manual Scale = 191
 
-For an effect, reminiscent of some scenes from the "2001 Spcae Odyssey" try this:
+For an effect, reminiscent of some scenes from the "2001 Spcae Odyssey" try
+this:
 Amount = 876
 Defish = ON
 Type = 0
