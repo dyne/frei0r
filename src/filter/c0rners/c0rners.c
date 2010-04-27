@@ -728,7 +728,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
 inst *in;
 
-in=malloc(sizeof(inst));
+in=calloc(1, sizeof(inst));
 in->w=width;
 in->h=height;
 in->x1=0.333333;
@@ -746,8 +746,8 @@ in->intp=1;
 in->transb=0;
 in->feath=1.0;
 
-in->map=malloc(sizeof(float)*(in->w*in->h*2+2));
-in->amap=malloc(sizeof(char)*(in->w*in->h*2+2));
+in->map=calloc(1, sizeof(float)*(in->w*in->h*2+2));
+in->amap=calloc(1, sizeof(char)*(in->w*in->h*2+2));
 in->interp=set_intp(*in);
 
 return (f0r_instance_t)in;
