@@ -41,8 +41,7 @@
 
 #include <math.h>
 #include <stdio.h>	/* za debug printoute */
-
-#include <linux/types.h>
+#include <inttypes.h>
 
 //--------------------------------------------------------
 //pointer to an interpolating function
@@ -83,7 +82,7 @@ for (i=0;i<ho;i++)
 //  map = za vsak pixel izs pove, kje ga vzamemo is vhs
 //  bgc = background color
 //  interp = kazalec na interpolacijsko funkcijo
-void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, __u32 bgc, interpp interp)
+void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, uint32_t bgc, interpp interp)
 {
 int i,j;
 float x,y;

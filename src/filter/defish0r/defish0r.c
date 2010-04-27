@@ -26,6 +26,7 @@
 
 //skaliranje za center=1 se ne dela!!!!
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -640,7 +641,7 @@ int i,j;
 
 p=(param*)instance;
 
-remap32(p->w, p->h, p->w, p->h, inframe, outframe, p->map, 0, p->interpol);
+remap32(p->w, p->h, p->w, p->h, (unsigned char*) inframe, (unsigned char*) outframe, p->map, 0, p->interpol);
 
 }
 
