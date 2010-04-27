@@ -57,6 +57,21 @@ expanding its functionalities (for instance, gstreamer does).
 </td></tr></table>
 #+END_HTML:
 
+If you like to  peek in what's boiling in the pot,  have a look at our
+[[file:TODO.php][TODO page]].
+
+Developers  are sporadically  contributing and  we are  happy  if more
+people like to get involved, so let us know about your creations! Code
+and  patches  are  well  accepted,   get  in  touch  with  us  on  the
+mailinglist.
+
+** Code gallery
+ 
+You might  want to  look at the  code in  frei0r more in  detail, then
+browse the existing effects by visiting the [[/gallery][Frei0r plugin gallery]].
+
+** History
+
 Frei0r  has been around  since 2006,  born from  yearly brainstormings
 held at the  [[http://www.piksel.no][Piksel]] conference with the participation  of various free
 and open source video software developers.
@@ -66,21 +81,10 @@ It is mostly adopted on  GNU/Linux and OSX platforms, counts more than
 [[http://www.artefacte.org/pd/][PureData]],  [[http://openmovieeditor.sourceforge.net/][Open  Movie  Editor]],  [[http://www.freenet.org.nz/dvedit][DVEdit]], [[http://www.gephex.org/][Gephex]],  [[http://lives.sf.net][LiVES]],  [[http://freej.dyne.org][FreeJ]],  [[http://mob.bek.no/][MøB]],
 [[http://veejayhq.net][VeeJay]], [[http://www.mltframework.org/][MLT]] and [[http://www.kdenlive.org/][KDEnLive]] among the others.
 
-Developers  are sporadically  contributing and  we are  happy  if more
-people like to get involved, spare some code and port new effects, for
-instance there  is a lot of code  to be ported from  [[http://effectv.sf.net][EffecTV]], the [[http://demo-effects.sourceforge.net/][Demo
-Effects  Collection]], [[ftp://ftp.dyne.org/freej/plugins/petespluginslinux_070114.tar.gz][Pete's  plugins]] and  the XScreensavers...  let us
-now!
+Find our more on the [[http://en.wikipedia.org/wiki/Frei0r][Wikipedia page about Frei0r]].
 
 
 * Download
-
-** Debian / Ubuntu
-
-Binary packages  are mantained  for Debian ([[http://packages.qa.debian.org/f/frei0r.html][QA]])  and Ubuntu  ([[http://packages.ubuntu.com/search?searchon=names&keywords=frei0r][pkg]]), to
-install the stable version distributed use *apt-get* or *synaptic*:
-
-:  sudo apt-get install frei0r-plugins
 
 ** Source code
 
@@ -92,6 +96,20 @@ revisioning system *GIT*
 Daily  snapshots  are also  packed  ready  to  "./configure; make"  on
 [[http://ftp.dyne.org/frei0r/][FTP.dyne.org]]
 
+** Debian / Ubuntu
+
+Binary packages  are mantained  for Debian ([[http://packages.qa.debian.org/f/frei0r.html][QA]])  and Ubuntu  ([[http://packages.ubuntu.com/search?searchon=names&keywords=frei0r][pkg]]), to
+install the stable version distributed use *apt-get* or *synaptic*:
+
+:  sudo apt-get install frei0r-plugins
+
+** Apple / OSX
+
+[[http://www.macports.org][MacPorts]] provide ready  to install packages for OSX:  in case you have
+this packaging system installed, you  just need to open a terminal and
+give the following command:
+
+: sudo port install frei0r-plugins
 
 * Documentation
 
@@ -152,12 +170,6 @@ frei0r::construct<MyExample>
 	       "Who did it", 1, 0);
 
 #+END_SRC
-
-** Code gallery
- 
-You might  want to  look at the  code in  frei0r more in  detail, then
-browse the existing effects by visiting the [[/gallery][Frei0r plugin gallery]].
-
 
 * Communication
 
