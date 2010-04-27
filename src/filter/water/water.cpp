@@ -66,7 +66,6 @@ typedef struct {
 class Water: public frei0r::filter {
 public:
 
-  f0r_param_position splash;
   f0r_param_double physics;
   bool rain;
   bool distort;
@@ -76,7 +75,7 @@ public:
   bool randomize_swirl;
 
   Water(unsigned int width, unsigned int height) {
-    register_param(splash, "splash", "make a big splash in the center");
+    physics = 0.0;
     register_param(physics, "physics", "water density: from 1 to 4");
     register_param(rain, "rain", "rain drops all over");
     register_param(distort, "distort", "distort all surface like dropping a bucket to the floor");

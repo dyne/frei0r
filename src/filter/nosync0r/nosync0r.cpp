@@ -8,6 +8,7 @@ class nosync0r : public frei0r::filter
 public:
   nosync0r(unsigned int width, unsigned int height)
   {
+    hsync = 0.0;
     register_param(hsync,"HSync","the hsync offset");
   }
   

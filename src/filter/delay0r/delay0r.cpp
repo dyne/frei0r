@@ -10,6 +10,7 @@ class delay0r : public frei0r::filter
 public:
   delay0r(unsigned int width, unsigned int height)
   {
+    delay = 0.0;
     register_param(delay,"DelayTime","the delay time");
   }
   

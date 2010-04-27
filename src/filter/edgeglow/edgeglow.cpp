@@ -39,6 +39,9 @@ public:
 
   edgeglow(unsigned int width, unsigned int height)
   {
+    lthresh = 0.0;
+    lupscale = 0.0;
+    lredscale = 0.0;
     register_param(lthresh, "lthresh", "threshold for edge lightening");
     register_param(lupscale, "lupscale", "multiplier for upscaling edge brightness");
     register_param(lredscale, "lredscale", "multiplier for downscaling non-edge brightness");
