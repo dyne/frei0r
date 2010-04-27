@@ -283,7 +283,7 @@ int DelayGrab::isqrt(unsigned int x) {
 
 
 
-frei0r::construct<DelayGrab> plugin("Dealygrab",
+frei0r::construct<DelayGrab> plugin("Delaygrab",
 				  "delayed frame blitting mapped on a time bitmap",
 				  "Bill Spinhover, Andreas Schiffler, Jaromil",
 				  3,0);
