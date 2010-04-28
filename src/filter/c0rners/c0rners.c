@@ -717,8 +717,8 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		break;
 	case 13:
 		info->name = "Feather Alpha";
-		info->type = F0R_PARAM_BOOL;
-		info->explanation = "Makes smooth transition into  transparent";
+		info->type = F0R_PARAM_DOUBLE;
+		info->explanation = "Makes smooth transition into transparent";
 		break;
 	}
 }
@@ -845,7 +845,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		p->transb = tmpf;
 		break;
 	case 13:		//Feather Alpha
-		tmpf=map_value_forward(*((double*)parm), 0.0, 20.0);
+		tmpf=map_value_forward(*((double*)parm), 0.0, 100.0);
 		if (tmpf!=p->feath) chg=1;
 		p->feath=tmpf;
 		break;
@@ -928,7 +928,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 		*((double*)param)=map_value_backward(p->transb, 0.0, 1.0); //BOOL!!
 		break;
 	case 13:		//Feather Alpha
-		*((double*)param)=map_value_backward(p->feath, 0.0, 20.0);
+		*((double*)param)=map_value_backward(p->feath, 0.0, 100.0);
 		break;
 	}
 }
