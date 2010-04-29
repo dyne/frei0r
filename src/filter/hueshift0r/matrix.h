@@ -31,8 +31,7 @@ unsigned char CLAMP0255(int32_t a)
  *		print a 4 by 4 matrix
  */
 void
-printmat(mat)
-  float mat[4][4];
+printmat(float mat[4][4])
 {
   int x, y;
 
@@ -50,10 +49,7 @@ printmat(mat)
  *		use a matrix to transform colors.
  */
 void
-applymatrix(lptr,mat,n)
-  unsigned long *lptr;
-float mat[4][4];
-int n;
+applymatrix(unsigned long *lptr,float mat[4][4],int n)
 {
   int ir, ig, ib, r, g, b;
   unsigned char *cptr;
@@ -78,8 +74,7 @@ int n;
  *		multiply two matricies
  */
 void
-matrixmult(a,b,c)
-  float a[4][4], b[4][4], c[4][4];
+matrixmult(float a[4][4],float b[4][4],float c[4][4])
 {
   int x, y;
   float temp[4][4];
@@ -101,8 +96,7 @@ matrixmult(a,b,c)
  *		make an identity matrix
  */
 void
-identmat(matrix)
-  float *matrix;
+identmat(float *matrix)
 {
   *matrix++ = 1.0;    /* row 1        */
   *matrix++ = 0.0;
@@ -127,10 +121,7 @@ identmat(matrix)
  *		transform a 3D point using a matrix
  */
 void
-xformpnt(matrix,x,y,z,tx,ty,tz)
-  float matrix[4][4];
-float x,y,z;
-float *tx,*ty,*tz;
+xformpnt(float matrix[4][4],float x,float y,float z,float *tx,float *ty,float *tz)
 {
   *tx = x*matrix[0][0] + y*matrix[1][0] + z*matrix[2][0] + matrix[3][0];
   *ty = x*matrix[0][1] + y*matrix[1][1] + z*matrix[2][1] + matrix[3][1];
@@ -142,9 +133,7 @@ float *tx,*ty,*tz;
  *		make a color scale marix
  */
 void
-cscalemat(mat,rscale,gscale,bscale)
-  float mat[4][4];
-float rscale, gscale, bscale;
+cscalemat(float mat[4][4],float rscale,float gscale,float bscale)
 {
   float mmat[4][4];
 
@@ -176,8 +165,7 @@ float rscale, gscale, bscale;
  *		make a luminance marix
  */
 void
-lummat(mat)
-  float mat[4][4];
+lummat(float mat[4][4])
 {
   float mmat[4][4];
   float rwgt, gwgt, bwgt;
@@ -212,9 +200,7 @@ lummat(mat)
  *		make a saturation marix
  */
 void
-saturatemat(mat,sat)
-  float mat[4][4];
-float sat;
+saturatemat(float mat[4][4],float sat)
 {
   float mmat[4][4];
   float a, b, c, d, e, f, g, h, i;
@@ -260,9 +246,7 @@ float sat;
  *		offset r, g, and b
  */
 void
-offsetmat(mat,roffset,goffset,boffset)
-  float mat[4][4];
-float roffset, goffset, boffset;
+offsetmat(float mat[4][4],float roffset,float goffset,float boffset)
 {
   float mmat[4][4];
 
@@ -293,9 +277,7 @@ float roffset, goffset, boffset;
  *		rotate about the x (red) axis
  */
 void
-xrotatemat(mat,rs,rc)
-  float mat[4][4];
-float rs, rc;
+xrotatemat(float mat[4][4],float rs,float rc)
 {
   float mmat[4][4];
 
@@ -326,9 +308,7 @@ float rs, rc;
  *		rotate about the y (green) axis
  */
 void
-yrotatemat(mat,rs,rc)
-  float mat[4][4];
-float rs, rc;
+yrotatemat(float mat[4][4],float rs,float rc)
 {
   float mmat[4][4];
 
@@ -359,9 +339,7 @@ float rs, rc;
  *		rotate about the z (blue) axis
  */
 void
-zrotatemat(mat,rs,rc)
-  float mat[4][4];
-float rs, rc;
+zrotatemat(float mat[4][4],float rs,float rc)
 {
   float mmat[4][4];
 
@@ -392,9 +370,7 @@ float rs, rc;
  *		shear z using x and y.
  */
 void
-zshearmat(mat,dx,dy)
-  float mat[4][4];
-float dx, dy;
+zshearmat(float mat[4][4],float dx,float dy)
 {
   float mmat[4][4];
 
@@ -425,9 +401,7 @@ float dx, dy;
  *		simple hue rotation. This changes luminance 
  */
 void
-simplehuerotatemat(mat,rot)
-  float mat[4][4];
-float rot;
+simplehuerotatemat(float mat[4][4],float rot)
 {
   float mag;
   float xrs, xrc;
@@ -460,9 +434,7 @@ float rot;
  *		rotate the hue, while maintaining luminance.
  */
 void
-huerotatemat(mat,rot)
-  float mat[4][4];
-float rot;
+huerotatemat(float mat[4][4],float rot)
 {
   float mmat[4][4];
   float mag;
@@ -472,7 +444,7 @@ float rot;
   float zrs, zrc;
   float zsx, zsy;
 
-  identmat(mmat);
+  identmat((float*)mmat);
 
   /* rotate the grey vector into positive Z */
   mag = sqrt(2.0);
