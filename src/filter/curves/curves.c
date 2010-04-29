@@ -345,6 +345,12 @@ void swap(double *points, int i, int j) {
   points[offsetY + 1] = tempY;
 }
 
+#if defined(_MSC_VER)
+__inline const int round(double x){
+	return (int)floor(x+0.5);
+}
+#endif
+
 void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {

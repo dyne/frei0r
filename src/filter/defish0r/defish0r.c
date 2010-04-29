@@ -104,6 +104,10 @@ float defish(int n, float r, float f, float mr)
 	return rr;
 }
 
+#if defined(_MSC_VER)
+#define hypotf _hypotf
+#endif
+
 //----------------------------------------------------------------
 //nafila array map s polozaji pikslov
 //locena funkcija, da jo poklicem samo enkrat na zacetku,
@@ -400,7 +404,7 @@ f0r_instance_t  f0r_construct(unsigned int width, unsigned int height)
 {
 	param *p;
 
-	p=calloc(1, sizeof(param));
+	p=(param*)calloc(1, sizeof(param));
 
 	p->w=width;
 	p->h=height;
@@ -414,7 +418,7 @@ f0r_instance_t  f0r_construct(unsigned int width, unsigned int height)
 	p->par=1.0;		//square pixels
 	p->mpar=1.0;
 
-	p->map=calloc(1, sizeof(float)*(p->w*p->h*2+2));
+	p->map=(float*)calloc(1, sizeof(float)*(p->w*p->h*2+2));
 	p->interpol=set_intp(*p);
 
 	make_map(*p);
@@ -447,7 +451,7 @@ void change_param(param *p, int w, int h, float f, int dir, int type, int scal, 
 	if ((w!=p->w)||(h!=p->h))
 	{
 		free(p->map);
-		p->map=calloc(1, sizeof(float)*(w*h*2+2));
+		p->map=(float*)calloc(1, sizeof(float)*(w*h*2+2));
 		p->w=w;
 		p->h=h;
 	}

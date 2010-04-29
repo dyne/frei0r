@@ -27,6 +27,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(_MSC_VER)
+#define _USE_MATH_DEFINES
+#endif /* _MSC_VER */
 #include <math.h>
 
 #define MSIZE 4
