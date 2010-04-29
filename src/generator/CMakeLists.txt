@@ -1,0 +1,6 @@
+add_subdirectory (dem0scene)
+add_subdirectory (ising0r)
+add_subdirectory (lissajous0r)
+add_subdirectory (nois0r)
+add_subdirectory (onecol0r)
+add_subdirectory (partik0l)

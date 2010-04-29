@@ -1,0 +1,10 @@
+set (SOURCES threshold0r.c)
+
+if (MSVC)
+  set_source_files_properties (threshold0r.c PROPERTIES LANGUAGE CXX)
+  set (SOURCES ${SOURCES} ${FREI0R_DEF})
+endif (MSVC)
+
+add_library (threshold0r MODULE ${SOURCES})
+
+install (TARGETS threshold0r LIBRARY DESTINATION lib)
