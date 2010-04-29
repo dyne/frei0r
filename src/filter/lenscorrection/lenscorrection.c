@@ -91,7 +91,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-  lenscorrection_instance_t* inst = calloc(1, sizeof(*inst));
+  lenscorrection_instance_t* inst = (lenscorrection_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
 
   inst->xcenter = 0.5;

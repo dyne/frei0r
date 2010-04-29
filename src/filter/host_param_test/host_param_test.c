@@ -88,7 +88,7 @@ void f0r_get_param_info( f0r_param_info_t* info, int param_index )
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-	host_param_test_instance_t* inst = calloc(1, sizeof(*inst));
+	host_param_test_instance_t* inst = (host_param_test_instance_t*)calloc(1, sizeof(*inst));
 	inst->w = width;
 	inst->h = height;
 
@@ -100,7 +100,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	inst->pvalue.x = 0.0;
 	inst->pvalue.y = 0.0;
 	const char* sval = "Hello";
-	inst->svalue = malloc( strlen(sval) + 1 );
+	inst->svalue = (char*)malloc( strlen(sval) + 1 );
 	strcpy( inst->svalue, sval );
 	return (f0r_instance_t)inst;
 }
@@ -130,7 +130,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 		case 4:
 		{
 			char* sval = ((char*)param);
-			inst->svalue = realloc( inst->svalue, strlen(sval) + 1 );
+			inst->svalue = (char*)realloc( inst->svalue, strlen(sval) + 1 );
 			strcpy( inst->svalue, sval );
 			break;
 		}

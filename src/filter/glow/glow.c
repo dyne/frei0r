@@ -62,11 +62,11 @@ void f0r_get_param_info( f0r_param_info_t* info, int param_index )
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-	glow_instance_t* inst = calloc(1, sizeof(*inst));
+	glow_instance_t* inst = (glow_instance_t*)calloc(1, sizeof(*inst));
 	inst->w = width;
 	inst->h = height;
 	inst->blurred = (uint32_t*)malloc( width * height * sizeof(uint32_t) );
-	inst->blur_instance = blur_construct( width, height );
+	inst->blur_instance = (f0r_instance_t *)blur_construct( width, height );
 	blur_set_param_value(inst->blur_instance, &inst->blur, 0 );
 	return (f0r_instance_t)inst;
 }

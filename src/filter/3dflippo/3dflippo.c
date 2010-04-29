@@ -143,14 +143,14 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width,unsigned int height)
 {
-  tdflippo_instance_t *inst=calloc(1, sizeof(*inst));
+  tdflippo_instance_t *inst=(tdflippo_instance_t*)calloc(1, sizeof(*inst));
   inst->width=width;
   inst->height=height;
   inst->fsize=width*height;
 
   inst->flip[0]=inst->flip[1]=inst->flip[2]=inst->rate[0]=inst->rate[1]=inst->rate[2]=0.5;
   
-  inst->mask=malloc(sizeof(int)*inst->fsize);
+  inst->mask=(int*)malloc(sizeof(int)*inst->fsize);
 
   return (f0r_instance_t)inst;
 }
@@ -297,11 +297,11 @@ void f0r_update(f0r_instance_t instance,double time,
 static float **newmat(unsigned char unit_flg)
 {
   int i;
-  float **to_ret=malloc(sizeof(float *)*MSIZE);
+  float **to_ret=(float**)malloc(sizeof(float *)*MSIZE);
 
   for(i=0;i<MSIZE;i++)
   {
-    to_ret[i]=calloc(MSIZE,sizeof(float));
+    to_ret[i]=(float*)calloc(MSIZE,sizeof(float));
     if(unit_flg)
       to_ret[i][i]=1.0;
   }

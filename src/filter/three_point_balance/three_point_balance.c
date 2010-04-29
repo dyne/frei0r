@@ -92,7 +92,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-  three_point_balance_instance_t* inst = calloc(1, sizeof(*inst));
+  three_point_balance_instance_t* inst = (three_point_balance_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
   inst->blackColor.r = 0;
   inst->blackColor.g = 0;
@@ -191,7 +191,7 @@ double* gaussSLESolve(size_t size, double* A) {
 		}
 	}
 	//backward way: find solution from last to first
-	double *solution = calloc(size, sizeof(double));
+	double *solution = (double*)calloc(size, sizeof(double));
 	for(int i = size - 1; i >= 0; i--) {
 		solution[i] = A[i * extSize + size];// 
 		for(int j = size - 1; j > i; j--) {
@@ -204,7 +204,7 @@ double* gaussSLESolve(size_t size, double* A) {
 
 
 double* calcParabolaCoeffs(double* points) {
-  double *m = calloc(3 * 4, sizeof(double));
+  double *m = (double*)calloc(3 * 4, sizeof(double));
   for(int i = 0; i < 3; i++) {
 	int offset = i * 2;
 	m[i * 4] = points[offset] * points[offset];

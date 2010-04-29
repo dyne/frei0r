@@ -53,10 +53,10 @@ typedef struct curves_instance
 char **param_names = NULL;
 int f0r_init()
 {
-  param_names = calloc(10, sizeof(char *));
+  param_names = (char**)calloc(10, sizeof(char *));
   for(int i = 0; i < 10; i++) {
 	char *val = i % 2 == 0?INPUT_VALUE:OUTPUT_VALUE;
-	param_names[i] = calloc(strlen(POINT) + 2 + strlen(val), sizeof(char));
+	param_names[i] = (char*)calloc(strlen(POINT) + 2 + strlen(val), sizeof(char));
 	sprintf(param_names[i], "%s%d%s", POINT, i / 2 + 1, val); 
   }
   return 1;
@@ -122,7 +122,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-  curves_instance_t* inst = calloc(1, sizeof(*inst));
+  curves_instance_t* inst = (curves_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
   inst->channel = 0;
   inst->drawCurves = 1;
@@ -226,7 +226,7 @@ double* gaussSLESolve(size_t size, double* A) {
 		}
 	}
 	//backward way: find solution from last to first
-	double *solution = calloc(size, sizeof(double));
+	double *solution = (double*)calloc(size, sizeof(double));
 	for(int i = size - 1; i >= 0; i--) {
 		solution[i] = A[i * extSize + size];// 
 		for(int j = size - 1; j > i; j--) {
@@ -244,7 +244,7 @@ double* calcSplineCoeffs(double* points, size_t pointsSize) {
 	int mxSize = size > 3?4:size;
 	int extMxSize = mxSize + 1;
 	if (size == 2) { //coefficients of linear function Ax + B = y
-		double *m = calloc(mxSize * extMxSize, sizeof(double));
+		double *m = (double*)calloc(mxSize * extMxSize, sizeof(double));
 		for(int i = 0; i < size; i++) {
 			int offset = i * 2;
 			m[i * extMxSize] = points[offset];
@@ -254,7 +254,7 @@ double* calcSplineCoeffs(double* points, size_t pointsSize) {
 		coeffs = gaussSLESolve(size, m);
 		free(m);
 	} else if (size == 3) { //coefficients of quadrant function Ax^2 + Bx + C = y
-		double *m = calloc(mxSize * extMxSize, sizeof(double));
+		double *m = (double*)calloc(mxSize * extMxSize, sizeof(double));
 		for(int i = 0; i < size; i++) {
 			int offset = i * 2;
 			m[i * extMxSize] = points[offset]*points[offset];
@@ -265,7 +265,7 @@ double* calcSplineCoeffs(double* points, size_t pointsSize) {
 		coeffs = gaussSLESolve(size, m);
 		free(m);
 	} else if (size > 3) { //coefficients of cubic spline Ax^3 + Bx^2 + Cx + D = y
-		coeffs = calloc(5 * size,sizeof(double));
+		coeffs = (double*)calloc(5 * size,sizeof(double));
 		for(int i = 0; i < size; i++) {
 			int offset = i * 5;
 			int srcOffset = i * 2;
@@ -273,8 +273,8 @@ double* calcSplineCoeffs(double* points, size_t pointsSize) {
 			coeffs[offset + 1] = points[srcOffset + 1];
 		}
 		coeffs[3] = coeffs[(size - 1) * 5 + 3] = 0;
-		double *alpha = calloc(size - 1,sizeof(double));
-		double *beta = calloc(size - 1,sizeof(double));
+		double *alpha = (double*)calloc(size - 1,sizeof(double));
+		double *beta = (double*)calloc(size - 1,sizeof(double));
 		alpha[0] = beta[0] = 0;
 		for(int i = 1; i < size - 1; i++) {
 			int srcI = i * 2;
@@ -361,7 +361,7 @@ void f0r_update(f0r_instance_t instance, double time,
   double mapLuma[256];
   float *mapCurves = NULL;
   int scale = inst->height / 2;
-  double *points = calloc(inst->pointNumber * 2, sizeof(double));
+  double *points = (double*)calloc(inst->pointNumber * 2, sizeof(double));
   int i = inst->pointNumber * 2;
   //copy point values 
   while(--i)
@@ -382,7 +382,7 @@ void f0r_update(f0r_instance_t instance, double time,
   }
   //building map for drawing curve
   if (inst->drawCurves) {
-	mapCurves = calloc(scale, sizeof(float));
+	mapCurves = (float*)calloc(scale, sizeof(float));
 	for(int i = 0; i < scale; i++)
 	  mapCurves[i] = spline((float)i / scale, points, (size_t)inst->pointNumber, coeffs) * scale;
   }
