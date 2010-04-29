@@ -22,9 +22,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef int bool;
-static const int false = 0;
-static const int true = 1;
+typedef int boolean;
+#define FALSE 0
+#define TRUE 1
 
 typedef struct host_param_test_instance {
 	double dvalue;
@@ -93,7 +93,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	inst->h = height;
 
 	inst->dvalue = 0.5;
-	inst->bvalue = false;
+	inst->bvalue = FALSE;
 	inst->cvalue.r = 0.5;
 	inst->cvalue.g = 0.5;
 	inst->cvalue.b = 0.5;
