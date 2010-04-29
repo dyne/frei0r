@@ -70,7 +70,7 @@ Baltan::Baltan(int wdt, int hgt) {
   pixels = geo.w*geo.h;
   
   planebuf = (uint32_t*)malloc(geo.size*PLANES);
-  bzero(planebuf, geo.size*PLANES);
+  memset(planebuf, 0, geo.size*PLANES);
     
   for(i=0;i<PLANES;i++)
     planetable[i] = &planebuf[pixels*i];
