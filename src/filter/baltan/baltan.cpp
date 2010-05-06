@@ -87,12 +87,12 @@ Baltan::~Baltan() {
 void Baltan::update() {
   int i, cf;
 
-  uint32_t *buf = (uint32_t*)in;
+  uint32_t *src = (uint32_t*)in;
   uint32_t *dst = (uint32_t*)out;
 
   
   for(i=0; i<pixels; i++)
-    planetable[plane][i] = (buf[i] & 0xfcfcfc)>>2;
+    planetable[plane][i] = (src[i] & 0xfcfcfc)>>2;
   
 
   cf = plane & (STRIDE-1);
