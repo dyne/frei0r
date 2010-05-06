@@ -98,12 +98,14 @@ void Baltan::update() {
   cf = plane & (STRIDE-1);
   
   for(i=0; i<pixels; i++) {
-    dst[i] = planetable[cf][i]
-      + planetable[cf+STRIDE][i]
-      + planetable[cf+STRIDE2][i]
-      + planetable[cf+STRIDE3][i];
+    dst[i] = (src[i]&0xFF000000)
+      |(planetable[cf][i]
+	+ planetable[cf+STRIDE][i]
+	+ planetable[cf+STRIDE2][i]
+	+ planetable[cf+STRIDE3][i]);
     planetable[plane][i] = (dst[i]&0xfcfcfc)>>2;
   }
+
 
   plane++;
   plane = plane & (PLANES-1);
