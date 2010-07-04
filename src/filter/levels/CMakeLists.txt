@@ -1,3 +1,4 @@
+set(CMAKE_C_FLAGS "-std=c99")
 set (SOURCES levels.c)
 
 if (MSVC)
