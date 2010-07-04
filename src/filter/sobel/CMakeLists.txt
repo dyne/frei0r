@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (sobel MODULE ${SOURCES})
 
-install (TARGETS sobel LIBRARY DESTINATION lib)
+install (TARGETS sobel LIBRARY DESTINATION lib/frei0r-1)

@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (alphainjection MODULE ${SOURCES})
 
-install (TARGETS alphainjection LIBRARY DESTINATION lib)
+install (TARGETS alphainjection LIBRARY DESTINATION lib/frei0r-1)

@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (grain_extract MODULE ${SOURCES})
 
-install (TARGETS grain_extract LIBRARY DESTINATION lib)
+install (TARGETS grain_extract LIBRARY DESTINATION lib/frei0r-1)

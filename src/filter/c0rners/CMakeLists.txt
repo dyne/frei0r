@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (c0rners MODULE ${SOURCES})
 
-install (TARGETS c0rners LIBRARY DESTINATION lib)
+install (TARGETS c0rners LIBRARY DESTINATION lib/frei0r-1)

@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (luminance MODULE ${SOURCES})
 
-install (TARGETS luminance LIBRARY DESTINATION lib)
+install (TARGETS luminance LIBRARY DESTINATION lib/frei0r-1)

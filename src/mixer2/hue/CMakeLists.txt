@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (hue MODULE ${SOURCES})
 
-install (TARGETS hue LIBRARY DESTINATION lib)
+install (TARGETS hue LIBRARY DESTINATION lib/frei0r-1)

@@ -4,4 +4,4 @@ endif (MSVC)
 
 add_library (rgbparade MODULE rgbparade.c rgbparade_image.h)
 
-install (TARGETS rgbparade LIBRARY DESTINATION lib)
+install (TARGETS rgbparade LIBRARY DESTINATION lib/frei0r-1)

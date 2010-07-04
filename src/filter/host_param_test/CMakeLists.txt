@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (host_param_test MODULE ${SOURCES})
 
-install (TARGETS host_param_test LIBRARY DESTINATION lib)
+install (TARGETS host_param_test LIBRARY DESTINATION lib/frei0r-1)

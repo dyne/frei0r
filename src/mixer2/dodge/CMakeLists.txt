@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (dodge MODULE ${SOURCES})
 
-install (TARGETS dodge LIBRARY DESTINATION lib)
+install (TARGETS dodge LIBRARY DESTINATION lib/frei0r-1)

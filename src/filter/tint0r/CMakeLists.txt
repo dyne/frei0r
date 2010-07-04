@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (tint0r MODULE ${SOURCES})
 
-install (TARGETS tint0r LIBRARY DESTINATION lib)
+install (TARGETS tint0r LIBRARY DESTINATION lib/frei0r-1)

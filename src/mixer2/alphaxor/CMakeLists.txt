@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (alphaxor MODULE ${SOURCES})
 
-install (TARGETS alphaxor LIBRARY DESTINATION lib)
+install (TARGETS alphaxor LIBRARY DESTINATION lib/frei0r-1)

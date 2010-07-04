@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (addition MODULE ${SOURCES})
 
-install (TARGETS addition LIBRARY DESTINATION lib)
+install (TARGETS addition LIBRARY DESTINATION lib/frei0r-1)

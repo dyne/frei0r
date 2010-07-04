@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (3dflippo MODULE ${SOURCES})
 
-install (TARGETS 3dflippo LIBRARY DESTINATION lib)
+install (TARGETS 3dflippo LIBRARY DESTINATION lib/frei0r-1)

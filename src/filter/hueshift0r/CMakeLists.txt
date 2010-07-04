@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (hueshift0r MODULE ${SOURCES})
 
-install (TARGETS hueshift0r LIBRARY DESTINATION lib)
+install (TARGETS hueshift0r LIBRARY DESTINATION lib/frei0r-1)

@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (lighten MODULE ${SOURCES})
 
-install (TARGETS lighten LIBRARY DESTINATION lib)
+install (TARGETS lighten LIBRARY DESTINATION lib/frei0r-1)

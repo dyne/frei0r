@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (equaliz0r MODULE ${SOURCES})
 
-install (TARGETS equaliz0r LIBRARY DESTINATION lib)
+install (TARGETS equaliz0r LIBRARY DESTINATION lib/frei0r-1)

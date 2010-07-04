@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (transparency MODULE ${SOURCES})
 
-install (TARGETS transparency LIBRARY DESTINATION lib)
+install (TARGETS transparency LIBRARY DESTINATION lib/frei0r-1)

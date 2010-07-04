@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (color_only MODULE ${SOURCES})
 
-install (TARGETS color_only LIBRARY DESTINATION lib)
+install (TARGETS color_only LIBRARY DESTINATION lib/frei0r-1)

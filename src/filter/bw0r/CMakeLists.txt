@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (bw0r MODULE ${SOURCES})
 
-install (TARGETS bw0r LIBRARY DESTINATION lib)
+install (TARGETS bw0r LIBRARY DESTINATION lib/frei0r-1)

@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (cartoon MODULE ${SOURCES})
 
-install (TARGETS cartoon LIBRARY DESTINATION lib)
+install (TARGETS cartoon LIBRARY DESTINATION lib/frei0r-1)

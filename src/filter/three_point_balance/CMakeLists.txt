@@ -8,4 +8,4 @@ endif (MSVC)
 
 add_library (three_point_balance MODULE ${SOURCES})
 
-install (TARGETS three_point_balance LIBRARY DESTINATION lib)
+install (TARGETS three_point_balance LIBRARY DESTINATION lib/frei0r-1)

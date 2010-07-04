@@ -8,4 +8,4 @@ add_library (facedetect MODULE facedetect.c)
 
 target_link_libraries (facedetect
   ${OpenCV_LIBS})
-install (TARGETS facedetect LIBRARY DESTINATION lib)
+install (TARGETS facedetect LIBRARY DESTINATION lib/frei0r-1)

@@ -4,4 +4,4 @@ endif (MSVC)
 
 add_library (scale0tilt MODULE scale0tilt.c)
 
-install (TARGETS scale0tilt LIBRARY DESTINATION lib)
+install (TARGETS scale0tilt LIBRARY DESTINATION lib/frei0r-1)

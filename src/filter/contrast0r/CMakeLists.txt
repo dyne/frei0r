@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (contrast0r MODULE ${SOURCES})
 
-install (TARGETS contrast0r LIBRARY DESTINATION lib)
+install (TARGETS contrast0r LIBRARY DESTINATION lib/frei0r-1)

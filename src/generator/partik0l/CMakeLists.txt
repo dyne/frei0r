@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (partik0l MODULE ${SOURCES})
 
-install (TARGETS partik0l LIBRARY DESTINATION lib)
+install (TARGETS partik0l LIBRARY DESTINATION lib/frei0r-1)

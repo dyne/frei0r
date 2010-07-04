@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (softlight MODULE ${SOURCES})
 
-install (TARGETS softlight LIBRARY DESTINATION lib)
+install (TARGETS softlight LIBRARY DESTINATION lib/frei0r-1)

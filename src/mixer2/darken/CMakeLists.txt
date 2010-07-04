@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (darken MODULE ${SOURCES})
 
-install (TARGETS darken LIBRARY DESTINATION lib)
+install (TARGETS darken LIBRARY DESTINATION lib/frei0r-1)

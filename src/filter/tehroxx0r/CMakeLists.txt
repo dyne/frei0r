@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (tehRoxx0r MODULE ${SOURCES})
 
-install (TARGETS tehRoxx0r LIBRARY DESTINATION lib)
+install (TARGETS tehRoxx0r LIBRARY DESTINATION lib/frei0r-1)

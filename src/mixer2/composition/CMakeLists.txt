@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (composition MODULE ${SOURCES})
 
-install (TARGETS composition LIBRARY DESTINATION lib)
+install (TARGETS composition LIBRARY DESTINATION lib/frei0r-1)

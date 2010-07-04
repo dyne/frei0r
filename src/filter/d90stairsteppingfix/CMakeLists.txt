@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (d90stairsteppingfix MODULE ${SOURCES})
 
-install (TARGETS d90stairsteppingfix LIBRARY DESTINATION lib)
+install (TARGETS d90stairsteppingfix LIBRARY DESTINATION lib/frei0r-1)

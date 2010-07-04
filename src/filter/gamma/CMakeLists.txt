@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (gamma MODULE ${SOURCES})
 
-install (TARGETS gamma LIBRARY DESTINATION lib)
+install (TARGETS gamma LIBRARY DESTINATION lib/frei0r-1)

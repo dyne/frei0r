@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (threshold0r MODULE ${SOURCES})
 
-install (TARGETS threshold0r LIBRARY DESTINATION lib)
+install (TARGETS threshold0r LIBRARY DESTINATION lib/frei0r-1)

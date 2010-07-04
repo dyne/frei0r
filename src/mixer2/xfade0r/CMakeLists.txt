@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (xfade0r MODULE ${SOURCES})
 
-install (TARGETS xfade0r LIBRARY DESTINATION lib)
+install (TARGETS xfade0r LIBRARY DESTINATION lib/frei0r-1)

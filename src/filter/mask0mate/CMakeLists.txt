@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (mask0mate MODULE ${SOURCES})
 
-install (TARGETS mask0mate LIBRARY DESTINATION lib)
+install (TARGETS mask0mate LIBRARY DESTINATION lib/frei0r-1)

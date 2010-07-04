@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (glow MODULE ${SOURCES})
 
-install (TARGETS glow LIBRARY DESTINATION lib)
+install (TARGETS glow LIBRARY DESTINATION lib/frei0r-1)

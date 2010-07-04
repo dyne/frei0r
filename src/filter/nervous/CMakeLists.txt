@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (nervous MODULE ${SOURCES})
 
-install (TARGETS nervous LIBRARY DESTINATION lib)
+install (TARGETS nervous LIBRARY DESTINATION lib/frei0r-1)
