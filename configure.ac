@@ -91,6 +91,7 @@ AM_CONDITIONAL([HAVE_OPENCV], [test x$HAVE_OPENCV = xtrue])
 if test x$HAVE_OPENCV = xtrue; then
     OPENCV_CFLAGS="$OPENCV_CFLAGS -DOPENCV_PREFIX=`pkg-config opencv --variable=prefix`"
 fi
+AC_SUBST(HAVE_OPENCV)
 
 HAVE_GAVL=false
 PKG_CHECK_MODULES(GAVL, gavl >= 0.2.3, [HAVE_GAVL=true], [true])
