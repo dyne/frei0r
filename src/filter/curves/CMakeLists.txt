@@ -8,4 +8,4 @@ endif (MSVC)
 
 add_library (curves MODULE ${SOURCES})
 
-install (TARGETS curves LIBRARY DESTINATION lib)
+install (TARGETS curves LIBRARY DESTINATION lib/frei0r-1)

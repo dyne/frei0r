@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (edgeglow MODULE ${SOURCES})
 
-install (TARGETS edgeglow LIBRARY DESTINATION lib)
+install (TARGETS edgeglow LIBRARY DESTINATION lib/frei0r-1)

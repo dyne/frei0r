@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (alphain MODULE ${SOURCES})
 
-install (TARGETS alphain LIBRARY DESTINATION lib)
+install (TARGETS alphain LIBRARY DESTINATION lib/frei0r-1)

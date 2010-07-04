@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (letterb0xed MODULE ${SOURCES})
 
-install (TARGETS letterb0xed LIBRARY DESTINATION lib)
+install (TARGETS letterb0xed LIBRARY DESTINATION lib/frei0r-1)

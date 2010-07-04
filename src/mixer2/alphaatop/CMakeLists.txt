@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (alphaatop MODULE ${SOURCES})
 
-install (TARGETS alphaatop LIBRARY DESTINATION lib)
+install (TARGETS alphaatop LIBRARY DESTINATION lib/frei0r-1)

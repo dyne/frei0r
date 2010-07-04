@@ -8,4 +8,4 @@ endif (MSVC)
 
 add_library (levels MODULE ${SOURCES})
 
-install (TARGETS levels LIBRARY DESTINATION lib)
+install (TARGETS levels LIBRARY DESTINATION lib/frei0r-1)

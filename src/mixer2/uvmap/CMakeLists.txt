@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (uvmap MODULE ${SOURCES})
 
-install (TARGETS uvmap LIBRARY DESTINATION lib)
+install (TARGETS uvmap LIBRARY DESTINATION lib/frei0r-1)

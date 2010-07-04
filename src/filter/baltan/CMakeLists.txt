@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (baltan MODULE ${SOURCES})
 
-install (TARGETS baltan LIBRARY DESTINATION lib)
+install (TARGETS baltan LIBRARY DESTINATION lib/frei0r-1)

@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (invert0r MODULE ${SOURCES})
 
-install (TARGETS invert0r LIBRARY DESTINATION lib)
+install (TARGETS invert0r LIBRARY DESTINATION lib/frei0r-1)

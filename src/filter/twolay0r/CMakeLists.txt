@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (twolay0r MODULE ${SOURCES})
 
-install (TARGETS twolay0r LIBRARY DESTINATION lib)
+install (TARGETS twolay0r LIBRARY DESTINATION lib/frei0r-1)

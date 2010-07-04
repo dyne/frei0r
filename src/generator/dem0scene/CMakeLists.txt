@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (plasma MODULE ${SOURCES})
 
-install (TARGETS plasma LIBRARY DESTINATION lib)
+install (TARGETS plasma LIBRARY DESTINATION lib/frei0r-1)

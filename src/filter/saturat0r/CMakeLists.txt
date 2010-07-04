@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (saturat0r MODULE ${SOURCES})
 
-install (TARGETS saturat0r LIBRARY DESTINATION lib)
+install (TARGETS saturat0r LIBRARY DESTINATION lib/frei0r-1)

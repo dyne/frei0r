@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (alphaout MODULE ${SOURCES})
 
-install (TARGETS alphaout LIBRARY DESTINATION lib)
+install (TARGETS alphaout LIBRARY DESTINATION lib/frei0r-1)

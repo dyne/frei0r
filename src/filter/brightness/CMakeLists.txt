@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (brightness MODULE ${SOURCES})
 
-install (TARGETS brightness LIBRARY DESTINATION lib)
+install (TARGETS brightness LIBRARY DESTINATION lib/frei0r-1)

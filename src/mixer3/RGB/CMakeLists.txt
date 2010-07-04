@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (RGB MODULE ${SOURCES})
 
-install (TARGETS RGB LIBRARY DESTINATION lib)
+install (TARGETS RGB LIBRARY DESTINATION lib/frei0r-1)

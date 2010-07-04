@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (perspective MODULE ${SOURCES})
 
-install (TARGETS perspective LIBRARY DESTINATION lib)
+install (TARGETS perspective LIBRARY DESTINATION lib/frei0r-1)

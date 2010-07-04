@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (divide MODULE ${SOURCES})
 
-install (TARGETS divide LIBRARY DESTINATION lib)
+install (TARGETS divide LIBRARY DESTINATION lib/frei0r-1)

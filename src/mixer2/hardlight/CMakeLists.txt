@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (hardlight MODULE ${SOURCES})
 
-install (TARGETS hardlight LIBRARY DESTINATION lib)
+install (TARGETS hardlight LIBRARY DESTINATION lib/frei0r-1)

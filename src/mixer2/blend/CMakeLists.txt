@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (blend MODULE ${SOURCES})
 
-install (TARGETS blend LIBRARY DESTINATION lib)
+install (TARGETS blend LIBRARY DESTINATION lib/frei0r-1)

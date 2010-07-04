@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (overlay MODULE ${SOURCES})
 
-install (TARGETS overlay LIBRARY DESTINATION lib)
+install (TARGETS overlay LIBRARY DESTINATION lib/frei0r-1)

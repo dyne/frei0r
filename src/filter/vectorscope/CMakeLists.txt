@@ -4,4 +4,4 @@ endif (MSVC)
 
 add_library (vectorscope MODULE vectorscope.c vectorscope_image.h)
 
-install (TARGETS vectorscope LIBRARY DESTINATION lib)
+install (TARGETS vectorscope LIBRARY DESTINATION lib/frei0r-1)

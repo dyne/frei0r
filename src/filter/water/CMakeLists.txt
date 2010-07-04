@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (water MODULE ${SOURCES})
 
-install (TARGETS water LIBRARY DESTINATION lib)
+install (TARGETS water LIBRARY DESTINATION lib/frei0r-1)

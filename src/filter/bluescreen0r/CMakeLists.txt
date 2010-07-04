@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (bluescreen0r MODULE ${SOURCES})
 
-install (TARGETS bluescreen0r LIBRARY DESTINATION lib)
+install (TARGETS bluescreen0r LIBRARY DESTINATION lib/frei0r-1)

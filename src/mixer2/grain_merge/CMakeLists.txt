@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (grain_merge MODULE ${SOURCES})
 
-install (TARGETS grain_merge LIBRARY DESTINATION lib)
+install (TARGETS grain_merge LIBRARY DESTINATION lib/frei0r-1)

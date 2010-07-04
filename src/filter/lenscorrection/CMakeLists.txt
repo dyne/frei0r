@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (lenscorrection MODULE ${SOURCES})
 
-install (TARGETS lenscorrection LIBRARY DESTINATION lib)
+install (TARGETS lenscorrection LIBRARY DESTINATION lib/frei0r-1)

@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (screen MODULE ${SOURCES})
 
-install (TARGETS screen LIBRARY DESTINATION lib)
+install (TARGETS screen LIBRARY DESTINATION lib/frei0r-1)

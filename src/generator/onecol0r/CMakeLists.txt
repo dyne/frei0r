@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (onecol0r MODULE ${SOURCES})
 
-install (TARGETS onecol0r LIBRARY DESTINATION lib)
+install (TARGETS onecol0r LIBRARY DESTINATION lib/frei0r-1)

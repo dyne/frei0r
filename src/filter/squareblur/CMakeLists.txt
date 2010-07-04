@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (squareblur MODULE ${SOURCES})
 
-install (TARGETS squareblur LIBRARY DESTINATION lib)
+install (TARGETS squareblur LIBRARY DESTINATION lib/frei0r-1)

@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (vertigo MODULE ${SOURCES})
 
-install (TARGETS vertigo LIBRARY DESTINATION lib)
+install (TARGETS vertigo LIBRARY DESTINATION lib/frei0r-1)

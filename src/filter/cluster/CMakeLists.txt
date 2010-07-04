@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (cluster MODULE ${SOURCES})
 
-install (TARGETS cluster LIBRARY DESTINATION lib)
+install (TARGETS cluster LIBRARY DESTINATION lib/frei0r-1)

@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (difference MODULE ${SOURCES})
 
-install (TARGETS difference LIBRARY DESTINATION lib)
+install (TARGETS difference LIBRARY DESTINATION lib/frei0r-1)

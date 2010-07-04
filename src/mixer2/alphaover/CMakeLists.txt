@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (alphaover MODULE ${SOURCES})
 
-install (TARGETS alphaover LIBRARY DESTINATION lib)
+install (TARGETS alphaover LIBRARY DESTINATION lib/frei0r-1)

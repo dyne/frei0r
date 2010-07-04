@@ -6,4 +6,4 @@ endif (MSVC)
 
 add_library (delaygrab MODULE ${SOURCES})
 
-install (TARGETS delaygrab LIBRARY DESTINATION lib)
+install (TARGETS delaygrab LIBRARY DESTINATION lib/frei0r-1)

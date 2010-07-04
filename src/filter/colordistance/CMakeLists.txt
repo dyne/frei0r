@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (colordistance MODULE ${SOURCES})
 
-install (TARGETS colordistance LIBRARY DESTINATION lib)
+install (TARGETS colordistance LIBRARY DESTINATION lib/frei0r-1)
