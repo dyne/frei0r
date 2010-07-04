@@ -1,3 +1,4 @@
+set(CMAKE_C_FLAGS "-std=c99")
 set (SOURCES three_point_balance.c)
 
 if (MSVC)
