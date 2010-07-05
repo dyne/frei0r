@@ -29,58 +29,67 @@ public:
         
         if (height == 720) {
             
-            int sliceNumber = (sizeof slices)/(sizeof slices[0]);
-            int newSize = height + sliceNumber;
+            /** Number of newly inserted lines: always between two slices (so #slices-1) */
+            int sliceLinesNumber = (sizeof slices)/(sizeof slices[0]) - 1;
             
-            printf("%d slices, %d total new lines\n", sliceNumber, newSize);
+            /** The height of the image after inserting the slice lines */
+            int newHeight = height + sliceLinesNumber;
             
-            float withInsertedLines[newSize];
+            printf("%d slice lines, %d total new lines\n", sliceLinesNumber, newHeight);
+            
+            /** 
+             * The position of each line including slice lines. 
+             * Slice lines are inserted between two lines (e.g. between 6 and 7) 
+             * and therefore get the number (line1+line2)/2, here 6.5.
+             * This positions will later be used for interpolation.
+             */
+            float filled[newHeight];
             
             int count = 0;
             int index = 0;
-            for (int i = 0; i < sliceNumber; i++) {
+            for (int i = 0; i < sliceLinesNumber+1; i++) {
                 for (int j = 0; j < slices[i]; j++) {
                     
-                    withInsertedLines[index] = count;
+                    filled[index] = count;
                     count++;
                     index++;
                     
                 }
-                if (count < newSize) {
-                    withInsertedLines[index] = count - 0.5;
+                if (count < newHeight) {
+                    filled[index] = count - 0.5;
                     index++;
                 }
             }
-            for (int i = 0; i < newSize; i++) {
-                printf("inserted Lines: %f at %d\n", withInsertedLines[i], i);
+            for (int i = 0; i < newHeight; i++) {
+                printf("inserted Lines: %f at %d\n", filled[i], i);
             }
             
-            float interpolationWeights[height];
-            float scaleFactor = (float) newSize/height;
+            /**
+             * Scaling numbers to scale the full height matrix with
+             * the slice lines down to the original height (720p).
+             */
+            float downScaling[height];
+            
+            float scaleFactor = (float) newHeight/height;
             printf("scale factor: %f\n", scaleFactor);
             for (int i = 0; i < height; i++) {
-                interpolationWeights[i] = i*scaleFactor;
-            }
-            for (int i = 0; i < height; i++) {
-                printf("scaled: %f at %d\n", interpolationWeights[i], i);
+                downScaling[i] = (float) (((2*i+1)*scaleFactor)-1)/2;
+                printf("scaled: %f at %d\n", downScaling[i], i);
             }
             
+            
+            /**
+             * Scale the full height vector down to 720p using the 
+             * previous scaling vector
+             */
             float offset;
             for (int i = 0; i < height; i++) {
                 
-                index = floor(interpolationWeights[i]);
-                offset = interpolationWeights[i] - index;
+                index = floor(downScaling[i]);
+                offset = downScaling[i] - index;
                 
-                if (i+1 < height) {
-                    m_interpolationValues[i] = offset*interpolationWeights[i] + (1-offset)*interpolationWeights[i+1];
-                } else {
-                    m_interpolationValues[i] = interpolationWeights[i];
-                    if (m_interpolationValues[i] > (newSize-1)) {
-                        m_interpolationValues[i] = newSize-1;
-                    }
-                }
-                printf("%f at %d with weights %f and %f\n", m_interpolationValues[i], 
-                    i, offset*interpolationWeights[i], (1-offset)*interpolationWeights[i+1]);
+                m_interpolationValues[i] = (1-offset)*filled[index] + offset*filled[index+1];
+                printf("%f at %d with weights %f and %f\n", m_interpolationValues[i], i, (1-offset)*downScaling[i], offset*downScaling[i+1]);
             }
             
         } else {
@@ -119,19 +128,31 @@ public:
         
         struct rgbColor col = toRGB(in[0]);
         
+        struct rgbColor colA, colB;
+        
         printf("Color value of first pixel: r=%d g=%d b=%d a=%d.\nuint value: %d.\n", col.r, col.g, col.b, col.a, in[0]);
         if (height == 720) {
             printf("Converting.\n");
             float factor;
+            int index;
             unsigned char r,g,b,a;
             
-            for (int line = 0; line+1 < height; line++) {
-                factor = (float) m_interpolationValues[line] - floor(m_interpolationValues[line]);
-                //printf("Factor is %f.\n", factor);
-                for (int index = 0; index < width; index++) {
+            for (int line = 0; line < height; line++) {
+                index = floor(m_interpolationValues[line]);
+                factor = (float) m_interpolationValues[line] - index;
+                printf("Factor %f on line %d, using index %d.\n", factor, line, index);
+                
+                for (int pixel = 0; pixel < width; pixel++) {
+                
+                    colA = toRGB(in[width*index+pixel]);
+                    colB = toRGB(in[width*(index+1) + pixel]);
                     
-                    out[width*line+index] = factor*in[width*line+index] + (1-factor) * in[width*(line+1) + index];
-                    //if (index % 2 == 0) { out[width*line+index] = 0; }
+                    col.r = floor((float)(1-factor)*colA.r + (factor)*colB.r);
+                    col.g = floor((float)(1-factor)*colA.g + (factor)*colB.g);
+                    col.b = floor((float)(1-factor)*colA.b + (factor)*colB.b);
+                    col.a = floor((float)(1-factor)*colA.a + (factor)*colB.a);
+                    
+                    out[width*line+pixel] = toUint(col);
                 }
             }
             std::copy(in + width*(height-1), in+width*height, out + width*(height-1));
