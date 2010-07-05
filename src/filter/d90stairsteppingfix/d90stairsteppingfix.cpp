@@ -92,22 +92,46 @@ public:
     {
         delete m_interpolationValues;
     }
+    
+    struct rgbColor toRGB(uint32_t input)
+    {
+        struct rgbColor rgbCol;
+        rgbCol.r = (input & 0x000000FF) >> 0;
+        rgbCol.g = (input & 0x0000FF00) >> 8;
+        rgbCol.b = (input & 0x00FF0000) >> 16;
+        rgbCol.a = (input & 0xFF000000) >> 24;
+        return rgbCol;
+    }
+    uint32_t toUint(struct rgbColor rgbCol)
+    {
+        uint32_t pixel = 0;
+        pixel = pixel | (rgbCol.r << 0);
+        pixel = pixel | (rgbCol.g << 8);
+        pixel = pixel | (rgbCol.b << 16);
+        pixel = pixel | (rgbCol.a << 24);
+        return pixel;
+    }
 
     virtual void update()
     {
         /*struct rgbColor* col = (struct rgbColor*) &in[0];*/
-        struct rgbColor col = *(struct rgbColor*) &in[0];
+        /*struct rgbColor col = *(struct rgbColor*) &in[0];*/
         
-        printf("Color value of first pixel: r=%d g=%d b=%d a=%d.\n", col.r, col.g, col.b, col.a);
+        struct rgbColor col = toRGB(in[0]);
+        
+        printf("Color value of first pixel: r=%d g=%d b=%d a=%d.\nuint value: %d.\n", col.r, col.g, col.b, col.a, in[0]);
         if (height == 720) {
             printf("Converting.\n");
-            int factor;
+            float factor;
+            unsigned char r,g,b,a;
             
             for (int line = 0; line+1 < height; line++) {
-                factor = m_interpolationValues[line] - floor(m_interpolationValues[line]);
+                factor = (float) m_interpolationValues[line] - floor(m_interpolationValues[line]);
+                //printf("Factor is %f.\n", factor);
                 for (int index = 0; index < width; index++) {
+                    
                     out[width*line+index] = factor*in[width*line+index] + (1-factor) * in[width*(line+1) + index];
-                    if (index % 2 == 0) { out[width*line+index] = 0; }
+                    //if (index % 2 == 0) { out[width*line+index] = 0; }
                 }
             }
             std::copy(in + width*(height-1), in+width*height, out + width*(height-1));
