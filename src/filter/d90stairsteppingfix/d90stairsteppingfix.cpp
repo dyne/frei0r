@@ -210,23 +210,21 @@ public:
                 index = floor(m_mesh[line]);
                 factor = (float) m_mesh[line] - index;
                 
-                for (int pixel = 0; pixel < width; pixel++) {
+                cvA = (unsigned char*) &in[width*index];
+                cvB = (unsigned char*) &in[width*(index+1)];
+                cvOut = (unsigned char*) &out[width*line];
+                    
+                for (int pixel = 0; pixel < width*4; pixel++) {
                     // Use linear interpolation on the colours
                     
                     // Use pointer arithmetics. Colour values are stored 
                     // as AABBGGRR in the uint32_t values.
                     // Convert each colour separately.
                     
-                    cvA = (unsigned char*) &in[width*index+pixel];
-                    cvB = (unsigned char*) &in[width*(index+1) + pixel];
-                    cvOut = (unsigned char*) &out[width*line+pixel];
-                    
-                    for (unsigned char i = 0; i < 4; i++) {
-                        *cvOut = floor((float)(1-factor)*(*cvA) + (factor)*(*cvB));
-                        cvA++;
-                        cvB++;
-                        cvOut++;
-                    }
+                    *cvOut = floor((float)(1-factor)*(*cvA) + (factor)*(*cvB));
+                    cvA++;
+                    cvB++;
+                    cvOut++;
                 }
             }
             std::copy(in + width*(height-1), in+width*height, out + width*(height-1));
