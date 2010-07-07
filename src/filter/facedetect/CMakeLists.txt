@@ -4,8 +4,9 @@ if (MSVC)
   set_source_files_properties (facedetect.c PROPERTIES LANGUAGE CXX)
 endif (MSVC)
 
-add_library (facedetect MODULE facedetect.c)
+add_library (${TARGET}  MODULE facedetect.c)
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
 target_link_libraries (facedetect
   ${OpenCV_LIBS})
-install (TARGETS facedetect LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

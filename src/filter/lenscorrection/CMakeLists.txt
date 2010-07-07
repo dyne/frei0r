@@ -1,10 +1,12 @@
 set (SOURCES lenscorrection.c)
+set (TARGET lenscorrection)
 
 if (MSVC)
   set_source_files_properties (lenscorrection.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (lenscorrection MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS lenscorrection LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

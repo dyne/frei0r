@@ -1,10 +1,12 @@
 set (SOURCES contrast0r.c)
+set (TARGET contrast0r)
 
 if (MSVC)
   set_source_files_properties (contrast0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (contrast0r MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS contrast0r LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

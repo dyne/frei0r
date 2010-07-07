@@ -1,9 +1,11 @@
 set (SOURCES hue.cpp)
+set (TARGET hue)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_1_1_DEF})
 endif (MSVC)
 
-add_library (hue MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS hue LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})
