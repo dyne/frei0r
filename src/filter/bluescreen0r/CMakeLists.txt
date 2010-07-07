@@ -1,9 +1,11 @@
 set (SOURCES bluescreen0r.cpp)
+set (TARGET bluescreen0r)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (bluescreen0r MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS bluescreen0r LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

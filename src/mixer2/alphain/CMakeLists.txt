@@ -1,9 +1,11 @@
 set (SOURCES alphain.cpp)
+set (TARGET alphain)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_1_1_DEF})
 endif (MSVC)
 
-add_library (alphain MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS alphain LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

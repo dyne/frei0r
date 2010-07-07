@@ -1,11 +1,13 @@
 set(CMAKE_C_FLAGS "-std=c99")
 set (SOURCES three_point_balance.c)
+set (TARGET three_point_balance)
 
 if (MSVC)
   set_source_files_properties (three_point_balance.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (three_point_balance MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS three_point_balance LIBRARY DESTINATION lib/frei0r-1)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})
