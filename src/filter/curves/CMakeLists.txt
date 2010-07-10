@@ -1,4 +1,8 @@
-set(CMAKE_C_FLAGS "-std=c99")
+# Set C99 flag for gcc
+if (CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_C_FLAGS "-std=c99")
+endif (CMAKE_COMPILER_IS_GNUCC)
+
 set (SOURCES curves.c)
 set (TARGET curves)
 
