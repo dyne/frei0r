@@ -94,7 +94,7 @@ revisioning system *GIT*
 :  git clone git://code.dyne.org/frei0r.git
 
 Daily  snapshots  are also  packed  ready  to  "./configure; make"  on
-[[http://ftp.dyne.org/frei0r/][FTP.dyne.org]]
+[[http://www.piksel.no/frei0r/snapshot/][www.piksel.no/frei0r/snapshot]]
 
 ** Debian / Ubuntu
 
