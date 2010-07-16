@@ -16,6 +16,14 @@ LT_INIT([disable-static])
 
 AC_CONFIG_HEADERS([include/config.h])
 
+if test "x${prefix}" = "xNONE"; then
+   prefix=${ac_default_prefix}
+fi
+PACKAGE_LIB_DIR="${prefix}/lib/frei0r-1"
+AC_SUBST(PACKAGE_LIB_DIR)
+PACKAGE_DATA_DIR="${prefix}/share/frei0r-1"
+AC_SUBST(PACKAGE_DATA_DIR)
+
 AC_MSG_CHECKING([host platform])
 case $host_os in
     *linux*)
@@ -89,13 +97,16 @@ HAVE_OPENCV=false
 PKG_CHECK_MODULES(OPENCV, opencv >= 1.0.0, [HAVE_OPENCV=true], [true])
 AM_CONDITIONAL([HAVE_OPENCV], [test x$HAVE_OPENCV = xtrue])
 if test x$HAVE_OPENCV = xtrue; then
-    OPENCV_CFLAGS="$OPENCV_CFLAGS -DOPENCV_PREFIX=`pkg-config opencv --variable=prefix`"
+#    OPENCV_CFLAGS="$OPENCV_CFLAGS -DOPENCV_PREFIX=`pkg-config opencv --variable=prefix`"
+    AC_DEFINE(HAVE_OPENCV,1,[compiled including opencv])
+    AC_DEFINE(OPENCV_DATA_DIR,[${prefix}/share/opencv],opencv data prefix)
 fi
 AC_SUBST(HAVE_OPENCV)
 
 HAVE_GAVL=false
 PKG_CHECK_MODULES(GAVL, gavl >= 0.2.3, [HAVE_GAVL=true], [true])
 AM_CONDITIONAL([HAVE_GAVL], [test x$HAVE_GAVL = xtrue])
+
 
 AC_CONFIG_FILES([
   frei0r.pc
@@ -122,6 +133,7 @@ fi
 
 if test x$HAVE_OPENCV = xtrue; then
 echo "    - opencv: YES"
+echo "              data dir: $OPENCV_DATA_DIR"
 else
 echo "    - opencv: NO"
 echo "              opencv >= 1.0.0 not found - this program enables optional"
