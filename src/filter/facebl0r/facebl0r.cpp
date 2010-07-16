@@ -15,6 +15,8 @@
  */
 
 
+#include <config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <opencv/cv.h>
@@ -67,9 +69,16 @@ private:
     CvHaarClassifierCascade* cascade;
     CvMemStorage* storage;
 
-    char *classifier;
 
-    bool face_found;
+    int face_found;
+    int face_notfound;
+    unsigned int width;
+    unsigned int height;
+    unsigned int size; // = width * height
+
+    f0r_param_string haarcascade[256];
+    char classifier[512];
+
 };
 
 
@@ -83,8 +92,12 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   width = wdt;
   height = hgt;
   size = width*height*4;
+
+  sprintf(haarcascade,"frontalface_default"); 
   //initialize
-  classifier = (const char*)"/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml";
+  snprintf(classifier,511,"/usr/share/opencv/haarcascades/haarcascade_%s.xml", haarcascade);
+  fprintf(stderr,"%s\n",classifier);
+  // para
   cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
   storage = cvCreateMemStorage(0);
   //validate
@@ -93,7 +106,11 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   face_rect = 0;
   image = 0;
   tracked_obj = 0;
-  face_found = false;
+  face_found = 0;
+  face_notfound = 1;
+
+//  register_param(haarcascade, "pattern model for recognition",
+//                 "frontalface_alt2, frontalface_alt_tree, frontalface_alt, frontalface_default, fullbody, lowerbody, profileface, upperbody (see in share/opencv/haarcascades)");
 
 }
 
@@ -101,8 +118,8 @@ FaceBl0r::~FaceBl0r() {
     if(tracked_obj)
         destroy_tracked_object(tracked_obj);
 
-//    if(cascade) cvReleaseHaarClassifierCascade(&cascade);
-//    if(storage) cvReleaseMemStorage(&storage);
+    if(cascade) cvReleaseHaarClassifierCascade(&cascade);
+    if(storage) cvReleaseMemStorage(&storage);
     
 }
 
@@ -114,20 +131,7 @@ void FaceBl0r::update() {
       image = cvCreateImage( cvSize(width,height), IPL_DEPTH_8U, 4 );
 
   unsigned char* ipli = (unsigned char*)image->imageData;
-  int step = image->widthStep;
-  unsigned i, j;
-  for (i = 0; (i < height); i++) {
-    for (j = 0; (j < width); j++) {
-
-//        ipli[(i*step)+j*4+0] = src[0];
-        ipli[(i*step)+j*4+2] = src[2];
-        ipli[(i*step)+j*4+1] = src[1];
-        ipli[(i*step)+j*4+0] = src[0];
-      //ipli += 4;
-      src += 4;
-    }
-  }
-
+  memcpy(image->imageData, in, size);
 
   /*
     no face*
@@ -137,60 +141,63 @@ void FaceBl0r::update() {
      - no more face
        no face*
    */
+#define CHECK 25
+#define RECHECK 25
+  if(face_notfound>0) {
 
-  if(!face_found) {
-      face_rect = detect_face(image, cascade, storage);
-      // if face detected
+      if(face_notfound % CHECK == 0)
+          face_rect = detect_face(image, cascade, storage);
+
+      // if no face detected
       if (!face_rect) {
-          memcpy(out,in,size);
+          face_notfound++;
+          memcpy(out, image->imageData, size);
+          return;
+      } else {
+          //track detected face with camshift
+          if(tracked_obj)
+              destroy_tracked_object(tracked_obj);
+          tracked_obj = create_tracked_object(image, face_rect);
+          face_notfound = 0;
+          face_found++;
+      }
+
+  }
+
+  if(face_found>0) { 
+      //track the face in the new frame
+      face_box = camshift_track_face(image, tracked_obj);
+
+      if( ( face_box.size.width < 10 ) // para
+          || (face_box.size.height < 10 ) 
+          || (face_box.size.width > 500 )
+          || (face_box.size.height > 500 )
+          ) {
+          
+          face_found = 0;
+          face_notfound++;
           return;
       }
-      //track detected face with camshift
-      tracked_obj = create_tracked_object(image, face_rect);
-      face_found = true;
-  }
-
-  //track the face in the new frame
-  face_box = camshift_track_face(image, tracked_obj);
-
-  if( ( face_box.size.width < 10 )
-      || (face_box.size.height <10 )
-      || (face_box.size.width > 500 )
-      || (face_box.size.height > 500 )
-      ) {
-
-      face_found = false;
-      return;
-  }
 
 ////////////////////////////////////////////////////////////////////////
-  cvSetImageROI (image, tracked_obj->prev_rect);
+      cvSetImageROI (image, tracked_obj->prev_rect);
 //  cvSmooth (image, image, CV_BLUR, 22, 22, 0, 0);
-      cvSmooth (image, image, CV_BLUR, 11, 11, 0, 0);
+      cvSmooth (image, image, CV_BLUR, 23, 23, 0, 0);
 //      cvSmooth (image, image, CV_GAUSSIAN, 11, 11, 0, 0);
-  cvResetImageROI (image);
+      cvResetImageROI (image);
 ////////////////////////////////////////////////////////////////////////
       
-  //outline face ellipse
-  cvEllipseBox(image, face_box, CV_RGB(255,0,0), 3, CV_AA, 0);
+      //outline face ellipse
+      cvEllipseBox(image, face_box, CV_RGB(255,0,0), 2, CV_AA, 0);
 
-//  memcpy(out,image->imageData,size);
-  src = (unsigned char *)in;
-
-  for (i = 0; (i < height); i++) {
-    for (j = 0; (j < width); j++) {
-
-//        ipli[(i*step)+j*4+0] = src[0];
-        dst[3] = src[3];
-        dst[2] = ipli[(i*step)+j*4+2];
-        dst[1] = ipli[(i*step)+j*4+1];
-        dst[0] = ipli[(i*step)+j*4+0];
-      //ipli += 4;
-        dst += 4;
-        src += 4;
-    }
+      face_found++;
+      if(face_found % RECHECK == 0)
+          face_notfound = 1; // try recheck
+      
   }
 
+  memcpy(out, image->imageData, size);
+  cvReleaseImage(&image);
 }
 
 /* Given an image and a classider, detect and return region. */
@@ -202,14 +209,15 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
   
   //get a sequence of faces in image
   CvSeq *faces = cvHaarDetectObjects(image, cascade, storage,
-     1.1,                       //increase search scale by 10% each pass
-     6,                         //require 6 neighbors
+     1.2,                       //increase search scale by 50% each pass
+     2,                         //require 2 neighbors
      CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
      cvSize(0, 0));             //use default face size from xml
 
   //if one or more faces are detected, return the first one
   if(faces && faces->total)
     rect = (CvRect*) cvGetSeqElem(faces, 0);
+
 
   return rect;
 }
