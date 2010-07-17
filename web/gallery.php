@@ -34,36 +34,74 @@ $smarty->plugins_dir   = array('/usr/share/php/smarty/plugins');
 
 
 
-$filter = $_GET["filter"];
+$filter    = $_GET["filter"];
+$generator = $_GET["generator"];
+$mixer2    = $_GET["mixer2"];
+$mixer3    = $_GET["mixer3"];
 
-if($filter) { // filter selected
+if( $filter || $generator || $mixer2 || $mixer3 ) { // pages selected
 
-  $smarty->assign("page_hgroup", "<h1>Frei0r filter :: $filter</h1>");
+  if($filter) {
 
-  $fd = fopen("filter/$filter.html","r");
-
-  if(!$fd) { $selection = NULL; }
-  else {
-    $selection = "filter/$filter.html";
-    fclose($fd);
-  }
-
-} else {
-
-  $generator = $_GET["generator"];
-
-  if($generator) { // generator selected
+    $smarty->assign("page_hgroup", "<h1>Frei0r filter :: $filter</h1>");
+    
+    $fd = fopen("filter/$filter.html","r");
+    
+    if(!$fd) { $selection = NULL; }
+    else {
+      $selection = "filter/$filter.html";
+      fclose($fd);
+    }
+    
+  } else if($generator) {
 
     $smarty->assign("page_hgroup", "<h1>Frei0r generator :: $generator</h1>");
-  } else {
+    
+    $fd = fopen("generator/$generator.html","r");
+    
+    if(!$fd) { $selection = NULL; }
+    else {
+      $selection = "generator/$generator.html";
+      fclose($fd);
+    }
 
-    $smarty->assign("page_hgroup", "<h1>Frei0r plugin gallery</h1>");
+  } else if($mixer2) {
 
-    $selection = "gallery-index.html";
-    // TODO mixer2 and mixer3
+    $smarty->assign("page_hgroup", "<h1>Frei0r mixer-2 :: $mixer2</h1>");
+    
+    $fd = fopen("mixer2/$mixer2.html","r");
+    
+    if(!$fd) { $selection = NULL; }
+    else {
+      $selection = "mixer2/$mixer2.html";
+      fclose($fd);
+    }
+
+  } else if($mixer3) {
+
+    $smarty->assign("page_hgroup", "<h1>Frei0r mixer-3 :: $mixer3</h1>");
+    
+    $fd = fopen("mixer3/$mixer3.html","r");
+    
+    if(!$fd) { $selection = NULL; }
+    else {
+      $selection = "mixer3/$mixer3.html";
+      fclose($fd);
+    }
+
   }
 
 }
+
+if(!$selection) {
+  
+  $smarty->assign("page_hgroup", "<h1>Frei0r plugin gallery</h1>");
+  
+  $selection = "gallery-index.html";
+  
+}
+  
+
 
 
 $smarty->assign("page_class",  "software org-mode");
