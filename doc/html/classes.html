@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>frei0r: Plugin Locations</title>
+<title>frei0r: Alphabetical List</title>
 <link href="doxygen.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -51,36 +51,25 @@ window.onload = initDynSections;
     <ul>
       <li><a href="index.html"><span>Main&nbsp;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
-      <li><a href="classes.html"><span>Data&nbsp;Structures</span></a></li>
+      <li class="current"><a href="classes.html"><span>Data&nbsp;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li><a href="dirs.html"><span>Directories</span></a></li>
     </ul>
   </div>
+  <div class="tabs">
+    <ul>
+      <li class="current"><a href="classes.html"><span>Alphabetical&nbsp;List</span></a></li>
+      <li><a href="annotated.html"><span>Data&nbsp;Structures</span></a></li>
+      <li><a href="functions.html"><span>Data&nbsp;Fields</span></a></li>
+    </ul>
+  </div>
 </div>
 <div class="contents">
-<h1>Plugin Locations</h1><table border="0" cellpadding="0" cellspacing="0">
-<tr><td></td></tr>
-</table>
-<h2><a class="anchor" name="sec_pluglocations">
-Plugin Locations</a></h2>
-For Unix platforms there are rules for the location of frei0r plugins.<p>
-frei0r 1.x plugin files should be located in<p>
-<ul>
-<li>(1) /usr/lib/frei0r-1/&lt;vendor&gt;</li><li>(2) /usr/local/lib/frei0r-1/&lt;vendor&gt;</li><li>(3) $HOME/.frei0r-1/lib/&lt;vendor&gt;</li></ul>
-<p>
-Examples:<p>
-<ul>
-<li>/usr/lib/frei0r-1/mob/flippo.so</li><li>/usr/lib/frei0r-1/drone/flippo.so</li><li>/usr/local/lib/frei0r-1/gephex/coma/invert0r.so</li><li>/home/martin/.frei0r-1/lib/martin/test.so</li></ul>
-<p>
-Like in these examples plugins should be placed in "vendor" subdirs to reduce name clashes. However, &lt;vendor&gt; is optional and may be left blank.<h3><a class="anchor" name="sec_order">
-Plugin Loading Order</a></h3>
-The application shall load plugins in the following order: 3, 2, 1. If a name clash occurs (two or more frei0r plugins with identical effect name), the plugins in directory 3 have precedence over plugins in directory 2, and those in directory 2 have precedence over plugins in directory 1.<p>
-This makes it possible for users to "override" effects that are installed in system wide directories by placing plugins in their home directory.<p>
-The order of loading plugins inside each of the directories 1, 2, and 3 is not defined.<h3><a class="anchor" name="sec_path">
-FREI0R_PATH Environment Variable</a></h3>
-If the environment variable FREI0R_PATH is defined, then it shall be considered a colon separated list of directories which replaces the default list.<p>
-For example:<p>
-FREI0R_PATH=/home/foo/frei0r-plugins:/usr/lib/frei0r-1:/etc/frei0r </div>
+<h1>Data Structure Index</h1><p><div class="qindex"><a class="qindex" href="#letter_F">F</a></div><p>
+<table align="center" width="95%" border="0" cellspacing="0" cellpadding="0">
+<tr><td><a name="letter_F"></a><table border="0" cellspacing="0" cellpadding="0"><tr><td><div class="ah">&nbsp;&nbsp;F&nbsp;&nbsp;</div></td></tr></table>
+</td><td><a class="el" href="structf0r__param__color.html">f0r_param_color</a>&nbsp;&nbsp;&nbsp;</td><td><a class="el" href="structf0r__param__info.html">f0r_param_info</a>&nbsp;&nbsp;&nbsp;</td><td><a class="el" href="structf0r__param__position.html">f0r_param_position</a>&nbsp;&nbsp;&nbsp;</td><td><a class="el" href="structf0r__plugin__info.html">f0r_plugin_info</a>&nbsp;&nbsp;&nbsp;</td></tr></table><p><div class="qindex"><a class="qindex" href="#letter_F">F</a></div><p>
+</div>
 <hr size="1"><address style="text-align: right;"><small>Generated on Mon Jul 19 21:20:58 2010 for frei0r by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.5.6 </small></address>
