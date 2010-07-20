@@ -1,0 +1,10 @@
+EXPORTS
+	f0r_init
+	f0r_deinit
+	f0r_get_plugin_info
+	f0r_get_param_info
+	f0r_construct
+	f0r_destruct
+	f0r_set_param_value
+	f0r_get_param_value
+	f0r_update2
