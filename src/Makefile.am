@@ -18,7 +18,7 @@ alphaover.la  darken.la      gamma.la          ising0r.la      overlay.la    sof
 alphaxor.la   delay0r.la                lighten.la      pixeliz0r.la  squareblur.la  contrast0r.la\
 blend.la      difference.la  grain_extract.la  lissajous0r.la  saturat0r.la\
 subtract.la letterb0xed.la R.la G.la B.la RGB.la composition.la alphainjection.la\
-water.la nervous.la baltan.la partik0l.la cartoon.la vertigo.la delaygrab.la \
+nervous.la baltan.la partik0l.la cartoon.la vertigo.la delaygrab.la \
 glow.la lenscorrection.la transparency.la \
 colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
 cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la \
@@ -43,11 +43,6 @@ rgbparade_la_LIBADD = @GAVL_LIBS@
 endif
 
 if HAVE_OPENCV
-plugin_LTLIBRARIES += facedetect.la
-facedetect_la_SOURCES = filter/facedetect/facedetect.c
-facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
-facedetect_la_LIBADD = @OPENCV_LIBS@
-
 plugin_LTLIBRARIES += facebl0r.la
 facebl0r_la_SOURCES = filter/facebl0r/facebl0r.cpp
 facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
@@ -63,7 +58,6 @@ transparency_la_SOURCES = filter/transparency/transparency.c
 lenscorrection_la_SOURCES = filter/lenscorrection/lenscorrection.c
 glow_la_SOURCES = filter/glow/glow.c filter/glow/blur.h
 cartoon_la_SOURCES = filter/cartoon/cartoon.cpp
-water_la_SOURCES = filter/water/water.cpp
 nervous_la_SOURCES = filter/nervous/nervous.cpp
 baltan_la_SOURCES = filter/baltan/baltan.cpp
 delaygrab_la_SOURCES = filter/delaygrab/delaygrab.cpp

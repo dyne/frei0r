@@ -5,7 +5,7 @@ if (${GAVL_FOUND})
 endif (${GAVL_FOUND})
 
 if (${OpenCV_FOUND})
-    add_subdirectory (facedetect)
+    add_subdirectory (facebl0r)
 endif (${OpenCV_FOUND})
 
 add_subdirectory (3dflippo)
@@ -56,4 +56,3 @@ add_subdirectory (tint0r)
 add_subdirectory (transparency)
 add_subdirectory (twolay0r)
 add_subdirectory (vertigo)
-add_subdirectory (water)
