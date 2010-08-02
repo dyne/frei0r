@@ -1,0 +1,70 @@
+coloradj*
+
+These plugins are for manual color adjustment.
+For (semi)automatic color correction, use "balanc0r" and/or
+"three_point_balance" plugins.
+
+
+Included are the following plugins:
+
+coloradj_RGB:	simple RGB manual color adjustment
+
+
+Written by Marko Cebokli,  jul 2010,  and released under GNU GPL
+
+
+RELEASE NOTES
+
+** jul 2010
+Version 0.1
+"pre-alpha" (throw it out and see what happens... :-)
+
+
+
+
+
+	****** DESCRIPTIONS OF EACH PLUGIN FOLLOW ******
+
+COLORADJ_RGB
+
+This plugin is for simple manual color adjustment by RGB channel, either
+through adding constants, or changing the channel gammas or gains.
+
+By "simple" I mean that it works channel-wise, no crosstalk. The
+off-diagonal elements of the transform matrix are zero - no color
+crosstalk, no color space rotation.
+But this should be sufficient for many tasks. For example, when
+shooting under tungsten light, the blue signal will not migrate into
+red, it will simply be too small. Amplifying the blue (and a bit
+of green too) should be all that is needed. Similar, an underwater
+shot will simply be red deficient, needing some red boost, etc.
+
+parameters:
+
+R,G,B:
+these determine the change in each of the three color channels.
+
+Action:
+"Add constant"		adds a fixed value between -150 and +150 (this
+			is sometimes called "black level" or "setup").
+"Change gamma"		changes channel gamma between 0.3333 and 3.0.
+"Multiply"		multiplies channel with a value between 0.3333
+			and 3.0 (sometimes called "gain" or "contrast")
+
+NOTE1: to apply more than one action above, use cascaded instances of
+coloradj_RGB.
+NOTE2: "Add constant" simply shifts the RGB "cube" colorspace. This
+means, that on one end we are left with empty space, which is filled
+with zeros, and on the other end, values can "fall outside", and in this
+case they will be truncated to max (255).
+"Change gain" changes the size of the cube, keeping the "black" corner
+fixed, affecting predominately highlights, but the other end can still
+"fall out" and get 255 truncated.
+"Change gamma" keeps the whole cube in the same place, just stretches
+and squeezes its interior, so no zero filling or truncation is necessary.
+To visualize this plugin's actions, apply it to "test_pat_L" pattern 2,
+and watch the result with "pr0file".
+
+Keep luma:
+Fixes the luma value, so that the sliders only affect color.
+
