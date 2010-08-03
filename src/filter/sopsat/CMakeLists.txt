@@ -1,5 +1,5 @@
-set (SOURCES colordecisionlist.cpp)
-set (TARGET colordecisionlist)
+set (SOURCES sopsat.cpp)
+set (TARGET sopsat)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})

@@ -23,13 +23,42 @@
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 
-//struct SOP {
-//    float slope;
-//    float offset;
-//    float power;
-//} sopR, sopG, sopB, sopA;
+/**
+  This filter implements a standard way of color correction proposed by
+  the American Society of Cinematographers: The Color Decision List, also
+  known as the
 
-class ColorDecisionList : public frei0r::filter
+     ASC CDL
+
+  More information about the ASC CDL can be found on Wikipedia[1], and
+  the current revision of the specification, including example code, can
+  be obtained by sending a mail to asc-cdl at theasc dot com. (Really works.)
+
+  The ASC CDL is a standard format for basic primary color correction (primary
+  meaning affecting the whole image and not only selected parts). Even big
+  editing systems use it :) This filter only obtains the values; Importing and
+  exporting to one of the possible ASC CDL exchange files must be done elsewhere.
+
+  Basically there are two stages in the correction:
+  1. SOP correction for each channel separately
+  2. Overall saturation correction
+  All corrections work on [0,1], so the RGB(A) values need to be transposed
+  from {0,...,255} to [0,1].
+  1. SOP correction
+     * Slope:   out = in * slope;   0 <= slope < \infty
+     * Offset:  out = in + offset;  -\infty < offset < \infty
+     * Power:   out = in^power;     0 < power < \infty
+  2. Saturation
+     * Luma:    Y = 0.2126 R + 0.7152 G + 0.0722 B (according to Rec. 709)
+     * Forall channels:
+                out = luma + sat * (in-luma)
+  As the values may exceed 1 (or 0), they need to be clamped where necessary.
+
+
+  [1] http://en.wikipedia.org/wiki/Color_Decision_List
+ */
+
+class SOPSat : public frei0r::filter
 {
 
 public:
@@ -46,8 +75,9 @@ public:
     f0r_param_double gPower;
     f0r_param_double bPower;
     f0r_param_double aPower;
+    f0r_param_double saturation;
 
-    ColorDecisionList(unsigned int, unsigned int)
+    SOPSat(unsigned int, unsigned int)
     {
 
         register_param(rSlope, "rSlope", "Slope of the red color component");
@@ -62,6 +92,7 @@ public:
         register_param(gPower, "gPower", "Power (Gamma) of the green color component");
         register_param(bPower, "bPower", "Power (Gamma) of the blue color component");
         register_param(aPower, "aPower", "Power (Gamma) of the alpha component");
+        register_param(saturation, "saturation", "Overall saturation");
         rSlope = 1;
         gSlope = 1;
         bSlope = 1;
@@ -74,16 +105,7 @@ public:
         gPower = 1;
         bPower = 1;
         aPower = 1;
-
-
-//        sopR.slope = .7;
-//        sopR.offset = 0.3;
-//        sopR.power = 1.5;
-//        sopG.slope = 1;
-//        sopG.offset = 0;
-//        sopG.power = 1;
-//        sopB = sopG;
-//        sopA = sopG;
+        saturation = 200;
 
         // Pre-build the lookup table.
         // For 1080p, rendering a 5-second video took
@@ -95,11 +117,11 @@ public:
         m_lutG = (unsigned char *) malloc(256*sizeof(char));
         m_lutB = (unsigned char *) malloc(256*sizeof(char));
         m_lutA = (unsigned char *) malloc(256*sizeof(char));
-
         updateLUT();
+
     }
     
-    ~ColorDecisionList()
+    ~SOPSat()
     {
         delete m_lutR;
         delete m_lutG;
@@ -115,11 +137,31 @@ public:
         unsigned char *pixel = (unsigned char *) in;
         unsigned char *dest = (unsigned char *) out;
 
-        for (unsigned int i = 0; i < size; i++) {
-            *dest++ = m_lutR[*pixel++];
-            *dest++ = m_lutG[*pixel++];
-            *dest++ = m_lutB[*pixel++];
-            *dest++ = m_lutA[*pixel++];
+        if (fabs(m_sat-1) < 0.001) {
+            // Calculating the saturation is expensive. So first check whether
+            // we really need to do it.
+            // Keeping the if/else outside of the loop gives a little speed gain.
+            // Worth the duplicate code, as only 4 lines so far :)
+
+            printf("Saturation: No change.\n");
+            for (unsigned int i = 0; i < size; i++) {
+                *dest++ = m_lutR[*pixel++];
+                *dest++ = m_lutG[*pixel++];
+                *dest++ = m_lutB[*pixel++];
+                *dest++ = m_lutA[*pixel++];
+            }
+        } else {
+            printf("Saturation is %f.\n", m_sat);
+            double luma;
+            for (unsigned int i = 0; i < size; i++) {
+                luma =   0.2126 * m_lutR[*(pixel+0)]
+                       + 0.7152 * m_lutG[*(pixel+1)]
+                       + 0.0722 * m_lutB[*(pixel+2)];
+                *dest++ = CLAMP0255(luma + m_sat*(m_lutR[*pixel++]-luma));
+                *dest++ = CLAMP0255(luma + m_sat*(m_lutG[*pixel++]-luma));
+                *dest++ = CLAMP0255(luma + m_sat*(m_lutB[*pixel++]-luma));
+                *dest++ = m_lutA[*pixel++];
+            }
         }
     }
 
@@ -129,21 +171,25 @@ private:
     unsigned char *m_lutB;
     unsigned char *m_lutA;
 
+    double m_sat;
+
     void updateLUT() {
-        double rS = rSlope*10;
-        double gS = gSlope*10;
-        double bS = bSlope*10;
-        double aS = aSlope*10;
+        double rS = rSlope;
+        double gS = gSlope;
+        double bS = bSlope;
+        double aS = aSlope;
 
-        double rO = (rOffset-0.5);
-        double gO = (gOffset-0.5);
-        double bO = (bOffset-0.5);
-        double aO = (aOffset-0.5);
+        double rO = rOffset;
+        double gO = gOffset;
+        double bO = bOffset;
+        double aO = aOffset;
 
-        double rP = rPower*10;
-        double gP = gPower*10;
-        double bP = bPower*10;
-        double aP = aPower*10;
+        double rP = rPower;
+        double gP = gPower;
+        double bP = bPower;
+        double aP = aPower;
+
+        m_sat = saturation;
 
         printf("rS: %f, %f\n", rSlope, rS);
         printf("rO: %f, %f\n", rOffset, rO);
@@ -169,8 +215,8 @@ private:
 
 
 
-frei0r::construct<ColorDecisionList> plugin("Color Decision List",
-                "ASC CDL test",
+frei0r::construct<SOPSat> plugin("SOP/Sat",
+                "Slope/Offset/Power and Saturation color corrections according to the ASC CDL (Color Decision List)",
                 "Simon A. Eugster (Granjow)",
                 0,1,
                 F0R_COLOR_MODEL_RGBA8888);
