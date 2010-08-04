@@ -256,7 +256,7 @@ else		//alpha controlled
 		a=(inframe[i]>>24)&255;
 		r = (255-a)*(inframe[i]&255) + a*lut->r[inframe[i]&255];
 		g = (255-a)*((inframe[i]>>8)&255) + a*lut->g[(inframe[i]>>8)&255];
-		b = (255-a)*((inframe[i]>>16)&255) + a*lut->g[(inframe[i]>>16)&255];
+		b = (255-a)*((inframe[i]>>16)&255) + a*lut->b[(inframe[i]>>16)&255];
 		outframe[i] = r/255 + ((g/255)<<8) + ((b/255)<<16);
 		outframe[i] = outframe[i] + (inframe[i]&0xFF000000);
 		}
