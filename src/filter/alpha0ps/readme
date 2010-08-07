@@ -1,0 +1,146 @@
+alpha0ps
+
+These plugins are for alpha channel manipulation
+
+
+Included are the following plugins:
+
+alpha0ps:	shrink,grow,threshold and visualize alpha
+alphagrad:	fill alpha channel with a gradient
+alphaspot:	draw simple shapes into the alpha channel
+
+
+Written by Marko Cebokli,  aug 2010,  and released under GNU GPL
+
+
+RELEASE NOTES
+
+** aug 2010
+Version 0.1
+"pre-alpha" (throw it out and see what happens... :-)
+
+
+
+ALPHAOPS:
+
+This plugin can shrink, grow, threshold and invert the alpha
+channel. It is mainly intended to improve keying edges.
+It can also display the alpha channel in various ways, to enable
+quick assessment of the effect.
+It is cascadable, so for example one can do a soft shrink first
+and then threshold, which gives a slightly different result than
+a hard shrink.
+
+Parameters:
+
+Display:
+what to display. Choices are seven: Image, Alpha as gray, Gray+red,
+Selection on black, Selection on gray, Selection on white and
+Selection on checkers.
+This is intended for monitoring during adjustment mostly. After
+adjusting the parameters, it should be left on "Image", which lets
+the unchanged input image through - this plugin is intended to
+change only the alpha channel...
+
+Display input alpha:
+use input alpha for the display function above. (Check what alpha
+we are getting on the input)
+
+Operation:
+select the operation to be done on the alpha channel. Currently
+there are six choices: NO OP, Shave, Shrink hard, Shrink soft, Grow
+hard, Grow soft, Threshold.
+"Shave" tris to remove the "hairy" stuff, and also shrinks the selecton
+a bit.
+The "hard" operations introduce no new values to the alpha channel,
+so if you have a "hard" key (only 0 and 255) it will stay that way.
+The "soft" operations will introduce interpolated values, making
+the edge softer.
+NOTE: the shave, shrink and grow operations are quite slow, because they
+do many conditional operations on each pixel.
+
+Threshold:
+this is only used for the Threshold operation.
+
+Shrink/grow amount:
+how far the shrinking/growing will extend.
+
+Invert:
+Inverts the input alpha channel, transparent will become opaque
+and vice versa.
+
+
+
+
+ALPHAGRAD:
+
+This is a very simple plugin, that just fills the alpha channel
+with a specified gradient.
+It's purpose is to enable, together with alpha controlled color
+manipulation, the use of graduated filters, for example like the
+Cokin series #121, #122, #124, #150 and similar.
+It is cascadable, allowing work with pre-existing alpha.
+
+Parameters:
+
+Position:
+shift in the direction of gradient, for positioning the
+gradient.
+
+Transition width:
+Width of the gradient slope between min and max values.
+
+Tilt:
+rotation of the gradient direction.
+
+Min:
+minimum value of the alpha channel, "before" the gradient.
+
+Max:
+maximum value of the alpha channel, "after" the gradient.
+
+Operation:
+slects between "Draw on clear", "Min", "Max", "Add" and "Subtract".
+The last four options combine the drawn gradient with pre-existing
+alpha.
+
+
+
+
+ALPHASPOT
+
+This is a simple plugin, that can draw a few simple shapes into
+the alpha channel. It is intended for "in" and "out" masks in
+keying, non-rectangular picture-in-picture, spotlight effects etc.
+It is cascadable, allowing work with pre-existing alpha and
+building of more complex shapes.
+
+Parameters:
+
+Shape:
+selects between four shapes: rectangle, round, triangle and
+diamond.
+
+Pozx, pozy:
+position of the drawn shape.
+
+Sizx, sizy:
+size of the drawn shape.
+
+Tilt:
+rotation of the drawn shape.
+
+Transition width:
+width of the soft border.
+
+Min:
+value of alpha outside of the shape.
+
+Max:
+value of alpha inside of the shape.
+
+Operation:
+slects between Draw on clear, Min, Max, Add, Subtract. The last
+four options combine the drawn shape with pre-existing alpha.
+
+
