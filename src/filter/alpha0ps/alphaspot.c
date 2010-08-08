@@ -57,6 +57,7 @@ void gen_rec_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
 int i,j;
 float d1,d2,d,db,st,ct,g,is1,is2;
 
+if ((siz1==0.0)||(siz2==0.0)) return;
 st=sinf(tilt);
 ct=cosf(tilt);
 is1=1.0/siz1;
@@ -134,6 +135,7 @@ void gen_tri_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
 int i,j;
 float d1,d2,d3,d4,d,st,ct,is1,is2,k5,lim,db,g;
 
+if ((siz1==0.0)||(siz2==0.0)) return;
 st=sinf(tilt);
 ct=cosf(tilt);
 is1=1.0/siz1;
@@ -181,6 +183,7 @@ void gen_dia_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
 int i,j;
 float d1,d2,d,db,st,ct,is1,is2,g;
 
+if ((siz1==0.0)||(siz2==0.0)) return;
 st=sinf(tilt);
 ct=cosf(tilt);
 is1=1.0/siz1;
