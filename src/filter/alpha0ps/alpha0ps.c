@@ -380,7 +380,7 @@ info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
 info->minor_version=1;
 info->num_params=6;
-info->explanation="Diplay and manipulation of the alpha channel";
+info->explanation="Display and manipulation of the alpha channel";
 }
 
 //--------------------------------------------------
