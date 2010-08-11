@@ -18,7 +18,6 @@
  */
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "frei0r.hpp"
 #include "frei0r_math.h"
@@ -143,7 +142,6 @@ public:
             // Keeping the if/else outside of the loop gives a little speed gain.
             // Worth the duplicate code, as only 4 lines so far :)
 
-            printf("Saturation: No change.\n");
             for (unsigned int i = 0; i < size; i++) {
                 *dest++ = m_lutR[*pixel++];
                 *dest++ = m_lutG[*pixel++];
@@ -151,7 +149,6 @@ public:
                 *dest++ = m_lutA[*pixel++];
             }
         } else {
-            printf("Saturation is %f.\n", m_sat);
             double luma;
             for (unsigned int i = 0; i < size; i++) {
                 luma =   0.2126 * m_lutR[*(pixel+0)]
@@ -191,11 +188,8 @@ private:
 
         m_sat = saturation;
 
-        printf("rS: %f, %f\n", rSlope, rS);
-        printf("rO: %f, %f\n", rOffset, rO);
-        printf("rP: %f, %f\n", rPower, rP);
-
         for (int i = 0; i < 256; i++) {
+            // above0 avoids overflows for negative numbers.
             m_lutR[i] = CLAMP0255((int) (pow(above0((float)i/255 * rS + rO), rP)*255));
             m_lutG[i] = CLAMP0255((int) (pow(above0((float)i/255 * gS + gO), gP)*255));
             m_lutB[i] = CLAMP0255((int) (pow(above0((float)i/255 * bS + bO), bP)*255));
