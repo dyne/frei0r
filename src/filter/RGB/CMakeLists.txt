@@ -13,6 +13,10 @@ add_library (R MODULE ${R_SOURCES})
 add_library (G MODULE ${G_SOURCES})
 add_library (B MODULE ${B_SOURCES})
 
-install (TARGETS R LIBRARY DESTINATION lib)
-install (TARGETS G LIBRARY DESTINATION lib)
-install (TARGETS B LIBRARY DESTINATION lib)
+set_target_properties (R PROPERTIES PREFIX "")
+set_target_properties (G PROPERTIES PREFIX "")
+set_target_properties (B PROPERTIES PREFIX "")
+
+install (TARGETS R LIBRARY DESTINATION ${LIBDIR})
+install (TARGETS G LIBRARY DESTINATION ${LIBDIR})
+install (TARGETS B LIBRARY DESTINATION ${LIBDIR})

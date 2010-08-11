@@ -1,10 +1,12 @@
 set (SOURCES saturat0r.c)
+set (TARGET saturat0r)
 
 if (MSVC)
   set_source_files_properties (saturat0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (saturat0r MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS saturat0r LIBRARY DESTINATION lib)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

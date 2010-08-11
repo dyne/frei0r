@@ -96,12 +96,10 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   sprintf(haarcascade,"frontalface_default"); 
   //initialize
   snprintf(classifier,511,"/usr/share/opencv/haarcascades/haarcascade_%s.xml", haarcascade);
-  fprintf(stderr,"%s\n",classifier);
   // para
   cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
   storage = cvCreateMemStorage(0);
   //validate
-  assert(cascade && storage);
 
   face_rect = 0;
   image = 0;
@@ -207,17 +205,18 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
     
   CvRect* rect = 0;
   
-  //get a sequence of faces in image
-  CvSeq *faces = cvHaarDetectObjects(image, cascade, storage,
-     1.2,                       //increase search scale by 50% each pass
-     2,                         //require 2 neighbors
-     CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
-     cvSize(0, 0));             //use default face size from xml
-
-  //if one or more faces are detected, return the first one
-  if(faces && faces->total)
-    rect = (CvRect*) cvGetSeqElem(faces, 0);
-
+  if (cascade && storage) {
+      //get a sequence of faces in image
+      CvSeq *faces = cvHaarDetectObjects(image, cascade, storage,
+         1.2,                       //increase search scale by 50% each pass
+         2,                         //require 2 neighbors
+         CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
+         cvSize(0, 0));             //use default face size from xml
+    
+      //if one or more faces are detected, return the first one
+      if(faces && faces->total)
+        rect = (CvRect*) cvGetSeqElem(faces, 0);
+  }
 
   return rect;
 }

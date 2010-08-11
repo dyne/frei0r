@@ -1,10 +1,12 @@
 set (SOURCES tehRoxx0r.c)
+set (TARGET tehRoxx0r)
 
 if (MSVC)
   set_source_files_properties (tehRoxx0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (tehRoxx0r MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS tehRoxx0r LIBRARY DESTINATION lib)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

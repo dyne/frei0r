@@ -1,9 +1,11 @@
 set (SOURCES delaygrab.cpp)
+set (TARGET delaygrab)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (delaygrab MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS delaygrab LIBRARY DESTINATION lib)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

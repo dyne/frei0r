@@ -1,10 +1,12 @@
 set (SOURCES luminance.c)
+set (TARGET luminance)
 
 if (MSVC)
   set_source_files_properties (luminance.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (luminance MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS luminance LIBRARY DESTINATION lib)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

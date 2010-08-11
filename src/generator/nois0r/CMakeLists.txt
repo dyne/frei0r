@@ -1,9 +1,11 @@
 set (SOURCES nois0r.cpp)
+set (TARGET nois0r)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (nois0r MODULE ${SOURCES})
+add_library (${TARGET}  MODULE ${SOURCES})
+set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-install (TARGETS nois0r LIBRARY DESTINATION lib)
+install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})
