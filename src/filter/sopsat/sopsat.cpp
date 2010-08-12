@@ -142,6 +142,10 @@ public:
             // Keeping the if/else outside of the loop gives a little speed gain.
             // Worth the duplicate code, as only 4 lines so far :)
 
+<<<<<<< HEAD
+=======
+            printf("Saturation: No change.\n");
+>>>>>>> hub/master
             for (unsigned int i = 0; i < size; i++) {
                 *dest++ = m_lutR[*pixel++];
                 *dest++ = m_lutG[*pixel++];
@@ -149,6 +153,10 @@ public:
                 *dest++ = m_lutA[*pixel++];
             }
         } else {
+<<<<<<< HEAD
+=======
+            printf("Saturation is %f.\n", m_sat);
+>>>>>>> hub/master
             double luma;
             for (unsigned int i = 0; i < size; i++) {
                 luma =   0.2126 * m_lutR[*(pixel+0)]
