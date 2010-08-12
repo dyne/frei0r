@@ -24,7 +24,7 @@ colordistance.la perspective.la uvmap.la luminance.la edgeglow.la \
 cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la \
 bluescreen0r.la primaries.la threelay0r.la \
 plasma.la c0rners.la defish0r.la coloradj_RGB.la \
-alpha0ps.la alphagrad.la alphaspot.la
+alpha0ps.la alphagrad.la alphaspot.la d90stairsteppingfix.la  sopsat.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -103,6 +103,8 @@ coloradj_RGB_la_SOURCES = filter/coloradj/coloradj_RGB.c
 alpha0ps_la_SOURCES = filter/alpha0ps/alpha0ps.c
 alphagrad_la_SOURCES = filter/alpha0ps/alphagrad.c
 alphaspot_la_SOURCES = filter/alpha0ps/alphaspot.c
+d90stairsteppingfix_la_SOURCES = filter/d90stairsteppingfix/d90stairsteppingfix.cpp
+sopsat_la_SOURCES = filter/sopsat/sopsat.cpp
 
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
