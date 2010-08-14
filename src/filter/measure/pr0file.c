@@ -114,7 +114,7 @@ while (c[i]!=0)
 //justified
 //p=0 one decimal place    p=1 three decimal places
 //m=1 always show sign
-char *forstr(float a, int p, int m)
+void forstr(float a, int p, int m, char *s)
 {
 float b;
 char *p3=" %5.3f";
@@ -122,24 +122,26 @@ char *p3m="%+5.3f";
 char *p1=" %5.1f";
 char *p1m1=" %+4.1f";
 char *p1m2="  %+3.1f";
+char *ss;
 
 b=fabsf(a);
 
 if (p==1)
 	{
-	if (m==0) return p3; else return p3m;
+	if (m==0) ss=p3; else ss=p3m;
 	}
 else
 	{
 	if (m==0)
-		return p1;
+		ss=p1;
 	else
 		{
-		if (b<10.0) return p1m2;
-		if ((b>=10.0)&&(b<100.0)) return p1m1;
-		return p3m;
+		if (b<10.0) ss=p1m2;
+		if ((b>=10.0)&&(b<100.0)) ss=p1m1;
+		ss=p3m;
 		}
 	}
+sprintf(s,"%s",ss);
 }
 
 //-------------------------------------------------------------
@@ -151,6 +153,7 @@ void draw_line(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, floa
 int x,y,d,i;
 
 d =  (abs(xk-xz)>abs(yk-yz)) ? abs(xk-xz) : abs(yk-yz);
+if (d==0) return;
 for (i=0;i<d;i++)
   {
   x=xz+(float)i/d*(xk-xz);
@@ -238,6 +241,7 @@ void draw_trace(float_rgba *s, int w, int h, int x0, int y0, int vx, int vy, flo
 {
 int i,x,y,xs,ys;
 
+if (n==0) return;
 xs=x0; ys=y0+vy*(1.0-p[0]-ofs);
 for (i=0;i<n;i++)
   {
@@ -260,7 +264,7 @@ for (i=0;i<n;i++)
 void izpis(profdata p, char *str, int m, int u, int m1, int m2, int dit)
 {
 int i;
-char fs[256];
+char fs[256],frs[16];
 float data[8];
 
 for (i=0;i<8;i++) data[i]=0;
@@ -315,7 +319,8 @@ if ((dit&0x00000001)!=0)	//marker 1 value
   {
   if (m1>=0)
     {
-    sprintf(fs,"%%s Mk1=%s", forstr(data[0],1-u,0));
+    forstr(data[0],1-u,0,frs);
+    sprintf(fs,"%%s Mk1=%s", frs);
     sprintf(str,fs,str,data[0]);
     }
   else
@@ -325,7 +330,8 @@ if ((dit&0x00000004)!=0)	//marker 2 value
   {
   if (m2>=0)
     {
-    sprintf(fs,"%%s Mk2=%s", forstr(data[1],1-u,0));
+    forstr(data[1],1-u,0,frs);
+    sprintf(fs,"%%s Mk2=%s", frs);
     sprintf(str,fs,str,data[1]);
     }
   else
@@ -335,7 +341,8 @@ if ((dit&0x00000010)!=0)	//difference marker2-marker1
   {
   if ((m2>=0)&&(m1>=0))
     {
-    sprintf(fs,"%%s D=%s", forstr(data[2],1-u,0));
+    forstr(data[2],1-u,0,frs);
+    sprintf(fs,"%%s D=%s", frs);
     sprintf(str,fs,str,data[2]);
     }
   else
@@ -343,22 +350,26 @@ if ((dit&0x00000010)!=0)	//difference marker2-marker1
   }
 if ((dit&0x00000020)!=0)	//average of profile
   {
-  sprintf(fs,"%%s Avg=%s", forstr(data[3],1-u,0));
+  forstr(data[3],1-u,0,frs);
+  sprintf(fs,"%%s Avg=%s", frs);
   sprintf(str,fs,str,data[3]);
   }
 if ((dit&0x00000040)!=0)	//RMS of profile
   {
-  sprintf(fs,"%%s RMS=%s", forstr(data[4],1-u,0));
+  forstr(data[4],1-u,0,frs);
+  sprintf(fs,"%%s RMS=%s", frs);
   sprintf(str,fs,str,data[4]);
   }
 if ((dit&0x00000080)!=0)	//MIN of profile
   {
-  sprintf(fs,"%%s Min=%s", forstr(data[5],1-u,0));
+  forstr(data[5],1-u,0,frs);
+  sprintf(fs,"%%s Min=%s", frs);
   sprintf(str,fs,str,data[5]);
   }
 if ((dit&0x00000100)!=0)	//MAX of profile
   {
-  sprintf(fs,"%%s Max=%s", forstr(data[6],1-u,0));
+  forstr(data[6],1-u,0,frs);
+  sprintf(fs,"%%s Max=%s", frs);
   sprintf(str,fs,str,data[6]);
   }
 }
@@ -537,10 +548,10 @@ int i;
 
 for (i=0;i<w*h;i++)
 	{
-	sl[i].r=((float)(inframe[i] & 0x000000FF))/255.0;
-	sl[i].g=((float)((inframe[i] & 0x0000FF00)>>8))/255.0;
-	sl[i].b=((float)((inframe[i] & 0x00FF0000)>>16))/255.0;
-	sl[i].a=((float)((inframe[i] & 0xFF000000)>>24))/255.0;
+	sl[i].r=((float)(inframe[i] & 0x000000FF))*0.00392157;
+	sl[i].g=((float)((inframe[i] & 0x0000FF00)>>8))*0.00392157;
+	sl[i].b=((float)((inframe[i] & 0x00FF0000)>>16))*0.00392157;
+	sl[i].a=((float)((inframe[i] & 0xFF000000)>>24))*0.00392157;
 	}
 }
 

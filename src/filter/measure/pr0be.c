@@ -135,9 +135,11 @@ draw_rectangle(s, w, h, x1, y1+1, v,  1, black);
 }
 
 //--------------------------------------------------------
-//generates format string for 6 chars wide number
+//generates format string for 6 chars wide number, right
+//justified
 //p=0 one decimal place    p=1 three decimal places
-char *forstr(float a, int p, int m)
+//m=1 always show sign
+void forstr(float a, int p, int m, char *s)
 {
 float b;
 char *p3=" %5.3f";
@@ -145,24 +147,26 @@ char *p3m="%+5.3f";
 char *p1=" %5.1f";
 char *p1m1=" %+4.1f";
 char *p1m2="  %+3.1f";
+char *ss;
 
 b=fabsf(a);
 
 if (p==1)
 	{
-	if (m==0) return p3; else return p3m;
+	if (m==0) ss=p3; else ss=p3m;
 	}
 else
 	{
 	if (m==0)
-		return p1;
+		ss=p1;
 	else
 		{
-		if (b<10.0) return p1m2;
-		if ((b>=10.0)&&(b<100.0)) return p1m1;
-		return p3m;
+		if (b<10.0) ss=p1m2;
+		if ((b>=10.0)&&(b<100.0)) ss=p1m1;
+		ss=p3m;
 		}
 	}
+sprintf(s,"%s",ss);
 }
 
 //-------------------------------------------------------------
@@ -172,7 +176,7 @@ else
 //mm=1  print min/max
 void izpis(char *str, char *lab, stat s, int u, int m, int mm)
 {
-char fs[256];
+char fs[256],as[16],rs[16],ns[16],xs[16];
 
 if (u==1)
 	{
@@ -184,12 +188,18 @@ if (u==1)
 
 if (mm==1)
   {
-  sprintf(fs,"%s%s%s %s%s", lab, forstr(s.avg,1-u,m), forstr(s.rms,1-u,0), forstr(s.min,1-u,m), forstr(s.max,1-u,m));
+  forstr(s.avg,1-u,m,as);
+  forstr(s.rms,1-u,0,rs);
+  forstr(s.min,1-u,m,ns);
+  forstr(s.max,1-u,m,xs);
+  sprintf(fs,"%s%s%s %s%s", lab, as, rs, ns, xs);
   sprintf(str,fs,s.avg,s.rms,s.min,s.max);
   }
 else
   {
-  sprintf(fs,"%s%s%s", lab, forstr(s.avg,1-u,m), forstr(s.rms,1-u,0));
+  forstr(s.avg,1-u,m,as);
+  forstr(s.rms,1-u,0,rs);
+  sprintf(fs,"%s%s%s", lab, as, rs);
   sprintf(str,fs,s.avg,s.rms);
   }
 }
@@ -474,10 +484,10 @@ int i;
 
 for (i=0;i<w*h;i++)
 	{
-	sl[i].r=((float)(inframe[i] & 0x000000FF))/255.0;
-	sl[i].g=((float)((inframe[i] & 0x0000FF00)>>8))/255.0;
-	sl[i].b=((float)((inframe[i] & 0x00FF0000)>>16))/255.0;
-	sl[i].a=((float)((inframe[i] & 0xFF000000)>>24))/255.0;
+	sl[i].r=((float)(inframe[i] & 0x000000FF))*0.00392157;
+	sl[i].g=((float)((inframe[i] & 0x0000FF00)>>8))*0.00392157;
+	sl[i].b=((float)((inframe[i] & 0x00FF0000)>>16))*0.00392157;
+	sl[i].a=((float)((inframe[i] & 0xFF000000)>>24))*0.00392157;
 	}
 }
 
