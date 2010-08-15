@@ -312,7 +312,7 @@ switch (m>>24)	//select channel  (r,g,b....)  & copy data
     break;
   }
 
-if (u!=0) for (i=0;i<256;i++) data[i]=data[i]*255.0;
+if (u!=0) for (i=0;i<8;i++) data[i]=data[i]*255.0;
 
 for (i=0;i<256;i++) {fs[i]=0; str[i]=0;}
 if ((dit&0x00000001)!=0)	//marker 1 value
