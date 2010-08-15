@@ -25,7 +25,7 @@ cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la \
 bluescreen0r.la primaries.la threelay0r.la \
 plasma.la c0rners.la defish0r.la coloradj_RGB.la \
 alpha0ps.la alphagrad.la alphaspot.la d90stairsteppingfix.la  sopsat.la \
-pr0be.la pr0file.la
+pr0be.la pr0file.la select0r.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -108,6 +108,7 @@ d90stairsteppingfix_la_SOURCES = filter/d90stairsteppingfix/d90stairsteppingfix.
 sopsat_la_SOURCES = filter/sopsat/sopsat.cpp
 pr0be_la_SOURCES = filter/measure/pr0be.c filter/measure/measure.h filter/measure/font2.h
 pr0file_la_SOURCES = filter/measure/pr0file.c filter/measure/measure.h filter/measure/font2.h
+select0r_la_SOURCES = filter/select0r/select0r.c
 
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp

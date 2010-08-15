@@ -1,0 +1,82 @@
+select0r
+
+This plugin selects a range of colors, and creates a corresponding
+alpha channel. It is cascadable, allowing construction of complex
+color selection subspaces.
+
+
+Written by Marko Cebokli,  aug 2010,  and released under GNU GPL
+
+
+RELEASE NOTES
+
+** aug 2010
+Version 0.1
+"pre-alpha" (throw it out and see what happens... :-)
+
+
+
+DESCRIPTION
+
+parameters:
+
+Color to select:
+the color to select. This is the center point of the selected
+color subspace.
+
+Invert selection:
+When ON, the selected color will be transparent, as normally used
+with keying. When OFF (default) the selected color will be opaque,
+for exmaple for alpha controlled adjustment of that color only.
+
+Delta XXXX:
+These three parameters determine the size of the color subspace
+along each axis. Bigger value means bigger tolerance on that axis.
+For example, setting a high I delta (in ABI and HCI), will allow
+the selection of a specific color in both light and shadows, but
+will also discard most of the high-bandwidth luma signal, making
+the selection less spatially accurate.
+
+Selection subspace:
+specifies in which of the three color spaces (RGB, ABI, HCI) the
+delta controls will work. Both ABI and HCI are separated
+luma/chroma. HCI is a cylindrical "Hue Chromacity Intensity" space,
+and ABI is a cartesian version thereof. Both suffer from chroma
+subsampling, and will give less sharp results than RGB.
+NOTE1: chroma subsampling is not a fault of this plugin. Frei0r
+plugins work in RGB 4:4:4. If you supply it with a truly 4:4:4
+video, it will produce perfectly sharp alpha from all three color
+spaces.
+NOTE2: HCI is slow, because it has to calculate atan2() and hypot()
+for each pixel.
+NOTE3: ABI is based on the alpha an beta coordinates, upon which
+most of the Hxx type colorspaces are defined.
+See http://en.wikipedia.org/wiki/HSL_and_HSV
+
+Subspace shape:
+determines the shape of the color subspace. Options are: box,
+ellipsoid or diamond. Box is the biggest of them (by volume) and
+diamond the smallest. Imagine an octahedron inscribed inside an
+ellipsoid, which is in turn inscribed in a box. The tips of the
+diamond touch the ellipsoid, and the box, at the center of the
+sides of the box.
+
+Edge mode:
+has four options: "Hard", "Fat", "Normal" and "Skinny".
+"Hard" means the alpha channel will be thresholded to two values only,
+fully opaque and fully transparent. This is mainly useful for
+keying. 
+The remaining options ("Fat", "Normal" and "Skinny") create a gradual
+transition between transparent and opaque. Alpha will be a function of
+the difference of color from the selected color, with cutoff at the
+delta points.The fatter the choice, the more the selected areas are
+filled towards the rim. This is useful with alpha controlled color
+adjustment tools.
+
+Operation:
+determines the way in which the alpha channel will be written.
+The "min", "max", "add" and "subtract" options allow cascading
+of select0r plugins (or combination with other alpha-writting
+plugins). These options combine the current selection with the
+pre-existing alpha of the source material.
+This way complex selections can be built.
