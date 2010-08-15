@@ -876,6 +876,11 @@ switch (in->subsp)
 		break;
 	}
 
+//invert selection if required
+if (in->inv==1)
+	for (i=0;i<in->h*in->w;i++)
+		in->sl[i].a = 1.0 - in->sl[i].a;
+
 //apply alpha
 switch (in->op)
 	{
