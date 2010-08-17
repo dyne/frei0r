@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (select0r MODULE ${SOURCES})
 
-install (TARGETS select0r LIBRARY DESTINATION lib)
+install (TARGETS select0r LIBRARY DESTINATION ${LIBDIR})

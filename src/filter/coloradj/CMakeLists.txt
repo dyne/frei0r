@@ -7,4 +7,4 @@ endif (MSVC)
 
 add_library (coloradj_RGB MODULE ${SOURCES})
 
-install (TARGETS coloradj_RGB LIBRARY DESTINATION lib)
+install (TARGETS coloradj_RGB LIBRARY DESTINATION ${LIBDIR})
