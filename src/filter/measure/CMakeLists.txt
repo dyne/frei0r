@@ -10,5 +10,8 @@ endif (MSVC)
 add_library (pr0be  MODULE  ${B_SOURCES})
 add_library (pr0file  MODULE  ${F_SOURCES})
 
+set_target_properties (pr0be PROPERTIES PREFIX "")
+set_target_properties (pr0file PROPERTIES PREFIX "")
+
 install (TARGETS pr0be LIBRARY DESTINATION ${LIBDIR})
 install (TARGETS pr0file LIBRARY DESTINATION ${LIBDIR})
