@@ -79,7 +79,7 @@ void f0r_get_param_value(f0r_instance_t instance,
 __inline const long int lrintf(float x){
 	return (long int)(x+0.5);
 }
-#endif */ _MSC_VER */
+#endif /* _MSC_VER */
 
 void f0r_update2(f0r_instance_t instance,
 		 double time,

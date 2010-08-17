@@ -234,7 +234,7 @@ for (i=0;i<256;i++)
 
 //----------------------------------------------------
 //F0R_COLOR_MODEL_RGBA8888  little endian
-void apply_lut(uint32_t* inframe, uint32_t* outframe, int size, lut_s *lut, int ac)
+void apply_lut(const uint32_t* inframe, uint32_t* outframe, int size, lut_s *lut, int ac)
 {
 int i;
 uint32_t r,g,b,a;

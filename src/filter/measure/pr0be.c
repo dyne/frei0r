@@ -478,7 +478,7 @@ for (i=0;i<w*h;i++)
 //-----------------------------------------------------
 //converts the Frei0r rgba8888 color image into
 //internal float RGBA
-void color2floatrgba(uint32_t* inframe, float_rgba *sl, int w , int h)
+void color2floatrgba(const uint32_t* inframe, float_rgba *sl, int w , int h)
 {
 int i;
 
