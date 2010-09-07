@@ -567,7 +567,7 @@ void f0r_update(f0r_instance_t instance,
  * \param inframe2 the second incoming video frame
           (can be zero for sources and filters)
  * \param inframe3 the third incoming video frame
-          (can be zero for sources, filters and mixer3) 
+          (can be zero for sources, filters and mixer2) 
  * \param outframe the resulting video frame
  *
  * \see f0r_update
