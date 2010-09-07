@@ -131,10 +131,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	frame_src->planes[0] = (uint8_t *)rgbparade_image.pixel_data;
 	frame_dst->planes[0] = (uint8_t *)inst->scala;
 
-	/* Pad the source image to make it a stride of 16. */
-	gavl_video_frame_t* padded = gavl_video_frame_create(0);
-	padded->strides[0] = (rgbparade_image.width * 4 + 15) / 16 * 16;
-	padded->planes[0] = (unsigned char*)malloc( padded->strides[0] * rgbparade_image.height );
+	/* Pad the source image to make the stride a multiple of 16. */
+	gavl_video_frame_t* padded = gavl_video_frame_create( &format_src );
 	gavl_video_frame_copy( &format_src, padded, frame_src );
 
 	float transparent[4] = { 0.0, 0.0, 0.0, 0.0 };
