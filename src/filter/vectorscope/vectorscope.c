@@ -34,8 +34,8 @@
 #define OFFSET_B        16
 #define OFFSET_A        24
 
-#define SCOPE_WIDTH	255
-#define SCOPE_HEIGHT	255
+#define SCOPE_WIDTH	256
+#define SCOPE_HEIGHT	256
 
 /* c99 seems to be extra clever, and removes the definition of M_PI,
  * this adds it again */
