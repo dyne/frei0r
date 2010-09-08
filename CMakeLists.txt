@@ -5,6 +5,10 @@ list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 project (frei0r)
 
 find_package (OpenCV)
+include(FindPkgConfig)
+if (PKG_CONFIG_FOUND)
+   pkg_check_modules(GAVL gavl)
+endif (PKG_CONFIG_FOUND)
 
 include_directories (AFTER include)
 
