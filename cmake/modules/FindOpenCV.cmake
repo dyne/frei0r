@@ -129,6 +129,33 @@ else(EXISTS "${OpenCV_DIR}")
 endif(EXISTS "${OpenCV_DIR}")
 ##====================================================
 
+if(NOT OpenCV_FOUND)
+  include(FindPkgConfig)
+      if (PKG_CONFIG_FOUND)
+         pkg_check_modules(OpenCV opencv)
+      endif (PKG_CONFIG_FOUND)
+      set(OpenCV_DIR "${OpenCV_PREFIX}")
+
+      find_path(OpenCV_INCLUDE_DIR
+         NAMES cv.h
+         PATHS ${OpenCV_INCLUDEDIR} ${OpenCV_PREFIX}/include/opencv /usr/local/include/opencv /usr/include/opencv
+         NO_DEFAULT_PATH
+      )
+
+      find_library(OpenCV_LIBS
+         NAMES cv
+         PATHS ${OpenCV_LIBDIR} ${OpenCV_PREFIX}/lib /usr/lib /usr/local/lib
+         NO_DEFAULT_PATH
+      )
+
+      if(OpenCV_INCLUDE_DIR AND OpenCV_LIBS)
+         set(OpenCV_FOUND TRUE)
+         message(STATUS "OpenCV found in: ${OpenCV_PREFIX}")
+      endif(OpenCV_INCLUDE_DIR AND OpenCV_LIBS)
+
+
+endif(NOT OpenCV_FOUND)
+
 
 ##====================================================
 ## Print message
