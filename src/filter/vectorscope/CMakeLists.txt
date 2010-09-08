@@ -7,6 +7,7 @@ if (MSVC)
 endif (MSVC)
 
 include_directories (${GAVL_INCLUDE_DIRS})
+link_directories (${GAVL_LIBRARY_DIRS})
 LINK_LIBRARIES(${GAVL_LIBRARIES})
 
 add_library (${TARGET}  MODULE ${SOURCES})
