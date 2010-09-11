@@ -497,6 +497,13 @@ typedef void* f0r_param_t;
  * effect instance. Validity of the parameter pointer is handled by the
  * application thus the data must be copied by the effect.
  *
+ * Furthermore, if d an update event/signal is needed in a host
+ * application to notice when parameters have changed, this should be
+ * implemented inside its own update() call. The host application
+ * would presumably need to store the current value as well to see if
+ * it changes; to make this thread safe, it should store a copy of the
+ * current value in a struct which uses instance as a key.
+ *
  * \param instance the effect instance
  * \param param pointer to the parameter value
  * \param param_index index of the parameter
