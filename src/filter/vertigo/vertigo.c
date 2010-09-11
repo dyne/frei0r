@@ -33,7 +33,6 @@ typedef struct vertigo_instance
   unsigned int width;
   unsigned int height;
   int x,y,xc,yc;
-  int mode;
   double phase_increment;
   double zoomrate;
   double tfactor;
@@ -77,16 +76,11 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   switch(param_index)
   {
   case 0:
-    info->name = "Mode";
-    info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "The effect mode";
-    break;
-  case 1:
     info->name = "PhaseIncrement";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Phase increment";
     break;
-  case 2:
+  case 1:
     info->name = "Zoomrate";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Zoomrate";
@@ -112,7 +106,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->alt_buffer = inst->buffer + inst->pixels;
 
   inst->phase = 0.0;
-  inst->mode = 3;
   inst->phase_increment = 0.02;
   inst->zoomrate = 1.01;
 
@@ -145,14 +138,10 @@ void f0r_set_param_value(f0r_instance_t instance,
   switch(param_index)
   {
   case 0:
-    /* mode */
-    inst->mode = *((double*)param);
-    break;
-  case 1:
     /* phase_increment */
     inst->phase_increment = *((double*)param);
     break;
-  case 2:
+  case 1:
     /* zoomrate */
     inst->zoomrate = *((double*)param);
     inst->tfactor = (inst->xc+inst->yc) * inst->zoomrate;
@@ -169,14 +158,10 @@ void f0r_get_param_value(f0r_instance_t instance,
   switch(param_index)
   {
   case 0:
-    /* mode */
-    *((double*)param) = (double) (inst->mode);
-    break;
-  case 1:
     /* phase_increment */
     *((double*)param) = (double) (inst->phase_increment);
     break;
-  case 2:
+  case 1:
     /* zoomrate */
     *((double*)param) = (double) (inst->zoomrate);
     break;
@@ -255,7 +240,7 @@ void f0r_update(f0r_instance_t instance, double time,
       if(i<0) i = 0;
       if(i>=inst->pixels) i = inst->pixels;
       v = inst->current_buffer[i] & 0xfcfcff;
-      v = (v * inst->mode) + ((*src++) & 0xfcfcff);
+      v = (v * 3) + ((*src++) & 0xfcfcff);
       *dst++ = (v>>2);
       *p++ = (v>>2);
       ox += inst->dx;
