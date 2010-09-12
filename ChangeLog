@@ -1,5 +1,1302 @@
 
 *** See the Changes @section in include/frei0r.h or git log
 
-*** Follows git --log output:
+*** Follows git --log output (incomplete before 2008)
 
+commit 8a98507d11381d8fc83100548d2fe0b34c9ec63d
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sun Sep 12 23:00:13 2010 +0200
+
+    documentation updates
+
+commit 5ddbc498afa8f4c8468434dbd48e932635736e8f
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sat Sep 11 12:10:16 2010 +0200
+
+    added documentation on how to implement set_parameter events
+    from Salsaman's advice on mailinglist
+
+commit 9045c24113fe4b0a9656d985ded84b801fc676db
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sat Sep 11 12:03:22 2010 +0200
+
+    removed "mode" parameter from vertigo
+    not really significant to change that multiplier
+    it just provided a very trippy effect
+    but the parametrisation was out of 0-1. range
+
+commit 3d73e96f290e2de04302f2d6d92447ff2b2631e2
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Wed Sep 8 12:46:50 2010 -0700
+
+    These pkg-config OpenCV vars fix build with CMake on OS X.
+    
+    Tested on macports installation of OpenCV.
+
+commit f74724d3f5f32b28be3c0e3bbe519c19022f1ec3
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Wed Sep 8 11:57:42 2010 -0700
+
+    Add library dirs to CMake for gavl-based plugins.
+
+commit 79b25842e37ea0fb089154ada99a7c4a3dc13d8e
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Wed Sep 8 11:16:04 2010 -0700
+
+    Avoid redefining PI.
+
+commit 5761a5b26424593877ad0db428578f372aa55588
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Sep 7 22:48:49 2010 -0700
+
+    Fix crash on vectorscope in gavl_video_scaler_scale().
+    
+    Due to the scope stride not a multiple of 16.
+
+commit fd42c2d5935f45bb7daa5e099dc13e61a1095880
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Sep 7 22:19:20 2010 -0700
+
+    Fix CMake build for plugins dependent on gavl.
+
+commit 5ee9bb58203daf8802b4e180d5b4ea45a10646e7
+Author: Jean-Baptiste Mardelle <jb@kdenlive.org>
+Date:   Tue Sep 7 22:13:32 2010 -0700
+
+    CMake build fixes.
+    
+    Not sure what's the status of the CMake build system, but it has
+    problems finding the OpenCV library. Below is a patch using pkg-config
+    instead of the strange stuff used.
+    
+    This also highlighted the fact that the facebl0r effect has no
+    CMakeLists.txt in it's directory, a proposal for that file is also just
+    below.
+
+commit 87043513d7a44a6fe4b0d6327d34edebfcf76f68
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Sep 6 21:21:20 2010 -0700
+
+    Fix typo pointed out by salaman.
+
+commit dedcd3c64a3dfcf7212bc51f5004a2bd92b8ae4f
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Sep 6 21:14:46 2010 -0700
+
+    Simplify previous commit by letting gavl compute stride and allocate
+    frame data.
+
+commit b5659d84f05cff2b3a7e1f2ba35bd26bd18e82b9
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Sep 6 21:06:37 2010 -0700
+
+    Fix segfault in rgbparade.
+    
+    Due to stride of scala overlay not a multiple of 16 as required by
+    gavl_video_scaler_scale(). Hint provided by Burkhard Plaum.
+
+commit aa40efade5f35824c832eb173d9b0124ecd611bf
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Aug 17 01:17:25 2010 -0700
+
+    Bump package version to 1.2.0.
+    
+    Now that CMake builds for the most on Linux too and spec is at 1.2.
+
+commit 38945e118caa660b7b07a801a6868e37c1be6077
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Aug 16 22:04:42 2010 -0700
+
+    Remove lib prefix from new plugins.
+    
+    To be consistent with autotools build and other plugins.
+
+commit 12dcaff55e2d15454d34d8883fadb50771c1f365
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Aug 16 21:42:35 2010 -0700
+
+    Fix compiler warnings.
+
+commit b6c8180a7c11fca74694681a502d15a77d2b8a78
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Aug 16 21:41:36 2010 -0700
+
+    Fix installation target for some new plugins.
+
+commit 07e362483830df745b94ff7f34f9550cdf58a542
+Author: Marko Cebokli <s57uuu@hamradio.si>
+Date:   Sun Aug 15 18:05:03 2010 +0200
+
+    profile patch from Till
+
+commit 5d6d253e18cef1ae26eb53f339197633be6392ad
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Sun Aug 15 12:31:51 2010 +0200
+
+    select0r:  fixed inversion
+
+commit a3f8505636e51222c4d9289b8f9102575e69e594
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Sun Aug 15 11:28:47 2010 +0200
+
+    Add select0r plugin
+
+commit b4e184747bf8c800114457d1b7d5c6479c4f0f00
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Sat Aug 14 14:02:34 2010 +0200
+
+    pr0be, pr0file: fixed forstr() and /255
+
+commit f076b686416fab3bf46bc49f0e6b428ef9302e58
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Fri Aug 13 21:17:56 2010 +0200
+
+    Add pr0be and pr0file plugins
+
+commit 4d92058b198535024dfe0f637c0b18ffc69355da
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Thu Aug 12 09:41:27 2010 +0200
+
+    Makefile patch for SOP/Sat filters. Submitted by Till Theato.
+
+commit 55d09906041816ce6b206a3788827d86ca54ed91
+Merge: 352a4dd 07bb152
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Wed Aug 11 16:31:07 2010 +0200
+
+    Merge branch 'master' of git@code.dyne.org:frei0r
+
+commit 352a4dda88788e6cc49958efb0e406612a736829
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Wed Aug 11 16:28:19 2010 +0200
+
+    alpha0ps: corrected typo in description
+
+commit 07bb152d03cc8577ff636f77f180079e76329301
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Wed Aug 11 09:19:05 2010 +0200
+
+    SOPSat: printf removed
+
+commit b9bdd4482af53ac905d78ec78b73a0ed6a020a8f
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Tue Aug 3 23:18:15 2010 +0200
+
+    SOP/Sat Filter added (ASC CDL)
+
+commit f6367855c3caabb17fae26cc2c8394366aaf0086
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sun Aug 1 18:46:39 2010 +0200
+
+    Basic color decision list filter added. WIP.
+
+commit dde88ee139eb654f78976bbb675c17d0201c97e6
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sat Jul 10 16:51:44 2010 +0200
+
+    Made C99 flag compiler specific (gcc only)
+
+commit bf6c7a99d9b59eef389d7e1e062b40e849912d2a
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Fri Jul 9 21:43:31 2010 +0200
+
+    Adding cmake (lost on last commit), fix build
+
+commit 9e9f4b829e4742d6c0c49f4f601134f02877aa00
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Wed Jul 7 13:43:14 2010 +0200
+
+    cmake: no lib prefix for plugins anymore
+
+commit b102c0a08e2c7c291adb01a6d4518a5a6d859a3f
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Wed Jul 7 13:19:59 2010 +0200
+
+    cmake: No lib prefix for d90 filter
+
+commit 1ae9057438d6f6276ead3725d63184446a61b299
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Tue Jul 6 17:56:33 2010 +0200
+
+    Another about 5 % speed gain
+
+commit 8218dee35d3b2ede8b8bbd8785125094e8210794
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Tue Jul 6 17:36:03 2010 +0200
+
+    Use pointer arithmetics instead of struct. Speed gain: 20 %.
+
+commit b0fda3662326222fb0dbbf0151f0f909b689d366
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Mon Jul 5 18:23:54 2010 +0200
+
+    Comments/Explanations added, stdout removed
+
+commit 59adb444aa9b4f22b40e6769f27247a47893a118
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Mon Jul 5 17:17:28 2010 +0200
+
+    Removing Stair steps of 720p D90 videos is working
+
+commit 4f1fe99b3327b5e10bd31dce7e642de93fe9ccb6
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Mon Jul 5 12:10:42 2010 +0200
+
+    conversion to struct with byte hacking instead of relying on struct structure in memory
+
+commit afdda6af3f993b79aa07781b413d1616a33fe1bc
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Mon Jul 5 00:28:19 2010 +0200
+
+    not working yet.
+
+commit 46bfe8a51dbdb5b027dd259f82e6d6e2379c1e76
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sun Jul 4 17:47:40 2010 +0200
+
+    CMakeFiles.txt updated to install to lib/frei0r-1/ again
+
+commit 048da28d2c3b1f54635b46f40851856070b5b226
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sun Jul 4 17:02:06 2010 +0200
+
+    test-adding a filter
+
+commit 8a8ed6d60ada04cb9293ce4155d80a04bd32d667
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sun Jul 4 17:01:15 2010 +0200
+
+    Fixed: Compile issues, added C99 flags
+
+commit 7bc4da12485f83296aa099cf46365e65c105fbfe
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sun Jul 4 17:00:31 2010 +0200
+
+    Fixed: Compile issues, added C99 flags
+
+commit f02da964bdc42e98cabee78fcfbbb6e4ffc9d391
+Author: Simon Eugster <simon.eu@gmail.com>
+Date:   Sun Jul 4 16:59:30 2010 +0200
+
+    Fixed infinite loop (for i=0; i!=height; i+=4).
+
+commit 797d6dc5d80b0045916831f5131a6c2ec4403354
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Aug 9 16:04:51 2010 -0700
+
+    Remove assert and printf in faebl0r
+
+commit 513c5d188d44e661d850cacb51d1f058c673d8bb
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Sun Aug 8 08:58:24 2010 +0200
+
+    alphaspot, fixed potential /0
+
+commit f82fc9bd1a5e330d8d98ae8dcfb670c7985a7cc5
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Sat Aug 7 20:46:42 2010 +0200
+
+    Add alpha0ps, alphagrad and alphaspot plugins
+
+commit 0ee6384b0112d31723d5872c05a9e8ad3d18db54
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Wed Aug 4 21:12:34 2010 +0200
+
+    coloradj_RGB fixed blue channel alpha control
+
+commit 1ed90da9d14eadc72fc6e35c297738b6ec5e547a
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Tue Aug 3 18:06:21 2010 +0200
+
+    coloradj_RGB:  add cmake stuff
+
+commit 6873b0b0401818c0c683f5632dee520db70330f0
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Mon Aug 2 20:19:53 2010 +0200
+
+    Add coloradj_RGB readme file
+
+commit 4388de47d02834ec1de349b1b6f33cf722118da6
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Mon Aug 2 20:04:34 2010 +0200
+
+    Add coloradj_RGB source
+
+commit 25fd2940b2ad382df40badbd5a3e5068db4559bd
+Author: Marko Cebokli <mc@mcpc14.mcsite>
+Date:   Mon Aug 2 19:56:41 2010 +0200
+
+    Add coloradj_RGB plugin
+
+commit 5cb3ddcb92025cd6699e1cddf60a10281e0d39ab
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Jul 19 22:07:58 2010 -0700
+
+    Disable water and facedetect plugins.
+    
+    facedetect is replaced by facebl0r, and water is unstable.
+
+commit 456eb664c8ebae3cc040de1431429ae53118bd6b
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Jul 19 21:54:19 2010 -0700
+
+    Update list of contributors.
+    
+    Also, direct ChangeLog viewers to helpful places.
+
+commit f01bfef51a26de31cf7117a08be52e1593b34924
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Jul 19 21:47:06 2010 -0700
+
+    Update generated HTML docs for API version 1.2.
+    
+    These docs are what appears on piksel.org and are installed.
+
+commit e37fdf5f0a36924a18b961d4506ae1f8611fdebb
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Jul 19 21:35:54 2010 -0700
+
+    Update API specification for version 1.2.
+
+commit 166d8dc0d933652f9893b36f79815b0fd63a20b9
+Merge: 74be45b a1d7bb9
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Jul 16 12:59:00 2010 +0100
+
+    Merge branch 'facebl0r'
+
+commit 74be45b0bf7b3a2644016746f0e858bcebe958cf
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Jul 16 12:58:09 2010 +0100
+
+    small enhancements to web gallery
+
+commit a1d7bb9edeb4f7261bdcd212a8ce244076a28fd5
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Jul 16 12:56:40 2010 +0100
+
+    opencv detection at configure
+    definition of package_dir at configure
+
+commit a29ddf2042214b3e5c1f1ccb7a4438a83c4f9549
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Jul 16 12:54:40 2010 +0100
+
+    some more variables and adjustements
+    haarcascade path is hardcoded for now
+    ?string parameters in frei0r aren't working from cpp?
+
+commit f89778e6371d663c44e5ef290bc467b727438ba8
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Jul 16 12:49:49 2010 +0100
+
+    fixed link to git snapshot
+
+commit 1cfb3077fe265e0152aa76db6c4e272eaf7754e8
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sun Jul 4 17:25:58 2010 +0200
+
+    fixed in post-hackmeeting with anarchia
+
+commit 41821b5db8c7d1bc887264814e7cae4ad342422b
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sun Jul 4 11:45:01 2010 +0200
+
+    faceblur made at hackmeeting 0x0D
+
+commit 2c779be16447dcd531a8f08732b02dd04effb645
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 11:15:14 2010 -0400
+
+    build: Add CMake build files
+    
+    This adds CMakeLists.txt files for all plugins. The motivation for this is to enable building of the plugins within Microsoft Visual Studio. At present plugins that depend on OpenCV or gavl won't build.
+    
+    While the CMake files can be used on *nix to generate automake build files, at the present time they will not be as feature complete as the build system already in place.
+    
+    MSVC by default doesn't export functions. A module definition file (DEF) has been created for versions 1.0 and 1.1 which enables exporting of functions under MSVC.
+
+commit 17f432cbefec2af790d2325eea1b3267d8208597
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 11:00:27 2010 -0400
+
+    Add conditional defines to fix poor math.h support in MSVC
+    
+    Microsoft's math.h doesn't be default define constants like M_PI, so before including math.h we need to define _USE_MATH_DEFINES if the compiler is MSVC.
+    
+    There are also a number of functions like rint, lrint, round, roundf, and hypotf which are not present, which we overcome by defining them ourselves if the compiler is MSVC.
+
+commit cfe1630990ca56d4e5fa339ea79d8a00ad475053
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 10:42:05 2010 -0400
+
+    Add stdint.h and inttypes.h files for compilation with MSVC
+    
+    Microsoft Visual Studio does not supply stdint.h or inttypes.h. This patch adds these files from http://msinttypes.googlecode.com/.
+
+commit fe222e2da2c35eded532d3d0160ea82347e7c624
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 11:08:47 2010 -0400
+
+    filter::balanc0r: Add braces around case statement to fix MSVC compilation error
+
+commit 97cd4a352503ab2714d3230922ab411610bb505d
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 13:04:44 2010 -0400
+
+    filter::hueshift0r: Update code by eliminating non-ANSI C function definitions
+    
+    Presumably this plugin could compile with gcc, but it fails miserably with MSVC.
+
+commit e8483697b658b27ffa24d65ef4c2e01a14c8c58a
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 11:08:10 2010 -0400
+
+    filter::host_param_test: Replace use of false/true with FALSE/TRUE
+    
+    false and true are keywords in C++, so replace them with simple defines.
+
+commit dccaaa787613b9ccbb00b499bb65977b4e33cc62
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 11:04:41 2010 -0400
+
+    filter::baltan: Replace legacy function bzero with memset
+    
+    MSVC doesn't define bzero, but that function is legacy anyways and should be replaced with memset.
+
+commit b1c92bb1d82b4743da50936090eea466dba7ae02
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Tue May 11 07:26:19 2010 -0400
+
+    Add more explicit casts when assigning void pointers
+
+commit 99318e554aee010c7f91cd70c38cd17c82a3e82d
+Author: Jaromil <jaromil@dyne.org>
+Date:   Thu May 6 18:48:30 2010 +0200
+
+    fixed typo in baltan filter's variable names
+    
+    with better naming of src/dst
+
+commit 4870d60e5d8f556eb87f06cd239c77cb9e87d29f
+Author: Jaromil <jaromil@dyne.org>
+Date:   Thu May 6 18:43:51 2010 +0200
+
+    avoid reset of alpha channel in baltan
+    
+    from ticket 20
+
+commit d753db5d133a97b1ac5dcd4b468532676e0badef
+Author: Joshua M. Doe <joshua.doe@us.army.mil>
+Date:   Thu Apr 29 10:18:10 2010 -0400
+
+    filter: add explicit casts when assigning a void pointer
+    
+    C++ requires an explicit cast whenever assigning a void pointer to a non-void pointer. This patch is a step towards code compatibility with Microsoft's C++ compiler.
+
+commit fe001ddd74eb32de6224a169ab715a3d8d1a9d18
+Author: Jaromil <jaromil@dyne.org>
+Date:   Thu May 6 18:21:20 2010 +0200
+
+    avoid compilation of static lib plugins by default
+    patch from ticket 5
+
+commit 366981dc9e3ff2831b083ff7c98167355e238f59
+Author: Jaromil <jaromil@dyne.org>
+Date:   Wed Apr 28 11:42:46 2010 +0200
+
+    small fix to c0rners
+    importing patch by Till Theato
+
+commit 7186a84c6b71567ffde75f0dd9dbe1e09d36b7d3
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Apr 27 13:26:34 2010 +0200
+
+    new TODO page and webpages updates
+    included some pending tasks mentioned in recent mailinglist discussions
+    as well a cleaner build system for multiple files
+
+commit 649580a22926e822a88bc37080fde582795e19f5
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Apr 27 02:00:14 2010 -0700
+
+    Fix uninitalized variables in C++ filters.
+    
+    Patch from Burkhard Plaum with note:
+    This patch fixes some uninitialized variable problems,
+    which caused valgrind warnings for me. In C all filters are now allocated
+    with calloc, unfortunately C++ doesn't have a new0 operator :)
+    
+    It simply sets the values to zero in the constructors. The exception is
+    water.cpp: The parameter "splash" isn't used at all, so I kicked it out.
+
+commit a11a007e51d0276979d754aee4c24214abe9972b
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Apr 27 01:53:09 2010 -0700
+
+    Fix segfault in scale0tilt on insane widths (ticket:18).
+    
+    Patch from Burkhard Plaum with indentation fix by me.
+
+commit 4025fc5e270a057dff66756593c9020bef8491fb
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Apr 27 01:37:06 2010 -0700
+
+    Fix memory not released on destruct in cartoon filter (ticket:14).
+
+commit a60ec310cc0c5d8752f5840d0479910ab8e43e62
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Apr 27 01:34:18 2010 -0700
+
+    Fix memory not released on destruct in water filter (ticket:13).
+
+commit 30b762b315080d2841cc38c75e9af3b6b9026c17
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Apr 27 01:18:52 2010 -0700
+
+    Fix explanation field in colordistance (ticket:9).
+
+commit a252e38ad147caa1441bdd850d25a3df362a1c86
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Tue Apr 27 01:00:12 2010 -0700
+
+    Fix Delaygrab name (ticket:17)
+
+commit 80b03a0567f16feefaca051b1273be6602965f19
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 23:38:08 2010 -0700
+
+    Reindent defish0r code and word wrap its README.
+
+commit 0a0411a8226dd5757e7e61cbb05241cbd5f8caff
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 23:35:15 2010 -0700
+
+    Allocate memory in defish0r with calloc per good practice.
+
+commit be180cf63162bfc060cfc00dcade212c9fe6e36a
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 23:33:32 2010 -0700
+
+    Fix compilation of defish0r.
+    
+    Missing stdlib.h include for malloc/free.
+    Convert usage of linux/types.h to inttypes.h.
+
+commit 8940b89d99e750ca33715033be89cdec8019e8df
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 23:30:35 2010 -0700
+
+    Add defish0r filter from Marko Cebokli.
+
+commit ced67fb5f2d2fdee49e8946b9f839db3d246a8a9
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 21:57:34 2010 -0700
+
+    Reindent code and word wrap README.
+
+commit 373280cb80ffd5ca2e92fd4283ff66b6021e0479
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 21:49:47 2010 -0700
+
+    Allocate memory with calloc per good practice.
+
+commit 83f1cb100f63c492cbee6d875c01b56096bc2a3e
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 21:32:57 2010 -0700
+
+    Fix compilation of c0rners.
+    
+    Missing stdlib.h include for malloc/free.
+    Convert usage of linux/types.h to inttypes.h.
+
+commit 3fa99c7f77a444e6fbe1a556d453d89f16337b8e
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Mon Apr 26 21:26:40 2010 -0700
+
+    Add c0rners filter from Marko Cebokli
+
+commit 1c3c63b424d6cfdfa1d681559efbd5e54e1b91a3
+Author: Jaromil <jaromil@dyne.org>
+Date:   Wed Mar 31 01:41:34 2010 +0200
+
+    new plugins gallery
+    also using freej in a script to list parameters available
+    TODO: complete with more plugin descriptions and info on parameters
+          eventually make screenshots and short movie examples in future
+
+commit 3ac567f3133a0b02e3a0ece43b6cb7cde6607b6a
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Mar 30 19:53:45 2010 +0200
+
+    webpage: better rendering of pdf
+    cleanup in web/ and starting new code gallery generator
+
+commit d73a5ef03bf4dc43dada363a58e3ec545dff0216
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Mar 30 19:05:38 2010 +0200
+
+    website with better styles
+
+commit ed08c48e46758ce4633588d6d59d593c6f9d76cf
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Mar 30 18:50:17 2010 +0200
+
+    website updates
+    and build fixes
+    now all what is needed to build the website is inside
+    (but still requires emacs, orgmode and texlive)
+
+commit fd973070aad36ac90dcfec4ecdfa507e0ecb212e
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sat Mar 13 10:29:28 2010 +0100
+
+    full fledged org-mode website
+    now also compilable in localhost for preview
+
+commit 1216596301eeab7d6b807cee54579718a8363855
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Feb 16 12:14:10 2010 +0100
+
+    web: c++ filter example
+
+commit 49e391d67946c1e3eb86e52db3e866f3d7388076
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Feb 16 09:29:29 2010 +0100
+
+    small webpage format updates
+
+commit 8e1d79cb4a0f1f54f63dac81393fd8ee023c02c5
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 15 19:26:17 2010 +0100
+
+    proper webpage contents
+
+commit 3e58d1c5436890f06cae5a88659d1c2ba3a1300b
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 15 17:43:39 2010 +0100
+
+    more website fixes
+
+commit c57f268b6d07ce80c80871e6a3b0baeafda6dfda
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 15 17:26:09 2010 +0100
+
+    cleanup of scripts
+    these are hosted on dyne-web repository
+
+commit 779b37091c57845ee64b294ee597524f92d07035
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 15 17:08:12 2010 +0100
+
+    fixes to website generation
+
+commit eac1063f0c5b9b2d234c71550bc2c33a3885fd6f
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 15 16:24:03 2010 +0100
+
+    new website in git
+    (work in progress....)
+
+commit 7a54884be6e7969397b913b865f4d815b6cdc385
+Author: Hedde Bosman <sgorpi@gmail.com>
+Date:   Mon Nov 9 14:06:50 2009 +0100
+
+    Forgot to really add the changes to Makefile.am, now did so
+
+commit fb31c32bb0c96aa19618d71f5f6efb3138efd265
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Nov 9 13:46:23 2009 +0100
+
+    patch contributed by Burkhard Plaum
+    http://thread.gmane.org/gmane.comp.video.frei0r.devel/585
+
+commit 64a1ecfe38dd8be59bc5246cb23168e76e9f270b
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Nov 6 20:48:56 2009 +0100
+
+    typo
+    sorry
+
+commit 601e82ce6e917a36d87c5fde3322306ce4c76693
+Author: Jaromil <jaromil@dyne.org>
+Date:   Fri Nov 6 20:44:55 2009 +0100
+
+    new Plasma generator
+    a classic 8bit plasma
+    
+    the dem0scene directory will contain more generators
+    ported from the demo-effects collection
+    
+    TODO: 	new parameter types fader and minmax
+    	current parameter system is not functional
+
+commit 686690e43a8663a89c898611a753cd846f587764
+Author: m4ks1k <m4ks1k@gmail.com>
+Date:   Thu Nov 5 20:48:49 2009 +0300
+
+    Changed default tint0r properties
+
+commit 32f06d4c01c626d23e3ead5ee5f9be9f74772f3d
+Author: m4ks1k <m4ks1k@gmail.com>
+Date:   Sun Nov 1 16:50:53 2009 +0300
+
+    Changed color mapping algorithm at 3-point color balance filter
+
+commit a903b1030cfa5dd39f07ddf5eb49d68b5fd44b82
+Author: m4ks1k <m4ks1k@gmail.com>
+Date:   Sun Nov 1 16:36:17 2009 +0300
+
+    New filter 3-point color balance
+
+commit e905ae065e7289911cba2474c3036531ac8c9f54
+Author: m4ks1k <m4ks1k@gmail.com>
+Date:   Sun Nov 1 11:25:37 2009 +0300
+
+    New curves adjustment filter
+
+commit ccf1cedbd9ac07b5bf99fa42966cf2883d2ac657
+Author: m4ks1k <m4ks1k@gmail.com>
+Date:   Tue Oct 27 23:43:29 2009 +0300
+
+    Added new levels adjustment effect
+
+commit 608f95ae27983b3644c0ccfb187aa8d59ea593dc
+Author: m4ks1k <m4ks1k@phoenix.(none)>
+Date:   Sun Oct 25 19:11:26 2009 +0300
+
+    New Tint effect
+
+commit 074f65364d734f4108a48975a37add8aea76e6df
+Author: Hedde Bosman <sgorpi@gmail.com>
+Date:   Thu Oct 15 13:39:24 2009 +0200
+
+    Three new effects: two announced on the mailing list already (three
+    layer thresholding and a bluescreen alpha effect), the third is a
+    color reducer which thresholds RGB channels seperately.
+    
+    Updated the Makefile.am aswell
+
+commit 8149fae6884035aa588eb14eb228863ebbd6bdbf
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Sep 14 13:35:30 2009 +0200
+
+    nervous filter small fix
+    missing stdio include
+
+commit 8dfe609829f12a7246762b69e3c6e17750c07110
+Author: Jaromil <jaromil@dyne.org>
+Date:   Thu Aug 27 12:24:23 2009 +0200
+
+    new Delaygrab filter
+    
+    from the code of Andreas Schiffler's libb
+
+commit 062c1137cdf1790d75a101ab946ae8788a0efc20
+Author: Jaromil <jaromil@dyne.org>
+Date:   Thu Aug 27 01:14:36 2009 +0200
+
+    new baltan filter
+    
+    ported from EffecTV
+
+commit eae9106de45c36bf00272ac5c63a52d6d2f08565
+Author: Jaromil <jaromil@dyne.org>
+Date:   Thu Aug 27 00:20:48 2009 +0200
+
+    new nervous filter
+    
+    ported from Edo Tannenbaum's filter in EffecTV
+
+commit 2525cf95d2dab886bf4fbe2a1838e12bb3e9c100
+Author: Jaromil <jaromil@dyne.org>
+Date:   Wed Aug 26 11:05:12 2009 +0200
+
+    correct installation path
+    
+    (noticed by Christian on the piksel-dev ml)
+
+commit 3936fa4d456f9deac42fe706b4dc0d25f55f6b7a
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sun Jul 26 11:42:07 2009 +0200
+
+    new Vertigo filter
+    ported from EffecTV and FreeJ
+
+commit c06cd053ffbcb887626abf5943c007fd344418ed
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Wed Jul 22 19:32:38 2009 -0700
+
+    Apply patch from Burkhard Plaum to initialize all instance structs.
+    
+    Signed-off-by: Dan Dennedy <dan@dennedy.org>
+
+commit 81c866e9a3eadec0ac3048e0e24874b231c865a2
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Sun Jul 19 22:45:35 2009 -0700
+
+    Convert obsolete __inline to static inline.
+    
+    Signed-off-by: Dan Dennedy <dan@dennedy.org>
+
+commit 2eac2c32cf3e5878b63ac36b865e69657b4ee313
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Jul 9 21:51:29 2009 +0100
+
+    AM_LDFLAGS changes for osx/ppc
+    
+    Remove "-nostartfiles" flag to avoid the following error:
+    ld: symbol dyld_stub_binding_helper not defined (usually in crt1.o/dylib1.o/bundle1.o)
+    
+    Introduce other flags for dynamic-linking.
+
+commit e68059e5880c3697b00b505dbd01fffda33cb898
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Jul 9 16:40:27 2009 +0100
+
+    configure refinements (2)
+    
+    - Print informations about not-found libraries in the summary
+
+commit eb2c60f6354748f15327bf5a53dab588470ffc6e
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Jul 9 15:52:56 2009 +0100
+
+    configure refinements
+    
+    - Check for optimization only on known platforms
+    - Print summary at the end of configuration process
+
+commit e935d5067441b61fb4fce77e33f11126ba6fb1ee
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Jul 9 15:11:28 2009 +0100
+
+    Track m4 directory contents
+
+commit 4c9f381571bf4c5573d6bf0b21dc51c0d9400112
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Jul 9 15:08:59 2009 +0100
+
+    Use 'm4' macro directory.
+
+commit 6b79e1c16fc49ca0619fb5031256cc9508bb4393
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Jul 9 14:56:00 2009 +0100
+
+    Update autogen.sh
+    
+    Use autogen.sh from freej.
+
+commit c950588f3e9188aa51e2cd3b9346bf346ad34118
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Thu Apr 9 17:10:53 2009 +0200
+
+    Add pkg-config support
+
+commit 40fcbcecd7c89599f8a5dbfb83c5f3c5c273963c
+Author: Dan Dennedy <dan@dennedy.org>
+Date:   Sun Feb 15 23:47:48 2009 -0800
+
+    Add balanc0r filter.
+    
+    Balanc0r is a white/color balance filter taken from the white balance portion
+    of my Kino Levels filter, which is based on the digikam white balance plugin.
+    It works by setting the color parameter to what should be a neutral color (but
+    is not), and the filter determines how to adjust it and all the other colors
+    to make the image look correct. There is also a parameter to adjust the green
+    tint since the color temperature part mainly just affects the red and blue
+    channels. It is most handy when the user interface offers an eye-dropper-like
+    tool to let the user pick a "white" spot on a displayed frame of the
+    unfiltered video.
+    
+    Signed-off-by: Dan Dennedy <dan@dennedy.org>
+
+commit 730aaac8628b7ca1db7fb1418227ad8d0ca11afd
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Mon Feb 9 13:56:47 2009 +0100
+
+    Move config.h in include/ .
+
+commit 53ca60964b3691172f7c95e68b6d754ba55e90ac
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Mon Feb 9 13:34:29 2009 +0100
+
+    Explicitly link against libm.
+
+commit f915cba7698302ee508115831cc97a4bf3dd6f56
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Mon Feb 9 13:13:56 2009 +0100
+
+    Fix compiler warnings (now use c99).
+    
+    Move to C99 because we use functions from math.h requiring it.
+    Increase required autoconf version for AC_PROG_CC_C99 macro.
+    Fix some warnings.
+
+commit 2a9578ea22de93c943ac978dd7ac4c2cd58cfe82
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Mon Feb 9 12:04:21 2009 +0100
+
+    Run autoheader in autogen.sh
+    
+    We use config.h.in so run autoheader.
+
+commit 2981d087533ba268ca4b143999da7637f6e9deb2
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 9 01:51:44 2009 +0100
+
+    new partik0l generation
+
+commit 4ba19e4195adc8d5dd267bcc758855bca766cd97
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 9 01:51:04 2009 +0100
+
+    normalised parameter values of water physics
+
+commit 0fb641c035ef5ac702295e83861f43f7390f8f6e
+Author: Jaromil <jaromil@dyne.org>
+Date:   Mon Feb 9 01:50:25 2009 +0100
+
+    cpu detection and build-generated config.h
+
+commit 09a6d2d374d8724984d3135ce935a1ecadb1a192
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Mon Feb 9 00:07:35 2009 +0100
+
+    Fixed version for html documentation.
+
+commit 0c40b92672b12347872cb1ee9c32ff45fa10ad5f
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Sun Feb 8 23:34:48 2009 +0100
+
+    Install html documentation.
+    
+    Change automake rule to install documentation.
+
+commit 3aceb42da4c353463d93c8697657d824b4321235
+Author: Luca Bigliardi <shammash@artha.org>
+Date:   Sun Feb 8 16:42:44 2009 +0100
+
+    Fix memory leak.
+    
+    Fix two memory leak found using "cppcheck --all --recursive"
+
+commit c91963057084118c0cb803bfb48ddc0c7c9a196d
+Author: Richard <oracle@propirate.net>
+Date:   Tue Nov 11 13:21:45 2008 +0100
+
+    Added guards to vectorscope to not initialize gavl when height or width are 0
+
+commit 8e5c2adaaf9379209d64029ea39afe6954d1a729
+Author: Richard <oracle@propirate.net>
+Date:   Tue Oct 28 12:21:57 2008 +0100
+
+    Added cluster.c to the Makefile again, should work now
+
+commit 6662f322ae1ec111d1ca323a26184f15fc85833d
+Author: Richard <oracle@propirate.net>
+Date:   Tue Oct 28 12:15:09 2008 +0100
+
+    Increased Version Number
+
+commit d74ad50476668fd3d623c179bf242c4176364d92
+Author: Richard <oracle@propirate.net>
+Date:   Tue Oct 28 12:12:17 2008 +0100
+
+    Added missing cluster.c file
+
+commit 4e3a5cbace18683401098228d4fcc6cddd60d38a
+Author: Jaromil <jaromil@dyne.org>
+Date:   Sun Oct 26 15:07:34 2008 +0100
+
+    water filter fix by Marco (Kdenlive)
+
+commit 06e41285a9ecd3f227a68e069fa9f28d6251f6ee
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Oct 21 16:28:18 2008 +0200
+
+    small build fixes (no cluster.c filter found?)
+
+commit bab5d11380f2ff2909116d80ea0d163a7d0448c5
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Oct 21 15:04:41 2008 +0200
+
+    compile patch for AMD64 by IOhannes
+
+commit 884da1f93fe90a9a3d65911a47f84d348f517579
+Author: Jaromil <jaromil@dyne.org>
+Date:   Tue Oct 21 12:00:31 2008 +0200
+
+    tailored import from darcs repository to git
+
+commit a6d198fa8f34fa940fe5ae099cfe2aad898bb90d
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Oct 10 06:51:00 2008 +0000
+
+    [project @ added some protectors to avoid 0 mallocs]
+
+commit 33e8c633ef5d37792271bcffe53753f9cc8a9d38
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Oct 10 06:50:28 2008 +0000
+
+    [project @ added cstring include for memset]
+
+commit 8508acb8d96a1b661c4d62cbac8021702375cd2e
+Author: tailor <richard.spindler@gmail.com>
+Date:   Thu Jul 3 06:58:15 2008 +0000
+
+    [project @ Bug in nois0r (alpha channel)]
+
+commit ce166e551850ac191300cefc4af327edbf649ad4
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Jun 13 11:11:23 2008 +0000
+
+    [project @ Adding the Clustering Filter]
+
+commit b4e4253d66a5e7c0b12e673f1cd34c32822d553b
+Author: tailor <richard.spindler@gmail.com>
+Date:   Tue May 27 09:25:23 2008 +0000
+
+    [project @ Added edgeglow filter]
+
+commit f68173b54a1a2e74cd4ce859c26b9cff4600525f
+Author: tailor <richard.spindler@gmail.com>
+Date:   Mon May 5 10:28:35 2008 +0000
+
+    [project @ added luminance filter to makefile]
+
+commit 94c3e71683fccc77afec1ddf48ad3fef49b83f7b
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Apr 20 14:40:28 2008 +0000
+
+    [project @ UV Map Filter added]
+
+commit a76c545e525adfd3781a817b01e81e99d71f7934
+Author: tailor <albert.frisch@gmail.com>
+Date:   Tue Apr 8 19:51:15 2008 +0000
+
+    [project @ rgbparade scaling with gavl and a scala overlay]
+
+commit 5f39be543ed959c12e3132de678773dafbd5d0a6
+Author: tailor <richard.spindler@gmail.com>
+Date:   Mon Apr 7 08:20:04 2008 +0000
+
+    [project @ Moved Scale Initalization to the init function]
+
+commit b246dec719aa4f1b5151713c18d32bfff242abe1
+Author: tailor <albert.frisch@gmail.com>
+Date:   Sun Apr 6 16:23:58 2008 +0000
+
+    [project @ scaling the vectorscope with gavl]
+
+commit c246a9f483b57e9ff4200b074e3f0db36cd1554c
+Author: tailor <richard.spindler@gmail.com>
+Date:   Thu Apr 3 12:39:14 2008 +0000
+
+    [project @ Fixed a number of irrelevant warnings]
+
+commit 5b7d7fcbe248dcf2759d55b63b0406a55a45cfb6
+Author: tailor <richard.spindler@gmail.com>
+Date:   Thu Apr 3 12:01:41 2008 +0000
+
+    [project @ fixed sinage warning in tehRoxx0r]
+
+commit 99b295064a88d5dc3b2b6425b7a717bd3a68000f
+Author: tailor <richard.spindler@gmail.com>
+Date:   Tue Apr 1 08:54:44 2008 +0000
+
+    [project @ moved vectorscope image]
+
+commit 64e786feb66fb65c247b735e8237f395e4c22aff
+Author: tailor <richard.spindler@gmail.com>
+Date:   Tue Apr 1 08:52:29 2008 +0000
+
+    [project @ Authors file updated, and some vectorscope compile fixes]
+
+commit 992e6041e376ffe1923b8c0ecbd77f1ec1f4dedd
+Author: tailor <richard.spindler@gmail.com>
+Date:   Mon Mar 31 12:04:03 2008 +0000
+
+    [project @ Added Scale to Vectorscope]
+
+commit 845ddcdef0af540023b92317749c2a063c1ba37a
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sat Mar 29 19:09:15 2008 +0000
+
+    [project @ changed hsv vectorscope to CrCb vectorscope]
+
+commit baadf9fde1891be653f990060d045bc53d771080
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Mar 26 07:44:05 2008 +0000
+
+    [project @ Added rgbparade]
+
+commit a5a806415ec1104d079a127627be512cbfa0beb3
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Mar 26 07:43:22 2008 +0000
+
+    [project @ added rgbparade]
+
+commit c1ddffe35181df152df9455137a4bca882f7caf6
+Author: tailor <richard.spindler@gmail.com>
+Date:   Mon Mar 24 10:24:41 2008 +0000
+
+    [project @ Added some guide-lines to the vectorscope]
+
+commit b5f96aad257a9f0895f15afd3f10df6de878a2a7
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Mar 21 17:30:23 2008 +0000
+
+    [project @ vectorscope added]
+
+commit c3218b03b66663a2b580f87888fb4925ea86853e
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Mar 5 11:27:46 2008 +0000
+
+    [project @ fixed dynamic linking of helper libs for complex frei0r plugins]
+
+commit 60abafacd35c437ca93ffb5f07defc02c31512b3
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Jan 27 22:19:57 2008 +0000
+
+    [project @ Fixed twolay0r to use opaque white for one layer instead of transparency]
+
+commit 486345ee63f24d0e2437413ff87f85a0e994fa52
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Jan 27 22:16:25 2008 +0000
+
+    [project @ Fixed Cartoon Filter to use Opaque Black for Edges instead of full Transparency]
+
+commit f0b53cf9cd6b8f37e51b398ea2f6c259f9a0fd64
+Author: tailor <richard.spindler@gmail.com>
+Date:   Thu Jan 24 19:11:23 2008 +0000
+
+    [project @ Added Perspective Filter]
+
+commit 50ec56cbda35805b9716bd86646a54b7ef1d73ee
+Author: tailor <richard.spindler@gmail.com>
+Date:   Thu Jan 24 14:56:11 2008 +0000
+
+    [project @ polishing the color distance filter]
+
+commit 40bbabba9ddc508bbfe8cd51725f393c18f408ff
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Dec 30 15:20:38 2007 +0000
+
+    [project @ color distance filter, first revision]
+
+commit ade489af009e8d10f1785276b8d2008f97bc93ae
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Dec 30 15:02:42 2007 +0000
+
+    [project @ added luminance filter]
+
+commit 5ea79bcc2a4e520fe4c9285ba2d384805c2446fd
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Dec 30 15:02:20 2007 +0000
+
+    [project @ added color distance filter skeleton]
+
+commit a421d40eb101b638c064c9ad89424259ea6a7284
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Dec 30 14:59:42 2007 +0000
+
+    [project @ removed legacy codeline from host_param_test]
+
+commit 2e698b5038234641b15eeefcb2742076a698a5cc
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Nov 18 17:05:15 2007 +0000
+
+    [project @ lens correction filter added]
+
+commit f2138ecdc7b1734a8cb7c70ba193bbd9d10bf9bd
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Nov 18 17:04:54 2007 +0000
+
+    [project @ added blur.h for glow filter]
+
+commit cc4386fc386667bf221fbeead56638707ee2e85d
+Author: tailor <richard.spindler@gmail.com>
+Date:   Sun Nov 18 17:04:27 2007 +0000
+
+    [project @ Adding Transparency Filter]
+
+commit 2072811fb59c7376bf5afe637dfaad9de7acab61
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Nov 9 13:40:24 2007 +0000
+
+    [project @ added a host param test plugin]
+
+commit 8cbf6a0140796a4092cb658ad95867eb01fbe8d5
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Nov 9 12:35:42 2007 +0000
+
+    [project @ Version number upped]
+
+commit 79ef15429c94bc309a9beeea3e283de105b82a1c
+Author: tailor <richard.spindler@gmail.com>
+Date:   Fri Nov 9 12:25:09 2007 +0000
+
+    [project @ increased alpha default value in onecol0r from 0 to 255]
+
+commit 518978b119f5fb8ca91107028647811db1ac0780
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 11:24:35 2007 +0000
+
+    [project @ added doxygen generated docs]
+    
+    One should not add generated stuff to a repo, but I do it anyways for the sake of convinience.
+
+commit 6ba1f6951cd0b391ac2d33081712a71470bceb98
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 10:34:44 2007 +0000
+
+    [project @ added glow filter]
+
+commit 57caa7056af59298aa427f648096d820b807eccc
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 10:25:38 2007 +0000
+
+    [project @ added cartoon filter]
+
+commit d3e299b621e42833a157fafba35f04a1d9957628
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 10:17:33 2007 +0000
+
+    [project @ added water filter]
+
+commit c6f508211c688e735642f26ecb1344ec2d66bc92
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 10:01:22 2007 +0000
+
+    [project @ modified makefile for R, G, B, RGB, composition and alphainjection]
+
+commit 74a1b3e70581faa989642f2ca55b9c3f2307b954
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 10:00:52 2007 +0000
+
+    [project @ added RGB mixer]
+
+commit ff8595fabe9f5b693f2f6352cfe04cf55783f9b9
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 10:00:34 2007 +0000
+
+    [project @ added composition filter]
+
+commit f6ed332872e2be1a4173121a2ee4b3541f652126
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 09:59:32 2007 +0000
+
+    [project @ added alphainjection filter]
+
+commit 3f664c4ee451816926f65814eada4de81a7ef3c3
+Author: tailor <richard.spindler@gmail.com>
+Date:   Wed Nov 7 09:58:55 2007 +0000
+
+    [project @ added R G B Filters]
+
+commit fddf16a532ef368da8a7c7fec486ce4d0fae0cb9
+Author: tailor <richard.spindler@gmail.com>
+Date:   Tue Oct 30 22:56:25 2007 +0000
+
+    [project @ Initial revision]
