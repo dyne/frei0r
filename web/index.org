@@ -9,10 +9,12 @@
 #+INFOJS_OPT: toc:nil localtoc:nil view:content sdepth:2 mouse:underline buttons:nil
 #+INFOJS_OPT: home:http://frei0r.dyne.org
 
-#+LATEX_HEADER: \documentclass[final,a4paper,10pt,onecolumn,twoside]{memoir}
+#+LATEX_CLASS: book-1column
+
 #+LATEX_HEADER: \usepackage[english]{babel}
 #+LATEX_HEADER: \usepackage{amsfonts, amsmath, amssymb}
 #+LATEX_HEADER: \usepackage{ucs}
+#+LATEX_HEADER: \usepackage{listings}
 #+LATEX_HEADER: \usepackage[utf8x]{inputenc}
 #+LATEX_HEADER: \usepackage[T1]{fontenc}
 #+LATEX_HEADER: \usepackage{hyperref}
@@ -21,14 +23,13 @@
 #+LATEX_HEADER: \usepackage{lmodern}
 
 
-
 * Introduction
 
 #+HTML: <div id="logo"><img src="http://www.piksel.no/piksel08/piksel/images/piksel_penquin_transparant.png"></div>
 
 ** What Frei0r is
 
-This is frei0r - a minimalistic plugin API for video effects.
+Frei0r is a minimalistic plugin API for video effects.
 
 The main emphasis  is on simplicity for an API that  will round up the
 most common video effects into simple filters, sources and mixers that
@@ -40,12 +41,17 @@ projects.
 
 ** What Frei0r is not
 
-This is  not meant as a  competing standard to  more ambitious efforts
-that try to satisfy the  needs of many different applications and more
+Frei0r is not meant as a competing standard to more ambitious efforts
+that try to satisfy the needs of many different applications and more
 complex effects.
 
-Eventually  the  frei0r  API  can  be wrapped  by  higher  level  APIs
-expanding its functionalities (for instance, gstreamer does).
+It is not meant as a generic API for all kinds of video applications,
+as it doesn't provides things like an extensive parameter mechanism or
+event handling.
+
+Eventually the frei0r API can be wrapped by higher level APIs
+expanding its functionalities (for instance as GStreamer, MLT, FFmpeg
+and others do).
 
 ** Current status
 
@@ -58,7 +64,7 @@ expanding its functionalities (for instance, gstreamer does).
 #+END_HTML:
 
 If you like to  peek in what's boiling in the pot,  have a look at our
-[[file:TODO.php][TODO page]].
+[[file:TODO][TODO]]
 
 Developers  are sporadically  contributing and  we are  happy  if more
 people like to get involved, so let us know about your creations! Code
@@ -88,13 +94,40 @@ Find our more on the [[http://en.wikipedia.org/wiki/Frei0r][Wikipedia page about
 
 ** Source code
 
-The  latest  source for  frei0r  plugins  can  be attained  using  our
+Stable frei0r releases are packaged periodically and distributed on
+
+ ftp://ftp.dyne.org/frei0r
+
+We encourage the unauthorized mirroring of this source repository by
+all those interested, using the command
+
+ rsync -Pr rsync.dyne.org::frei0r .
+
+Frei0r sourcecode is released under the terms of the GNU General
+Public License and, eventually other compatible Free Software
+licenses.
+
+The latest source for frei0r plugins can be attained using our
 revisioning system *GIT*
 
 :  git clone git://code.dyne.org/frei0r.git
 
-Daily  snapshots  are also  packed  ready  to  "./configure; make"  on
-[[http://www.piksel.no/frei0r/snapshot/][www.piksel.no/frei0r/snapshot]]
+Daily snapshots are on the FTP and on [[http://www.piksel.no/frei0r/snapshot/][www.piksel.no/frei0r/snapshot]]
+
+*** Build dependencies
+
+ + GNU autotools ( ./configure && make )
+   or
+ + CMake ( cmake . && make )
+
+Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms,
+possibly in even more environments.
+
+**** Optional Dependencies
+
+ + [[http://gmerlin.sourceforge.net/][Gavl]] ( required for scale0tilt and vectorscope filters )
+ + [[http://opencvlibrary.sourceforge.net/][OpenCV]] (required for facebl0r filter )
+
 
 ** Debian / Ubuntu
 
