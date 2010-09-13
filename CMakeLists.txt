@@ -20,4 +20,7 @@ set (LIBDIR lib/frei0r-1)
 set (FREI0R_DEF ${CMAKE_SOURCE_DIR}/msvc/frei0r_1_0.def)
 set (FREI0R_1_1_DEF ${CMAKE_SOURCE_DIR}/msvc/frei0r_1_1.def)
 
+# --- custom targets: ---
+INCLUDE( cmake/modules/TargetDistclean.cmake OPTIONAL)
+
 add_subdirectory (src)

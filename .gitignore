@@ -19,7 +19,7 @@ tags
 *.so
 *.la
 *.lo
-*.cmake
+cmake_install.cmake
 CMakeFiles
 CMakeCache.txt
 *~
