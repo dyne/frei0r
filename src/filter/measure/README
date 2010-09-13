@@ -1,0 +1,107 @@
+Measurement Frei0r plugins
+
+Plugins for various measurements on video
+
+Included are the following plugins:
+
+Pr0be		Measure channel values, with statistics
+Pr0file		a 2D video oscilloscope with readouts
+
+
+
+Written by Marko Cebokli,  jun 2010,  and released under GNU GPL
+
+
+RELEASE NOTES
+
+** jun 2010
+Version 0.1
+"pre-alpha" (throw it out and see what happens... :-)
+
+
+INTRODUCTION
+
+I am an old engineer, who is not happy unless surrounded by ...scopes,
+...meters, ...lyzers and stuff. So I had to do this, really.
+I suspect these plugins won't be of much use for the general public
+(well, the geeky types might like them anyway ;-).
+They are intended mainly for developers and testers.
+
+NOTE1: The "test_pat_*" plugins can provide well defined signals for
+stimulus/response measurements.
+
+NOTE2: for best results, watch the output on 1:1 pixel scale display.
+
+
+
+
+	****** DESCRIPTIONS OF EACH PLUGIN FOLLOW ******
+
+
+PR0BE
+
+Uses a variable sized probe, that can be moved across the image to
+sample values of the color channels. Comes with a magnifier for pixel
+accurate work, and does statistics over the probe area. It is useful
+mainly for checking color and levels.
+
+parameters:
+
+Measurement	select the set of channels to measure
+X		X position of probe
+Y		Y position of probe
+X size		X size of probe
+Y size		Y size of probe
+256 scale	Show values as 0-255 instead of 0.0-1.0
+Show alpha	Show the values of the alpha channel too
+Big window	Display a bigger info window
+
+The available channel sets are RGB, two flavors of Y'PrPb, HSV and HSL.
+HSV and HSL are strange nonlinear combinations, not very scientific, so
+the statistics are not displayed for them.
+Avg is the average value within the probe rectangle. RMS is the "AC"
+component. For example, it can be used to measure noise, when the probe
+is placed over an otherwise uniform area.
+
+
+PR0FILE
+
+A classic scope can show you a line waveform, and maybe a vertical
+profile too.  This one can show profiles at any angle anywhere in the
+image, so I call it a "2D scope". It has two markers with delta and a
+profile statistics display. It has a zillion parameters, but if you've
+been to a lab lately, you probably noticed that any self respecting
+'scope' is replete with buttons and knobs :-)
+The main purpose of "pr0file" is to measure spatial impulse and step
+responses, chroma delays, noise, etc.
+
+parameters:
+
+X		X position of center of profile
+Y		Y position of center of profile
+Tilt		The angle of the profile
+Length		The length of the profile
+Channel		The color channel to display numnerically
+Marker 1	Position of first marker along the profile
+Marker 1	Position of second marker along the profile
+R trace		Turn on trace of R channel
+G trace		Turn on trace of G channel
+B trace		Turn on trace of B channel
+Y trace		Turn on trace of Y channel
+Pr trace	Turn on trace of Pr channel
+Pb trace	Turn on trace of Pb channel
+Alpha trace	Turn on trace of alpha channel
+Display average	Turn on numeric display of profile average
+Display RMS	Turn on numeric display of profile RMS (AC value)
+Display minimum	Turn on numeric display of profile minimum
+Display maximum	Turn on numeric display of profile maximum
+256 scale	Show values as 0-255 instead of 0.0-1.0
+Color		Select rec 601 or rec 709 for Y'PrPb calculation
+Crosshair color Select one of 8 colors for the profile marker, to make
+		it stand out from different image contents.
+
+The markers are switched on by pulling them from the leftmost position,
+and turned off by slamming them all the way left. When a marker is
+activated, a numeric display of its value is automatically turned on.
+When both markers are active, a difference display appears.
+

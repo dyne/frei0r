@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59c)
-AC_INIT(frei0r-plugins, [1.1.22], [richard.spindler@gmail.com])
+AC_INIT(frei0r-plugins, [1.2.0], [frei0r-devel@piksel.no])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
@@ -107,6 +107,8 @@ HAVE_GAVL=false
 PKG_CHECK_MODULES(GAVL, gavl >= 0.2.3, [HAVE_GAVL=true], [true])
 AM_CONDITIONAL([HAVE_GAVL], [test x$HAVE_GAVL = xtrue])
 
+AC_CHECK_PROG([DOXYGEN], [doxygen], [doxygen])
+
 
 AC_CONFIG_FILES([
   frei0r.pc
@@ -114,7 +116,6 @@ AC_CONFIG_FILES([
   include/Makefile
   src/Makefile
   doc/Makefile
-  doc/html/Makefile
 ])
 
 AC_OUTPUT

@@ -8,4 +8,24 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-SUBDIRS=html
+html:
+	$(DOXYGEN) Doxyfile
+
+htmldocs_DATA = html
+
+htmldocsdir=${prefix}/share/doc/${PACKAGE}-${VERSION}
+
+clean:
+	rm -rf html
+
+dist-hook:
+	-cp -ra html $(distdir)/doc/
+
+install-data:
+	install -c -m 644 -d $(htmldocs_DATA) $(htmldocsdir)
+
+# Modify the install hook, so we can install directories
+install-htmldocsDATA:
+	mkdir -p $(htmldocsdir)
+	cp -r ./html $(htmldocsdir)/
+

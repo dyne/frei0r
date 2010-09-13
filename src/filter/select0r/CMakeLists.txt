@@ -1,8 +1,8 @@
-set (SOURCES coloradj_RGB.c)
-set (TARGET coloradj_RGB)
+set (SOURCES select0r.c)
+set (TARGET select0r)
 
 if (MSVC)
-  set_source_files_properties (coloradj_RGB.c PROPERTIES LANGUAGE CXX)
+  set_source_files_properties (select0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

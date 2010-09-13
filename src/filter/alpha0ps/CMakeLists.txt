@@ -13,6 +13,10 @@ add_library (alpha0ps MODULE ${O_SOURCES})
 add_library (alphagrad MODULE ${G_SOURCES})
 add_library (alphaspot MODULE ${S_SOURCES})
 
-install (TARGETS alpha0ps LIBRARY DESTINATION lib)
-install (TARGETS alphagrad LIBRARY DESTINATION lib)
-install (TARGETS alphaspot LIBRARY DESTINATION lib)
+set_target_properties (alpha0ps PROPERTIES PREFIX "")
+set_target_properties (alphagrad PROPERTIES PREFIX "")
+set_target_properties (alphaspot PROPERTIES PREFIX "")
+
+install (TARGETS alpha0ps LIBRARY DESTINATION ${LIBDIR})
+install (TARGETS alphagrad LIBRARY DESTINATION ${LIBDIR})
+install (TARGETS alphaspot LIBRARY DESTINATION ${LIBDIR})

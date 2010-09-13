@@ -22,6 +22,10 @@
 
 * Welcome hackers!
 
+The Frei0r mailinglist is the first step to get in touch with us: the
+one we use is [[https://piksel.no/mailman/listinfo/frei0r-devel][frei0r-devel]] and it has [[http://piksel.no/pipermail/frei0r-devel/][public archives]] that are also
+[[http://blog.gmane.org/gmane.comp.video.frei0r.devel][searchable and indexed]] online.
+
 The bugtracker we are currently using  is [[http://www.piksel.no/projects/frei0r/report][the Piksel trac]], have a look
 there and, if  you know how to  report a bug, please open  a new issue
 and give it as many details as you can.
@@ -30,7 +34,7 @@ Here below are outlined some open issues in the development flow, they
 range   from  /bugfixing/   tasks  to   /specification   updates/  and
 /documentation/.
 
-* GNU code
+* Port existing code
 
 Porting  new Effects  from existing  collections should  be  easy, for
 instance there  is a lot of code  to be ported from  [[http://effectv.sf.net/][EffecTV]], the [[http://demo-effects.sourceforge.net/][Demo
@@ -67,8 +71,6 @@ with new issues coming up. It might be also useful to confront it with
 the  specification  drafted  in   [[http://livido.dyne.org/codedoc/][LiViDO]],  which  provides  a  broader
 case-study, and other standards adopted in [[http://gstreamer.freedesktop.org/documentation/][GStreamer]].
 
-
-
 * Documentation
 
 ** Screenshots
@@ -80,6 +82,6 @@ are screenshots or maybe short video renderings of plugins in action.
 
 ** TODO Trac spam
 
-We should fix the trac on  piksel.org or install a new bugtracker like
-[[http://flyspray.org][flyspray]].
+We should fix the trac on piksel.org, install a new bugtracker like
+[[http://flyspray.org][flyspray]] or use the mantis already up at [[http://bugs.dyne.org][bugs.dyne.org]].
 

@@ -497,6 +497,13 @@ typedef void* f0r_param_t;
  * effect instance. Validity of the parameter pointer is handled by the
  * application thus the data must be copied by the effect.
  *
+ * Furthermore, if d an update event/signal is needed in a host
+ * application to notice when parameters have changed, this should be
+ * implemented inside its own update() call. The host application
+ * would presumably need to store the current value as well to see if
+ * it changes; to make this thread safe, it should store a copy of the
+ * current value in a struct which uses instance as a key.
+ *
  * \param instance the effect instance
  * \param param pointer to the parameter value
  * \param param_index index of the parameter
@@ -567,7 +574,7 @@ void f0r_update(f0r_instance_t instance,
  * \param inframe2 the second incoming video frame
           (can be zero for sources and filters)
  * \param inframe3 the third incoming video frame
-          (can be zero for sources, filters and mixer3) 
+          (can be zero for sources, filters and mixer2) 
  * \param outframe the resulting video frame
  *
  * \see f0r_update

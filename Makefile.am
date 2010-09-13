@@ -16,3 +16,5 @@ EXTRA_DIST = Doxyfile
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = frei0r.pc
 
+docsdir = ${prefix}/share/doc/${PACKAGE}-${VERSION}
+docs_DATA = README ChangeLog TODO AUTHORS 
