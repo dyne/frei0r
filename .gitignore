@@ -19,6 +19,9 @@ tags
 *.so
 *.la
 *.lo
+*.cmake
+CMakeFiles
+CMakeCache.txt
 *~
 Makefile.in
 Makefile
@@ -28,3 +31,4 @@ Makefile
 TAGS
 ylwrap
 frei0r.pc
+doc/html
