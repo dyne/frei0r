@@ -13,7 +13,7 @@ html:
 
 htmldocs_DATA = html
 
-htmldocsdir=${prefix}/share/doc/${PACKAGE}-${VERSION}
+htmldocsdir=${prefix}/share/doc/${PACKAGE}
 
 clean:
 	rm -rf html

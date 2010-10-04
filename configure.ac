@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59c)
-AC_INIT(frei0r-plugins, [1.2.0], [frei0r-devel@piksel.no])
+AC_INIT(frei0r-plugins, [1.2.1], [frei0r-devel@piksel.no])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
