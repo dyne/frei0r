@@ -15,8 +15,6 @@
  */
 
 
-#include <config.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <opencv/cv.h>
