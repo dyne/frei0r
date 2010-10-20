@@ -118,6 +118,6 @@ away" transitions that were once so popular.
 5. Alpha Feather
 
 This can be used to make the transition between transparent and opaque gradual.
-It should specify the width of the transition in pixels, 0 to 20.
+It should specify the width of the transition in pixels, 0 to 100.
 For now it does not feather the "caustics" (those curved lines in the concave
 and crossed settings, which are not edges of the input picture).
