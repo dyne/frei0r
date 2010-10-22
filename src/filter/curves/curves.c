@@ -539,6 +539,11 @@ void updateBsplineMap(f0r_instance_t instance)
         // x range * 3 should give enough points
         // TODO: more tests on whether *3 is really sufficient
         c = (int)((p[3].x - p[0].x) * 3);
+        if (c == 0) {
+            // points have same x value -> will result in a jump in the curve
+            // calculate anyways, in case we only have these two points (with more points this x value will be calculated three times)
+            c = 1;
+        }
         step = 1 / (double)c;
         position curve[c];
         while (t <= 1) {
@@ -548,6 +553,7 @@ void updateBsplineMap(f0r_instance_t instance)
 
         // Fill the map in range this curve provides
         k = 0;
+        // connection points will be written twice (but therefore no special case for the last point is required)
         for (int j = (int)p[0].x; j <= (int)p[3].x; ++j) {
             diff = k > 0 ? j - curve[k-1].x : -1;
             diff2 = j - curve[k].x;
