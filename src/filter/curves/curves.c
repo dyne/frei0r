@@ -161,7 +161,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->curvesPosition = 3;
   inst->pointNumber = 2;
   inst->formula = 1;
-  inst->bspline = "\0";
+  inst->bspline = calloc(1, sizeof(char));
   inst->points[0] = 0;
   inst->points[1] = 0;
   inst->points[2] = 1;
