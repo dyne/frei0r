@@ -67,7 +67,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* vertigoInfo)
   vertigoInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   vertigoInfo->major_version = 1;
   vertigoInfo->minor_version = 0;
-  vertigoInfo->num_params =  3;
+  vertigoInfo->num_params =  2;
   vertigoInfo->explanation = "alpha blending with zoomed and rotated images";
 }
 

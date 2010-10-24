@@ -10,11 +10,10 @@
 
 ACLOCAL_AMFLAGS= -I m4
 
-SUBDIRS=src include doc
-EXTRA_DIST = Doxyfile
+SUBDIRS=src include
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = frei0r.pc
 
-docsdir = ${prefix}/share/doc/${PACKAGE}-${VERSION}
+docsdir = ${prefix}/share/doc/${PACKAGE}
 docs_DATA = README ChangeLog TODO AUTHORS 

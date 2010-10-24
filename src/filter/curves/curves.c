@@ -48,6 +48,7 @@ typedef struct curves_instance
   double points[10];
   double drawCurves;
   double curvesPosition;
+  double formula;
 } curves_instance_t;
 
 char **param_names = NULL;
@@ -78,7 +79,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* curves_info)
   curves_info->frei0r_version = FREI0R_MAJOR_VERSION;
   curves_info->major_version = 0; 
   curves_info->minor_version = 1; 
-  curves_info->num_params = 14; 
+  curves_info->num_params = 15; 
   curves_info->explanation = "Adjust luminance or color channel intensity with curve level mapping";
 }
 
@@ -108,13 +109,18 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 3:
     info->name = "Curve point number";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Number of point to use to build curve";
+    info->explanation = "Number of points to use to build curve";
+    break;
+  case 4:
+    info->name = "Luma formula";
+    info->type = F0R_PARAM_BOOL;
+    info->explanation = "Use Rec. 601 (false) or Rec. 709 (true)";
     break;
   default:
-	if (param_index > 3) {
-	  info->name = get_param_name(param_index - 4);
+	if (param_index > 4) {
+	  info->name = get_param_name(param_index - 5);
 	  info->type = F0R_PARAM_DOUBLE;
-	  info->explanation = get_param_name(param_index - 4);
+	  info->explanation = get_param_name(param_index - 5);
 	}
     break;
   }
@@ -128,6 +134,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->drawCurves = 1;
   inst->curvesPosition = 3;
   inst->pointNumber = 2;
+  inst->formula = 1;
   inst->points[0] = 0;
   inst->points[1] = 0;
   inst->points[2] = 1;
@@ -166,9 +173,12 @@ void f0r_set_param_value(f0r_instance_t instance,
 	case 3:
 	  inst->pointNumber = *((f0r_param_double *)param);
 	  break;
+        case 4:
+          inst->formula = *((f0r_param_double *)param);
+          break;
 	default:
-	  if (param_index > 3)
-		inst->points[param_index - 4] = *((f0r_param_double *)param); //Assigning value to curve point
+	  if (param_index > 4)
+		inst->points[param_index - 5] = *((f0r_param_double *)param); //Assigning value to curve point
 	  break;
   }
 }
@@ -193,9 +203,12 @@ void f0r_get_param_value(f0r_instance_t instance,
   case 3:
 	*((f0r_param_double *)param) = inst->pointNumber;
 	break;
+  case 4:
+        *((f0r_param_double *)param) = inst->formula;
+        break;
   default:
-	if (param_index > 3)
-	  *((f0r_param_double *)param) = inst->points[3]; //Fetch curve point value
+	if (param_index > 4)
+	  *((f0r_param_double *)param) = inst->points[param_index - 5]; //Fetch curve point value
 	break;
   }
 }
@@ -401,8 +414,12 @@ void f0r_update(f0r_instance_t instance, double time,
 	b = *src++;
 
 	//calculating point luminance value
-	if (inst->channel == CHANNEL_LUMA)
-	  luma = CLAMP0255((unsigned int)(b * .114 + g * .587 + r * .299));
+	if (inst->channel == CHANNEL_LUMA) {
+            if (inst->formula)
+                luma = CLAMP0255((unsigned int)(.2126 * r + .7152 * g + .0722 * b)); // Rec. 709
+            else
+                luma = CLAMP0255((unsigned int)(.299 * r + .587 * g + .114 * b)); // Rec. 601
+        }
 	
 	//mapping curve values to current point
 	switch ((int)inst->channel) {

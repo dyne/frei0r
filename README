@@ -6,7 +6,7 @@
     \___  /   |__|    \___  >__|\_____  /__|
         \/                \/          \/
 
-  Minimalistic plugin API for video effects    v.1.2
+  Minimalistic plugin API for video effects  v.1.2.1
 
   	       	      by the Piksel Developers Union
 
@@ -90,7 +90,7 @@ browse the existing effects by visiting the [Frei0r plugin gallery].
 History 
 ========
 
-Frei0r  has been around  since 2006,  born from  yearly brainstormings
+Frei0r  has been around  since 2004,  born from  yearly brainstormings
 held at the  [Piksel] conference with the participation  of various free
 and open source video software developers.
 

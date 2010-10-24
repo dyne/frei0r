@@ -246,6 +246,7 @@ standard*.   Maintenance and further  refinements were  contributed by
 Carlo Prelz  (MøB/BEK), Richard Spindler  (Open Movie Editor)  and Dan
 Dennedy (MLT/KDEnLive), while Debian/Ubuntu packaging and build system
 standardization  were taken  care  of by  dyne.org developers  Filippo
-Giunchedi and Luca Bigliardi.
+Giunchedi  and Luca Bigliardi.  For a  complete list  of contributors,
+please refer to the [[AUTHORS]] file.
 
 ---------------------------------------------------------------------
