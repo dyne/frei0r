@@ -35,7 +35,7 @@ typedef struct {
   CvBox2D curr_box;  //current face location estimate
 } TrackedObj;
 
-
+#define FACEBL0R_PARAM_CLASSIFIER (0)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -73,10 +73,6 @@ private:
     unsigned int width;
     unsigned int height;
     unsigned int size; // = width * height
-
-    f0r_param_string haarcascade[256];
-    char classifier[512];
-
 };
 
 
@@ -91,22 +87,18 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   height = hgt;
   size = width*height*4;
 
-  sprintf(haarcascade,"frontalface_default"); 
-  //initialize
-  snprintf(classifier,511,"/usr/share/opencv/haarcascades/haarcascade_%s.xml", haarcascade);
-  // para
-  cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
-  storage = cvCreateMemStorage(0);
-  //validate
-
   face_rect = 0;
   image = 0;
   tracked_obj = 0;
   face_found = 0;
   face_notfound = 1;
-
-//  register_param(haarcascade, "pattern model for recognition",
-//                 "frontalface_alt2, frontalface_alt_tree, frontalface_alt, frontalface_default, fullbody, lowerbody, profileface, upperbody (see in share/opencv/haarcascades)");
+  
+  cascade = 0;
+  storage = 0;
+  
+  register_param("/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
+                 "classifier",
+                 "full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades"); 
 
 }
 
@@ -123,6 +115,15 @@ void FaceBl0r::update() {
   unsigned char *src = (unsigned char *)in;
   unsigned char *dst = (unsigned char *)out;
 
+  if (!cascade) {
+      f0r_param_string classifier;
+      get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
+      if (classifier) {
+          cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
+          storage = cvCreateMemStorage(0);
+      }
+      else return;
+  }
   if( !image )
       image = cvCreateImage( cvSize(width,height), IPL_DEPTH_8U, 4 );
 

@@ -425,7 +425,7 @@ typedef struct f0r_param_position
  * The string type. 
  * Zero terminated array of 8-bit values in utf-8 encoding
  */
-typedef char f0r_param_string;
+typedef char* f0r_param_string;
 
 /**  @} */
 
@@ -497,7 +497,13 @@ typedef void* f0r_param_t;
  * effect instance. Validity of the parameter pointer is handled by the
  * application thus the data must be copied by the effect.
  *
- * Furthermore, if d an update event/signal is needed in a host
+ * If the parameter type is of F0R_PARAM_STRING, then the caller should
+ * supply a pointer to f0r_param_string (char**). The plugin must copy
+ * copy the string and not assume it exists beyond the lifetime of the call.
+ * The reason a double pointer is requested when only a single is really
+ * needed is simply for API consistency.
+ *
+ * Furthermore, if an update event/signal is needed in a host
  * application to notice when parameters have changed, this should be
  * implemented inside its own update() call. The host application
  * would presumably need to store the current value as well to see if
@@ -516,6 +522,13 @@ void f0r_set_param_value(f0r_instance_t instance,
 /**
  * This function allows the application to query the parameter values of an
  * effect instance.
+ *
+ * If the parameter type is of F0R_PARAM_STRING, then the caller should
+ * supply a pointer to f0r_param_string (char**). The plugin sets the
+ * pointer to the address of its copy of the parameter value. Therefore,
+ * the caller should not free the result. If the caller needs to modify
+ * the value, it should make a copy of it and modify before calling
+ * f0r_set_param_value().
  *
  * \param instance the effect instance
  * \param param pointer to the parameter value
