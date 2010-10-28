@@ -25,7 +25,8 @@ cluster.la balanc0r.la tint0r.la levels.la curves.la three_point_balance.la \
 bluescreen0r.la primaries.la threelay0r.la \
 plasma.la c0rners.la defish0r.la coloradj_RGB.la \
 alpha0ps.la alphagrad.la alphaspot.la d90stairsteppingfix.la  sopsat.la \
-pr0be.la pr0file.la select0r.la test_pat_B.la test_pat_C.la test_pat_G.la
+pr0be.la pr0file.la select0r.la test_pat_B.la test_pat_C.la test_pat_G.la \
+test_pat_I.la test_pat_L.la test_pat_R.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -118,6 +119,9 @@ plasma_la_SOURCES = generator/dem0scene/plasma.cpp
 test_pat_B_la_SOURCES = generator/test_pat/test_pat_B.c
 test_pat_C_la_SOURCES = generator/test_pat/test_pat_C.c
 test_pat_G_la_SOURCES = generator/test_pat/test_pat_G.c
+test_pat_I_la_SOURCES = generator/test_pat/test_pat_I.c
+test_pat_L_la_SOURCES = generator/test_pat/test_pat_L.c
+test_pat_R_la_SOURCES = generator/test_pat/test_pat_R.c
 
 uvmap_la_SOURCES = mixer2/uvmap/uvmap.c
 composition_la_SOURCES = mixer2/composition/composition.c
