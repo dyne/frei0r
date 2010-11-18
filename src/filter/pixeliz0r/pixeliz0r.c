@@ -34,7 +34,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* pixelizerInfo)
   pixelizerInfo->name = "pixeliz0r";
   pixelizerInfo->author = "Gephex crew";
   pixelizerInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  pixelizerInfo->color_model = F0R_COLOR_MODEL_BGRA8888;
+  pixelizerInfo->color_model = F0R_COLOR_MODEL_PACKED32;
   pixelizerInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   pixelizerInfo->major_version = 1; 
   pixelizerInfo->minor_version = 0; 
