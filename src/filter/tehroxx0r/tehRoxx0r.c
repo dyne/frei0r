@@ -40,7 +40,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* tehRoxx0rInfo)
   tehRoxx0rInfo->name = "TehRoxx0r";
   tehRoxx0rInfo->author = "Coma";
   tehRoxx0rInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  tehRoxx0rInfo->color_model = F0R_COLOR_MODEL_BGRA8888;
+  tehRoxx0rInfo->color_model = F0R_COLOR_MODEL_PACKED32;
   tehRoxx0rInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   tehRoxx0rInfo->major_version = 0; 
   tehRoxx0rInfo->minor_version = 9; 

@@ -1,0 +1,27 @@
+Denoise Frei0r plugins
+
+
+For now, I have only ported the Daniel Moreno's hqdn3d filter from
+Mplayer.
+
+I have also tried Mplayer's "ow" (overcomplete wavelet) denoiser, but
+despite being only 2D, it is EXTREMELY slow (like <1fps...), so I 
+decided not to include it for now.
+
+In the future I would like to try at least a thresholded 3D median,
+and maybe port something like fftdenoise3d from Avisynth. That
+is a pretty big chunk of code, and originally written for another
+operating system, so much more work, and it depends when I'll have
+the spare time for that.
+
+Or maybe some other "smart" denoiser, suggestions welcome.
+
+
+
+HQDN3D
+
+This is a three dimensional nonlinear IIR filter. Does a pretty god
+job at moderate noise levels. For stronger denoising, it becomes a bit
+asymmetric, which is a consequence of its IIR form.
+
+ 

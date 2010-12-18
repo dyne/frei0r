@@ -86,7 +86,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* inverterInfo)
   inverterInfo->name = "K-Means Clustering";
   inverterInfo->author = "binarymillenium";
   inverterInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  inverterInfo->color_model = F0R_COLOR_MODEL_BGRA8888;
+  inverterInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
   inverterInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   inverterInfo->major_version = 0; 
   inverterInfo->minor_version = 1; 

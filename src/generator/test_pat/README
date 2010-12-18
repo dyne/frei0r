@@ -1,0 +1,387 @@
+test_pat_*
+
+This is a set of test pattern generating Frei0r plugins. Mostly, I just
+gathered together a pile of C functions that I wrote over the years for
+testing other image processing stuff, but some I wrote anew (like the
+broadcast test card lookalikes).
+They are useful for measuring the effects of image processing, for
+display checking and adjustment, for reverse engineering of video
+effects, for debugging during development of video software, etc...
+
+
+Included are the following plugins:
+
+test_pat_B	broadcast test card lookalikes
+test_pat_C	color space cross sections
+test_pat_G	geometry checking
+test_pat_I	spatial impulse and step response checking
+test_pat_L	levels and linearity checking
+test_pat_M	motion response checking    (*)
+test_pat_R	resolution and spatial frequency response checking
+test_pat_T	time domain response checking   (*)
+
+(*)  not yet finished  (heck, not even started working on them :-)
+
+Each one of these can generate several different patterns, many of them
+adjustable through parameters.
+
+
+Written by Marko Cebokli,  jun 2010,  and released under GNU GPL
+
+
+RELEASE NOTES
+
+** jun 2010
+Version 0.1
+"pre-alpha" (throw it out and see what happens... :-)
+
+
+INTRODUCTION
+
+First question that comes to mind is, "why bother with this?"
+Would it not be simpler to just use PNG images and import them as
+slides?
+This is why:
+- First, in that case you would need a separate PNG for each video
+format - otherwise scaling would be done on import, introducing
+scaling artefacts. Test_pat plugins draw algorithmically, adapting
+the patterns to the chosen format.
+- Second, many of these plugins accept parameters, to change the
+features in the pattern, making them much more versatile than fixed
+slides.
+- Third, time domain and motion tests wouldn't be feasible at all
+with slides.
+
+
+PIXEL ASPECT RATIO
+
+Some of the plugins will attempt to draw exact circles and squares.
+To do this, they need to know the pixel aspect ratio. Since this info
+is not available directly to a Frei0r plugin, the user must set it
+manually. Seven options are offered: square pixels, five standard video
+pixel aspect ratios, and arbitrary manual adjustment.
+
+
+COLOR FORMAT
+
+For maximum portability, these plugins internally generate the patterns
+in floating point format, in the range [0...1], so most of the code is
+independent of the final color model, endianness and number of bits.
+The test_pat_G uses "char" with [0...255] range internally, since it
+only needs a few levels.
+Converting to the final format (in the case of Frei0r rgba8888) is
+done last, and is confined to a few functions (in most cases a single
+one), so adding other color models should be simple.
+
+
+LEVELS AND COLOR ACCURACY
+
+On the output of these plugins, they should be as accurate as the
+used color model allows - but note that the host application might
+convert to a different model, enforce DV legality (rec 601 levels), or
+chop the color gamut...
+
+
+ARTEFACTS
+
+The patterns are drawn algorithmically and should not contain artefacts.
+If you see any, they are probably caused because you are not viewing
+at exact 1:1 pixel scale (the image was scaled before display).
+Higher spatial frequencies can cause "moire" patterns, even when
+below the Nyquist limit. This is a normal consequence of the fact,
+that there is no anti-aliasing filter present between the monitor
+and your eyes.
+
+
+MEASUREMENT AND QUANTITATIVE ANALYSIS
+
+can be done by combining these generators with the "pr0be",
+"pr0file" and other measurement plugins.
+
+
+MULTIPLE CHOICE (list / enum) TYPE PARAMETERS
+
+Parameters of this type are not natively supported in the Frei0r
+specification, therefore they must be somehow implemented using
+a floating point argument. The Frei0r specification requires this
+to be in the [0...1] range. These plugins conform to that by dividing
+the [0...1] range into N subintervals (if there are N choices for this
+parameter), each corresponding to one of the choices.
+However, this is a bit clumsy for command line usage, so I have
+also mapped the integers 0...(N-1) to the same parameter choices.
+For example, if a parameter has five choices, 0.7 and 3 will both
+mean the fourth choice.
+
+
+
+
+	****** DESCRIPTIONS OF EACH PLUGIN FOLLOW ******
+
+
+*** THE "TEST_PAT_B" PLUGIN   ("B" for Broadcasting)
+
+This one produces patterns similar to some popular broadcast test cards.
+Because those contain some specifically "analog" stuff, like the
+illegal phase color subcarrier in the PAL PM5544, or "infrablack"
+in the SMPTE color bars "pluge" group, they can not be
+100% emulated in a digital environment. Also, for most of them I did
+not have the original specification, so I more or less guessed the
+values with some help from Google... 
+Therefore, I call them "lookalikes".
+
+Parameters:
+
+Type:		selects among the available patterns
+Aspect type:	square pixel, PAL, wPAL, NTSC, wNTSC, HDV, Manual
+Manual aspect:	active when Aspect type is set to manual
+
+Available patterns:
+
+Pattern 0	100% PAL color bars
+Pattern 1	100% PAL color bars with red
+Pattern 2	95% BBC color bars (PAL)
+Pattern 3	75% EBU color bars
+Pattern 4	SMPTE color bars
+Pattern 5	Philips PM5544
+Pattern 6	FuBK
+Pattern 7	Simplified FuBK
+
+
+*** THE "TEST_PAT_C" PLUGIN   ("C" for Color)
+
+This plugin draws cross sections of various color spaces. I have
+written it mainly to test color keying, but other uses for it could
+probably be found.
+
+Parameters:
+
+Color space:
+Selects among four spaces: RGB, Y'PrPb, ABI and HCI
+
+Cross section:
+Selects between three possible cross sections, 12(3), 23(1), 31(2)
+NOTE: the numbers tell which two axes are represented in the 2D plane,
+(the first two numbers), and which axis is controlled by the "third
+axis value" slider (the third number in parentheses). For example,
+23(1) in RGB menas that G will change along the horizontal axis, B
+along vertical, and R will be set by the "third axis value" slider.
+
+Third axis value:
+sets the value along the "third" axis, which cannot be accomodated
+on a 2D display.
+
+Fullscreen:
+extends the image across the full screen. Normally, it is drawn
+somewhat smaller, to avoid "bad" areas of CRT displays.
+
+NOTE:
+The strange shapes that appear on the display result from the edges
+of valid color in various spaces. (defined by RGB c [0...1])
+
+
+*** THE "TEST_PAT_G" PLUGIN   ("G" for Geometry)
+
+This one generates patterns for testing of the image geometry.
+
+Parameters:
+
+Type:		selects among the possible patterns
+Size 1:		size of major features
+Size 2: 	size of minor features
+Negative: 	just that
+Aspect type:	square pixel, PAL, wPAL, NTSC, wNTSC, HDV, Manual
+Manual aspect:	active when Aspect type is set to manual
+
+Available patterns:
+
+Pattern 0	checkerboard
+Pattern 1	checkerboard with gray rim
+Pattern 2	horizontal lines
+Pattern 3	vertical lines
+Pattern 4	rectangular grid
+Pattern 5	points (small squares)
+Pattern 6	bullseye (CAUTION: most displays aren't bullet proof!)
+These are similar to what old "analog" hardware test generators
+produced, for adjustment of CRT display geometry and convergence.
+
+Pattern 7 is useful to check if something is eating the borders of
+your video, and determine how much is missing.
+One would think that with digital flat panel displays, overscan is a
+thing of the past, but sadly, this is not the case.
+Especially camcorder viewfinders are prone to this! To test camcorders
+which do not support firewire input, make a tape with one that does.
+
+Pattern 8 is probably not of much general use... I made it while
+testing the "c0rners" plugin, to see where each corner ended, even
+with extreme distortion.
+
+Pattern 9 are "pixel rulers" useful for centering, etc. This only
+looks good on an 1:1 pixel scale display.
+
+Pattern 10 is a measurement grid, scaled in pixels, in a
+"computer graphics" type coordinate system (0,0 is upper left).
+This only looks good on an 1:1 pixel scale display, and is also an
+indicator of whether the image has been scaled. (Pattern 0,
+Size1=minimum is also good for such check)
+
+Pattern 11
+Pattern 12
+are the same patterns as 9 and 10, but with a transparent background.
+They can be used to measure positions and sizes of stuff in video.
+For example, I've used this to determine the position and size of
+logos, to use the mencoder's delogo filter.
+
+NOTE: Test_pat_G always draws things at integer pixel coordinates,
+to make the lines maximally sharp. This means that with non-square
+pixels, squares might not have exactly equal sides, and circles be a
+bit elliptic. Test_pat_G will do a best effort rounding in such cases.
+
+
+*** THE "TEST_PAT_I" PLUGIN   ("I" for Impulse response)
+
+This one generates patterns for measuring the spatial impulse and
+step responses.
+
+Parameters:
+
+Type:		selects among the possible patterns
+Channel:	choices are: All(gray), R, G, B, R-Y, B-Y (601 and 709)
+Amplitude: 	amplitude of impulses and steps
+Width:		width of impulse
+Tilt:		angle of line (patterns 2,3,4 only)
+Negative: 	just that
+
+
+Available patterns:
+
+Pattern 0	square point impulse
+Pattern 1	raised cosine point impulse
+Pattern 2	square line impulse
+Pattern 3	raised cosine line impulse
+Pattern 4	step (raised cos)
+Pattern 5	step (linear ramp)
+
+These can be used to check code that does spatial convolution, like
+blurring and sharpening, etc. For example, with a single pixel square
+point, a convolution kernel can be directly read out with pr0be.
+
+
+*** THE "TEST_PAT_L" PLUGIN   ("L" for Levels)
+
+This one produces patterns with defined "gray" levels in the chosen
+channel, for checking the amplitude transfer curves, gamma, etc.
+
+Parameters:
+
+Type:		selects among the available patterns
+Channel:	choices are: All(gray), R, G, B, R-Y, B-Y (601 and 709)
+
+Available patterns:
+
+Pattern 0	8 step gray scale  0.0 to 1.0
+
+Pattern 1 is an 8 step gray scale with contrast squares. The steps are
+somewhat smaller than in pattern 0, the range is 0.0625...0.9375.
+The top row of square pairs differ by plus minus one percent from their
+backgrounds, the second 2%, then 5, 10 and 20%. In the left and right
+column, the 10 and 20% squares are truncated to black and white,
+respectively. Pattern 1 is mostly useful for a visual check of
+black and white "crushing".
+
+Pattern 2 is a continuous horizontal gradient from 0.0 to 1.0, flanked
+left and right with 50% gray. If you see stripes, your display (or
+something in the line between this plugin and your display) is cheating
+on the number of bits per pixel...
+
+Pattern 3 are 256 different levels arranged in a 16 x 16 matrix. This
+gives each level more area, to enable the use of spatially averaged
+pr0be for level measurement. Background is 50% gray.
+
+Pattern 4 are "contrast bands". The level difference between the
+vertically adjacent bands in each box is constant from left to right.
+In the top box it is 1%, then 2, 5, and 10%. This is a check of the
+"perceptual uniformity" of the video transfer curve.
+
+Pattern 5 is for gamma checking. It only works on a 1:1 pixel scale
+display, when the vertical gray (zebra) stripes show no artefacts.
+To determine the gamma of your display, step back, so that the zebra
+pattern is no more visible, and determine which of the gray patches
+seems of the most similar brightness as the zebra bars.
+For viewing video, the display gamma should be between cca 2.0 and 2.4,
+with lower values suitable for brighter, and higher values for dimmer
+viewing environments.
+The bars at left and right are for checking the black level and
+highlight crushing. The small squares are 1% steps from 1 to 10%.
+Especially the black level (the "brightness" control on the monitor)
+is important for correct gamma setting! The dimmer squares in the
+black bar should be just barely visible. (if the darkest two or three
+are not visible, it's not a catastrophe...)
+
+NOTE: Most test cards of this type use a constant step gamma scale.
+Because in that case, the grays for the higher gamma values are very
+similar (small differences), I have decided to do it a bit differently.
+Here, a constant gray level step scale is used, and the corresponding
+gamma values are calculated (therefore the non-round gamma values).
+I think this is more in sync with the usual goal of perceptual
+uniformity.
+
+Pattern 6 is just something that I wrote to help me with the development
+of an orthicon simulator.
+
+NOTE: If you see any color cast when output is to the "All" channel
+(default), it is a problem of your display. Either it is less than
+ 4 bit "true color", or a misaligned CRT, etc...
+
+
+*** THE "TEST_PAT_R" PLUGIN   ("R" for resolution)
+
+This one generates patterns for resolution and spatial frequency
+response measurement.
+
+Parameters:
+
+Type:		selects among the available patterns
+Channel:	choices are: All(gray), R, G, B, R-Y, B-Y (601 and 709)
+Amplitude:	amplitude (contrast) of the patterns
+Lin. p. swp.:	OFF = linear frequency sweep  ON = linear period sweep
+Freq1:		Pattern 7 only: horizontal component of 2D frequency
+Freq2:		Pattern 7 only: vertical component of 2D frequency
+Aspect type:	square pixel, PAL, wPAL, NTSC, wNTSC, HDV, Manual
+Manual aspect:	active when Aspect type is set to manual
+
+The pixel aspect ratio is only used to calculate the "Lines per
+picture height" labels on horizontal frequencies (vertical lines),
+and does not affect the pattern itself, which is specified in parts
+of the Nyquist frequency..
+
+Available patterns:
+
+Pattern 0	vertical sweep of horizontal frequencies
+Pattern 1	horizontal sweep of horizontal frequencies
+Pattern 2	vertical sweep of vertical frequencies
+Pattern 3	horizontal sweep of vertical frequencies
+Pattern 4	radials ("Siemens star"), 0.7N cutoff
+Pattern 5	rings, radial sweep, high frequencies outside
+Pattern 6	rings, radial sweep, high frequencies nside
+Pattern 7	uniform 2D spatial frequency (Freq1, Freq2)
+Pattern 8	"Nyquist blocks" H,checkers,V, freqs of N and N/2
+Pattern 9	Square wave bars at integer Nyquist fractions
+
+The sweep limit frequencies are always relative to the Nyquist
+frequency. This way the patterns automatically optimally adapt to
+frame size/resolution. Additional labels are provided in lines per
+picture height, LPPH.
+The sweeps go from 0.05 Nyquist to 0.7 Nyquist. The sweep function is
+either linear frequency, which gives more emphasis to the higher
+frequencies, or linear period, which emphasizes the lower frequencies.
+The 0.7 Nyquist cutoff was chosen because it corresponds to the most
+popular value of the Kell factor, 0.7.
+All patterns, except 8 and 9 which are square waves, are drawn as
+smooth phase sinewaves.
+
+NOTE: These patterns are very sensitive to scaling and interpolation,
+any warts there will be revealed in a very drastical manner! Monitor
+windows in video software are often done in a "fast" way, so it may
+be necessary to do a final rendering, to see a fair result.
+
+
