@@ -17,7 +17,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #include "frei0r.hpp"
 
 #include <cstdio>
@@ -28,6 +27,7 @@
 #define GETB(abgr) (((abgr) >> (2*CHAR_BIT)) & 0xFF)
 #define GETG(abgr) (((abgr) >> (1*CHAR_BIT)) & 0xFF)
 #define GETR(abgr) (((abgr) >> (0*CHAR_BIT)) & 0xFF)
+#define RGBA(r,g,b,a) ( ((r) << (0*CHAR_BIT)) | ((g) << (1*CHAR_BIT)) | ((b) << (2*CHAR_BIT)) | ((a) << (3*CHAR_BIT)) )
 #define MOVING_AVG(mean, in, alpha) (((uint32_t) (((mean) & 0xFF) * (1 - (alpha)) + ((in) & 0xFF ) * (alpha))) \
         | (((uint32_t) ((((mean) >> CHAR_BIT) & 0xFF) * (1 - (alpha)) + (((in) >> CHAR_BIT) & 0xFF ) * (alpha))) << CHAR_BIT) \
         | (((uint32_t) ((((mean) >> 2*CHAR_BIT) & 0xFF) * (1 - (alpha)) + (((in) >> 2*CHAR_BIT) & 0xFF ) * (alpha))) << 2*CHAR_BIT) \
@@ -36,6 +36,8 @@
                   | (((((a) >> (1*CHAR_BIT)) & 0xFF) > (((b) >> (1*CHAR_BIT)) & 0xFF)) ? ((a) & (0xFF << (1*CHAR_BIT))) : ((b) & (0xFF << (1*CHAR_BIT)))) \
                   | (((((a) >> (2*CHAR_BIT)) & 0xFF) > (((b) >> (2*CHAR_BIT)) & 0xFF)) ? ((a) & (0xFF << (2*CHAR_BIT))) : ((b) & (0xFF << (2*CHAR_BIT)))) \
                   | (((((a) >> (3*CHAR_BIT)) & 0xFF) > (((b) >> (3*CHAR_BIT)) & 0xFF)) ? ((a) & (0xFF << (3*CHAR_BIT))) : ((b) & (0xFF << (3*CHAR_BIT)))) )
+
+#define CLAMP(a) (((a) < 0) ? 0 : (((a) > 255) ? 255 : (a)))
 
 #define ALPHA(mask,img) \
   (   ( ((uint32_t) ( ((((mask) >> (0*CHAR_BIT)) & 0xFF)/255.0) * ( ((mask) >> (0*CHAR_BIT)) & 0xFF) \
@@ -54,7 +56,8 @@ public:
     LightGraffiti(unsigned int width, unsigned int height) :
             m_lightMask(width*height, 0),
             m_alphaMap(4*width*height, 0.0),
-            m_alpha(.025),
+            m_alpha(1/8.0),
+            m_longAlpha(1/128.0),
             m_meanInitialized(false)
 
     {
@@ -65,7 +68,11 @@ public:
     {
     }
 
-    enum GraffitiMode { Graffiti_max_sum, Graffiti_Y, Graffiti_Avg, Graffiti_Avg2 };
+    enum GraffitiMode { Graffiti_max_sum, Graffiti_Y, Graffiti_Avg, Graffiti_Avg2,
+                        Graffiti_Avg_Stat, Graffiti_AvgTresh_Stat, Graffiti_Max_Stat, Graffiti_Y_Stat, Graffiti_S_Stat,
+                        Graffiti_STresh_Stat, Graffiti_SDiff_Stat, Graffiti_SDiffTresh_Stat,
+                        Graffiti_SSqrt_Stat,
+                        Graffiti_LongAvg_Stat };
 
     virtual void update()
     {
@@ -74,13 +81,27 @@ public:
 
         if (!m_meanInitialized) {
             m_meanImage = std::vector<uint32_t>(&in[0], &in[width*height-1]);
+            m_longMeanImage = std::vector<float>(width*height*3);
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                m_longMeanImage[3*pixel+0] = GETR(in[pixel]);
+                m_longMeanImage[3*pixel+1] = GETG(in[pixel]);
+                m_longMeanImage[3*pixel+2] = GETB(in[pixel]);
+            }
             m_meanInitialized = true;
         } else {
             for (int pixel = 0; pixel < width*height; pixel++) {
                 m_meanImage[pixel] = MOVING_AVG(m_meanImage[pixel], in[pixel], m_alpha);
-                uint32_t k = MOVING_AVG(m_meanImage[pixel], in[pixel], m_alpha);
+                m_longMeanImage[3*pixel+0] = (1-m_longAlpha) * m_longMeanImage[3*pixel+0] + m_longAlpha * GETR(in[pixel]);
+                m_longMeanImage[3*pixel+1] = (1-m_longAlpha) * m_longMeanImage[3*pixel+1] + m_longAlpha * GETG(in[pixel]);
+                m_longMeanImage[3*pixel+2] = (1-m_longAlpha) * m_longMeanImage[3*pixel+2] + m_longAlpha * GETB(in[pixel]);
             }
         }
+
+
+        int r, g, b;
+        int maxDiff, temp;
+        int min;
+        int max;
 
 
         switch (m_mode) {
@@ -159,8 +180,8 @@ public:
             break;
 
         case Graffiti_Avg2:
-            int maxDiff = 0;
-            int temp = 0;
+            maxDiff = 0;
+            temp = 0;
             for (int pixel = 0; pixel < width*height; pixel++) {
                 temp = GETR(out[pixel]) - GETR(m_meanImage[pixel]);
                 if (temp > maxDiff) maxDiff = temp;
@@ -191,15 +212,202 @@ public:
                 }
             }
             break;
+
+        case Graffiti_Avg_Stat:
+            maxDiff = 0;
+            temp = 0;
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                r = 0x7f + (GETR(out[pixel]) - GETR(m_meanImage[pixel]));
+                r = CLAMP(r);
+                g = 0x7f + (GETG(out[pixel]) - GETG(m_meanImage[pixel]));
+                g = CLAMP(g);
+                b = 0x7f + (GETB(out[pixel]) - GETB(m_meanImage[pixel]));
+                b = CLAMP(b);
+
+                out[pixel] = RGBA(r,g,b,0xFF);
+            }
+            break;
+
+        case Graffiti_AvgTresh_Stat:
+            maxDiff = 0;
+            temp = 0;
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                r = 0x7f + (GETR(out[pixel]) - GETR(m_meanImage[pixel]));
+                max = GETR(out[pixel]);
+                r = CLAMP(r);
+                g = 0x7f + (GETG(out[pixel]) - GETG(m_meanImage[pixel]));
+                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                g = CLAMP(g);
+                b = 0x7f + (GETB(out[pixel]) - GETB(m_meanImage[pixel]));
+                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                b = CLAMP(b);
+
+                if (max < 0x80) {
+                    r /= 2;
+                    g /= 2;
+                    b /= 2;
+                }
+                out[pixel] = RGBA(r,g,b,0xFF);
+            }
+            break;
+
+        case Graffiti_Max_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                if (GETR(out[pixel]) == 0xFF || GETG(out[pixel]) == 0xFF || GETB(out[pixel]) == 0xFF) {
+                    out[pixel] = 0xFFFFFFFF;
+                } else {
+                    out[pixel] = 0;
+                }
+            }
+            break;
+        case Graffiti_Y_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                temp = .299*GETR(out[pixel]) + .587 * GETG(out[pixel]) + .114 * GETB(out[pixel]);
+                temp = CLAMP(temp);
+                out[pixel] = RGBA(temp, temp, temp, 0xFF);
+            }
+            break;
+        case Graffiti_S_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                min = GETR(out[pixel]);
+                max = GETR(out[pixel]);
+                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                if (min == 0) { out[pixel] = 0; }
+                else {
+                    temp = 255.0*(max-min)/(float)max;
+                    temp = CLAMP(temp);
+                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                }
+            }
+            break;
+        case Graffiti_STresh_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                min = GETR(out[pixel]);
+                max = GETR(out[pixel]);
+                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                if (min == 0 || max < 0x80) { out[pixel] = 0; }
+                else {
+                    temp = 255.0*((float)max-min)/max;
+                    temp = CLAMP(temp);
+                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                }
+            }
+            break;
+        case Graffiti_SDiff_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                min = GETR(out[pixel]);
+                max = GETR(out[pixel]);
+                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                int sat;
+                if (min == 0) { sat = 0; }
+                else {
+                    temp = 255.0*(max-min)/(float)max;
+                    temp = CLAMP(temp);
+                    sat = RGBA(temp, temp, temp, 0xFF);
+                }
+                min = GETR(m_meanImage[pixel]);
+                max = GETR(m_meanImage[pixel]);
+                if (GETG(m_meanImage[pixel]) < min) min = GETG(m_meanImage[pixel]);
+                if (GETG(m_meanImage[pixel]) > max) max = GETG(m_meanImage[pixel]);
+                if (GETB(m_meanImage[pixel]) < min) min = GETB(m_meanImage[pixel]);
+                if (GETB(m_meanImage[pixel]) > max) max = GETB(m_meanImage[pixel]);
+                if (min == 0) { out[pixel] = 0; }
+                else {
+                    temp = 255.0*(max-min)/(float)max;
+                    temp = CLAMP(temp);
+                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                }
+                temp = 0x7f + GETR(out[pixel]) - GETR(sat);
+                temp = CLAMP(temp);
+                out[pixel] = RGBA(temp, temp, temp, 0xFF);
+            }
+            break;
+        case Graffiti_SDiffTresh_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                min = GETR(out[pixel]);
+                max = GETR(out[pixel]);
+                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                int sat;
+                if (min == 0) { sat = 0; }
+                else {
+                    temp = 255.0*(max-min)/(float)max;
+                    temp = CLAMP(temp);
+                    sat = RGBA(temp, temp, temp, 0xFF);
+                }
+                if (max < 0x80) {
+                    out[pixel] = RGBA(0,0,0,0xFF);
+                } else {
+                    min = GETR(m_meanImage[pixel]);
+                    max = GETR(m_meanImage[pixel]);
+                    if (GETG(m_meanImage[pixel]) < min) min = GETG(m_meanImage[pixel]);
+                    if (GETG(m_meanImage[pixel]) > max) max = GETG(m_meanImage[pixel]);
+                    if (GETB(m_meanImage[pixel]) < min) min = GETB(m_meanImage[pixel]);
+                    if (GETB(m_meanImage[pixel]) > max) max = GETB(m_meanImage[pixel]);
+                    if (min == 0) { out[pixel] = 0; }
+                    else {
+                        temp = 255.0*(max-min)/(float)max;
+                        temp = CLAMP(temp);
+                        out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                    }
+                    temp = 0x7f + GETR(out[pixel]) - GETR(sat);
+                    temp = CLAMP(temp);
+                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                }
+            }
+            break;
+        case Graffiti_SSqrt_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                min = GETR(out[pixel]);
+                max = GETR(out[pixel]);
+                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                if (min == 0) { out[pixel] = 0; }
+                else {
+                    temp = 255.0*(max-min)/(float)max/(256.0-max);
+                    temp = CLAMP(temp);
+                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                }
+            }
+            break;
+        case Graffiti_LongAvg_Stat:
+            maxDiff = 0;
+            temp = 0;
+            for (int pixel = 0; pixel < width*height; pixel++) {
+                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                r = CLAMP(r);
+                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                g = CLAMP(g);
+                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                b = CLAMP(b);
+
+                out[pixel] = RGBA(r,g,b,0xFF);
+            }
+            break;
         }
     }
 
 private:
     std::vector<uint32_t> m_lightMask;
     std::vector<uint32_t> m_meanImage;
+    std::vector<float> m_longMeanImage;
     std::vector<float> m_alphaMap;
     bool m_meanInitialized;
     float m_alpha;
+    float m_longAlpha;
     GraffitiMode m_mode;
 
 };
