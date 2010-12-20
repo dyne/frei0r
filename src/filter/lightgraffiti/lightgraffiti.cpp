@@ -49,6 +49,8 @@
       | ( ((uint32_t) ( ((((mask) >> (3*CHAR_BIT)) & 0xFF)/255.0) * ( ((mask) >> (3*CHAR_BIT)) & 0xFF) \
                         + (1 - (( ((mask) >> (3*CHAR_BIT)) & 0xFF)/255.0)) * ( ((img) >> (3*CHAR_BIT)) & 0xFF) )) << (3*CHAR_BIT))   )
 
+#define SCREEN1(mask,img) ((uint8_t) (255-(255.0-(mask))*(255.0-(img))/255.0))
+
 class LightGraffiti : public frei0r::filter
 {
 
@@ -61,7 +63,7 @@ public:
             m_meanInitialized(false)
 
     {
-        m_mode = Graffiti_Avg2;
+        m_mode = Graffiti_LongAvg;
     }
 
     ~LightGraffiti()
@@ -72,7 +74,7 @@ public:
                         Graffiti_Avg_Stat, Graffiti_AvgTresh_Stat, Graffiti_Max_Stat, Graffiti_Y_Stat, Graffiti_S_Stat,
                         Graffiti_STresh_Stat, Graffiti_SDiff_Stat, Graffiti_SDiffTresh_Stat,
                         Graffiti_SSqrt_Stat,
-                        Graffiti_LongAvg_Stat };
+                        Graffiti_LongAvg, Graffiti_LongAvg_Stat };
 
     virtual void update()
     {
@@ -102,6 +104,7 @@ public:
         int maxDiff, temp;
         int min;
         int max;
+        int y;
 
 
         switch (m_mode) {
@@ -395,6 +398,62 @@ public:
                 b = CLAMP(b);
 
                 out[pixel] = RGBA(r,g,b,0xFF);
+            }
+            break;
+        case Graffiti_LongAvg:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+
+                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                r = CLAMP(r);
+                max = GETR(out[pixel]);
+                maxDiff = r;
+                temp = r;
+
+                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                g = CLAMP(g);
+                if (maxDiff < g) maxDiff = g;
+                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                temp += g;
+
+                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                b = CLAMP(b);
+                if (maxDiff < b) maxDiff = b;
+                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                temp += b;
+
+                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
+
+                    m_alphaMap[4*pixel+0] = 2*(m_longMeanImage[3*pixel+0]-0x7F);
+                    m_alphaMap[4*pixel+0] = CLAMP(m_alphaMap[4*pixel+0])/255.0;
+
+                    m_alphaMap[4*pixel+1] = 2*(m_longMeanImage[3*pixel+1]-0x7F);
+                    m_alphaMap[4*pixel+1] = CLAMP(m_alphaMap[4*pixel+1])/255.0;
+
+                    m_alphaMap[4*pixel+2] = 2*(m_longMeanImage[3*pixel+2]-0x7F);
+                    m_alphaMap[4*pixel+2] = CLAMP(m_alphaMap[4*pixel+2])/255.0;
+
+                    m_alphaMap[4*pixel+3] = 1;
+
+//                    m_alphaMap[4*pixel+0] *= m_alphaMap[4*pixel+0];
+//                    m_alphaMap[4*pixel+1] *= m_alphaMap[4*pixel+1];
+//                    m_alphaMap[4*pixel+2] *= m_alphaMap[4*pixel+2];
+//                    m_alphaMap[4*pixel+3] *= m_alphaMap[4*pixel+3];
+                }
+
+                if (m_lightMask[pixel] != 0) {
+//                    out[pixel] = ((uint32_t) (m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]) + (1-m_alphaMap[4*pixel+0])*GETR(out[pixel]))) << (0*CHAR_BIT)
+//                                 | ((uint32_t) (m_alphaMap[4*pixel+1]*GETR(m_lightMask[pixel]) + (1-m_alphaMap[4*pixel+1])*GETR(out[pixel]))) << (1*CHAR_BIT)
+//                                 | ((uint32_t) (m_alphaMap[4*pixel+2]*GETR(m_lightMask[pixel]) + (1-m_alphaMap[4*pixel+2])*GETR(out[pixel]))) << (2*CHAR_BIT)
+//                                 | ((uint32_t) (m_alphaMap[4*pixel+3]*GETR(m_lightMask[pixel]) + (1-m_alphaMap[4*pixel+3])*GETR(out[pixel]))) << (3*CHAR_BIT);
+                    r = SCREEN1(GETR(out[pixel]), GETR(m_lightMask[pixel]));
+                    g = SCREEN1(GETG(out[pixel]), GETG(m_lightMask[pixel]));
+                    b = SCREEN1(GETB(out[pixel]), GETB(m_lightMask[pixel]));
+                    r = CLAMP(r);
+                    g = CLAMP(g);
+                    b = CLAMP(b);
+                    out[pixel] = RGBA(r,g,b,0xFF);
+                }
             }
             break;
         }
