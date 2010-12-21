@@ -17,6 +17,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/**
+  This effect is intended to simulate what happens when you use a shutter speed of
+  e.g. 10 seconds for your camera and paint with light, like lamps, in the air
+  -- just with video. It tries to remember bright spots and keeps them in a mask.
+  Areas that are not very bright (i.e. background) will not sum up.
+  */
 #include "frei0r.hpp"
 
 #include <cstdio>
@@ -55,26 +61,29 @@ class LightGraffiti : public frei0r::filter
 {
 
 public:
+
+    f0r_param_double m_diffToMean;
+
     LightGraffiti(unsigned int width, unsigned int height) :
             m_lightMask(width*height, 0),
-            m_alphaMap(4*width*height, 0.0),
+            m_alphaMap(4*width*height, 1.0),
             m_alpha(1/8.0),
             m_longAlpha(1/128.0),
             m_meanInitialized(false)
 
     {
-        m_mode = Graffiti_LongAvg;
+        m_mode = Graffiti_LongAvgAlpha2;
     }
 
     ~LightGraffiti()
     {
     }
 
-    enum GraffitiMode { Graffiti_max_sum, Graffiti_Y, Graffiti_Avg, Graffiti_Avg2,
+    enum GraffitiMode { Graffiti_max, Graffiti_max_sum, Graffiti_Y, Graffiti_Avg, Graffiti_Avg2,
                         Graffiti_Avg_Stat, Graffiti_AvgTresh_Stat, Graffiti_Max_Stat, Graffiti_Y_Stat, Graffiti_S_Stat,
                         Graffiti_STresh_Stat, Graffiti_SDiff_Stat, Graffiti_SDiffTresh_Stat,
                         Graffiti_SSqrt_Stat,
-                        Graffiti_LongAvg, Graffiti_LongAvg_Stat };
+                        Graffiti_LongAvg, Graffiti_LongAvg_Stat, Graffiti_LongAvgAlpha, Graffiti_LongAvgAlpha2, Graffiti_LongAvgAlpha_Stat };
 
     virtual void update()
     {
@@ -104,10 +113,25 @@ public:
         int maxDiff, temp;
         int min;
         int max;
-        int y;
+        float f;
 
 
         switch (m_mode) {
+        case Graffiti_max:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+
+                if (
+                        (GETR(out[pixel]) == 0xFF
+                         || GETG(out[pixel]) == 0xFF
+                         || GETB(out[pixel]) == 0xFF)
+                    ){
+                    m_lightMask[pixel] |= out[pixel];
+                }
+                if (m_lightMask[pixel] != 0) {
+                    out[pixel] = m_lightMask[pixel];
+                }
+            }
+            break;
         case Graffiti_max_sum:
             for (int pixel = 0; pixel < width*height; pixel++) {
 
@@ -424,21 +448,16 @@ public:
                 if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
                     m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
 
-                    m_alphaMap[4*pixel+0] = 2*(m_longMeanImage[3*pixel+0]-0x7F);
+                    m_alphaMap[4*pixel+0] = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
                     m_alphaMap[4*pixel+0] = CLAMP(m_alphaMap[4*pixel+0])/255.0;
 
-                    m_alphaMap[4*pixel+1] = 2*(m_longMeanImage[3*pixel+1]-0x7F);
+                    m_alphaMap[4*pixel+1] = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
                     m_alphaMap[4*pixel+1] = CLAMP(m_alphaMap[4*pixel+1])/255.0;
 
-                    m_alphaMap[4*pixel+2] = 2*(m_longMeanImage[3*pixel+2]-0x7F);
+                    m_alphaMap[4*pixel+2] = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
                     m_alphaMap[4*pixel+2] = CLAMP(m_alphaMap[4*pixel+2])/255.0;
 
                     m_alphaMap[4*pixel+3] = 1;
-
-//                    m_alphaMap[4*pixel+0] *= m_alphaMap[4*pixel+0];
-//                    m_alphaMap[4*pixel+1] *= m_alphaMap[4*pixel+1];
-//                    m_alphaMap[4*pixel+2] *= m_alphaMap[4*pixel+2];
-//                    m_alphaMap[4*pixel+3] *= m_alphaMap[4*pixel+3];
                 }
 
                 if (m_lightMask[pixel] != 0) {
@@ -449,6 +468,145 @@ public:
                     r = SCREEN1(GETR(out[pixel]), GETR(m_lightMask[pixel]));
                     g = SCREEN1(GETG(out[pixel]), GETG(m_lightMask[pixel]));
                     b = SCREEN1(GETB(out[pixel]), GETB(m_lightMask[pixel]));
+                    r = CLAMP(r);
+                    g = CLAMP(g);
+                    b = CLAMP(b);
+                    out[pixel] = RGBA(r,g,b,0xFF);
+                }
+            }
+            break;
+        case Graffiti_LongAvgAlpha_Stat:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+
+                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                r = CLAMP(r);
+                max = GETR(out[pixel]);
+                maxDiff = r;
+                temp = r;
+
+                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                g = CLAMP(g);
+                if (maxDiff < g) maxDiff = g;
+                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                temp += g;
+
+                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                b = CLAMP(b);
+                if (maxDiff < b) maxDiff = b;
+                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                temp += b;
+
+                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
+
+                    f = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
+                    f = CLAMP(f)/255.0;
+                    if (f > m_alphaMap[4*pixel+0]) m_alphaMap[4*pixel+0] = f;
+
+                    f = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
+                    f = CLAMP(f)/255.0;
+                    if (f > m_alphaMap[4*pixel+1]) m_alphaMap[4*pixel+1] = f;
+
+                    f = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
+                    f = CLAMP(f)/255.0;
+                    if (f > m_alphaMap[4*pixel+2]) m_alphaMap[4*pixel+2] = f;
+
+                    m_alphaMap[4*pixel+3] = 1;
+                }
+                r = 255.0*m_alphaMap[4*pixel+0];
+                g = 255*m_alphaMap[4*pixel+1];
+                b = 255*m_alphaMap[4*pixel+2];
+                out[pixel] = RGBA(r,g,b,0xFF);
+            }
+            break;
+        case Graffiti_LongAvgAlpha:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+
+                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                r = CLAMP(r);
+                max = GETR(out[pixel]);
+                maxDiff = r;
+                temp = r;
+
+                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                g = CLAMP(g);
+                if (maxDiff < g) maxDiff = g;
+                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                temp += g;
+
+                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                b = CLAMP(b);
+                if (maxDiff < b) maxDiff = b;
+                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                temp += b;
+
+                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
+
+                    f = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
+                    f = CLAMP(f)/255.0;
+                    f *= f;
+                    if (f > m_alphaMap[4*pixel+0]) m_alphaMap[4*pixel+0] = f;
+
+                    f = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
+                    f = CLAMP(f)/255.0;
+                    f *= f;
+                    if (f > m_alphaMap[4*pixel+1]) m_alphaMap[4*pixel+1] = f;
+
+                    f = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
+                    f = CLAMP(f)/255.0;
+                    f *= f;
+                    if (f > m_alphaMap[4*pixel+2]) m_alphaMap[4*pixel+2] = f;
+                }
+                if (m_lightMask[pixel] != 0) {
+                    r = SCREEN1(GETR(out[pixel]), m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]));
+                    g = SCREEN1(GETG(out[pixel]), m_alphaMap[4*pixel+1]*GETG(m_lightMask[pixel]));
+                    b = SCREEN1(GETB(out[pixel]), m_alphaMap[4*pixel+2]*GETB(m_lightMask[pixel]));
+                    r = CLAMP(r);
+                    g = CLAMP(g);
+                    b = CLAMP(b);
+                    out[pixel] = RGBA(r,g,b,0xFF);
+                }
+            }
+            break;
+        case Graffiti_LongAvgAlpha2:
+            for (int pixel = 0; pixel < width*height; pixel++) {
+
+                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                r = CLAMP(r);
+                max = GETR(out[pixel]);
+                maxDiff = r;
+                temp = r;
+
+                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                g = CLAMP(g);
+                if (maxDiff < g) maxDiff = g;
+                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                temp += g;
+
+                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                b = CLAMP(b);
+                if (maxDiff < b) maxDiff = b;
+                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                temp += b;
+
+                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
+
+                    f = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
+                    f = 16*(f/255.0/3 - (1-1/16.0));
+                    if (f < 0) f = 0;
+                    f *= f;
+                    if (f > m_alphaMap[4*pixel+0]) {
+                        m_alphaMap[4*pixel+0] = f;
+                        m_alphaMap[4*pixel+1] = f;
+                        m_alphaMap[4*pixel+2] = f;
+                    }
+                }
+                if (m_lightMask[pixel] != 0) {
+                    r = SCREEN1(GETR(out[pixel]), m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]));
+                    g = SCREEN1(GETG(out[pixel]), m_alphaMap[4*pixel+1]*GETG(m_lightMask[pixel]));
+                    b = SCREEN1(GETB(out[pixel]), m_alphaMap[4*pixel+2]*GETB(m_lightMask[pixel]));
                     r = CLAMP(r);
                     g = CLAMP(g);
                     b = CLAMP(b);
