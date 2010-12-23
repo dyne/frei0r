@@ -63,6 +63,7 @@ class LightGraffiti : public frei0r::filter
 public:
 
     f0r_param_double m_diffToMean;
+    f0r_param_double m_pLongAlpha;
 
     LightGraffiti(unsigned int width, unsigned int height) :
             m_lightMask(width*height, 0),
@@ -73,6 +74,10 @@ public:
 
     {
         m_mode = Graffiti_LongAvgAlpha2;
+
+        register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
+        m_pLongAlpha = 1/128.0;
+        updateParams();
     }
 
     ~LightGraffiti()
@@ -85,8 +90,15 @@ public:
                         Graffiti_SSqrt_Stat,
                         Graffiti_LongAvg, Graffiti_LongAvg_Stat, Graffiti_LongAvgAlpha, Graffiti_LongAvgAlpha2, Graffiti_LongAvgAlpha_Stat };
 
+    void updateParams()
+    {
+        m_longAlpha = m_pLongAlpha;
+//        std::cout << "Alpha: " << m_pLongAlpha << "\n";
+    }
+
     virtual void update()
     {
+        updateParams();
 
         std::copy(in, in + width*height, out);
 
