@@ -72,10 +72,15 @@ public:
 
         register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
         register_param(m_pLightOpacity, "lightOpacity", "Basic opacity for a light source. Will be summed up.");
+        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should be");
+        register_param(m_pThresholdBrightness, "thresholdBrighness", "Brightness threshold to distinguish between foreground and background");
+        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguis between fore- and background");
+        register_param(m_pDim, "dim", "Dimming of the light mask");
         m_pLongAlpha = 1/128.0;
         m_pLightOpacity = .4;
-
-        // TODO background weight (keep in target video?)
+        m_pBackgroundWeight = 0;
+        m_pThresholdBrightness = 450;
+        m_pDim = 0;
 
     }
 
@@ -104,10 +109,36 @@ public:
             }
             m_meanInitialized = true;
         } else {
+            // Calculate the mean image to estimate the background. If alpha is set > 0, bright light sources
+            // moving into the image and standing still will eventually be treated as background.
+            if (m_pLongAlpha > 0) {
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    m_longMeanImage[3*pixel+0] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+0] + m_pLongAlpha * GETR(in[pixel]);
+                    m_longMeanImage[3*pixel+1] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+1] + m_pLongAlpha * GETG(in[pixel]);
+                    m_longMeanImage[3*pixel+2] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+2] + m_pLongAlpha * GETB(in[pixel]);
+                }
+            }
+        }
+
+        if (m_pBackgroundWeight > 0) {
+            // Use part of the background mean. This allows to have only lights appearing in the video
+            // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
             for (int pixel = 0; pixel < width*height; pixel++) {
-                m_longMeanImage[3*pixel+0] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+0] + m_pLongAlpha * GETR(in[pixel]);
-                m_longMeanImage[3*pixel+1] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+1] + m_pLongAlpha * GETG(in[pixel]);
-                m_longMeanImage[3*pixel+2] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+2] + m_pLongAlpha * GETB(in[pixel]);
+                out[pixel] = RGBA((int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+0] + (1-m_pBackgroundWeight)*GETR(out[pixel])),
+                                  (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+1] + (1-m_pBackgroundWeight)*GETG(out[pixel])),
+                                  (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+2] + (1-m_pBackgroundWeight)*GETB(out[pixel])),
+                                  0xFF);
+            }
+        }
+
+        if (m_pDim > 0) {
+            // Dims the light mask. Lights will leave fainting trails.
+            float factor = 1-m_pDim;
+            for (int i = 0; i < width*height; i++) {
+                m_alphaMap[4*i + 0] *= factor;
+                m_alphaMap[4*i + 1] *= factor;
+                m_alphaMap[4*i + 2] *= factor;
+                m_alphaMap[4*i + 3] *= factor;
             }
         }
 
@@ -309,11 +340,11 @@ public:
             maxDiff = 0;
             temp = 0;
             for (int pixel = 0; pixel < width*height; pixel++) {
-                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0])/2;
                 r = CLAMP(r);
-                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1])/2;
                 g = CLAMP(g);
-                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2])/2;
                 b = CLAMP(b);
 
                 out[pixel] = RGBA(r,g,b,0xFF);
@@ -508,30 +539,49 @@ public:
         case Graffiti_LongAvgAlphaCum:
             for (int pixel = 0; pixel < width*height; pixel++) {
 
+                // maxDiff: Maximum difference to the mean image
+                //          {-255,...,255}
+                // max:     Maximum pixel value
+                //          {0,...,255}
+                // temp:    Sum of all differences
+                //          {-3*255,...,3*255}
+                // sum:     Sum of all pixel values
+                //          {0,...,3*255}
+
                 r = GETR(out[pixel]) - m_longMeanImage[3*pixel+0];
-                r = CLAMP(r);
-                max = GETR(out[pixel]);
                 maxDiff = r;
+                max = GETR(out[pixel]);
                 temp = r;
 
                 g = GETG(out[pixel]) - m_longMeanImage[3*pixel+1];
-                g = CLAMP(g);
-                if (maxDiff < g) maxDiff = g;
-                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                if (max < GETG(out[pixel])) {
+                    max = GETG(out[pixel]);
+                }
+                if (maxDiff < g) {
+                    maxDiff = g;
+                }
                 temp += g;
 
                 b = GETB(out[pixel]) - m_longMeanImage[3*pixel+2];
-                b = CLAMP(b);
-                if (maxDiff < b) maxDiff = b;
-                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                if (max < GETB(out[pixel])) {
+                    max = GETB(out[pixel]);
+                }
+                if (maxDiff < b) {
+                    maxDiff = b;
+                }
                 temp += b;
 
-                if (maxDiff > 0x50 && temp > 3*0x45) {
+                sum = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
+
+                if (
+                        maxDiff > m_pThresholdDifference    // I regard 0x50 as a meaningful value.
+                        && temp > 3*0x45
+                        && sum > m_pThresholdBrightness     // A value of 450 seems to make sense here.
+                    ) {
                     // Store the «additional» light delivered by the light source in the light mask.
-                    color = RGBA(r,g,b,0xFF);
+                    color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
                     m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
 
-                    sum = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
 
                     m_alphaMap[4*pixel+0] += m_pLightOpacity;
                     if (sum > 3*0xF0) {
@@ -543,7 +593,7 @@ public:
                     }
                 }
                 if (m_lightMask[pixel] != 0) {
-                    // Add additional light to the image
+                    // Add the light map as additional light to the image
                     r = GETR(out[pixel]) + m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]);
                     g = GETG(out[pixel]) + m_alphaMap[4*pixel+0]*GETG(m_lightMask[pixel]);
                     b = GETB(out[pixel]) + m_alphaMap[4*pixel+0]*GETB(m_lightMask[pixel]);
@@ -566,6 +616,10 @@ private:
 
     f0r_param_double m_pLongAlpha;
     f0r_param_double m_pLightOpacity;
+    f0r_param_double m_pBackgroundWeight;
+    f0r_param_double m_pThresholdBrightness;
+    f0r_param_double m_pThresholdDifference;
+    f0r_param_double m_pDim;
 
 };
 
