@@ -25,6 +25,7 @@
   */
 #include "frei0r.hpp"
 
+#include <cmath>
 #include <cstdio>
 #include <climits>
 #include <algorithm>
@@ -37,6 +38,7 @@
 
 // Macro to assemble a color in RGBA8888 format
 #define RGBA(r,g,b,a) ( ((r) << (0*CHAR_BIT)) | ((g) << (1*CHAR_BIT)) | ((b) << (2*CHAR_BIT)) | ((a) << (3*CHAR_BIT)) )
+// Component-wise maximum
 #define MAX(a,b)  ( (((((a) >> (0*CHAR_BIT)) & 0xFF) > (((b) >> (0*CHAR_BIT)) & 0xFF)) ? ((a) & (0xFF << (0*CHAR_BIT))) : ((b) & (0xFF << (0*CHAR_BIT)))) \
                   | (((((a) >> (1*CHAR_BIT)) & 0xFF) > (((b) >> (1*CHAR_BIT)) & 0xFF)) ? ((a) & (0xFF << (1*CHAR_BIT))) : ((b) & (0xFF << (1*CHAR_BIT)))) \
                   | (((((a) >> (2*CHAR_BIT)) & 0xFF) > (((b) >> (2*CHAR_BIT)) & 0xFF)) ? ((a) & (0xFF << (2*CHAR_BIT))) : ((b) & (0xFF << (2*CHAR_BIT)))) \
@@ -69,17 +71,22 @@ public:
 
     {
         m_mode = Graffiti_LongAvgAlphaCum;
+        m_dimMode = Dim_Mult;
 
         register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
         register_param(m_pLightOpacity, "lightOpacity", "Basic opacity for a light source. Will be summed up.");
+        register_param(m_pOpacitySmoothing, "opacitySmoothing", "Smoothing of the light map");
         register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should be");
-        register_param(m_pThresholdBrightness, "thresholdBrighness", "Brightness threshold to distinguish between foreground and background");
+        register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background");
         register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguis between fore- and background");
+        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences");
         register_param(m_pDim, "dim", "Dimming of the light mask");
         m_pLongAlpha = 1/128.0;
         m_pLightOpacity = .4;
+        m_pOpacitySmoothing = 3;
         m_pBackgroundWeight = 0;
         m_pThresholdBrightness = 450;
+        m_pThresholdDiffSum = 0;
         m_pDim = 0;
 
     }
@@ -92,8 +99,9 @@ public:
                         Graffiti_Avg_Stat, Graffiti_AvgTresh_Stat, Graffiti_Max_Stat, Graffiti_Y_Stat, Graffiti_S_Stat,
                         Graffiti_STresh_Stat, Graffiti_SDiff_Stat, Graffiti_SDiffTresh_Stat,
                         Graffiti_SSqrt_Stat,
-                        Graffiti_LongAvg, Graffiti_LongAvg_Stat, Graffiti_LongAvgAlpha, Graffiti_LongAvgAlpha2, Graffiti_LongAvgAlpha_Stat,
+                        Graffiti_LongAvg, Graffiti_LongAvg_Stat, Graffiti_LongAvgAlpha, Graffiti_LongAvgAlpha_Stat,
                         Graffiti_LongAvgAlphaCum };
+    enum DimMode { Dim_Mult, Dim_Sin };
 
 
     virtual void update()
@@ -133,13 +141,35 @@ public:
 
         if (m_pDim > 0) {
             // Dims the light mask. Lights will leave fainting trails.
+
             float factor = 1-m_pDim;
-            for (int i = 0; i < width*height; i++) {
-                m_alphaMap[4*i + 0] *= factor;
-                m_alphaMap[4*i + 1] *= factor;
-                m_alphaMap[4*i + 2] *= factor;
-                m_alphaMap[4*i + 3] *= factor;
+
+            /* Gnu Octave:
+               range=linspace(0,1,100);
+               % Sin
+               plot(range,sin(range*pi/2).^.5)
+               plot(range,sin(range*pi/2).^.25)
+            */
+
+            switch (m_dimMode) {
+                case Dim_Mult:
+                    for (int i = 0; i < width*height; i++) {
+                        m_alphaMap[4*i + 0] *= factor;
+                        m_alphaMap[4*i + 1] *= factor;
+                        m_alphaMap[4*i + 2] *= factor;
+                        m_alphaMap[4*i + 3] *= factor;
+                    }
+                    break;
+                case Dim_Sin:
+                    // Attention: Since Graffiti_LongAvgAlphaCum only makes use of the first alpha channel
+                    // the other channels are not calculated here due to efficiency reasons.
+                    // May have to be adjusted if required.
+                    for (int i = 0; i < width*height; i++) {
+                        m_alphaMap[4*i + 0] *= pow(sin(m_alphaMap[4*i + 0] * M_PI/2), m_pDim) - .01;
+                        if (m_alphaMap[4*i + 0] < 0) { m_alphaMap[4*i + 0] = 0; }
+                    }
             }
+
         }
 
 
@@ -491,51 +521,6 @@ public:
                 }
             }
             break;
-        case Graffiti_LongAvgAlpha2:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-
-                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
-                r = CLAMP(r);
-                max = GETR(out[pixel]);
-                maxDiff = r;
-                temp = r;
-
-                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
-                g = CLAMP(g);
-                if (maxDiff < g) maxDiff = g;
-                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
-                temp += g;
-
-                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
-                b = CLAMP(b);
-                if (maxDiff < b) maxDiff = b;
-                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
-                temp += b;
-
-                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
-                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
-
-                    f = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
-                    f = 16*(f/255.0/3 - (1-1/16.0));
-                    if (f < 0) f = 0;
-                    f *= f;
-                    if (f > m_alphaMap[4*pixel+0]) {
-                        m_alphaMap[4*pixel+0] = f;
-                        m_alphaMap[4*pixel+1] = f;
-                        m_alphaMap[4*pixel+2] = f;
-                    }
-                }
-                if (m_lightMask[pixel] != 0) {
-                    r = SCREEN1(GETR(out[pixel]), m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]));
-                    g = SCREEN1(GETG(out[pixel]), m_alphaMap[4*pixel+1]*GETG(m_lightMask[pixel]));
-                    b = SCREEN1(GETB(out[pixel]), m_alphaMap[4*pixel+2]*GETB(m_lightMask[pixel]));
-                    r = CLAMP(r);
-                    g = CLAMP(g);
-                    b = CLAMP(b);
-                    out[pixel] = RGBA(r,g,b,0xFF);
-                }
-            }
-            break;
         case Graffiti_LongAvgAlphaCum:
             for (int pixel = 0; pixel < width*height; pixel++) {
 
@@ -575,7 +560,7 @@ public:
 
                 if (
                         maxDiff > m_pThresholdDifference    // I regard 0x50 as a meaningful value.
-                        && temp > 3*0x45
+                        && temp > m_pThresholdDiffSum       // 3*0x45 sometimes okay for filtering reflections on bright patches
                         && sum > m_pThresholdBrightness     // A value of 450 seems to make sense here.
                     ) {
                     // Store the «additional» light delivered by the light source in the light mask.
@@ -583,9 +568,14 @@ public:
                     m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
 
 
-                    m_alphaMap[4*pixel+0] += m_pLightOpacity;
+                    f = 3*(sum - m_pThresholdBrightness)/(3.0 * 0xFF - m_pThresholdBrightness);
+                    if (f > 1) {
+                        f = 1;
+                    }
+
+                    m_alphaMap[4*pixel+0] += f * m_pLightOpacity;
                     if (sum > 3*0xF0) {
-                        m_alphaMap[4*pixel+0] += .3*(sum-3*0xF0);
+                        m_alphaMap[4*pixel+0] += .3*(sum-3*0xF0)/(3.0*0x0F);
                     }
 
                     if (m_alphaMap[4*pixel+0] > 1) {
@@ -602,6 +592,8 @@ public:
                     b = CLAMP(b);
                     out[pixel] = RGBA(r,g,b,0xFF);
                 }
+                // TODO remove
+//                out[pixel] = RGBA(CLAMP((int) (m_alphaMap[4*pixel]*255)),CLAMP((int) (m_alphaMap[4*pixel]*255)),CLAMP((int) (m_alphaMap[4*pixel]*255)),0xFF);
             }
             break;
         }
@@ -613,12 +605,15 @@ private:
     std::vector<float> m_alphaMap;
     bool m_meanInitialized;
     GraffitiMode m_mode;
+    DimMode m_dimMode;
 
     f0r_param_double m_pLongAlpha;
     f0r_param_double m_pLightOpacity;
+    f0r_param_double m_pOpacitySmoothing;
     f0r_param_double m_pBackgroundWeight;
     f0r_param_double m_pThresholdBrightness;
     f0r_param_double m_pThresholdDifference;
+    f0r_param_double m_pThresholdDiffSum;
     f0r_param_double m_pDim;
 
 };
