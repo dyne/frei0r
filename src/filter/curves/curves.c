@@ -29,10 +29,6 @@
 
 #include "frei0r.h"
 #include "frei0r_math.h"
-#define CHANNEL_RED 0
-#define CHANNEL_GREEN 1
-#define CHANNEL_BLUE 2
-#define CHANNEL_LUMA 3
 
 #define POS_TOP_LEFT 0
 #define POS_TOP_RIGHT 1
@@ -42,6 +38,8 @@
 #define POINT "Point "
 #define INPUT_VALUE " input value"
 #define OUTPUT_VALUE " output value"
+
+enum CHANNELS { CHANNEL_RED = 0, CHANNEL_GREEN, CHANNEL_BLUE, CHANNEL_ALPHA, CHANNEL_LUMA, CHANNEL_RGB };
 
 typedef struct position
 {
@@ -61,7 +59,7 @@ typedef struct curves_instance
 {
   unsigned int width;
   unsigned int height;
-  double channel;
+  enum CHANNELS channel;
   double pointNumber;
   double points[10];
   double drawCurves;
@@ -119,7 +117,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 0:
     info->name = "Channel";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Channel to adjust levels (1 = RED; 2 = GREEN; 3 = BLUE; 4 = LUMA)";
+    info->explanation = "Channel to adjust (0 = red, 0.1 = green, 0.2 = blue, 0.3 = alpha, 0.4 = luma, 0.5 = rgb)";
     break;
   case 1:
     info->name = "Show curves";
@@ -159,7 +157,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
   curves_instance_t* inst = (curves_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
-  inst->channel = 0;
+  inst->channel = CHANNEL_RGB;
   inst->drawCurves = 1;
   inst->curvesPosition = 3;
   inst->pointNumber = 2;
@@ -190,12 +188,22 @@ void f0r_set_param_value(f0r_instance_t instance,
   assert(instance);
   curves_instance_t* inst = (curves_instance_t*)instance;
 
+  double tmp;
   f0r_param_string bspline;
   
   switch(param_index)
   {
 	case 0:
-          inst->channel = *((f0r_param_double *)param);
+          tmp = *((f0r_param_double *)param);
+          if (tmp >= 1) {
+              // legacy support
+              if (tmp == 3)
+                  inst->channel = CHANNEL_LUMA;
+              else
+                  inst->channel = (enum CHANNELS)((int)tmp);
+          } else {
+              inst->channel = (enum CHANNELS)(tmp * 10);
+          }
 	  break;
 	case 1:
 	  inst->drawCurves =  *((f0r_param_double *)param);
@@ -233,7 +241,7 @@ void f0r_get_param_value(f0r_instance_t instance,
   switch(param_index)
   {
   case 0:
-	*((f0r_param_double *)param) = inst->channel;
+	*((f0r_param_double *)param) = inst->channel / 10.;
 	break;
   case 1:
 	*((f0r_param_double *)param) = inst->drawCurves;
@@ -621,6 +629,14 @@ void f0r_update(f0r_instance_t instance, double time,
   double factorR, factorG, factorB, lumaValue;
 
   switch ((int)inst->channel) {
+  case CHANNEL_RGB:
+      while (len--) {
+          *dst++ = map[*src++];         // r
+          *dst++ = map[*src++];         // g
+          *dst++ = map[*src++];         // b
+          *dst++ = *src++;              // a
+      }
+      break;
   case CHANNEL_RED:
       while (len--) {
           *dst++ = map[*src++];         // r
@@ -643,6 +659,14 @@ void f0r_update(f0r_instance_t instance, double time,
           *dst++ = *src++;              // g
           *dst++ = map[*src++];         // b
           *dst++ = *src++;              // a
+      }
+      break;
+  case CHANNEL_ALPHA:
+      while (len--) {
+          *dst++ = *src++;              // r
+          *dst++ = *src++;              // g
+          *dst++ = *src++;              // b
+          *dst++ = map[*src++];         // a
       }
       break;
   case CHANNEL_LUMA:
@@ -677,7 +701,7 @@ void f0r_update(f0r_instance_t instance, double time,
 
   if (inst->drawCurves && !strlen(inst->bspline)) {
 	unsigned char color[] = {0, 0, 0};
-	if (inst->channel != CHANNEL_LUMA)
+	if (inst->channel == CHANNEL_RED || inst->channel == CHANNEL_GREEN || inst->channel == CHANNEL_BLUE)
 	  color[(int)inst->channel] = 255;
 	//calculating graph offset by given position values
 	int graphXOffset = inst->curvesPosition == POS_TOP_LEFT || inst->curvesPosition == POS_BOTTOM_LEFT?0:inst->width - scale;
