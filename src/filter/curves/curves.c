@@ -102,9 +102,9 @@ void f0r_get_plugin_info(f0r_plugin_info_t* curves_info)
   curves_info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
   curves_info->color_model = F0R_COLOR_MODEL_RGBA8888;
   curves_info->frei0r_version = FREI0R_MAJOR_VERSION;
-  curves_info->major_version = 0; 
-  curves_info->minor_version = 1; 
-  curves_info->num_params = 16; 
+  curves_info->major_version = 0;
+  curves_info->minor_version = 2;
+  curves_info->num_params = 16;
   curves_info->explanation = "Adjust luminance or color channel intensity with curve level mapping";
 }
 
@@ -144,7 +144,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 5:
     info->name = "Bézier spline";
     info->type = F0R_PARAM_STRING;
-    info->explanation = "Use cubic Bézier spline. Has to be a sorted list of points in the format \"handle1x;handle1y#pointx;pointy#handle2x;handle2y\"(pointx = in, pointy = out). Points are separated by a \"|\".The values can have \"double\" precision. x, y for points should be in the range 0-255. x,y for handles might also be out of this range.";
+    info->explanation = "Use cubic Bézier spline. Has to be a sorted list of points in the format \"handle1x;handle1y#pointx;pointy#handle2x;handle2y\"(pointx = in, pointy = out). Points are separated by a \"|\".The values can have \"double\" precision. x, y for points should be in the range 0-1. x,y for handles might also be out of this range.";
   default:
 	if (param_index > 5) {
 	  info->name = get_param_name(param_index - 6);
@@ -469,7 +469,7 @@ void updateBsplineMap(f0r_instance_t instance)
         char **positionsStr = calloc(1, sizeof(char *));
         int positionsNum = tokenise(pointStr[i], "#", &positionsStr);
 
-        if (/*positionsNum < 2 || positionsNum > 3*/ positionsNum != 3) {
+        if (positionsNum != 3) {
             for(int j = 0; j < positionsNum; ++j)
                 free(positionsStr[j]);
             free(positionsStr);
@@ -488,8 +488,8 @@ void updateBsplineMap(f0r_instance_t instance)
                 continue;
             }
 
-            double x = atof(coords[0]);
-            double y = atof(coords[1]);
+            double x = atof(coords[0]) * 255;
+            double y = atof(coords[1]) * 255;
 
             positions[j].x = x;
             positions[j].y = y;
@@ -527,15 +527,10 @@ void updateBsplineMap(f0r_instance_t instance)
         // make sure points are in correct order
         if (p[0].x > p[3].x)
             continue;
+
         // try to avoid loops and other cases of one x having multiple y
-        if (p[1].x < p[0].x)
-            p[1].x = p[0].x;
-        if (p[2].x > p[3].x)
-            p[2].x = p[3].x;
-        if (p[2].x < p[0].x)
-            p[2].x = p[0].x;
-        if (p[1].x > p[3].x)
-            p[1].x = p[3].x;
+        p[1].x = CLAMP(p[1].x, p[0].x, p[3].x);
+        p[2].x = CLAMP(p[2].x, p[0].x, p[3].x);
 
         t = 0;
         pn = 0;
