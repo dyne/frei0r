@@ -212,6 +212,7 @@ void f0r_set_param_value(f0r_instance_t instance,
         case 5:
           bspline = *((f0r_param_string *)param);
           if (strcmp(inst->bspline, bspline) != 0) {
+              free(inst->bspline);
               inst->bspline = strdup(bspline);
               updateBsplineMap(instance);
           }
