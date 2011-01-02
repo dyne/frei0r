@@ -513,7 +513,7 @@ void updateBsplineMap(f0r_instance_t instance)
     free(pointStr);
 
     /*
-     * Actual work: calculate curves between points and fill map.
+     * Actual work: calculate curves between points and fill map
      */
     position p[4];
     double t, step, diff, diff2;
@@ -577,8 +577,6 @@ void f0r_update(f0r_instance_t instance, double time,
   
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
-  int b, g, r;
-  int luma;
 
   int map[256];
   double mapLuma[256];
@@ -619,58 +617,65 @@ void f0r_update(f0r_instance_t instance, double time,
       }
   }
 
-  while (len--)
-  {
-	r = *src++;
-	g = *src++;
-	b = *src++;
+  int r, g, b, luma;
+  double factorR, factorG, factorB, lumaValue;
 
-	//calculating point luminance value
-	if (inst->channel == CHANNEL_LUMA) {
-            if (inst->formula)
-                luma = CLAMP0255((unsigned int)(.2126 * r + .7152 * g + .0722 * b)); // Rec. 709
-            else
-                luma = CLAMP0255((unsigned int)(.299 * r + .587 * g + .114 * b)); // Rec. 601
-        }
-	
-	//mapping curve values to current point
-	switch ((int)inst->channel) {
-	case CHANNEL_RED:
-	  *dst++ = map[r];
-	  *dst++ = g;
-	  *dst++ = b;
-	  break;
-	case CHANNEL_GREEN:
-	  *dst++ = r;
-	  *dst++ = map[g];
-	  *dst++ = b;
-	  break;
-	case CHANNEL_BLUE:
-	  *dst++ = r;
-	  *dst++ = g;
-	  *dst++ = map[b];
-	  break;
-	case CHANNEL_LUMA:
-	  if (luma == 0) {
-		*dst++ = mapLuma[luma];
-		*dst++ = mapLuma[luma];
-		*dst++ = mapLuma[luma];
-	  } else {
-		*dst++ = CLAMP0255((unsigned int)(r * mapLuma[luma]));
-		*dst++ = CLAMP0255((unsigned int)(g * mapLuma[luma]));
-		*dst++ = CLAMP0255((unsigned int)(b * mapLuma[luma]));
-	  }
-	  break;
-	}
-
-	*dst++ = *src++;  // copy alpha
+  switch ((int)inst->channel) {
+  case CHANNEL_RED:
+      while (len--) {
+          *dst++ = map[*src++];         // r
+          *dst++ = *src++;              // g
+          *dst++ = *src++;              // b
+          *dst++ = *src++;              // a
+      }
+      break;
+  case CHANNEL_GREEN:
+      while (len--) {
+          *dst++ = *src++;              // r
+          *dst++ = map[*src++];         // g
+          *dst++ = *src++;              // b
+          *dst++ = *src++;              // a
+      }
+      break;
+  case CHANNEL_BLUE:
+      while (len--) {
+          *dst++ = *src++;              // r
+          *dst++ = *src++;              // g
+          *dst++ = map[*src++];         // b
+          *dst++ = *src++;              // a
+      }
+      break;
+  case CHANNEL_LUMA:
+      if (inst->formula) {      // Rec.709
+          factorR = .2126;
+          factorG = .7152;
+          factorB = .0722;
+      } else {                  // Rec. 601
+          factorR = .299;
+          factorG = .587;
+          factorB = .114;
+      }
+      while (len--) {
+          r = *src++;
+          g = *src++;
+          b = *src++;
+          // should we maybe use ROUND here?
+          luma = (int)(factorR * r + factorG * g + factorB * b);
+          lumaValue = mapLuma[luma];
+          if (luma == 0) {
+              *dst++ = lumaValue;
+              *dst++ = lumaValue;
+              *dst++ = lumaValue;
+          } else {
+              *dst++ = CLAMP0255((int)(r * lumaValue));
+              *dst++ = CLAMP0255((int)(g * lumaValue));
+              *dst++ = CLAMP0255((int)(b * lumaValue));
+          }
+          *dst++ = *src++;
+      }
   }
 
-  if (strlen(inst->bspline) > 0) {
-      return;
-  }
-
-  if (inst->drawCurves) {
+  if (inst->drawCurves && !strlen(inst->bspline)) {
 	unsigned char color[] = {0, 0, 0};
 	if (inst->channel != CHANNEL_LUMA)
 	  color[(int)inst->channel] = 255;
