@@ -59,6 +59,9 @@
 // Screen layer mode
 #define SCREEN1(mask,img) ((uint8_t) (255-(255.0-(mask))*(255.0-(img))/255.0))
 
+// Luma calculation. Refer to the SOP/Sat filter.
+#define REC709Y(r,g,b) (.2126*(r) + .7152*(g) + .0722*(b))
+
 class LightGraffiti : public frei0r::filter
 {
 
@@ -70,20 +73,23 @@ public:
             m_meanInitialized(false)
 
     {
-        m_mode = Graffiti_LongAvgAlphaCum;
+        m_mode = Graffiti_LongAvgAlphaCumC;
         m_dimMode = Dim_Mult;
 
-        register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
-        register_param(m_pLightOpacity, "lightOpacity", "Basic opacity for a light source. Will be summed up.");
-        register_param(m_pOpacitySmoothing, "opacitySmoothing", "Smoothing of the light map");
+        // TODO move down, less important
+        register_param(m_pSensitivity, "sensitivity", "Basic opacity for a light source. Will be summed up.");
         register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should be");
         register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background");
         register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguis between fore- and background");
         register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences");
         register_param(m_pDim, "dim", "Dimming of the light mask");
+        register_param(m_pStatsBrightness, "statsBrightness", "Display the brightness and threshold");
+        register_param(m_pStatsDiff, "statsDifference", "Display the background difference and threshold");
+        register_param(m_pReset, "reset", "Reset filter masks");
+        register_param(m_pTransparentBackground, "transparentBackground", "Make the background transparent");
+        register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
         m_pLongAlpha = 1/128.0;
-        m_pLightOpacity = .4;
-        m_pOpacitySmoothing = 3;
+        m_pSensitivity = 1;
         m_pBackgroundWeight = 0;
         m_pThresholdBrightness = 450;
         m_pThresholdDiffSum = 0;
@@ -100,15 +106,18 @@ public:
                         Graffiti_STresh_Stat, Graffiti_SDiff_Stat, Graffiti_SDiffTresh_Stat,
                         Graffiti_SSqrt_Stat,
                         Graffiti_LongAvg, Graffiti_LongAvg_Stat, Graffiti_LongAvgAlpha, Graffiti_LongAvgAlpha_Stat,
-                        Graffiti_LongAvgAlphaCum };
+                        Graffiti_LongAvgAlphaCum, Graffiti_LongAvgAlphaCumC };
     enum DimMode { Dim_Mult, Dim_Sin };
+
+
+
 
 
     virtual void update()
     {
         std::copy(in, in + width*height, out);
 
-        if (!m_meanInitialized) {
+        if (!m_meanInitialized || m_pReset) {
             m_longMeanImage = std::vector<float>(width*height*3);
             for (int pixel = 0; pixel < width*height; pixel++) {
                 m_longMeanImage[3*pixel+0] = GETR(in[pixel]);
@@ -125,17 +134,6 @@ public:
                     m_longMeanImage[3*pixel+1] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+1] + m_pLongAlpha * GETG(in[pixel]);
                     m_longMeanImage[3*pixel+2] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+2] + m_pLongAlpha * GETB(in[pixel]);
                 }
-            }
-        }
-
-        if (m_pBackgroundWeight > 0) {
-            // Use part of the background mean. This allows to have only lights appearing in the video
-            // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                out[pixel] = RGBA((int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+0] + (1-m_pBackgroundWeight)*GETR(out[pixel])),
-                                  (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+1] + (1-m_pBackgroundWeight)*GETG(out[pixel])),
-                                  (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+2] + (1-m_pBackgroundWeight)*GETB(out[pixel])),
-                                  0xFF);
             }
         }
 
@@ -173,11 +171,18 @@ public:
         }
 
 
+        if (m_pReset) {
+            std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
+            std::fill(&m_alphaMap[0], &m_alphaMap[width*height*4 - 1], 0);
+            // m_longMeanImage has been handled above already (set to the current image).
+        }
+
+
         int r, g, b;
         int maxDiff, temp, sum;
         int min;
         int max;
-        float f;
+        float f, y;
         uint32_t color;
 
 
@@ -521,7 +526,18 @@ public:
                 }
             }
             break;
-        case Graffiti_LongAvgAlphaCum:
+        case Graffiti_LongAvgAlphaCumC:
+
+            /**
+              Ideas:
+              * Remember Hue if Saturation > 0.1 (below: Close to white, so Hue might be wrong → remember Saturation as well)
+              * Maximize Saturation for low alpha (opacity)
+              * Make alpha depend on the light source's brightness
+              * If alpha > 1: Simulate overexposure by going towards white
+              * If pixel is bright in another frame: Sum up alpha values (longer exposure)
+                Maybe: Logarithmic scale? → Overexposure becomes harder
+                log(alpha/factor + 1) or sqrt(alpha/factor)
+              */
             for (int pixel = 0; pixel < width*height; pixel++) {
 
                 // maxDiff: Maximum difference to the mean image
@@ -567,33 +583,99 @@ public:
                     color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
                     m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
 
-
-                    f = 3*(sum - m_pThresholdBrightness)/(3.0 * 0xFF - m_pThresholdBrightness);
-                    if (f > 1) {
-                        f = 1;
-                    }
-
-                    m_alphaMap[4*pixel+0] += f * m_pLightOpacity;
-                    if (sum > 3*0xF0) {
-                        m_alphaMap[4*pixel+0] += .3*(sum-3*0xF0)/(3.0*0x0F);
-                    }
-
-                    if (m_alphaMap[4*pixel+0] > 1) {
-                        m_alphaMap[4*pixel+0] = 1;
-                    }
+                    // Add the brightness of the light source to the brightness map (alpha map)
+                    y = REC709Y(CLAMP(r), CLAMP(g), CLAMP(b)) / 255.0;
+                    y = y * m_pSensitivity;
+                    m_alphaMap[4*pixel] += y;
                 }
-                if (m_lightMask[pixel] != 0) {
+
+
+                if (m_pBackgroundWeight > 0) {
+                    // Use part of the background mean. This allows to have only lights appearing in the video
+                    // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
+                    out[pixel] = RGBA((int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+0] + (1-m_pBackgroundWeight)*GETR(out[pixel])),
+                                      (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+1] + (1-m_pBackgroundWeight)*GETG(out[pixel])),
+                                      (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+2] + (1-m_pBackgroundWeight)*GETB(out[pixel])),
+                                      0xFF);
+                }
+
+                if (m_lightMask[pixel] != 0 && !m_pStatsBrightness && !m_pStatsDiff) {
+
+                    f = sqrt(m_alphaMap[4*pixel]);
+
+                    r = f * GETR(m_lightMask[pixel]);
+                    g = f * GETG(m_lightMask[pixel]);
+                    b = f * GETB(m_lightMask[pixel]);
+
+                    if (f > 1) {
+                        // Simulate overexposure
+                        sum = 0;
+                        if (r > 255) {
+                            sum += r-255;
+                        }
+                        if (g > 255) {
+                            sum += g-255;
+                        }
+                        if (b > 255) {
+                            sum += g-255;
+                        }
+
+                        if (sum > 0) {
+                            sum = sum/10.0;
+                            r += sum;
+                            g += sum;
+                            b += sum;
+                        }
+                    } else if (f < 1) {
+                        // Lower exposure: Stronger colors
+                        y = REC709Y(r,g,b);
+                        float sat = 2.0;
+
+                        r = y + sat * (r-y);
+                        g = y + sat * (g-y);
+                        b = y + sat * (b-y);
+                    }
+
+
                     // Add the light map as additional light to the image
-                    r = GETR(out[pixel]) + m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]);
-                    g = GETG(out[pixel]) + m_alphaMap[4*pixel+0]*GETG(m_lightMask[pixel]);
-                    b = GETB(out[pixel]) + m_alphaMap[4*pixel+0]*GETB(m_lightMask[pixel]);
+                    r += GETR(out[pixel]);
+                    g += GETG(out[pixel]);
+                    b += GETB(out[pixel]);
                     r = CLAMP(r);
                     g = CLAMP(g);
                     b = CLAMP(b);
                     out[pixel] = RGBA(r,g,b,0xFF);
+                } else if (m_pTransparentBackground) {
+                    // Transparent background
+                    out[pixel] &= RGBA(0xFF, 0xFF, 0xFF, 0);
                 }
-                // TODO remove
-//                out[pixel] = RGBA(CLAMP((int) (m_alphaMap[4*pixel]*255)),CLAMP((int) (m_alphaMap[4*pixel]*255)),CLAMP((int) (m_alphaMap[4*pixel]*255)),0xFF);
+
+
+                if (m_pStatsBrightness) {
+                    // Show the image's brightness and highlight the threshold
+                    // set by the user for detecting the right threshold easier
+                    r = sum/3;
+                    g = sum/3;
+                    b = sum/3;
+                    if (sum > m_pThresholdBrightness) {
+                        b = 255;
+                    }
+                    out[pixel] = RGBA(r,g,b,0xFF);
+                }
+
+                if (m_pStatsDiff) {
+                    // As above, but for the brightness difference relative to the background.
+                    r = CLAMP(maxDiff);
+                    g = r;
+                    if (!m_pStatsBrightness) {
+                        b = r;
+                    }
+
+                    if (maxDiff > m_pThresholdDifference) {
+                        g = 255;
+                    }
+                    out[pixel] = RGBA(r,g,b,0xFF);
+                }
             }
             break;
         }
@@ -608,13 +690,16 @@ private:
     DimMode m_dimMode;
 
     f0r_param_double m_pLongAlpha;
-    f0r_param_double m_pLightOpacity;
-    f0r_param_double m_pOpacitySmoothing;
+    f0r_param_double m_pSensitivity;
     f0r_param_double m_pBackgroundWeight;
     f0r_param_double m_pThresholdBrightness;
     f0r_param_double m_pThresholdDifference;
     f0r_param_double m_pThresholdDiffSum;
     f0r_param_double m_pDim;
+    f0r_param_bool m_pStatsBrightness;
+    f0r_param_bool m_pStatsDiff;
+    f0r_param_bool m_pReset;
+    f0r_param_bool m_pTransparentBackground;
 
 };
 
