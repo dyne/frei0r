@@ -50,12 +50,7 @@ typedef struct position
     double y;
 } position;
 
-typedef struct bspline_point
-{
-    position handle1;
-    position point;
-    position handle2;
-} bspline_point;
+typedef position bspline_point[3]; // [0] = handle1, [1] = point, [2] = handle2
 
 
 typedef struct curves_instance
@@ -70,8 +65,7 @@ typedef struct curves_instance
   double formula;
 
   char *bspline;
-  int bsplineMap[256];
-  double bsplineLumaMap[256];
+  double *bsplineMap;
 } curves_instance_t;
 
 
@@ -80,7 +74,7 @@ typedef struct curves_instance
 // slightly modified
 
 // r,g,b values are from 0 to 255
-// h = [0,6], s = [0,1], v = [0,1]
+// h = [0,360], s = [0,1], v = [0,1]
 //              if s == 0, then h = -1 (undefined)
 void RGBtoHSV(double r, double g, double b, double *h, double *s, double *v)
 {
@@ -106,14 +100,13 @@ void RGBtoHSV(double r, double g, double b, double *h, double *s, double *v)
     else
         *h = 4 + (r - g) / delta;     // between magenta & cyan
 
-    //*h *= 60;                         // degrees
+    *h *= 60;                         // degrees
     if (*h < 0)
-        *h += 6;
-        //*h += 360;
+        *h += 360;
 }
 
 // r,g,b values are from 0 to 1
-// h = [0,6], s = [0,1], v = [0,1]
+// h = [0,360], s = [0,1], v = [0,1]
 void HSVtoRGB(double *r, double *g, double *b, double h, double s, double v)
 {
     if (s == 0) {
@@ -122,7 +115,7 @@ void HSVtoRGB(double *r, double *g, double *b, double h, double s, double v)
         return;
     }
 
-    //h /= 60;                        // sector 0 to 5
+    h /= 60;                        // sector 0 to 5
     int i = (int)h;
     double f = h - i;               // factorial part of h
     double p = v * (1 - s);
@@ -259,6 +252,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->pointNumber = 2;
   inst->formula = 1;
   inst->bspline = calloc(1, sizeof(char));
+  inst->bsplineMap = malloc(sizeof(double));
   inst->points[0] = 0;
   inst->points[1] = 0;
   inst->points[2] = 1;
@@ -275,6 +269,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
   free(((curves_instance_t*)instance)->bspline);
+  free(((curves_instance_t*)instance)->bsplineMap);
   free(instance);
 }
 
@@ -293,12 +288,25 @@ void f0r_set_param_value(f0r_instance_t instance,
           tmp = *((f0r_param_double *)param);
           if (tmp >= 1) {
               // legacy support
-              if (tmp == 3)
-                  inst->channel = CHANNEL_LUMA;
-              else
-                  inst->channel = (enum CHANNELS)((int)tmp);
+              if (tmp == 3) {
+                  if (inst->channel != CHANNEL_LUMA) {
+                    inst->channel = CHANNEL_LUMA;
+                    if (strlen(inst->bspline))
+                        updateBsplineMap(instance);
+                  }
+              } else {
+                  if ((int)inst->channel != (int)tmp) {
+                    inst->channel = (enum CHANNELS)((int)tmp);
+                    if (strlen(inst->bspline))
+                        updateBsplineMap(instance);
+                  }
+              }
           } else {
-              inst->channel = (enum CHANNELS)(tmp * 10);
+              if ((int)inst->channel != (int)(tmp * 10)) {
+                inst->channel = (enum CHANNELS)(tmp * 10);
+                if (strlen(inst->bspline))
+                    updateBsplineMap(instance);
+              }
           }
 	  break;
 	case 1:
@@ -515,7 +523,12 @@ void swap(double *points, int i, int j) {
 position pointOnBezier(double t, position points[4])
 {
     position pos;
-    // coefficients from Bernstein basis polynomial of degree 3
+
+    /*
+     * Calculating a point on the bezier curve using the coefficients from Bernstein basis polynomial of degree 3.
+     * Using the De Casteljau algorithm would be slightly faster when calculating a lot of values
+     * but the difference is far from noticable here since we update the spline only when the parameter changes
+     */
     double c1 = (1-t) * (1-t) * (1-t);
     double c2 = 3 * t * (1-t) * (1-t);
     double c3 = 3 * t * t * (1-t);
@@ -526,7 +539,7 @@ position pointOnBezier(double t, position points[4])
 }
 
 /**
- * Splits given string into sub-strings on given delimiter.
+ * Splits given string into sub-strings at given delimiter.
  * \param string input string
  * \param delimiter delimiter
  * \param tokens pointer to array of strings, will be filled with sub-strings
@@ -555,10 +568,19 @@ void updateBsplineMap(f0r_instance_t instance)
     assert(instance);
     curves_instance_t* inst = (curves_instance_t*)instance;
 
+    int range = inst->channel == CHANNEL_HUE ? 361 : 256;
+    free(inst->bsplineMap);
+    inst->bsplineMap = malloc(range * sizeof(double));
     // fill with default values, in case the spline does not cover the whole range
-    for(int i = 0; i < 256; ++i) {
-        inst->bsplineMap[i] = i;
-        inst->bsplineLumaMap[i] = (i == 0 ? i : i / 255.0);
+    if (inst->channel == CHANNEL_HUE) {
+        for(int i = 0; i < 361; ++i)
+            inst->bsplineMap[i] = i;
+    } else if (inst->channel == CHANNEL_LUMA || inst->channel == CHANNEL_SATURATION) {
+        for(int i = 0; i < 256; ++i)
+            inst->bsplineMap[i] = inst->channel == CHANNEL_LUMA ? 1 : i / 255.;
+    } else {
+        for(int i = 0; i < 256; ++i)
+            inst->bsplineMap[i] = i;
     }
 
     /*
@@ -572,38 +594,19 @@ void updateBsplineMap(f0r_instance_t instance)
     for (int i = 0; i < count; ++i) {
         char **positionsStr = calloc(1, sizeof(char *));
         int positionsNum = tokenise(pointStr[i], "#", &positionsStr);
-
-        if (positionsNum != 3) {
-            for(int j = 0; j < positionsNum; ++j)
-                free(positionsStr[j]);
-            free(positionsStr);
-            continue;
-        }
-
-        position positions[3];
-        for (int j = 0; j < positionsNum; ++j) {
-            char **coords = calloc(1, sizeof(char *));
-            int coordsNum = tokenise(positionsStr[j], ";", &coords);
-
-            if (coordsNum != 2) {
+        if (positionsNum == 3) { // h1, p, h2
+            for (int j = 0; j < positionsNum; ++j) {
+                char **coords = calloc(1, sizeof(char *));
+                int coordsNum = tokenise(positionsStr[j], ";", &coords);
+                if (coordsNum == 2) { // x, y
+                    points[i][j].x = atof(coords[0]);
+                    points[i][j].y = atof(coords[1]);
+                }
                 for (int k = 0; k < coordsNum; ++k)
                     free(coords[k]);
                 free(coords);
-                continue;
             }
-
-            positions[j].x = atof(coords[0]) * 255;
-            positions[j].y = atof(coords[1]) * 255;
-
-            free(coords[0]);
-            free(coords[1]);
-            free(coords);
         }
-
-        points[i].handle1 = positions[0];
-        points[i].point = positions[1];
-        points[i].handle2 = positions[2];
-        
         for(int j = 0; j < positionsNum; ++j)
             free(positionsStr[j]);
         free(positionsStr);
@@ -617,13 +620,13 @@ void updateBsplineMap(f0r_instance_t instance)
      * Actual work: calculate curves between points and fill map
      */
     position p[4];
-    double t, step, diff, diff2;
+    double t, step, diff, y;
     int pn, c, k;
     for (int i = 0; i < count - 1; ++i) {
-        p[0] = points[i].point;
-        p[1] = points[i].handle2;
-        p[2] = points[i+1].handle1;
-        p[3] = points[i+1].point;
+        p[0] = points[i][1];
+        p[1] = points[i][2];
+        p[2] = points[i+1][0];
+        p[3] = points[i+1][1];
 
         // make sure points are in correct order
         if (p[0].x > p[3].x)
@@ -636,9 +639,8 @@ void updateBsplineMap(f0r_instance_t instance)
         t = 0;
         pn = 0;
         // number of points calculated for this curve
-        // x range * 3 should give enough points
-        // TODO: more tests on whether *3 is really sufficient
-        c = (int)((p[3].x - p[0].x) * 3);
+        // x range * 10 should give enough points
+        c = (int)((p[3].x - p[0].x) * range * 10);
         if (c == 0) {
             // points have same x value -> will result in a jump in the curve
             // calculate anyways, in case we only have these two points (with more points this x value will be calculated three times)
@@ -654,17 +656,28 @@ void updateBsplineMap(f0r_instance_t instance)
         // Fill the map in range this curve provides
         k = 0;
         // connection points will be written twice (but therefore no special case for the last point is required)
-        for (int j = (int)p[0].x; j <= (int)p[3].x; ++j) {
-            diff = k > 0 ? j - curve[k-1].x : -1;
-            diff2 = j - curve[k].x;
-            // Find point closest to the one needed (integers 0-255)
-            while (fabs(diff2) <= fabs(diff) && ++k < pn) {
-                diff = diff2;
-                diff2 = j - curve[k].x;
+        for (int j = (int)(p[0].x * (range-1)); j <= (int)(p[3].x * (range-1)); ++j) {
+            if (k > 0)
+                --k;
+            diff = fabs(j / ((double)(range-1)) - curve[k].x);
+            y = curve[k].y;
+            // Find point closest to the one needed (integers 0 - range)
+            while (++k < pn) {
+                if (fabs(j / ((double)(range-1)) - curve[k].x) > diff)
+                    break;
+                diff = fabs(j / ((double)(range-1)) - curve[k].x);
+                y = curve[k++].y;
             }
-            inst->bsplineMap[j] = CLAMP0255(ROUND(curve[k-1].y));
-            inst->bsplineLumaMap[j] = curve[k-1].y / 255.0 / (j == 0 ? 1 : (j / 255.0));
-        }   
+
+            if (inst->channel == CHANNEL_HUE)
+                inst->bsplineMap[j] = CLAMP(y * 360, 0, 360);
+            else if (inst->channel == CHANNEL_LUMA)
+                inst->bsplineMap[j] = y / (j == 0 ? 1 : j / 255.);
+            else if (inst->channel == CHANNEL_SATURATION)
+                inst->bsplineMap[j] = CLAMP(y, 0, 1);
+            else
+                inst->bsplineMap[j] = CLAMP0255(ROUND(y * 255));
+        }
     }
 }
 
@@ -675,14 +688,14 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   curves_instance_t* inst = (curves_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
-  
+
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
 
   int i = 0;
-  int map[256];
+  int mapI[256];
   double mapLuma[256];
-  double *map01 = NULL;
+  double *map = NULL;
   float *mapCurves = NULL;
   int scale = inst->height / 2;
   double *points = NULL;
@@ -703,7 +716,7 @@ void f0r_update(f0r_instance_t instance, double time,
       for(i = 0; i < 256; i++) {
           double v = i / 255.;
 	  double w = spline(v, points, (size_t)inst->pointNumber, coeffs);
-	  map[i] = CLAMP(w, 0, 1) * 255;
+	  mapI[i] = CLAMP(w, 0, 1) * 255;
 	  mapLuma[i] = i == 0?w:w / v;	
       }
       //building map for drawing curve
@@ -713,9 +726,26 @@ void f0r_update(f0r_instance_t instance, double time,
               mapCurves[i] = spline((float)i / scale, points, (size_t)inst->pointNumber, coeffs) * scale;
       }
       free(coeffs);
+
+      if (inst->channel == CHANNEL_HUE || inst->channel == CHANNEL_SATURATION) {
+          map = malloc(361*sizeof(double));
+          if (CHANNEL_SATURATION)
+              for (i = 0; i < 256; ++i)
+                  map[i] = mapI[i] / 255.;
+          else
+              for (i = 0; i < 361; ++i)
+                  map[i] = mapI[(int)(i / 360. * 255)] / 360. * 255;
+      }
   } else {
-      memcpy(map, inst->bsplineMap, 256*sizeof(int));
-      memcpy(mapLuma, inst->bsplineLumaMap, 256*sizeof(double));
+      map = malloc(361*sizeof(double));
+      memcpy(map, inst->bsplineMap, (inst->channel == CHANNEL_HUE ? 361 : 256)*sizeof(double));
+      if (inst->channel != CHANNEL_SATURATION && inst->channel != CHANNEL_HUE) {
+          if (inst->channel == CHANNEL_LUMA)
+              memcpy(mapLuma, map, 256*sizeof(double));
+          else
+              for (i = 0; i < 256; ++i)
+                  mapI[i] = (int)map[i];
+      }
   }
 
   int r, g, b, luma;
@@ -725,42 +755,41 @@ void f0r_update(f0r_instance_t instance, double time,
   switch ((int)inst->channel) {
   case CHANNEL_RGB:
       while (len--) {
-          *dst++ = map[*src++];         // r
-          *dst++ = map[*src++];         // g
-          *dst++ = map[*src++];         // b
+          *dst++ = mapI[*src++];        // r
+          *dst++ = mapI[*src++];        // g
+          *dst++ = mapI[*src++];        // b
           *dst++ = *src++;              // a
       }
       break;
   case CHANNEL_RED:
+      memcpy(outframe, inframe, len*sizeof(uint32_t));
       while (len--) {
-          *dst++ = map[*src++];         // r
-          *dst++ = *src++;              // g
-          *dst++ = *src++;              // b
-          *dst++ = *src++;              // a
+          *dst = mapI[*dst];
+          dst += 4;
       }
       break;
   case CHANNEL_GREEN:
+      memcpy(outframe, inframe, len*sizeof(uint32_t));
+      dst += 1;
       while (len--) {
-          *dst++ = *src++;              // r
-          *dst++ = map[*src++];         // g
-          *dst++ = *src++;              // b
-          *dst++ = *src++;              // a
+          *dst = mapI[*dst];
+          dst += 4;
       }
       break;
   case CHANNEL_BLUE:
+      memcpy(outframe, inframe, len*sizeof(uint32_t));
+      dst += 2;
       while (len--) {
-          *dst++ = *src++;              // r
-          *dst++ = *src++;              // g
-          *dst++ = map[*src++];         // b
-          *dst++ = *src++;              // a
+          *dst = mapI[*dst];
+          dst += 4;
       }
       break;
   case CHANNEL_ALPHA:
+      memcpy(outframe, inframe, len*sizeof(uint32_t));
+      dst += 3;
       while (len--) {
-          *dst++ = *src++;              // r
-          *dst++ = *src++;              // g
-          *dst++ = *src++;              // b
-          *dst++ = map[*src++];         // a
+          *dst = mapI[*dst];
+          dst += 4;
       }
       break;
   case CHANNEL_LUMA:
@@ -777,8 +806,7 @@ void f0r_update(f0r_instance_t instance, double time,
           r = *src++;
           g = *src++;
           b = *src++;
-          // should we maybe use ROUND here?
-          luma = (int)(factorR * r + factorG * g + factorB * b);
+          luma = ROUND(factorR * r + factorG * g + factorB * b);
           lumaValue = mapLuma[luma];
           if (luma == 0) {
               *dst++ = lumaValue;
@@ -793,17 +821,13 @@ void f0r_update(f0r_instance_t instance, double time,
       }
       break;
   case CHANNEL_HUE:
-      map01 = malloc(256 * sizeof(double));
-      for (i = 0; i < 256; ++i) {
-          map01[i] = inst->bsplineMap[i] / 255.;
-      }
       while (len--) {
           rf = *src++;
           gf = *src++;
           bf = *src++;
           RGBtoHSV(rf, gf, bf, &hue, &sat, &val);
           if (hue != -1) {
-              HSVtoRGB(&rf, &gf, &bf, map01[(int)(hue / 6. * 255)] * 6, sat, val);
+              HSVtoRGB(&rf, &gf, &bf, map[(int)hue], sat, val);
               *dst++ = rf * 255;
               *dst++ = gf * 255;
               *dst++ = bf * 255;
@@ -816,22 +840,21 @@ void f0r_update(f0r_instance_t instance, double time,
       }
       break;
   case CHANNEL_SATURATION:
-      map01 = malloc(256 * sizeof(double));
-      for (i = 0; i < 256; ++i) {
-          map01[i] = inst->bsplineMap[i] / 255.;
-      }
       while (len--) {
           rf = *src++;
           gf = *src++;
           bf = *src++;
           RGBtoHSV(rf, gf, bf, &hue, &sat, &val);
-          HSVtoRGB(&rf, &gf, &bf, hue, map01[(int)(sat * 255)], val);
+          HSVtoRGB(&rf, &gf, &bf, hue, map[(int)(sat * 255)], val);
           *dst++ = rf * 255;
           *dst++ = gf * 255;
           *dst++ = bf * 255;
           *dst++ = *src++;
       }
   }
+
+  if (map)
+      free(map);
 
   if (inst->drawCurves && !strlen(inst->bspline)) {
 	unsigned char color[] = {0, 0, 0};
