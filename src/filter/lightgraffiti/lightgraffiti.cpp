@@ -85,9 +85,11 @@ public:
         register_param(m_pDim, "dim", "Dimming of the light mask");
         register_param(m_pStatsBrightness, "statsBrightness", "Display the brightness and threshold");
         register_param(m_pStatsDiff, "statsDifference", "Display the background difference and threshold");
+        register_param(m_pStatsDiffSum, "statsDiffSum", "Display the sum of the background difference and the threshold");
         register_param(m_pReset, "reset", "Reset filter masks");
         register_param(m_pTransparentBackground, "transparentBackground", "Make the background transparent");
         register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
+        register_param(m_pNonlinearDim, "nonlinearDim", "Nonlinear dimming (may look more natural)");
         m_pLongAlpha = 1/128.0;
         m_pSensitivity = 1;
         m_pBackgroundWeight = 0;
@@ -106,7 +108,7 @@ public:
                         Graffiti_STresh_Stat, Graffiti_SDiff_Stat, Graffiti_SDiffTresh_Stat,
                         Graffiti_SSqrt_Stat,
                         Graffiti_LongAvg, Graffiti_LongAvg_Stat, Graffiti_LongAvgAlpha, Graffiti_LongAvgAlpha_Stat,
-                        Graffiti_LongAvgAlphaCum, Graffiti_LongAvgAlphaCumC };
+                        Graffiti_LongAvgAlphaCumC };
     enum DimMode { Dim_Mult, Dim_Sin };
 
 
@@ -117,6 +119,17 @@ public:
     {
         std::copy(in, in + width*height, out);
 
+
+        if (m_pNonlinearDim) {
+            m_dimMode = Dim_Sin;
+        } else {
+            m_dimMode = Dim_Mult;
+        }
+
+
+        /*
+         Refresh background image
+         */
         if (!m_meanInitialized || m_pReset) {
             m_longMeanImage = std::vector<float>(width*height*3);
             for (int pixel = 0; pixel < width*height; pixel++) {
@@ -137,6 +150,10 @@ public:
             }
         }
 
+
+        /*
+         Light mask dimming
+         */
         if (m_pDim > 0) {
             // Dims the light mask. Lights will leave fainting trails.
 
@@ -159,18 +176,27 @@ public:
                     }
                     break;
                 case Dim_Sin:
-                    // Attention: Since Graffiti_LongAvgAlphaCum only makes use of the first alpha channel
+                    // Attention: Since Graffiti_LongAvgAlphaCumC only makes use of the first alpha channel
                     // the other channels are not calculated here due to efficiency reasons.
                     // May have to be adjusted if required.
                     for (int i = 0; i < width*height; i++) {
-                        m_alphaMap[4*i + 0] *= pow(sin(m_alphaMap[4*i + 0] * M_PI/2), m_pDim) - .01;
+                        if (m_alphaMap[4*i + 0] < 1) {
+                            m_alphaMap[4*i + 0] *= pow(sin(m_alphaMap[4*i + 0] * M_PI/2), m_pDim) - .01;
+                        } else {
+                            m_alphaMap[4*i + 0] *= factor;
+                        }
                         if (m_alphaMap[4*i + 0] < 0) { m_alphaMap[4*i + 0] = 0; }
                     }
+                    break;
             }
 
         }
 
 
+
+        /*
+         Reset all masks if desired
+         */
         if (m_pReset) {
             std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
             std::fill(&m_alphaMap[0], &m_alphaMap[width*height*4 - 1], 0);
@@ -540,6 +566,10 @@ public:
               */
             for (int pixel = 0; pixel < width*height; pixel++) {
 
+                /*
+                 Light detection
+                 */
+
                 // maxDiff: Maximum difference to the mean image
                 //          {-255,...,255}
                 // max:     Maximum pixel value
@@ -578,7 +608,8 @@ public:
                         maxDiff > m_pThresholdDifference    // I regard 0x50 as a meaningful value.
                         && temp > m_pThresholdDiffSum       // 3*0x45 sometimes okay for filtering reflections on bright patches
                         && sum > m_pThresholdBrightness     // A value of 450 seems to make sense here.
-                    ) {
+                    )
+                {
                     // Store the «additional» light delivered by the light source in the light mask.
                     color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
                     m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
@@ -590,6 +621,9 @@ public:
                 }
 
 
+                /*
+                 Background weight
+                 */
                 if (m_pBackgroundWeight > 0) {
                     // Use part of the background mean. This allows to have only lights appearing in the video
                     // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
@@ -599,7 +633,15 @@ public:
                                       0xFF);
                 }
 
-                if (m_lightMask[pixel] != 0 && !m_pStatsBrightness && !m_pStatsDiff) {
+
+                /*
+                 Adding light mask
+                 */
+                if (
+                        m_lightMask[pixel] != 0  && m_alphaMap[4*pixel + 0] != 0
+                        && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
+                    )
+                {
 
                     f = sqrt(m_alphaMap[4*pixel]);
 
@@ -651,12 +693,17 @@ public:
                 }
 
 
+                /*
+                 Statistics
+                 */
                 if (m_pStatsBrightness) {
                     // Show the image's brightness and highlight the threshold
                     // set by the user for detecting the right threshold easier
-                    r = sum/3;
-                    g = sum/3;
-                    b = sum/3;
+
+                    // Multiply with 0.8 for still being able to distinguish between white and threshold
+                    r = .8*sum/3;
+                    g = .8*sum/3;
+                    b = .8*sum/3;
                     if (sum > m_pThresholdBrightness) {
                         b = 255;
                     }
@@ -665,7 +712,7 @@ public:
 
                 if (m_pStatsDiff) {
                     // As above, but for the brightness difference relative to the background.
-                    r = CLAMP(maxDiff);
+                    r = .8*CLAMP(maxDiff);
                     g = r;
                     if (!m_pStatsBrightness) {
                         b = r;
@@ -673,6 +720,21 @@ public:
 
                     if (maxDiff > m_pThresholdDifference) {
                         g = 255;
+                    }
+                    out[pixel] = RGBA(r,g,b,0xFF);
+                }
+
+                if (m_pStatsDiffSum) {
+                    // As above, for the sum of the differences in each color channel.
+                    r = .8*CLAMP(temp/3.0);
+                    if (!m_pStatsDiff) {
+                        g = r;
+                    }
+                    if (!m_pStatsBrightness) {
+                        b = r;
+                    }
+                    if (temp > m_pThresholdDiffSum) {
+                        r = 255;
                     }
                     out[pixel] = RGBA(r,g,b,0xFF);
                 }
@@ -698,8 +760,10 @@ private:
     f0r_param_double m_pDim;
     f0r_param_bool m_pStatsBrightness;
     f0r_param_bool m_pStatsDiff;
-    f0r_param_bool m_pReset;
+    f0r_param_bool m_pStatsDiffSum;
     f0r_param_bool m_pTransparentBackground;
+    f0r_param_bool m_pNonlinearDim;
+    f0r_param_bool m_pReset;
 
 };
 
