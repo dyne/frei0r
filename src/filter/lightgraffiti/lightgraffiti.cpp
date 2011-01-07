@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Simon Andreas Eugster (simon.eu@gmail.com)
+ * Copyright (C) 2010-2011 Simon Andreas Eugster (simon.eu@gmail.com)
  * This file is a Frei0r plugin.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,10 +18,39 @@
  */
 
 /**
+            LIGHT GRAFFITI / LIGHT PAINTING / LUMASOL
+
+
   This effect is intended to simulate what happens when you use a shutter speed of
   e.g. 10 seconds for your camera and paint with light, like lamps, in the air
   -- just with video. It tries to remember bright spots and keeps them in a mask.
   Areas that are not very bright (i.e. background) will not sum up.
+
+  Originally I saw this effect in some Ford Kuga commercials on YouTube when a friend
+  shew me those. One of them was [1]. No information about how this effect works is given
+  -- only that a guy from the Dutch PIPS:LAB[2] was involved. The technique seems to be
+  slightly different though; whileas this frei0r effect works in post, the original Lumasol
+  effect is said to work directly in-camera.
+
+  Since the technique is fascinating I started writing this Open-Source effect.[3] The general
+  concept is:
+  1. Extract the light by using thresholding (absolute brightness and brightness change relative to
+     the background image fetched from the first frame)
+  2. Store the color in a light mask, and the estimated density in an alpha map (increased every time
+     that a light source hits a pixel to simulate overexposure)
+  3. Paint the light mask over the video image
+  4. Dim the alpha map, and update the background image (moving average), if desired.
+  5. Repeat for the next frame.
+
+  If you write your own Light Graffiti effect (e.g. for After Effects) I'd very much appreciate
+  to hear about it!
+
+  -- Simon (Granjow)
+
+  [1] http://www.youtube.com/watch?v=WVaxuIKPKvU
+  [2] http://www.pipslab.org/bio/keez-duyves/
+  [3] http://kdenlive.org/users/granjow/writing-light-graffiti-effect
+
   */
 #include "frei0r.hpp"
 
@@ -76,14 +105,13 @@ public:
         m_mode = Graffiti_LongAvgAlphaCumC;
         m_dimMode = Dim_Mult;
 
-        // TODO move down, less important
-        register_param(m_pSensitivity, "sensitivity", "Basic opacity for a light source. Will be summed up.");
-        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should be");
+        register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)");
+        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through");
         register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background");
-        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguis between fore- and background");
-        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences");
+        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguish between fore- and background");
+        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences. Can in most cases be ignored (set to 0).");
         register_param(m_pDim, "dim", "Dimming of the light mask");
-        register_param(m_pStatsBrightness, "statsBrightness", "Display the brightness and threshold");
+        register_param(m_pStatsBrightness, "statsBrightness", "Display the brightness and threshold, for adjusting the brightness threshold parameter");
         register_param(m_pStatsDiff, "statsDifference", "Display the background difference and threshold");
         register_param(m_pStatsDiffSum, "statsDiffSum", "Display the sum of the background difference and the threshold");
         register_param(m_pReset, "reset", "Reset filter masks");
@@ -101,6 +129,8 @@ public:
 
     ~LightGraffiti()
     {
+        // I was told that a std::vector does not need to be deleted --
+        // therefore nothing to do here!
     }
 
     enum GraffitiMode { Graffiti_max, Graffiti_max_sum, Graffiti_Y, Graffiti_Avg, Graffiti_Avg2,
@@ -117,6 +147,8 @@ public:
 
     virtual void update()
     {
+        // Copy everything to the output image.
+        // Most of the image will very likely not change at all.
         std::copy(in, in + width*height, out);
 
 
@@ -128,7 +160,7 @@ public:
 
 
         /*
-         Refresh background image
+         Refresh the background image
          */
         if (!m_meanInitialized || m_pReset) {
             m_longMeanImage = std::vector<float>(width*height*3);
@@ -196,6 +228,7 @@ public:
 
         /*
          Reset all masks if desired
+         (mainly for parameter adjustments when working in the NLE)
          */
         if (m_pReset) {
             std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
@@ -213,156 +246,124 @@ public:
 
 
         switch (m_mode) {
-        case Graffiti_max:
-            for (int pixel = 0; pixel < width*height; pixel++) {
+            /*
+             Lots of testing modes here!
+             */
+            case Graffiti_max:
+                for (int pixel = 0; pixel < width*height; pixel++) {
 
-                if (
-                        (GETR(out[pixel]) == 0xFF
-                         || GETG(out[pixel]) == 0xFF
-                         || GETB(out[pixel]) == 0xFF)
-                    ){
-                    m_lightMask[pixel] |= out[pixel];
+                    if (
+                            (GETR(out[pixel]) == 0xFF
+                             || GETG(out[pixel]) == 0xFF
+                             || GETB(out[pixel]) == 0xFF)
+                        ){
+                        m_lightMask[pixel] |= out[pixel];
+                    }
+                    if (m_lightMask[pixel] != 0) {
+                        out[pixel] = m_lightMask[pixel];
+                    }
                 }
-                if (m_lightMask[pixel] != 0) {
-                    out[pixel] = m_lightMask[pixel];
-                }
-            }
-            break;
-        case Graffiti_max_sum:
-            for (int pixel = 0; pixel < width*height; pixel++) {
+                break;
+            case Graffiti_max_sum:
+                for (int pixel = 0; pixel < width*height; pixel++) {
 
-                if (
-                        (GETR(out[pixel]) == 0xFF
-                         || GETG(out[pixel]) == 0xFF
-                         || GETB(out[pixel]) == 0xFF)
-                        &&
-                        (GETR(out[pixel])
-                         + GETG(out[pixel])
-                         + GETB(out[pixel])
-                         > 0xFF + 0xCC + 0xCC)
-                    ){
-                    m_lightMask[pixel] |= out[pixel];
+                    if (
+                            (GETR(out[pixel]) == 0xFF
+                             || GETG(out[pixel]) == 0xFF
+                             || GETB(out[pixel]) == 0xFF)
+                            &&
+                            (GETR(out[pixel])
+                             + GETG(out[pixel])
+                             + GETB(out[pixel])
+                             > 0xFF + 0xCC + 0xCC)
+                        ){
+                        m_lightMask[pixel] |= out[pixel];
+                    }
+                    if (m_lightMask[pixel] != 0) {
+                        out[pixel] = m_lightMask[pixel];
+                    }
                 }
-                if (m_lightMask[pixel] != 0) {
-                    out[pixel] = m_lightMask[pixel];
-                }
-            }
-            break;
+                break;
 
-        case Graffiti_Y:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                if (
-                           .299*GETR(out[pixel])/255.0
-                         + .587 * GETG(out[pixel])/255.0
-                         + .114 * GETB(out[pixel])/255.0
-                         >= .85
-                    ){
-                    m_lightMask[pixel] |= out[pixel];
+            case Graffiti_Y:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    if (
+                               .299*GETR(out[pixel])/255.0
+                             + .587 * GETG(out[pixel])/255.0
+                             + .114 * GETB(out[pixel])/255.0
+                             >= .85
+                        ){
+                        m_lightMask[pixel] |= out[pixel];
+                    }
+                    if (m_lightMask[pixel] != 0) {
+                        out[pixel] = m_lightMask[pixel];
+                    }
                 }
-                if (m_lightMask[pixel] != 0) {
-                    out[pixel] = m_lightMask[pixel];
-                }
-            }
-            break;
+                break;
 
-        case Graffiti_Max_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                if (GETR(out[pixel]) == 0xFF || GETG(out[pixel]) == 0xFF || GETB(out[pixel]) == 0xFF) {
-                    out[pixel] = 0xFFFFFFFF;
-                } else {
-                    out[pixel] = 0;
+            case Graffiti_Max_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    if (GETR(out[pixel]) == 0xFF || GETG(out[pixel]) == 0xFF || GETB(out[pixel]) == 0xFF) {
+                        out[pixel] = 0xFFFFFFFF;
+                    } else {
+                        out[pixel] = 0;
+                    }
                 }
-            }
-            break;
-        case Graffiti_Y_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                temp = .299*GETR(out[pixel]) + .587 * GETG(out[pixel]) + .114 * GETB(out[pixel]);
-                temp = CLAMP(temp);
-                out[pixel] = RGBA(temp, temp, temp, 0xFF);
-            }
-            break;
-        case Graffiti_S_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                min = GETR(out[pixel]);
-                max = GETR(out[pixel]);
-                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
-                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
-                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
-                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
-                if (min == 0) { out[pixel] = 0; }
-                else {
-                    temp = 255.0*(max-min)/(float)max;
+                break;
+            case Graffiti_Y_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    temp = .299*GETR(out[pixel]) + .587 * GETG(out[pixel]) + .114 * GETB(out[pixel]);
                     temp = CLAMP(temp);
                     out[pixel] = RGBA(temp, temp, temp, 0xFF);
                 }
-            }
-            break;
-        case Graffiti_STresh_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                min = GETR(out[pixel]);
-                max = GETR(out[pixel]);
-                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
-                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
-                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
-                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
-                if (min == 0 || max < 0x80) { out[pixel] = 0; }
-                else {
-                    temp = 255.0*((float)max-min)/max;
-                    temp = CLAMP(temp);
-                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                break;
+            case Graffiti_S_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    min = GETR(out[pixel]);
+                    max = GETR(out[pixel]);
+                    if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                    if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                    if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                    if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                    if (min == 0) { out[pixel] = 0; }
+                    else {
+                        temp = 255.0*(max-min)/(float)max;
+                        temp = CLAMP(temp);
+                        out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                    }
                 }
-            }
-            break;
-        case Graffiti_SDiff_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                min = GETR(out[pixel]);
-                max = GETR(out[pixel]);
-                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
-                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
-                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
-                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
-                int sat;
-                if (min == 0) { sat = 0; }
-                else {
-                    temp = 255.0*(max-min)/(float)max;
-                    temp = CLAMP(temp);
-                    sat = RGBA(temp, temp, temp, 0xFF);
+                break;
+            case Graffiti_STresh_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    min = GETR(out[pixel]);
+                    max = GETR(out[pixel]);
+                    if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                    if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                    if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                    if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                    if (min == 0 || max < 0x80) { out[pixel] = 0; }
+                    else {
+                        temp = 255.0*((float)max-min)/max;
+                        temp = CLAMP(temp);
+                        out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                    }
                 }
-                min = m_longMeanImage[3*pixel+0];
-                max = m_longMeanImage[3*pixel+0];
-                if (m_longMeanImage[3*pixel+1] < min) min = m_longMeanImage[3*pixel+1];
-                if (m_longMeanImage[3*pixel+1] > max) max = m_longMeanImage[3*pixel+1];
-                if (m_longMeanImage[3*pixel+2] < min) min = m_longMeanImage[3*pixel+2];
-                if (m_longMeanImage[3*pixel+2] > max) max = m_longMeanImage[3*pixel+2];
-                if (min == 0) { out[pixel] = 0; }
-                else {
-                    temp = 255.0*(max-min)/(float)max;
-                    temp = CLAMP(temp);
-                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
-                }
-                temp = 0x7f + GETR(out[pixel]) - GETR(sat);
-                temp = CLAMP(temp);
-                out[pixel] = RGBA(temp, temp, temp, 0xFF);
-            }
-            break;
-        case Graffiti_SDiffTresh_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                min = GETR(out[pixel]);
-                max = GETR(out[pixel]);
-                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
-                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
-                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
-                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
-                int sat;
-                if (min == 0) { sat = 0; }
-                else {
-                    temp = 255.0*(max-min)/(float)max;
-                    temp = CLAMP(temp);
-                    sat = RGBA(temp, temp, temp, 0xFF);
-                }
-                if (max < 0x80) {
-                    out[pixel] = RGBA(0,0,0,0xFF);
-                } else {
+                break;
+            case Graffiti_SDiff_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    min = GETR(out[pixel]);
+                    max = GETR(out[pixel]);
+                    if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                    if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                    if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                    if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                    int sat;
+                    if (min == 0) { sat = 0; }
+                    else {
+                        temp = 255.0*(max-min)/(float)max;
+                        temp = CLAMP(temp);
+                        sat = RGBA(temp, temp, temp, 0xFF);
+                    }
                     min = m_longMeanImage[3*pixel+0];
                     max = m_longMeanImage[3*pixel+0];
                     if (m_longMeanImage[3*pixel+1] < min) min = m_longMeanImage[3*pixel+1];
@@ -379,367 +380,403 @@ public:
                     temp = CLAMP(temp);
                     out[pixel] = RGBA(temp, temp, temp, 0xFF);
                 }
-            }
-            break;
-        case Graffiti_SSqrt_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                min = GETR(out[pixel]);
-                max = GETR(out[pixel]);
-                if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
-                if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
-                if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
-                if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
-                if (min == 0) { out[pixel] = 0; }
-                else {
-                    temp = 255.0*(max-min)/(float)max/(256.0-max);
-                    temp = CLAMP(temp);
-                    out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                break;
+            case Graffiti_SDiffTresh_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    min = GETR(out[pixel]);
+                    max = GETR(out[pixel]);
+                    if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                    if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                    if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                    if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                    int sat;
+                    if (min == 0) { sat = 0; }
+                    else {
+                        temp = 255.0*(max-min)/(float)max;
+                        temp = CLAMP(temp);
+                        sat = RGBA(temp, temp, temp, 0xFF);
+                    }
+                    if (max < 0x80) {
+                        out[pixel] = RGBA(0,0,0,0xFF);
+                    } else {
+                        min = m_longMeanImage[3*pixel+0];
+                        max = m_longMeanImage[3*pixel+0];
+                        if (m_longMeanImage[3*pixel+1] < min) min = m_longMeanImage[3*pixel+1];
+                        if (m_longMeanImage[3*pixel+1] > max) max = m_longMeanImage[3*pixel+1];
+                        if (m_longMeanImage[3*pixel+2] < min) min = m_longMeanImage[3*pixel+2];
+                        if (m_longMeanImage[3*pixel+2] > max) max = m_longMeanImage[3*pixel+2];
+                        if (min == 0) { out[pixel] = 0; }
+                        else {
+                            temp = 255.0*(max-min)/(float)max;
+                            temp = CLAMP(temp);
+                            out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                        }
+                        temp = 0x7f + GETR(out[pixel]) - GETR(sat);
+                        temp = CLAMP(temp);
+                        out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                    }
                 }
-            }
-            break;
-        case Graffiti_LongAvg_Stat:
-            maxDiff = 0;
-            temp = 0;
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0])/2;
-                r = CLAMP(r);
-                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1])/2;
-                g = CLAMP(g);
-                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2])/2;
-                b = CLAMP(b);
-
-                out[pixel] = RGBA(r,g,b,0xFF);
-            }
-            break;
-        case Graffiti_LongAvg:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-
-                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
-                r = CLAMP(r);
-                max = GETR(out[pixel]);
-                maxDiff = r;
-                temp = r;
-
-                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
-                g = CLAMP(g);
-                if (maxDiff < g) maxDiff = g;
-                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
-                temp += g;
-
-                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
-                b = CLAMP(b);
-                if (maxDiff < b) maxDiff = b;
-                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
-                temp += b;
-
-                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
-                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
-
-                    m_alphaMap[4*pixel+0] = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
-                    m_alphaMap[4*pixel+0] = CLAMP(m_alphaMap[4*pixel+0])/255.0;
-
-                    m_alphaMap[4*pixel+1] = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
-                    m_alphaMap[4*pixel+1] = CLAMP(m_alphaMap[4*pixel+1])/255.0;
-
-                    m_alphaMap[4*pixel+2] = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
-                    m_alphaMap[4*pixel+2] = CLAMP(m_alphaMap[4*pixel+2])/255.0;
-
-                    m_alphaMap[4*pixel+3] = 1;
+                break;
+            case Graffiti_SSqrt_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    min = GETR(out[pixel]);
+                    max = GETR(out[pixel]);
+                    if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
+                    if (GETG(out[pixel]) > max) max = GETG(out[pixel]);
+                    if (GETB(out[pixel]) < min) min = GETB(out[pixel]);
+                    if (GETB(out[pixel]) > max) max = GETB(out[pixel]);
+                    if (min == 0) { out[pixel] = 0; }
+                    else {
+                        temp = 255.0*(max-min)/(float)max/(256.0-max);
+                        temp = CLAMP(temp);
+                        out[pixel] = RGBA(temp, temp, temp, 0xFF);
+                    }
                 }
-
-                if (m_lightMask[pixel] != 0) {
-                    r = SCREEN1(GETR(out[pixel]), GETR(m_lightMask[pixel]));
-                    g = SCREEN1(GETG(out[pixel]), GETG(m_lightMask[pixel]));
-                    b = SCREEN1(GETB(out[pixel]), GETB(m_lightMask[pixel]));
+                break;
+            case Graffiti_LongAvg_Stat:
+                maxDiff = 0;
+                temp = 0;
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0])/2;
                     r = CLAMP(r);
+                    g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1])/2;
                     g = CLAMP(g);
+                    b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2])/2;
                     b = CLAMP(b);
+
                     out[pixel] = RGBA(r,g,b,0xFF);
                 }
-            }
-            break;
-        case Graffiti_LongAvgAlpha_Stat:
-            for (int pixel = 0; pixel < width*height; pixel++) {
+                break;
+            case Graffiti_LongAvg:
+                for (int pixel = 0; pixel < width*height; pixel++) {
 
-                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
-                r = CLAMP(r);
-                max = GETR(out[pixel]);
-                maxDiff = r;
-                temp = r;
-
-                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
-                g = CLAMP(g);
-                if (maxDiff < g) maxDiff = g;
-                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
-                temp += g;
-
-                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
-                b = CLAMP(b);
-                if (maxDiff < b) maxDiff = b;
-                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
-                temp += b;
-
-                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
-                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
-
-                    f = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
-                    f = CLAMP(f)/255.0;
-                    if (f > m_alphaMap[4*pixel+0]) m_alphaMap[4*pixel+0] = f;
-
-                    f = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
-                    f = CLAMP(f)/255.0;
-                    if (f > m_alphaMap[4*pixel+1]) m_alphaMap[4*pixel+1] = f;
-
-                    f = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
-                    f = CLAMP(f)/255.0;
-                    if (f > m_alphaMap[4*pixel+2]) m_alphaMap[4*pixel+2] = f;
-
-                    m_alphaMap[4*pixel+3] = 1;
-                }
-                r = 255.0*m_alphaMap[4*pixel+0];
-                g = 255*m_alphaMap[4*pixel+1];
-                b = 255*m_alphaMap[4*pixel+2];
-                out[pixel] = RGBA(r,g,b,0xFF);
-            }
-            break;
-        case Graffiti_LongAvgAlpha:
-            for (int pixel = 0; pixel < width*height; pixel++) {
-
-                r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
-                r = CLAMP(r);
-                max = GETR(out[pixel]);
-                maxDiff = r;
-                temp = r;
-
-                g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
-                g = CLAMP(g);
-                if (maxDiff < g) maxDiff = g;
-                if (max < GETG(out[pixel])) max = GETG(out[pixel]);
-                temp += g;
-
-                b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
-                b = CLAMP(b);
-                if (maxDiff < b) maxDiff = b;
-                if (max < GETB(out[pixel])) max = GETB(out[pixel]);
-                temp += b;
-
-                if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
-                    m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
-
-                    f = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
-                    f = CLAMP(f)/255.0;
-                    f *= f;
-                    if (f > m_alphaMap[4*pixel+0]) m_alphaMap[4*pixel+0] = f;
-
-                    f = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
-                    f = CLAMP(f)/255.0;
-                    f *= f;
-                    if (f > m_alphaMap[4*pixel+1]) m_alphaMap[4*pixel+1] = f;
-
-                    f = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
-                    f = CLAMP(f)/255.0;
-                    f *= f;
-                    if (f > m_alphaMap[4*pixel+2]) m_alphaMap[4*pixel+2] = f;
-                }
-                if (m_lightMask[pixel] != 0) {
-                    r = SCREEN1(GETR(out[pixel]), m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]));
-                    g = SCREEN1(GETG(out[pixel]), m_alphaMap[4*pixel+1]*GETG(m_lightMask[pixel]));
-                    b = SCREEN1(GETB(out[pixel]), m_alphaMap[4*pixel+2]*GETB(m_lightMask[pixel]));
+                    r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
                     r = CLAMP(r);
+                    max = GETR(out[pixel]);
+                    maxDiff = r;
+                    temp = r;
+
+                    g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
                     g = CLAMP(g);
+                    if (maxDiff < g) maxDiff = g;
+                    if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                    temp += g;
+
+                    b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
                     b = CLAMP(b);
-                    out[pixel] = RGBA(r,g,b,0xFF);
-                }
-            }
-            break;
-        case Graffiti_LongAvgAlphaCumC:
+                    if (maxDiff < b) maxDiff = b;
+                    if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                    temp += b;
 
-            /**
-              Ideas:
-              * Remember Hue if Saturation > 0.1 (below: Close to white, so Hue might be wrong → remember Saturation as well)
-              * Maximize Saturation for low alpha (opacity)
-              * Make alpha depend on the light source's brightness
-              * If alpha > 1: Simulate overexposure by going towards white
-              * If pixel is bright in another frame: Sum up alpha values (longer exposure)
-                Maybe: Logarithmic scale? → Overexposure becomes harder
-                log(alpha/factor + 1) or sqrt(alpha/factor)
-              */
-            for (int pixel = 0; pixel < width*height; pixel++) {
+                    if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                        m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
 
-                /*
-                 Light detection
-                 */
+                        m_alphaMap[4*pixel+0] = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
+                        m_alphaMap[4*pixel+0] = CLAMP(m_alphaMap[4*pixel+0])/255.0;
 
-                // maxDiff: Maximum difference to the mean image
-                //          {-255,...,255}
-                // max:     Maximum pixel value
-                //          {0,...,255}
-                // temp:    Sum of all differences
-                //          {-3*255,...,3*255}
-                // sum:     Sum of all pixel values
-                //          {0,...,3*255}
+                        m_alphaMap[4*pixel+1] = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
+                        m_alphaMap[4*pixel+1] = CLAMP(m_alphaMap[4*pixel+1])/255.0;
 
-                r = GETR(out[pixel]) - m_longMeanImage[3*pixel+0];
-                maxDiff = r;
-                max = GETR(out[pixel]);
-                temp = r;
+                        m_alphaMap[4*pixel+2] = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
+                        m_alphaMap[4*pixel+2] = CLAMP(m_alphaMap[4*pixel+2])/255.0;
 
-                g = GETG(out[pixel]) - m_longMeanImage[3*pixel+1];
-                if (max < GETG(out[pixel])) {
-                    max = GETG(out[pixel]);
-                }
-                if (maxDiff < g) {
-                    maxDiff = g;
-                }
-                temp += g;
-
-                b = GETB(out[pixel]) - m_longMeanImage[3*pixel+2];
-                if (max < GETB(out[pixel])) {
-                    max = GETB(out[pixel]);
-                }
-                if (maxDiff < b) {
-                    maxDiff = b;
-                }
-                temp += b;
-
-                sum = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
-
-                if (
-                        maxDiff > m_pThresholdDifference    // I regard 0x50 as a meaningful value.
-                        && temp > m_pThresholdDiffSum       // 3*0x45 sometimes okay for filtering reflections on bright patches
-                        && sum > m_pThresholdBrightness     // A value of 450 seems to make sense here.
-                    )
-                {
-                    // Store the «additional» light delivered by the light source in the light mask.
-                    color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
-                    m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
-
-                    // Add the brightness of the light source to the brightness map (alpha map)
-                    y = REC709Y(CLAMP(r), CLAMP(g), CLAMP(b)) / 255.0;
-                    y = y * m_pSensitivity;
-                    m_alphaMap[4*pixel] += y;
-                }
-
-
-                /*
-                 Background weight
-                 */
-                if (m_pBackgroundWeight > 0) {
-                    // Use part of the background mean. This allows to have only lights appearing in the video
-                    // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
-                    out[pixel] = RGBA((int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+0] + (1-m_pBackgroundWeight)*GETR(out[pixel])),
-                                      (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+1] + (1-m_pBackgroundWeight)*GETG(out[pixel])),
-                                      (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+2] + (1-m_pBackgroundWeight)*GETB(out[pixel])),
-                                      0xFF);
-                }
-
-
-                /*
-                 Adding light mask
-                 */
-                if (
-                        m_lightMask[pixel] != 0  && m_alphaMap[4*pixel + 0] != 0
-                        && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
-                    )
-                {
-
-                    f = sqrt(m_alphaMap[4*pixel]);
-
-                    r = f * GETR(m_lightMask[pixel]);
-                    g = f * GETG(m_lightMask[pixel]);
-                    b = f * GETB(m_lightMask[pixel]);
-
-                    if (f > 1) {
-                        // Simulate overexposure
-                        sum = 0;
-                        if (r > 255) {
-                            sum += r-255;
-                        }
-                        if (g > 255) {
-                            sum += g-255;
-                        }
-                        if (b > 255) {
-                            sum += g-255;
-                        }
-
-                        if (sum > 0) {
-                            sum = sum/10.0;
-                            r += sum;
-                            g += sum;
-                            b += sum;
-                        }
-                    } else if (f < 1) {
-                        // Lower exposure: Stronger colors
-                        y = REC709Y(r,g,b);
-                        float sat = 2.0;
-
-                        r = y + sat * (r-y);
-                        g = y + sat * (g-y);
-                        b = y + sat * (b-y);
+                        m_alphaMap[4*pixel+3] = 1;
                     }
 
+                    if (m_lightMask[pixel] != 0) {
+                        r = SCREEN1(GETR(out[pixel]), GETR(m_lightMask[pixel]));
+                        g = SCREEN1(GETG(out[pixel]), GETG(m_lightMask[pixel]));
+                        b = SCREEN1(GETB(out[pixel]), GETB(m_lightMask[pixel]));
+                        r = CLAMP(r);
+                        g = CLAMP(g);
+                        b = CLAMP(b);
+                        out[pixel] = RGBA(r,g,b,0xFF);
+                    }
+                }
+                break;
+            case Graffiti_LongAvgAlpha_Stat:
+                for (int pixel = 0; pixel < width*height; pixel++) {
 
-                    // Add the light map as additional light to the image
-                    r += GETR(out[pixel]);
-                    g += GETG(out[pixel]);
-                    b += GETB(out[pixel]);
+                    r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
                     r = CLAMP(r);
+                    max = GETR(out[pixel]);
+                    maxDiff = r;
+                    temp = r;
+
+                    g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
                     g = CLAMP(g);
+                    if (maxDiff < g) maxDiff = g;
+                    if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                    temp += g;
+
+                    b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
                     b = CLAMP(b);
-                    out[pixel] = RGBA(r,g,b,0xFF);
-                } else if (m_pTransparentBackground) {
-                    // Transparent background
-                    out[pixel] &= RGBA(0xFF, 0xFF, 0xFF, 0);
-                }
+                    if (maxDiff < b) maxDiff = b;
+                    if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                    temp += b;
 
+                    if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                        m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
 
-                /*
-                 Statistics
-                 */
-                if (m_pStatsBrightness) {
-                    // Show the image's brightness and highlight the threshold
-                    // set by the user for detecting the right threshold easier
+                        f = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
+                        f = CLAMP(f)/255.0;
+                        if (f > m_alphaMap[4*pixel+0]) m_alphaMap[4*pixel+0] = f;
 
-                    // Multiply with 0.8 for still being able to distinguish between white and threshold
-                    r = .8*sum/3;
-                    g = .8*sum/3;
-                    b = .8*sum/3;
-                    if (sum > m_pThresholdBrightness) {
-                        b = 255;
+                        f = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
+                        f = CLAMP(f)/255.0;
+                        if (f > m_alphaMap[4*pixel+1]) m_alphaMap[4*pixel+1] = f;
+
+                        f = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
+                        f = CLAMP(f)/255.0;
+                        if (f > m_alphaMap[4*pixel+2]) m_alphaMap[4*pixel+2] = f;
+
+                        m_alphaMap[4*pixel+3] = 1;
                     }
-                    out[pixel] = RGBA(r,g,b,0xFF);
-                }
-
-                if (m_pStatsDiff) {
-                    // As above, but for the brightness difference relative to the background.
-                    r = .8*CLAMP(maxDiff);
-                    g = r;
-                    if (!m_pStatsBrightness) {
-                        b = r;
-                    }
-
-                    if (maxDiff > m_pThresholdDifference) {
-                        g = 255;
-                    }
+                    r = 255.0*m_alphaMap[4*pixel+0];
+                    g = 255*m_alphaMap[4*pixel+1];
+                    b = 255*m_alphaMap[4*pixel+2];
                     out[pixel] = RGBA(r,g,b,0xFF);
                 }
+                break;
+            case Graffiti_LongAvgAlpha:
+                for (int pixel = 0; pixel < width*height; pixel++) {
 
-                if (m_pStatsDiffSum) {
-                    // As above, for the sum of the differences in each color channel.
-                    r = .8*CLAMP(temp/3.0);
-                    if (!m_pStatsDiff) {
+                    r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
+                    r = CLAMP(r);
+                    max = GETR(out[pixel]);
+                    maxDiff = r;
+                    temp = r;
+
+                    g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1]);
+                    g = CLAMP(g);
+                    if (maxDiff < g) maxDiff = g;
+                    if (max < GETG(out[pixel])) max = GETG(out[pixel]);
+                    temp += g;
+
+                    b = 0x7f + (GETB(out[pixel]) - m_longMeanImage[3*pixel+2]);
+                    b = CLAMP(b);
+                    if (maxDiff < b) maxDiff = b;
+                    if (max < GETB(out[pixel])) max = GETB(out[pixel]);
+                    temp += b;
+
+                    if (maxDiff > 0xe0 && temp > 0xe0 + 0xd0 + 0x80) {
+                        m_lightMask[pixel] = MAX(m_lightMask[pixel], out[pixel]);
+
+                        f = 2*(GETR(out[pixel])-m_longMeanImage[3*pixel+0]);
+                        f = CLAMP(f)/255.0;
+                        f *= f;
+                        if (f > m_alphaMap[4*pixel+0]) m_alphaMap[4*pixel+0] = f;
+
+                        f = 2*(GETG(out[pixel])-m_longMeanImage[3*pixel+1]);
+                        f = CLAMP(f)/255.0;
+                        f *= f;
+                        if (f > m_alphaMap[4*pixel+1]) m_alphaMap[4*pixel+1] = f;
+
+                        f = 2*(GETB(out[pixel])-m_longMeanImage[3*pixel+2]);
+                        f = CLAMP(f)/255.0;
+                        f *= f;
+                        if (f > m_alphaMap[4*pixel+2]) m_alphaMap[4*pixel+2] = f;
+                    }
+                    if (m_lightMask[pixel] != 0) {
+                        r = SCREEN1(GETR(out[pixel]), m_alphaMap[4*pixel+0]*GETR(m_lightMask[pixel]));
+                        g = SCREEN1(GETG(out[pixel]), m_alphaMap[4*pixel+1]*GETG(m_lightMask[pixel]));
+                        b = SCREEN1(GETB(out[pixel]), m_alphaMap[4*pixel+2]*GETB(m_lightMask[pixel]));
+                        r = CLAMP(r);
+                        g = CLAMP(g);
+                        b = CLAMP(b);
+                        out[pixel] = RGBA(r,g,b,0xFF);
+                    }
+                }
+                break;
+            case Graffiti_LongAvgAlphaCumC:
+
+                /**
+                  Ideas (partially considered) to get a realistic look:
+                  * Remember Hue if Saturation > 0.1 (below: Close to white, so Hue might be wrong → remember Saturation as well)
+                  * Maximize Saturation for low alpha (opacity)
+                  * Make alpha depend on the light source's brightness
+                  * If alpha > 1: Simulate overexposure by going towards white
+                  * If pixel is bright in another frame: Sum up alpha values (longer exposure)
+                    Maybe: Logarithmic scale? → Overexposure becomes harder
+                    log(alpha/factor + 1) or sqrt(alpha/factor)
+                  */
+                for (int pixel = 0; pixel < width*height; pixel++) {
+
+                    /*
+                     Light detection
+                     */
+
+                    // maxDiff: Maximum difference to the mean image
+                    //          {-255,...,255}
+                    // max:     Maximum pixel value
+                    //          {0,...,255}
+                    // temp:    Sum of all differences
+                    //          {-3*255,...,3*255}
+                    // sum:     Sum of all pixel values
+                    //          {0,...,3*255}
+
+                    r = GETR(out[pixel]) - m_longMeanImage[3*pixel+0];
+                    maxDiff = r;
+                    max = GETR(out[pixel]);
+                    temp = r;
+
+                    g = GETG(out[pixel]) - m_longMeanImage[3*pixel+1];
+                    if (max < GETG(out[pixel])) {
+                        max = GETG(out[pixel]);
+                    }
+                    if (maxDiff < g) {
+                        maxDiff = g;
+                    }
+                    temp += g;
+
+                    b = GETB(out[pixel]) - m_longMeanImage[3*pixel+2];
+                    if (max < GETB(out[pixel])) {
+                        max = GETB(out[pixel]);
+                    }
+                    if (maxDiff < b) {
+                        maxDiff = b;
+                    }
+                    temp += b;
+
+                    sum = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
+
+                    if (
+                            maxDiff > m_pThresholdDifference
+                            && temp > m_pThresholdDiffSum
+                            && sum > m_pThresholdBrightness
+                            // If all requirements are met, then this should be a light source.
+                        )
+                    {
+                        // Store the «additional» light delivered by the light source in the light mask.
+                        color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
+                        m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
+
+                        // Add the brightness of the light source to the brightness map (alpha map)
+                        y = REC709Y(CLAMP(r), CLAMP(g), CLAMP(b)) / 255.0;
+                        y = y * m_pSensitivity;
+                        m_alphaMap[4*pixel] += y;
+                    }
+
+
+                    /*
+                     Background weight
+                     */
+                    if (m_pBackgroundWeight > 0) {
+                        // Use part of the background mean. This allows to have only lights appearing in the video
+                        // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
+                        out[pixel] = RGBA((int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+0] + (1-m_pBackgroundWeight)*GETR(out[pixel])),
+                                          (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+1] + (1-m_pBackgroundWeight)*GETG(out[pixel])),
+                                          (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+2] + (1-m_pBackgroundWeight)*GETB(out[pixel])),
+                                          0xFF);
+                    }
+
+
+                    /*
+                     Adding light mask
+                     */
+                    if (
+                            m_lightMask[pixel] != 0  && m_alphaMap[4*pixel + 0] != 0
+                            && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
+                        )
+                    {
+
+                        f = sqrt(m_alphaMap[4*pixel]);
+
+                        r = f * GETR(m_lightMask[pixel]);
+                        g = f * GETG(m_lightMask[pixel]);
+                        b = f * GETB(m_lightMask[pixel]);
+
+                        if (f > 1) {
+                            // Simulate overexposure
+                            sum = 0;
+                            if (r > 255) {
+                                sum += r-255;
+                            }
+                            if (g > 255) {
+                                sum += g-255;
+                            }
+                            if (b > 255) {
+                                sum += g-255;
+                            }
+
+                            if (sum > 0) {
+                                sum = sum/10.0;
+                                r += sum;
+                                g += sum;
+                                b += sum;
+                            }
+                        } else if (f < 1) {
+                            // Lower exposure: Stronger colors
+                            y = REC709Y(r,g,b);
+                            float sat = 2.0;
+
+                            r = y + sat * (r-y);
+                            g = y + sat * (g-y);
+                            b = y + sat * (b-y);
+                        }
+
+
+                        // Add the light map as additional light to the image
+                        r += GETR(out[pixel]);
+                        g += GETG(out[pixel]);
+                        b += GETB(out[pixel]);
+                        r = CLAMP(r);
+                        g = CLAMP(g);
+                        b = CLAMP(b);
+                        out[pixel] = RGBA(r,g,b,0xFF);
+                    } else if (m_pTransparentBackground) {
+                        // Transparent background
+                        out[pixel] &= RGBA(0xFF, 0xFF, 0xFF, 0);
+                    }
+
+
+                    /*
+                     In-video statistics for easier parameter adjustment (thresholds)
+                     */
+                    if (m_pStatsBrightness) {
+                        // Show the image's brightness and highlight the threshold set by the user
+
+                        // Limit maximum brightness to 80% for still being able to distinguish
+                        // between «bright spot» (light grey) and «over the threshold» (blue)
+                        r = .8*sum/3;
+                        g = .8*sum/3;
+                        b = .8*sum/3;
+                        if (sum > m_pThresholdBrightness) {
+                            b = 255;
+                        }
+                        out[pixel] = RGBA(r,g,b,0xFF);
+                    }
+
+                    if (m_pStatsDiff) {
+                        // As above, but for the brightness difference relative to the background.
+                        r = .8*CLAMP(maxDiff);
                         g = r;
+                        if (!m_pStatsBrightness) {
+                            b = r;
+                        }
+
+                        if (maxDiff > m_pThresholdDifference) {
+                            g = 255;
+                        }
+                        out[pixel] = RGBA(r,g,b,0xFF);
                     }
-                    if (!m_pStatsBrightness) {
-                        b = r;
+
+                    if (m_pStatsDiffSum) {
+                        // As above, for the sum of the differences in each color channel.
+                        r = .8*CLAMP(temp/3.0);
+                        if (!m_pStatsDiff) {
+                            g = r;
+                        }
+                        if (!m_pStatsBrightness) {
+                            b = r;
+                        }
+                        if (temp > m_pThresholdDiffSum) {
+                            r = 255;
+                        }
+                        out[pixel] = RGBA(r,g,b,0xFF);
                     }
-                    if (temp > m_pThresholdDiffSum) {
-                        r = 255;
-                    }
-                    out[pixel] = RGBA(r,g,b,0xFF);
                 }
-            }
-            break;
+                break;
         }
     }
 
