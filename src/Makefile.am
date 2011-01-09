@@ -26,7 +26,7 @@ bluescreen0r.la primaries.la threelay0r.la \
 plasma.la c0rners.la defish0r.la coloradj_RGB.la \
 alpha0ps.la alphagrad.la alphaspot.la d90stairsteppingfix.la  sopsat.la \
 pr0be.la pr0file.la select0r.la test_pat_B.la test_pat_C.la test_pat_G.la \
-test_pat_I.la test_pat_L.la test_pat_R.la hqdn3d.la sharpness.la
+test_pat_I.la test_pat_L.la test_pat_R.la hqdn3d.la sharpness.la lightgraffiti.la
 
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
@@ -112,6 +112,7 @@ pr0file_la_SOURCES = filter/measure/pr0file.c filter/measure/measure.h filter/me
 select0r_la_SOURCES = filter/select0r/select0r.c
 hqdn3d_la_SOURCES = filter/denoise/hqdn3d.c
 sharpness_la_SOURCES = filter/sharpness/sharpness.c
+lightgraffiti_la_SOURCES = filter/lightgraffiti/lightgraffiti.cpp
 
 ising0r_la_SOURCES = generator/ising0r/ising0r.c
 lissajous0r_la_SOURCES = generator/lissajous0r/lissajous0r.cpp
