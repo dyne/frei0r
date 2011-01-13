@@ -54,6 +54,7 @@ typedef struct
 	interpp interp;
 	float *map;
 	unsigned char *amap;
+	int mapIsDirty;
 } inst;
 
 
@@ -749,6 +750,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	in->map=(float*)calloc(1, sizeof(float)*(in->w*in->h*2+2));
 	in->amap=(unsigned char*)calloc(1, sizeof(char)*(in->w*in->h*2+2));
 	in->interp=set_intp(*in);
+	in->mapIsDirty = 1;
 
 	return (f0r_instance_t)in;
 }
@@ -771,8 +773,6 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 	inst *p;
 	double tmpf;
 	int chg;
-	tocka2 vog[4];
-	int nots[4];
 
 	p=(inst*)instance;
 
@@ -854,16 +854,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 	if (chg!=0)
 	{
 		p->interp=set_intp(*p);
-		vog[0].x=(p->x1-0.333333)/0.333333*p->w;
-		vog[0].y=(p->y1-0.333333)/0.333333*p->h;
-		vog[1].x=(p->x2-0.333333)/0.333333*p->w;
-		vog[1].y=(p->y2-0.333333)/0.333333*p->h;
-		vog[2].x=(p->x3-0.333333)/0.333333*p->w;
-		vog[2].y=(p->y3-0.333333)/0.333333*p->h;
-		vog[3].x=(p->x4-0.333333)/0.333333*p->w;
-		vog[3].y=(p->y4-0.333333)/0.333333*p->h;
-		geom4c_b(p->w, p->h, p->w, p->h, vog, p->stretchON, p->stretchx, p->stretchy, p->map, nots);
-		make_alphamap(p->amap, vog, p->w, p->h, p->map, p->feath, nots);
+		p->mapIsDirty = 1;
 	}
 
 }
@@ -941,6 +932,22 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	int bkgr;
 
 	p=(inst*)instance;
+
+	if (p->mapIsDirty) {
+		tocka2 vog[4];
+		int nots[4];
+		vog[0].x=(p->x1-0.333333)/0.333333*p->w;
+		vog[0].y=(p->y1-0.333333)/0.333333*p->h;
+		vog[1].x=(p->x2-0.333333)/0.333333*p->w;
+		vog[1].y=(p->y2-0.333333)/0.333333*p->h;
+		vog[2].x=(p->x3-0.333333)/0.333333*p->w;
+		vog[2].y=(p->y3-0.333333)/0.333333*p->h;
+		vog[3].x=(p->x4-0.333333)/0.333333*p->w;
+		vog[3].y=(p->y4-0.333333)/0.333333*p->h;
+		geom4c_b(p->w, p->h, p->w, p->h, vog, p->stretchON, p->stretchx, p->stretchy, p->map, nots);
+		make_alphamap(p->amap, vog, p->w, p->h, p->map, p->feath, nots);
+		p->mapIsDirty = 0;
+	}
 
 	//if (p->transb==0) bkgr=0xFF000000; else bkgr=0;
 	bkgr=0xFF000000;
