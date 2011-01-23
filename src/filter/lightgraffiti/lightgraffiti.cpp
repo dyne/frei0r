@@ -59,6 +59,9 @@
 #include <climits>
 #include <algorithm>
 
+//#define LG_ADV
+//#define LG_DEBUG
+
 // Macros to extract color components
 #define GETA(abgr) (((abgr) >> (3*CHAR_BIT)) & 0xFF)
 #define GETB(abgr) (((abgr) >> (2*CHAR_BIT)) & 0xFF)
@@ -91,6 +94,12 @@
 // Luma calculation. Refer to the SOP/Sat filter.
 #define REC709Y(r,g,b) (.2126*(r) + .7152*(g) + .0722*(b))
 
+  struct RGBFloat {
+                      float r;
+                      float g;
+                      float b;
+                  };
+
 class LightGraffiti : public frei0r::filter
 {
 
@@ -104,6 +113,22 @@ public:
     {
         m_mode = Graffiti_LongAvgAlphaCumC;
         m_dimMode = Dim_Mult;
+
+#ifdef LG_ADV
+        RGBFloat rgb0;
+        rgb0.r = 0;
+        rgb0.g = 0;
+        rgb0.b = 0;
+        m_rgbLightMask = std::vector<RGBFloat>(width*height, rgb0);
+
+#ifdef LG_DEBUG
+        for (int i = 0; i < width*height; i++) {
+            if (m_rgbLightMask[i].r != 0 || m_rgbLightMask[i].g != 0 || m_rgbLightMask[i].b != 0) {
+                std::cout << "ERROR: " << m_rgbLightMask[i].r;
+            }
+        }
+#endif
+#endif
 
         register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)");
         register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through");
@@ -233,6 +258,13 @@ public:
         if (m_pReset) {
             std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
             std::fill(&m_alphaMap[0], &m_alphaMap[width*height*4 - 1], 0);
+#ifdef LG_ADV
+            RGBFloat rgb0;
+            rgb0.r = 0;
+            rgb0.g = 0;
+            rgb0.b = 0;
+            m_rgbLightMask = std::vector<RGBFloat>(width*height, rgb0);
+#endif
             // m_longMeanImage has been handled above already (set to the current image).
         }
 
@@ -243,6 +275,11 @@ public:
         int max;
         float f, y;
         uint32_t color;
+        float fr, fg, fb, sr, sg, sb, fy;
+
+#ifdef LG_DEBUG
+        int deCount = 0;
+#endif
 
 
         switch (m_mode) {
@@ -650,11 +687,29 @@ public:
                         // Store the «additional» light delivered by the light source in the light mask.
                         color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
                         m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
+#ifdef LG_ADV
+#ifdef LG_DEBUG
+                        if (m_rgbLightMask[pixel].r < 0 || m_rgbLightMask[pixel].g < 0 || m_rgbLightMask[pixel].b < 0) {
+                            std::cout << "ERROR: below 0";
+                        }
+#endif
+                        // Just add values. Overflows are highly unlikely (3.4E38+ frames ...).
+                        m_rgbLightMask[pixel].r += CLAMP(r)/255.0 * m_pSensitivity;
+                        m_rgbLightMask[pixel].g += CLAMP(g)/255.0 * m_pSensitivity;
+                        m_rgbLightMask[pixel].b += CLAMP(b)/255.0 * m_pSensitivity;
+
+#ifdef LG_DEBUG
+                        if (m_rgbLightMask[pixel].r < 0 || m_rgbLightMask[pixel].g < 0 || m_rgbLightMask[pixel].b < 0) {
+                            std::cout << "ERROR: below 0 afterwards! Sensitivity: " << m_pSensitivity << ". " << r << "/" << g << "/" << b << ". ";
+                        }
+#endif
+#else
 
                         // Add the brightness of the light source to the brightness map (alpha map)
                         y = REC709Y(CLAMP(r), CLAMP(g), CLAMP(b)) / 255.0;
                         y = y * m_pSensitivity;
                         m_alphaMap[4*pixel] += y;
+#endif
                     }
 
 
@@ -674,6 +729,71 @@ public:
                     /*
                      Adding light mask
                      */
+#ifdef LG_ADV
+                    if (
+                            m_rgbLightMask[pixel].r != 0 || m_rgbLightMask[pixel].g != 0 || m_rgbLightMask[pixel].b != 0
+                            && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
+                       )
+                    {
+                        fr = m_rgbLightMask[pixel].r;
+                        fg = m_rgbLightMask[pixel].g;
+                        fb = m_rgbLightMask[pixel].b;
+
+                        sr = 0;
+                        sg = 0;
+                        sb = 0;
+                        if (fr > 1) {
+                            sr += fr - 1;
+                        }
+                        if (fg > 1) {
+                            sg += fg - 1;
+                        }
+                        if (fb > 1) {
+                            sb += fb - 1;
+                        }
+                        fr += (sg + sb)/2;
+                        fg += (sr + sb)/2;
+                        fb += (sg + sb)/2;
+                        if (fr > 1) {
+                            fr = 1;
+                        }
+                        if (fg > 1) {
+                            fg = 1;
+                        }
+                        if (fb > 1) {
+                            fb = 1;
+                        }
+
+                        fy = REC709Y(fr,fg,fb);
+                        if (fy < 1) {
+                            float sat = 2.0;
+
+                            fr = fy + sat * (fr-fy);
+                            fg = fy + sat * (fg-fy);
+                            fb = fy + sat * (fb-fy);
+
+                        }
+
+                        r = 255*fr + GETR(out[pixel]);
+                        g = 255*fg + GETG(out[pixel]);
+                        b = 255*fb + GETB(out[pixel]);
+                        r = CLAMP(r);
+                        g = CLAMP(g);
+                        b = CLAMP(b);
+                        out[pixel] = RGBA(r,g,b,0xFF);
+
+#ifdef LG_DEBUG
+                        deCount++;
+                        if (deCount < 10) {
+                            std::cout << "r: " << m_rgbLightMask[pixel].r << ", fy: " << fy << ", fr: " << fr << ", sr: " << sr << ", R: " << r << ", inR: " << GETR(in[pixel]) << "\n";
+                        }
+#endif
+
+                    } else if (m_pTransparentBackground) {
+                        // Transparent background
+                        out[pixel] &= RGBA(0xFF, 0xFF, 0xFF, 0);
+                    }
+#else
                     if (
                             m_lightMask[pixel] != 0  && m_alphaMap[4*pixel + 0] != 0
                             && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
@@ -728,6 +848,7 @@ public:
                         // Transparent background
                         out[pixel] &= RGBA(0xFF, 0xFF, 0xFF, 0);
                     }
+#endif
 
 
                     /*
@@ -787,6 +908,10 @@ private:
     bool m_meanInitialized;
     GraffitiMode m_mode;
     DimMode m_dimMode;
+
+#ifdef LG_ADV
+    std::vector<RGBFloat> m_rgbLightMask;
+#endif
 
     f0r_param_double m_pLongAlpha;
     f0r_param_double m_pSensitivity;
