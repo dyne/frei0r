@@ -1,4 +1,5 @@
 add_subdirectory (addition)
+add_subdirectory (addition_alpha)
 add_subdirectory (alphaatop)
 add_subdirectory (alphain)
 add_subdirectory (alphainjection)
