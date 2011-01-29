@@ -42,6 +42,18 @@
   4. Dim the alpha map, and update the background image (moving average), if desired.
   5. Repeat for the next frame.
 
+  The second approach (LG_ADV) is based on the observation that colour mixing does not work well
+  with the above one that stores colour values and changes the brightness via an alpha map. Therefore
+  the new approach directly sums up colour values detected in the light source and does not use an
+  alpha map.
+  * Transitions are not very smooth out-of-the-box. This is solved by multiplying the light source's
+    RGB value by (r+g+b)/3 (after normalizing them to [0,1]); Darker lights will then be even darker
+    and the transition to the background looks smoother.
+  * Lights may look a little faint regarding color. Therefore the saturation can be increased by a custom
+    factor. Saturation depends on the brightness of the light map; the darker the light is, the more
+    the saturation is increased. This will, within a sensible range, make the lights look more vital.
+  Dimming works by scaling each color values individually.
+
   If you write your own Light Graffiti effect (e.g. for After Effects) I'd very much appreciate
   to hear about it!
 
@@ -59,7 +71,7 @@
 #include <climits>
 #include <algorithm>
 
-//#define LG_ADV
+#define LG_ADV
 //#define LG_DEBUG
 
 // Macros to extract color components
@@ -130,12 +142,14 @@ public:
 #endif
 #endif
 
-        register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)");
-        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through");
-        register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background");
-        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguish between fore- and background");
-        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences. Can in most cases be ignored (set to 0).");
-        register_param(m_pDim, "dim", "Dimming of the light mask");
+        register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)"); // [0,5]
+        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through"); // [0,1]
+        register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background"); // {0...765}
+        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguish between fore- and background"); // {0...255}
+        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences. Can in most cases be ignored (set to 0)."); // {0...765}
+        register_param(m_pDim, "dim", "Dimming of the light mask"); // [0,1]
+        register_param(m_pSaturation, "saturation", "Saturation of lights"); // [0,4] (higher values hardly meaningful)
+        register_param(m_pLowerOverexposure, "lowerOverexposure", "Prevents some overexposure if the light source stays steady too long (varying speed)"); // {0...5}
         register_param(m_pStatsBrightness, "statsBrightness", "Display the brightness and threshold, for adjusting the brightness threshold parameter");
         register_param(m_pStatsDiff, "statsDifference", "Display the background difference and threshold");
         register_param(m_pStatsDiffSum, "statsDiffSum", "Display the sum of the background difference and the threshold");
@@ -149,6 +163,7 @@ public:
         m_pThresholdBrightness = 450;
         m_pThresholdDiffSum = 0;
         m_pDim = 0;
+        m_pSaturation = 1;
 
     }
 
@@ -224,15 +239,53 @@ public:
             */
 
             switch (m_dimMode) {
+
                 case Dim_Mult:
+#ifdef LG_ADV
+                    for (int i = 0; i < m_rgbLightMask.size(); i++) {
+                        m_rgbLightMask[i].r *= factor;
+                        m_rgbLightMask[i].g *= factor;
+                        m_rgbLightMask[i].b *= factor;
+                    }
+#else
                     for (int i = 0; i < width*height; i++) {
                         m_alphaMap[4*i + 0] *= factor;
                         m_alphaMap[4*i + 1] *= factor;
                         m_alphaMap[4*i + 2] *= factor;
                         m_alphaMap[4*i + 3] *= factor;
                     }
+#endif
                     break;
+
+
                 case Dim_Sin:
+#ifdef LG_ADV
+                    for (int i = 0; i < m_rgbLightMask.size(); i++) {
+                        // Red
+                        if (m_rgbLightMask[i].r < 1) {
+                            m_rgbLightMask[i].r *= pow(sin(m_rgbLightMask[i].r * M_PI/2), m_pDim) - .01;
+                        } else {
+                            m_rgbLightMask[i].r *= factor;
+                        }
+                        if (m_rgbLightMask[i].r < 0) { m_rgbLightMask[i].r = 0; }
+
+                        // Green
+                        if (m_rgbLightMask[i].g < 1) {
+                            m_rgbLightMask[i].g *= pow(sin(m_rgbLightMask[i].g * M_PI/2), m_pDim) - .01;
+                        } else {
+                            m_rgbLightMask[i].g *= factor;
+                        }
+                        if (m_rgbLightMask[i].g < 0) { m_rgbLightMask[i].g = 0; }
+
+                        // Blue
+                        if (m_rgbLightMask[i].b < 1) {
+                            m_rgbLightMask[i].b *= pow(sin(m_rgbLightMask[i].b * M_PI/2), m_pDim) - .01;
+                        } else {
+                            m_rgbLightMask[i].b *= factor;
+                        }
+                        if (m_rgbLightMask[i].b < 0) { m_rgbLightMask[i].b = 0; }
+                    }
+#else
                     // Attention: Since Graffiti_LongAvgAlphaCumC only makes use of the first alpha channel
                     // the other channels are not calculated here due to efficiency reasons.
                     // May have to be adjusted if required.
@@ -244,6 +297,7 @@ public:
                         }
                         if (m_alphaMap[4*i + 0] < 0) { m_alphaMap[4*i + 0] = 0; }
                     }
+#endif
                     break;
             }
 
@@ -256,14 +310,15 @@ public:
          (mainly for parameter adjustments when working in the NLE)
          */
         if (m_pReset) {
-            std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
-            std::fill(&m_alphaMap[0], &m_alphaMap[width*height*4 - 1], 0);
 #ifdef LG_ADV
             RGBFloat rgb0;
             rgb0.r = 0;
             rgb0.g = 0;
             rgb0.b = 0;
             m_rgbLightMask = std::vector<RGBFloat>(width*height, rgb0);
+#else
+            std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
+            std::fill(&m_alphaMap[0], &m_alphaMap[width*height*4 - 1], 0);
 #endif
             // m_longMeanImage has been handled above already (set to the current image).
         }
@@ -275,7 +330,7 @@ public:
         int max;
         float f, y;
         uint32_t color;
-        float fr, fg, fb, sr, sg, sb, fy;
+        float fr, fg, fb, sr, sg, sb, fy, fsat;
 
 #ifdef LG_DEBUG
         int deCount = 0;
@@ -684,26 +739,19 @@ public:
                             // If all requirements are met, then this should be a light source.
                         )
                     {
+#ifdef LG_ADV
+                        // Just add values as float. Overflows are highly unlikely (3.4E38+ frames ...).
+                        fr = CLAMP(r)/255.0;
+                        fg = CLAMP(g)/255.0;
+                        fb = CLAMP(b)/255.0;
+                        f = (fr + fg + fb) / 3;
+                        m_rgbLightMask[pixel].r += fr * m_pSensitivity * f;
+                        m_rgbLightMask[pixel].g += fg * m_pSensitivity * f;
+                        m_rgbLightMask[pixel].b += fb * m_pSensitivity * f;
+#else
                         // Store the «additional» light delivered by the light source in the light mask.
                         color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
                         m_lightMask[pixel] = MAX(m_lightMask[pixel], color);
-#ifdef LG_ADV
-#ifdef LG_DEBUG
-                        if (m_rgbLightMask[pixel].r < 0 || m_rgbLightMask[pixel].g < 0 || m_rgbLightMask[pixel].b < 0) {
-                            std::cout << "ERROR: below 0";
-                        }
-#endif
-                        // Just add values. Overflows are highly unlikely (3.4E38+ frames ...).
-                        m_rgbLightMask[pixel].r += CLAMP(r)/255.0 * m_pSensitivity;
-                        m_rgbLightMask[pixel].g += CLAMP(g)/255.0 * m_pSensitivity;
-                        m_rgbLightMask[pixel].b += CLAMP(b)/255.0 * m_pSensitivity;
-
-#ifdef LG_DEBUG
-                        if (m_rgbLightMask[pixel].r < 0 || m_rgbLightMask[pixel].g < 0 || m_rgbLightMask[pixel].b < 0) {
-                            std::cout << "ERROR: below 0 afterwards! Sensitivity: " << m_pSensitivity << ". " << r << "/" << g << "/" << b << ". ";
-                        }
-#endif
-#else
 
                         // Add the brightness of the light source to the brightness map (alpha map)
                         y = REC709Y(CLAMP(r), CLAMP(g), CLAMP(b)) / 255.0;
@@ -735,10 +783,22 @@ public:
                             && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
                        )
                     {
+
                         fr = m_rgbLightMask[pixel].r;
                         fg = m_rgbLightMask[pixel].g;
                         fb = m_rgbLightMask[pixel].b;
 
+                        if (m_pLowerOverexposure > 0) {
+                            // Comparisation of plots with octave:
+                            // clf;hold on;plot([0 1],[0 1],'k');plot(range,ones(length(range),1),'k');plot(range,sqrt(range));plot(range,log(1+range),'k');plot(range,log(1+range),'g');plot(range,(log(1+range)/3).^.5,'r');axis equal
+                            fr = pow( log(1+fr)/m_pLowerOverexposure, .5 );
+                            fg = pow( log(1+fg)/m_pLowerOverexposure, .5 );
+                            fb = pow( log(1+fb)/m_pLowerOverexposure, .5 );
+                        }
+
+
+                        // Calculate overflow between different colours:
+                        // A very bright red light source will eventually overflow into other channels.
                         sr = 0;
                         sg = 0;
                         sb = 0;
@@ -764,16 +824,19 @@ public:
                             fb = 1;
                         }
 
-                        fy = REC709Y(fr,fg,fb);
-                        if (fy < 1) {
-                            float sat = 2.0;
+                        // Increase the saturation if the average brightness is below a certain level
+                        // Do not use Rec709 Luma since we want to consider all colours to equal parts.
+                        fy = (fr + fg + fb) / 3;
+                        if (fy < 1 && m_pSaturation > 0) {
+                            fsat = 1 + m_pSaturation*(1-fy);
 
-                            fr = fy + sat * (fr-fy);
-                            fg = fy + sat * (fg-fy);
-                            fb = fy + sat * (fb-fy);
-
+                            fr = fy + fsat * (fr-fy);
+                            fg = fy + fsat * (fg-fy);
+                            fb = fy + fsat * (fb-fy);
                         }
 
+                        // Paint the light on top of the image using addition
+                        // Since brightness is equidistant in sRGB, this works fine.
                         r = 255*fr + GETR(out[pixel]);
                         g = 255*fg + GETG(out[pixel]);
                         b = 255*fb + GETB(out[pixel]);
@@ -920,6 +983,8 @@ private:
     f0r_param_double m_pThresholdDifference;
     f0r_param_double m_pThresholdDiffSum;
     f0r_param_double m_pDim;
+    f0r_param_double m_pSaturation;
+    f0r_param_double m_pLowerOverexposure;
     f0r_param_bool m_pStatsBrightness;
     f0r_param_bool m_pStatsDiff;
     f0r_param_bool m_pStatsDiffSum;
