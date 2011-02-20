@@ -37,6 +37,7 @@ typedef struct {
 #define FACEBL0R_PARAM_CLASSIFIER (0)
 #define FACEBL0R_PARAM_ELLIPSE (1)
 #define FACEBL0R_PARAM_RECHECK (2)
+#define FACEBL0R_PARAM_THREADS (3)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -71,6 +72,7 @@ private:
     // plugin parameters
     f0r_param_bool ellipse;
     f0r_param_double recheck;
+    f0r_param_double threads;
 
     unsigned int face_found;
     unsigned int face_notfound;
@@ -107,6 +109,8 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   recheck = 0.025;
   face_notfound = cvRound(recheck * 1000);
   register_param(recheck, "recheck", "how often to detect an object in number of frames divided by 1000");
+  threads = 0.0; //number of CPUs
+  register_param(threads, "threads", "how many threads to use divided by 100; 0 uses CPU count");
 }
 
 FaceBl0r::~FaceBl0r() {
@@ -121,6 +125,7 @@ FaceBl0r::~FaceBl0r() {
 void FaceBl0r::update() {
 
   if (!cascade) {
+      cvSetNumThreads(cvRound(threads * 100));
       f0r_param_string classifier;
       get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
       if (classifier) {
