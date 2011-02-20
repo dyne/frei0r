@@ -72,6 +72,7 @@
 #include <algorithm>
 
 #define LG_ADV
+//#define LG_NO_OVERLAY // Not really working yet
 //#define LG_DEBUG
 
 // Macros to extract color components
@@ -142,6 +143,10 @@ public:
 #endif
 #endif
 
+#ifdef LG_NO_OVERLAY
+        m_prevMask = std::vector<RGBFloat>(width*height, rgb0);
+#endif
+
         register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)"); // [0,5]
         register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through"); // [0,1]
         register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background"); // {0...765}
@@ -191,6 +196,12 @@ public:
         // Most of the image will very likely not change at all.
         std::copy(in, in + width*height, out);
 
+#ifdef LG_ADV
+        RGBFloat rgb0;
+        rgb0.r = 0;
+        rgb0.g = 0;
+        rgb0.b = 0;
+#endif
 
         if (m_pNonlinearDim) {
             m_dimMode = Dim_Sin;
@@ -311,10 +322,6 @@ public:
          */
         if (m_pReset) {
 #ifdef LG_ADV
-            RGBFloat rgb0;
-            rgb0.r = 0;
-            rgb0.g = 0;
-            rgb0.b = 0;
             m_rgbLightMask = std::vector<RGBFloat>(width*height, rgb0);
 #else
             std::fill(&m_lightMask[0], &m_lightMask[width*height - 1], 0);
@@ -744,10 +751,30 @@ public:
                         fr = CLAMP(r)/255.0;
                         fg = CLAMP(g)/255.0;
                         fb = CLAMP(b)/255.0;
-                        f = (fr + fg + fb) / 3;
-                        m_rgbLightMask[pixel].r += fr * m_pSensitivity * f;
-                        m_rgbLightMask[pixel].g += fg * m_pSensitivity * f;
-                        m_rgbLightMask[pixel].b += fb * m_pSensitivity * f;
+
+                        f = (fr + fg + fb) / 3 * m_pSensitivity;
+                        fr *= f;
+                        fg *= f;
+                        fb *= f;
+
+#ifdef LG_NO_OVERLAY
+//                        std::cout << "fr: " << fr << "; fg: " << fg << "; fb: " << fb << "\n";
+                        fr -= m_prevMask[pixel].r;
+                        fg -= m_prevMask[pixel].g;
+                        fb -= m_prevMask[pixel].b;
+                        m_prevMask[pixel].r += fr;
+                        m_prevMask[pixel].g += fg;
+                        m_prevMask[pixel].b += fb;
+//                        std::cout << "fr2: " << fr << "; fg2: " << fg << "; fb2: " << fb << "\n";
+                        if (fr < 0) { fr = 0; }
+                        if (fg < 0) { fg = 0; }
+                        if (fb < 0) { fb = 0; }
+#endif
+
+                        m_rgbLightMask[pixel].r += fr;
+                        m_rgbLightMask[pixel].g += fg;
+                        m_rgbLightMask[pixel].b += fb;
+
 #else
                         // Store the «additional» light delivered by the light source in the light mask.
                         color = RGBA(CLAMP(r), CLAMP(g), CLAMP(b),0xFF);
@@ -758,7 +785,12 @@ public:
                         y = y * m_pSensitivity;
                         m_alphaMap[4*pixel] += y;
 #endif
+                    } else {
+#ifdef LG_NO_OVERLAY
+                        m_prevMask[pixel] = rgb0;
+#endif
                     }
+
 
 
                     /*
@@ -974,6 +1006,9 @@ private:
 
 #ifdef LG_ADV
     std::vector<RGBFloat> m_rgbLightMask;
+#endif
+#ifdef LG_NO_OVERLAY
+    std::vector<RGBFloat> m_prevMask;
 #endif
 
     f0r_param_double m_pLongAlpha;
