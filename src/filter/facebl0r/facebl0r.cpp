@@ -22,8 +22,6 @@
 
 #include <frei0r.hpp>
 
-#define CHECK (25)   //how often to perform object detection
-
 typedef struct {
   IplImage* hsv;     //input image converted to HSV
   IplImage* hue;     //hue channel of HSV image
@@ -38,6 +36,7 @@ typedef struct {
 
 #define FACEBL0R_PARAM_CLASSIFIER (0)
 #define FACEBL0R_PARAM_ELLIPSE (1)
+#define FACEBL0R_PARAM_RECHECK (2)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -71,6 +70,7 @@ private:
 
     // plugin parameters
     f0r_param_bool ellipse;
+    f0r_param_double recheck;
 
     unsigned int face_found;
     unsigned int face_notfound;
@@ -81,7 +81,7 @@ private:
 
 
 frei0r::construct<FaceBl0r> plugin("FaceBl0r",
-				  "automatic face blur ",
+				  "automatic face blur",
 				  "ZioKernel, Biilly, Jilt, Jaromil, ddennedy",
 				  1,0);
 
@@ -95,7 +95,6 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   image = 0;
   tracked_obj = 0;
   face_found = 0;
-  face_notfound = CHECK;
   
   cascade = 0;
   storage = 0;
@@ -104,7 +103,10 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
                  "classifier",
                  "full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades"); 
   ellipse = false;
-  register_param(ellipse, "ellipse", "draw a red ellipse around the face");
+  register_param(ellipse, "ellipse", "draw a red ellipse around the object");
+  recheck = 0.025;
+  face_notfound = cvRound(recheck * 1000);
+  register_param(recheck, "recheck", "how often to detect an object in number of frames divided by 1000");
 }
 
 FaceBl0r::~FaceBl0r() {
@@ -145,7 +147,7 @@ void FaceBl0r::update() {
    */
   if(face_notfound>0) {
 
-      if(face_notfound % CHECK == 0)
+      if(face_notfound % cvRound(recheck * 1000) == 0)
           face_rect = detect_face(image, cascade, storage);
 
       // if no face detected
@@ -188,8 +190,8 @@ void FaceBl0r::update() {
               cvEllipseBox(image, face_box, CV_RGB(255,0,0), 2, CV_AA, 0);
 
           face_found++;
-          if(face_found % CHECK == 0)
-              face_notfound = CHECK; // try recheck
+          if(face_found % cvRound(recheck * 1000) == 0)
+              face_notfound = cvRound(recheck * 1000); // try recheck
       }
   }
 
