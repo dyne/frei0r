@@ -22,6 +22,7 @@
 
 #include <frei0r.hpp>
 
+#define CHECK (25)   //how often to perform object detection
 
 typedef struct {
   IplImage* hsv;     //input image converted to HSV
@@ -68,8 +69,8 @@ private:
     CvMemStorage* storage;
 
 
-    int face_found;
-    int face_notfound;
+    unsigned int face_found;
+    unsigned int face_notfound;
     unsigned int width;
     unsigned int height;
     unsigned int size; // = width * height
@@ -91,7 +92,7 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   image = 0;
   tracked_obj = 0;
   face_found = 0;
-  face_notfound = 1;
+  face_notfound = CHECK;
   
   cascade = 0;
   storage = 0;
@@ -112,8 +113,6 @@ FaceBl0r::~FaceBl0r() {
 }
 
 void FaceBl0r::update() {
-  unsigned char *src = (unsigned char *)in;
-  unsigned char *dst = (unsigned char *)out;
 
   if (!cascade) {
       f0r_param_string classifier;
@@ -122,12 +121,14 @@ void FaceBl0r::update() {
           cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
           storage = cvCreateMemStorage(0);
       }
-      else return;
+      else {
+          memcpy(out, in, size);
+          return;
+	  }
   }
   if( !image )
       image = cvCreateImage( cvSize(width,height), IPL_DEPTH_8U, 4 );
 
-  unsigned char* ipli = (unsigned char*)image->imageData;
   memcpy(image->imageData, in, size);
 
   /*
@@ -138,8 +139,6 @@ void FaceBl0r::update() {
      - no more face
        no face*
    */
-#define CHECK 25
-#define RECHECK 25
   if(face_notfound>0) {
 
       if(face_notfound % CHECK == 0)
@@ -148,8 +147,6 @@ void FaceBl0r::update() {
       // if no face detected
       if (!face_rect) {
           face_notfound++;
-          memcpy(out, image->imageData, size);
-          return;
       } else {
           //track detected face with camshift
           if(tracked_obj)
@@ -170,27 +167,25 @@ void FaceBl0r::update() {
           || (face_box.size.width > 500 )
           || (face_box.size.height > 500 )
           ) {
-          
           face_found = 0;
           face_notfound++;
-          return;
       }
-
+      else {
 ////////////////////////////////////////////////////////////////////////
-      cvSetImageROI (image, tracked_obj->prev_rect);
-//  cvSmooth (image, image, CV_BLUR, 22, 22, 0, 0);
-      cvSmooth (image, image, CV_BLUR, 23, 23, 0, 0);
-//      cvSmooth (image, image, CV_GAUSSIAN, 11, 11, 0, 0);
-      cvResetImageROI (image);
+	      cvSetImageROI (image, tracked_obj->prev_rect);
+//          cvSmooth (image, image, CV_BLUR, 22, 22, 0, 0);
+		  cvSmooth (image, image, CV_BLUR, 23, 23, 0, 0);
+//          cvSmooth (image, image, CV_GAUSSIAN, 11, 11, 0, 0);
+		  cvResetImageROI (image);
 ////////////////////////////////////////////////////////////////////////
       
-      //outline face ellipse
-      cvEllipseBox(image, face_box, CV_RGB(255,0,0), 2, CV_AA, 0);
+          //outline face ellipse
+          cvEllipseBox(image, face_box, CV_RGB(255,0,0), 2, CV_AA, 0);
 
-      face_found++;
-      if(face_found % RECHECK == 0)
-          face_notfound = 1; // try recheck
-      
+          face_found++;
+          if(face_found % CHECK == 0)
+              face_notfound = CHECK; // try recheck
+      }
   }
 
   memcpy(out, image->imageData, size);
@@ -207,7 +202,7 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
   if (cascade && storage) {
       //get a sequence of faces in image
       CvSeq *faces = cvHaarDetectObjects(image, cascade, storage,
-         1.2,                       //increase search scale by 50% each pass
+         1.2,                       //increase search scale by 20% each pass
          2,                         //require 2 neighbors
          CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
          cvSize(0, 0));             //use default face size from xml
