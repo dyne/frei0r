@@ -40,6 +40,7 @@ typedef struct {
 #define FACEBL0R_PARAM_THREADS (3)
 #define FACEBL0R_PARAM_SEARCHSCALE (4)
 #define FACEBL0R_PARAM_NEIGHBORS (5)
+#define FACEBL0R_PARAM_SMALLEST (6)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -77,6 +78,7 @@ private:
     f0r_param_double threads;
     f0r_param_double search_scale;
     f0r_param_double neighbors;
+    f0r_param_double smallest;
 
     unsigned int face_found;
     unsigned int face_notfound;
@@ -119,6 +121,8 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   register_param(search_scale, "search scale", "the search window scale factor, divided by 10");
   neighbors = 0.02; // require 2 neighbors
   register_param(neighbors, "neighbors", "minimum number of rectangles that makes up an object, divided by 100");
+  smallest = 0.0; // smallest window size is trained default
+  register_param(smallest, "smallest", "minimum window size in pixels, divided by 1000");
 }
 
 FaceBl0r::~FaceBl0r() {
@@ -181,8 +185,10 @@ void FaceBl0r::update() {
       //track the face in the new frame
       face_box = camshift_track_face(image, tracked_obj);
 
-      if( ( face_box.size.width < 10 ) // para
-          || (face_box.size.height < 10 ) 
+      int min = cvRound(smallest * 1000);
+          min = min? min : 10;
+      if( ( face_box.size.width < min )
+          || (face_box.size.height < min )
           || (face_box.size.width > 500 )
           || (face_box.size.height > 500 )
           ) {
@@ -227,12 +233,13 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
      cvClearMemStorage(storage);
 
       //get a sequence of faces in image
+      int min = cvRound(smallest * 1000);
       CvSeq *faces = cvHaarDetectObjects(gray, cascade, storage,
          search_scale * 10.0,
          cvRound(neighbors * 100),
          CV_HAAR_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
          CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
-         cvSize(0, 0));             //use default face size from xml
+         cvSize(min, min));
     
       //if one or more faces are detected, return the first one
       if(faces && faces->total)
