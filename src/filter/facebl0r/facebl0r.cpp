@@ -37,6 +37,7 @@ typedef struct {
 } TrackedObj;
 
 #define FACEBL0R_PARAM_CLASSIFIER (0)
+#define FACEBL0R_PARAM_ELLIPSE (1)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -68,6 +69,8 @@ private:
     CvHaarClassifierCascade* cascade;
     CvMemStorage* storage;
 
+    // plugin parameters
+    f0r_param_bool ellipse;
 
     unsigned int face_found;
     unsigned int face_notfound;
@@ -79,7 +82,7 @@ private:
 
 frei0r::construct<FaceBl0r> plugin("FaceBl0r",
 				  "automatic face blur ",
-				  "ZioKernel, Biilly, Jilt, Jaromil",
+				  "ZioKernel, Biilly, Jilt, Jaromil, ddennedy",
 				  1,0);
 
 FaceBl0r::FaceBl0r(int wdt, int hgt) {
@@ -100,7 +103,8 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   register_param("/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
                  "classifier",
                  "full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades"); 
-
+  ellipse = false;
+  register_param(ellipse, "ellipse", "draw a red ellipse around the face");
 }
 
 FaceBl0r::~FaceBl0r() {
@@ -180,7 +184,8 @@ void FaceBl0r::update() {
 ////////////////////////////////////////////////////////////////////////
       
           //outline face ellipse
-          cvEllipseBox(image, face_box, CV_RGB(255,0,0), 2, CV_AA, 0);
+          if (ellipse)
+              cvEllipseBox(image, face_box, CV_RGB(255,0,0), 2, CV_AA, 0);
 
           face_found++;
           if(face_found % CHECK == 0)
