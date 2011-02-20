@@ -160,6 +160,7 @@ public:
         register_param(m_pStatsDiffSum, "statsDiffSum", "Display the sum of the background difference and the threshold");
         register_param(m_pReset, "reset", "Reset filter masks");
         register_param(m_pTransparentBackground, "transparentBackground", "Make the background transparent");
+        register_param(m_pBlackReference, "blackReference", "Uses black as background image instead of the first frame.");
         register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
         register_param(m_pNonlinearDim, "nonlinearDim", "Nonlinear dimming (may look more natural)");
         m_pLongAlpha = 1/128.0;
@@ -169,6 +170,7 @@ public:
         m_pThresholdDiffSum = 0;
         m_pDim = 0;
         m_pSaturation = 1;
+        m_pBlackReference = false;
 
     }
 
@@ -214,11 +216,17 @@ public:
          Refresh the background image
          */
         if (!m_meanInitialized || m_pReset) {
-            m_longMeanImage = std::vector<float>(width*height*3);
-            for (int pixel = 0; pixel < width*height; pixel++) {
-                m_longMeanImage[3*pixel+0] = GETR(in[pixel]);
-                m_longMeanImage[3*pixel+1] = GETG(in[pixel]);
-                m_longMeanImage[3*pixel+2] = GETB(in[pixel]);
+            if (m_pBlackReference) {
+                // Do not use the first frame from the movie as background image but plain black
+                // to calculate the added light. Useful e.g. when dealing with still images.
+                m_longMeanImage = std::vector<float>(width*height*3, 0);
+            } else {
+                m_longMeanImage = std::vector<float>(width*height*3);
+                for (int pixel = 0; pixel < width*height; pixel++) {
+                    m_longMeanImage[3*pixel+0] = GETR(in[pixel]);
+                    m_longMeanImage[3*pixel+1] = GETG(in[pixel]);
+                    m_longMeanImage[3*pixel+2] = GETB(in[pixel]);
+                }
             }
             m_meanInitialized = true;
         } else {
@@ -1024,6 +1032,7 @@ private:
     f0r_param_bool m_pStatsDiff;
     f0r_param_bool m_pStatsDiffSum;
     f0r_param_bool m_pTransparentBackground;
+    f0r_param_bool m_pBlackReference;
     f0r_param_bool m_pNonlinearDim;
     f0r_param_bool m_pReset;
 
