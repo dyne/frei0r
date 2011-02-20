@@ -41,6 +41,7 @@ typedef struct {
 #define FACEBL0R_PARAM_SEARCHSCALE (4)
 #define FACEBL0R_PARAM_NEIGHBORS (5)
 #define FACEBL0R_PARAM_SMALLEST (6)
+#define FACEBL0R_PARAM_LARGEST (7)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -79,6 +80,7 @@ private:
     f0r_param_double search_scale;
     f0r_param_double neighbors;
     f0r_param_double smallest;
+    f0r_param_double largest;
 
     unsigned int face_found;
     unsigned int face_notfound;
@@ -123,6 +125,8 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   register_param(neighbors, "neighbors", "minimum number of rectangles that makes up an object, divided by 100");
   smallest = 0.0; // smallest window size is trained default
   register_param(smallest, "smallest", "minimum window size in pixels, divided by 1000");
+  largest = 0.0500; // largest object size shown is 500 px
+  register_param(largest, "largest", "maximum object size in pixels, divided by 10000");
 }
 
 FaceBl0r::~FaceBl0r() {
@@ -187,10 +191,11 @@ void FaceBl0r::update() {
 
       int min = cvRound(smallest * 1000);
           min = min? min : 10;
+      int max = cvRound(largest * 10000);
       if( ( face_box.size.width < min )
           || (face_box.size.height < min )
-          || (face_box.size.width > 500 )
-          || (face_box.size.height > 500 )
+          || (face_box.size.width > max )
+          || (face_box.size.height > max )
           ) {
           face_found = 0;
           face_notfound++;
