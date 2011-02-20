@@ -38,6 +38,7 @@ typedef struct {
 #define FACEBL0R_PARAM_ELLIPSE (1)
 #define FACEBL0R_PARAM_RECHECK (2)
 #define FACEBL0R_PARAM_THREADS (3)
+#define FACEBL0R_PARAM_SEARCHSCALE (4)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -73,6 +74,7 @@ private:
     f0r_param_bool ellipse;
     f0r_param_double recheck;
     f0r_param_double threads;
+    f0r_param_double search_scale;
 
     unsigned int face_found;
     unsigned int face_notfound;
@@ -111,6 +113,8 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   register_param(recheck, "recheck", "how often to detect an object in number of frames divided by 1000");
   threads = 0.0; //number of CPUs
   register_param(threads, "threads", "how many threads to use divided by 100; 0 uses CPU count");
+  search_scale = 0.12;
+  register_param(search_scale, "search scale", "the search window scale factor divided by 10");
 }
 
 FaceBl0r::~FaceBl0r() {
@@ -220,7 +224,7 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
 
       //get a sequence of faces in image
       CvSeq *faces = cvHaarDetectObjects(gray, cascade, storage,
-         1.2,                       //increase search scale by 20% each pass
+         search_scale * 10.0,       //increase search scale by X each pass
          2,                         //require 2 neighbors
          CV_HAAR_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
          CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
