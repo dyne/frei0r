@@ -200,8 +200,14 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
   CvRect* rect = 0;
   
   if (cascade && storage) {
+     //use an equalized gray image for better recognition
+     IplImage* gray = cvCreateImage(cvSize(image->width, image->height), 8, 1);
+     cvCvtColor(image, gray, CV_BGR2GRAY);
+     cvEqualizeHist(gray, gray);
+     cvClearMemStorage(storage);
+
       //get a sequence of faces in image
-      CvSeq *faces = cvHaarDetectObjects(image, cascade, storage,
+      CvSeq *faces = cvHaarDetectObjects(gray, cascade, storage,
          1.2,                       //increase search scale by 20% each pass
          2,                         //require 2 neighbors
          CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
@@ -210,6 +216,8 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
       //if one or more faces are detected, return the first one
       if(faces && faces->total)
         rect = (CvRect*) cvGetSeqElem(faces, 0);
+
+      cvReleaseImage(&gray);
   }
 
   return rect;
