@@ -210,6 +210,7 @@ CvRect* FaceBl0r::detect_face (IplImage* image,
       CvSeq *faces = cvHaarDetectObjects(gray, cascade, storage,
          1.2,                       //increase search scale by 20% each pass
          2,                         //require 2 neighbors
+         CV_HAAR_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
          CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
          cvSize(0, 0));             //use default face size from xml
     
