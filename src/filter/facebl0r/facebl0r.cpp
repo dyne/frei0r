@@ -93,7 +93,7 @@ private:
 frei0r::construct<FaceBl0r> plugin("FaceBl0r",
 				  "automatic face blur",
 				  "ZioKernel, Biilly, Jilt, Jaromil, ddennedy",
-				  1,0);
+				  1,1, F0R_COLOR_MODEL_PACKED32);
 
 FaceBl0r::FaceBl0r(int wdt, int hgt) {
 
