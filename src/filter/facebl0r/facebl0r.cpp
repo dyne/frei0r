@@ -49,7 +49,7 @@ public:
     FaceBl0r(int wdt, int hgt);
     ~FaceBl0r();
 
-    virtual void update();
+    void update();
 
 private:
     
@@ -84,9 +84,6 @@ private:
 
     unsigned int face_found;
     unsigned int face_notfound;
-    unsigned int width;
-    unsigned int height;
-    unsigned int size; // = width * height
 };
 
 
@@ -96,10 +93,6 @@ frei0r::construct<FaceBl0r> plugin("FaceBl0r",
 				  1,1, F0R_COLOR_MODEL_PACKED32);
 
 FaceBl0r::FaceBl0r(int wdt, int hgt) {
-
-  width = wdt;
-  height = hgt;
-  size = width*height*4;
 
   face_rect = 0;
   image = 0;
@@ -146,17 +139,19 @@ void FaceBl0r::update() {
       get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
       if (classifier) {
           cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
+          if (!cascade)
+              fprintf(stderr, "ERROR: Could not load classifier cascade %s\n", classifier);
           storage = cvCreateMemStorage(0);
       }
       else {
-          memcpy(out, in, size);
+          memcpy(out, in, size * 4);
           return;
 	  }
   }
   if( !image )
       image = cvCreateImage( cvSize(width,height), IPL_DEPTH_8U, 4 );
 
-  memcpy(image->imageData, in, size);
+  memcpy(image->imageData, in, size * 4);
 
   /*
     no face*
@@ -219,7 +214,7 @@ void FaceBl0r::update() {
       }
   }
 
-  memcpy(out, image->imageData, size);
+  memcpy(out, image->imageData, size * 4);
   cvReleaseImage(&image);
 }
 
