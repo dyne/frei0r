@@ -135,6 +135,10 @@ plugin_LTLIBRARIES += facebl0r.la
 facebl0r_la_SOURCES = filter/facebl0r/facebl0r.cpp
 facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
 facebl0r_la_LIBADD = @OPENCV_LIBS@
+plugin_LTLIBRARIES += facedetect.la
+facedetect_la_SOURCES = filter/facedetect/facedetect.cpp
+facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
+facedetect_la_LIBADD = @OPENCV_LIBS@
 endif
 
 #

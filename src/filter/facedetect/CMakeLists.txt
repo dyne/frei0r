@@ -1,12 +1,15 @@
-include_directories (${OpenCV_INCLUDE_DIR})
+set (SOURCES facedetect.cpp)
+set (TARGET facedetect)
 
 if (MSVC)
-  set_source_files_properties (facedetect.c PROPERTIES LANGUAGE CXX)
+  set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-add_library (${TARGET}  MODULE facedetect.c)
+include_directories (${OpenCV_INCLUDE_DIR})
+link_directories (${OpenCV_LIBRARY_DIRS})
+LINK_LIBRARIES(${OpenCV_LIBS} ${OpenCV_LIBRARIES})
+
+add_library (${TARGET}  MODULE ${SOURCES})
 set_target_properties (${TARGET} PROPERTIES PREFIX "")
 
-target_link_libraries (facedetect
-  ${OpenCV_LIBS})
 install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})

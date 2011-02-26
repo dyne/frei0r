@@ -6,6 +6,7 @@ endif (${GAVL_FOUND})
 
 if (${OpenCV_FOUND})
     add_subdirectory (facebl0r)
+    add_subdirectory (facedetect)
 endif (${OpenCV_FOUND})
 
 add_subdirectory (3dflippo)
