@@ -35,13 +35,6 @@ typedef struct {
 } TrackedObj;
 
 #define FACEBL0R_PARAM_CLASSIFIER (0)
-#define FACEBL0R_PARAM_ELLIPSE (1)
-#define FACEBL0R_PARAM_RECHECK (2)
-#define FACEBL0R_PARAM_THREADS (3)
-#define FACEBL0R_PARAM_SEARCHSCALE (4)
-#define FACEBL0R_PARAM_NEIGHBORS (5)
-#define FACEBL0R_PARAM_SMALLEST (6)
-#define FACEBL0R_PARAM_LARGEST (7)
 
 class FaceBl0r: public frei0r::filter {
 
@@ -103,23 +96,23 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   storage = 0;
   
   register_param("/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
-                 "classifier",
-                 "full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades"); 
+                 "Classifier",
+                 "Full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades");
   ellipse = false;
-  register_param(ellipse, "ellipse", "draw a red ellipse around the object");
+  register_param(ellipse, "Ellipse", "Draw a red ellipse around the object");
   recheck = 0.025;
   face_notfound = cvRound(recheck * 1000);
-  register_param(recheck, "recheck", "how often to detect an object in number of frames, divided by 1000");
+  register_param(recheck, "Recheck", "How often to detect an object in number of frames, divided by 1000");
   threads = 0.0; //number of CPUs
-  register_param(threads, "threads", "how many threads to use divided by 100; 0 uses CPU count");
+  register_param(threads, "Threads", "How many threads to use divided by 100; 0 uses CPU count");
   search_scale = 0.12; // increase size of search window by 20% on each pass
-  register_param(search_scale, "search scale", "the search window scale factor, divided by 10");
+  register_param(search_scale, "Search scale", "The search window scale factor, divided by 10");
   neighbors = 0.02; // require 2 neighbors
-  register_param(neighbors, "neighbors", "minimum number of rectangles that makes up an object, divided by 100");
+  register_param(neighbors, "Neighbors", "Minimum number of rectangles that makes up an object, divided by 100");
   smallest = 0.0; // smallest window size is trained default
-  register_param(smallest, "smallest", "minimum window size in pixels, divided by 1000");
+  register_param(smallest, "Smallest", "Minimum window size in pixels, divided by 1000");
   largest = 0.0500; // largest object size shown is 500 px
-  register_param(largest, "largest", "maximum object size in pixels, divided by 10000");
+  register_param(largest, "Largest", "Maximum object size in pixels, divided by 10000");
 }
 
 FaceBl0r::~FaceBl0r() {
