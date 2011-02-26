@@ -251,6 +251,7 @@ public:
     
     void draw()
     {
+        double scale = this->scale == 0? 1.0 : this->scale;
         CvScalar colors[5] = {
             {{cvRound(color[0].r * 255), cvRound(color[0].g * 255), cvRound(color[0].b * 255), cvRound(alpha * 255)}},
             {{cvRound(color[1].r * 255), cvRound(color[1].g * 255), cvRound(color[1].b * 255), cvRound(alpha * 255)}},
