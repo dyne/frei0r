@@ -91,7 +91,7 @@ public:
         register_param(scale, "Scale", "Down scale the image prior detection");
         stroke = CV_FILLED;
         register_param(stroke, "Stroke", "Line width, divided by 100, or fill if 0");
-        antialias = true;
+        antialias = false;
         register_param(antialias, "Antialias", "Draw with antialiasing");
         alpha = 1.0;
         register_param(alpha, "Alpha", "The alpha channel value for the shapes");
@@ -178,6 +178,7 @@ public:
         cvReleaseImage(&image);
     }
     
+private:
     CvSeq* detect()
     {
         if (!cascade) return 0;
@@ -264,19 +265,18 @@ public:
         {
             CvRect* r = (CvRect*) cvGetSeqElem(objects, i);
             CvPoint center;
-            int radius;
             int thickness = stroke <= 0? CV_FILLED : cvRound(stroke * 100);
             int linetype = antialias? CV_AA : 8;
             
             center.x = cvRound((r->x + r->width * 0.5) / scale);
             center.y = cvRound((r->y + r->height * 0.5) / scale);
-            radius   = cvRound((r->width + r->height) * 0.25 / scale);
             
             switch (shape == 1.0? (rand() % 3) : cvRound(shape * 10))
             {
             default:
             case 0:
                 {
+                    int radius = cvRound((r->width + r->height) * 0.25 / scale);
                     cvCircle(image, center, radius, colors[i % 5], thickness, linetype);
                     break;
                 }
