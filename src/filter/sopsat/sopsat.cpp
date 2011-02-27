@@ -122,10 +122,10 @@ public:
     
     ~SOPSat()
     {
-        delete m_lutR;
-        delete m_lutG;
-        delete m_lutB;
-        delete m_lutA;
+        free(m_lutR);
+        free(m_lutG);
+        free(m_lutB);
+        free(m_lutA);
     }
 
     virtual void update()

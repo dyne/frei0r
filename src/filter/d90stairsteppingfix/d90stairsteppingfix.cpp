@@ -192,7 +192,7 @@ public:
     
     ~D90StairsteppingFix()
     {
-        delete m_mesh;
+        delete[] m_mesh;
     }
 
     virtual void update()
