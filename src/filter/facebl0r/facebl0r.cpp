@@ -103,7 +103,7 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   recheck = 0.025;
   face_notfound = cvRound(recheck * 1000);
   register_param(recheck, "Recheck", "How often to detect an object in number of frames, divided by 1000");
-  threads = 0.0; //number of CPUs
+  threads = 0.01; //number of CPUs
   register_param(threads, "Threads", "How many threads to use divided by 100; 0 uses CPU count");
   search_scale = 0.12; // increase size of search window by 20% on each pass
   register_param(search_scale, "Search scale", "The search window scale factor, divided by 10");

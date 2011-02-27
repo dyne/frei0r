@@ -75,7 +75,7 @@ public:
         register_param("/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
                        "Classifier",
                        "Full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades"); 
-        threads = 0.0; //number of CPUs
+        threads = 0.01; //number of CPUs
         register_param(threads, "Threads", "How many threads to use divided by 100; 0 uses CPU count");
         shape = 0.0;
         register_param(shape, "Shape", "The shape to draw: 0=circle, 0.1=ellipse, 0.2=rectangle, 1=random");
