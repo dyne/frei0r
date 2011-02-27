@@ -148,7 +148,7 @@ public:
         {
             // skip detect
             count++;
-            fprintf(stderr, "draw-only counter %u\n", count);
+//            fprintf(stderr, "draw-only counter %u\n", count);
         }
         else
         {
@@ -168,7 +168,7 @@ public:
             // which is not compliant, but technically feasible.
             if (recheck < 0 && cvRound( elapsed / (1000.0 / (recheckInt + 1)) ) <= recheckInt)
                     count += recheckInt - cvRound( elapsed / (1000.0 / (recheckInt + 1)));
-            fprintf(stderr, "detection time = %gms counter %u\n", elapsed, count);
+//            fprintf(stderr, "detection time = %gms counter %u\n", elapsed, count);
         }
         
         draw();
