@@ -1,6 +1,14 @@
 
 *** See also the Changes @section in include/frei0r.h or git log
 
+1.3.0 - 8 March 2011
+
+	This release adds more plugins, better documentation and better
+	examples for writing code that makes use of thed opencv library.
+	New filters (4): tutorial, sharpness, denoise, lightgraffiti
+	New generator: test_pat (broadcast test patterns)
+	New mixer: addition_alpha
+
 1.2.1 - 4 October 2010
 
 	This is a bugfix release which avoids a crash on load of the
