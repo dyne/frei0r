@@ -28,6 +28,7 @@
 #include <frei0r.h>
 #include <string.h>
 #include <math.h>
+#include "frei0r_math.h"
 #include "interp.h"
 
 //----------------------------------------
@@ -50,6 +51,7 @@ typedef struct
 	int intp;
 	int transb;
 	float feath;
+        int op;
 
 	interpp interp;
 	float *map;
@@ -424,18 +426,55 @@ void make_alphamap(unsigned char *amap, tocka2 vog[], int wo, int ho, float *map
 }
 
 //-------------------------------------------------------
-void apply_alphamap(uint32_t* frame, int w, int h, unsigned char *amap)
+void apply_alphamap(uint32_t* frame, int w, int h, unsigned char *amap, int operation)
 {
-	int i,j;
+	int i,j, length;
 	uint32_t t;
+        length = w * h;
 
-	for (i=0;i<h;i++)
-		for (j=0;j<w;j++)
-		{
-		t=(uint32_t)amap[i*w+j];
-		//		printf(" =%X",t<<24);
-		frame[i*w+j]=(frame[i*w+j]&0x00FFFFFF)+(t<<24);
-	}
+        switch (operation)
+        {
+        case 0:         //write on clear
+            for (i=0;i<length;i++)
+            {
+                t=((uint32_t)amap[i])<<24;
+                frame[i] = (frame[i]&0x00FFFFFF) | t;
+            }
+            break;
+        case 1:         //max
+            for (i=0;i<length;i++)
+            {
+                t=((uint32_t)amap[i])<<24;
+                frame[i] = (frame[i]&0x00FFFFFF) | MAX(frame[i]&0xFF000000, t);
+            }
+            break;
+        case 2:         //min
+            for (i=0;i<length;i++)
+            {
+                t=((uint32_t)amap[i])<<24;
+                frame[i] = (frame[i]&0x00FFFFFF) | MIN(frame[i]&0xFF000000, t);
+            }
+            break;
+        case 3:         //add
+            for (i=0;i<length;i++)
+            {
+                t=((uint32_t)amap[i])<<24;
+                t=((frame[i]&0xFF000000)>>1)+(t>>1);
+                t = (t>0x7F800000) ? 0xFF000000 : t<<1;
+                frame[i] = (frame[i]&0x00FFFFFF) | t;
+            }
+            break;
+        case 4:         //subtract
+            for (i=0;i<length;i++)
+            {
+                t=((uint32_t)amap[i])<<24;
+                t= ((frame[i]&0xFF000000)>t) ? (frame[i]&0xFF000000)-t : 0;
+                frame[i] = (frame[i]&0x00FFFFFF) | t;
+            }
+            break;
+        default:
+            break;
+        }
 }
 
 //---------------------------------------------------------------
@@ -641,7 +680,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
 	info->minor_version=1;
-	info->num_params=14;
+	info->num_params=15;
 	info->explanation="Four corners geometry engine";
 }
 
@@ -721,6 +760,10 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "Makes smooth transition into transparent";
 		break;
+        case 14:
+            info->name = "Alpha operation";
+            info->type = F0R_PARAM_DOUBLE;
+            info->explanation = "";
 	}
 }
 
@@ -746,11 +789,12 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	in->intp=1;
 	in->transb=0;
 	in->feath=1.0;
+        in->op=0;
 
 	in->map=(float*)calloc(1, sizeof(float)*(in->w*in->h*2+2));
 	in->amap=(unsigned char*)calloc(1, sizeof(char)*(in->w*in->h*2+2));
 	in->interp=set_intp(*in);
-	in->mapIsDirty = 1;
+	in->mapIsDirty=1;
 
 	return (f0r_instance_t)in;
 }
@@ -849,6 +893,10 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		if (tmpf!=p->feath) chg=1;
 		p->feath=tmpf;
 		break;
+        case 14:                //Alpha operation
+            p->op=map_value_forward(*((double*)parm), 0.0, 4.9999);
+            printf("setting p->op: %i\n", p->op);
+            break;
 	}
 
 	if (chg!=0)
@@ -921,6 +969,9 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 	case 13:		//Feather Alpha
 		*((double*)param)=map_value_backward(p->feath, 0.0, 100.0);
 		break;
+        case 14:                //Alpha operation
+                *((double*)param)=map_value_backward(p->op, 0.0, 4.9999);
+                break;
 	}
 }
 
@@ -936,14 +987,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	if (p->mapIsDirty) {
 		tocka2 vog[4];
 		int nots[4];
-		vog[0].x=(p->x1-0.333333)/0.333333*p->w;
-		vog[0].y=(p->y1-0.333333)/0.333333*p->h;
-		vog[1].x=(p->x2-0.333333)/0.333333*p->w;
-		vog[1].y=(p->y2-0.333333)/0.333333*p->h;
-		vog[2].x=(p->x3-0.333333)/0.333333*p->w;
-		vog[2].y=(p->y3-0.333333)/0.333333*p->h;
-		vog[3].x=(p->x4-0.333333)/0.333333*p->w;
-		vog[3].y=(p->y4-0.333333)/0.333333*p->h;
+		vog[0].x=(p->x1*3-1)*p->w;
+		vog[0].y=(p->y1*3-1)*p->h;
+		vog[1].x=(p->x2*3-1)*p->w;
+		vog[1].y=(p->y2*3-1)*p->h;
+		vog[2].x=(p->x3*3-1)*p->w;
+		vog[2].y=(p->y3*3-1)*p->h;
+		vog[3].x=(p->x4*3-1)*p->w;
+		vog[3].y=(p->y4*3-1)*p->h;
 		geom4c_b(p->w, p->h, p->w, p->h, vog, p->stretchON, p->stretchx, p->stretchy, p->map, nots);
 		make_alphamap(p->amap, vog, p->w, p->h, p->map, p->feath, nots);
 		p->mapIsDirty = 0;
@@ -955,6 +1006,6 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	remap32(p->w, p->h, p->w, p->h, (unsigned char*) inframe, (unsigned char *) outframe, p->map, bkgr, p->interp);
 
 	if (p->transb!=0)
-		apply_alphamap(outframe, p->w, p->h, p->amap);
+		apply_alphamap(outframe, p->w, p->h, p->amap, p->op);
 
 }
