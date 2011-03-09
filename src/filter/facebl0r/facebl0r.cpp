@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
@@ -75,6 +76,10 @@ private:
     f0r_param_double smallest;
     f0r_param_double largest;
 
+    f0r_param_string classifier;
+    char old_classifier[512];
+  
+
     unsigned int face_found;
     unsigned int face_notfound;
 };
@@ -128,18 +133,27 @@ void FaceBl0r::update() {
 
   if (!cascade) {
       cvSetNumThreads(cvRound(threads * 100));
-      f0r_param_string classifier;
       get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
       if (classifier) {
-          cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
-          if (!cascade)
-              fprintf(stderr, "ERROR: Could not load classifier cascade %s\n", classifier);
-          storage = cvCreateMemStorage(0);
+	if ( strcmp(classifier, old_classifier) == 0) {
+	  // same as before, avoid repeating error messages
+	  memcpy(out, in, size * 4); // of course assuming we are RGBA only
+	  return;
+	} else strcpy(old_classifier, classifier);
+
+	cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
+	if (!cascade) {
+	  fprintf(stderr, "ERROR in filter facebl0r, classifier cascade not found:\n");
+	  fprintf(stderr, " %s\n", classifier);
+	  memcpy(out, in, size * 4);
+	  return;
+	}
+	storage = cvCreateMemStorage(0);
       }
       else {
-          memcpy(out, in, size * 4);
-          return;
-	  }
+	memcpy(out, in, size * 4);
+	return;
+      }
   }
   if( !image )
       image = cvCreateImage( cvSize(width,height), IPL_DEPTH_8U, 4 );
