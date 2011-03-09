@@ -17,7 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <wchar.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
