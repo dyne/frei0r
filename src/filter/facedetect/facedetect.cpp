@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <opencv/cv.h>
 #include "frei0r.hpp"
+#include "frei0r_math.h"
 
 #define USE_ROI
 #define PAD (40)
@@ -125,7 +126,7 @@ public:
             cvSetNumThreads(cvRound(threads * 100));
             f0r_param_string classifier;
             get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
-            if (classifier) {
+            if (classifier && strcmp(classifier, "")) {
                 cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
                 if (!cascade)
                     fprintf(stderr, "ERROR: Could not load classifier cascade %s\n", classifier);
@@ -136,7 +137,11 @@ public:
                 return;
             }
         }
-        
+
+        // sanitize parameters
+        search_scale = CLAMP(search_scale, 0.11, 1.0);
+        neighbors = CLAMP(neighbors, 0.01, 1.0);
+
         // copy input image to OpenCV
         if( !image )
             image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 4);

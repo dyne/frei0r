@@ -21,6 +21,7 @@
 #include <opencv/highgui.h>
 
 #include <frei0r.hpp>
+#include <frei0r_math.h>
 
 typedef struct {
   IplImage* hsv;     //input image converted to HSV
@@ -133,7 +134,7 @@ void FaceBl0r::update() {
   if (!cascade) {
       cvSetNumThreads(cvRound(threads * 100));
       get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
-      if (classifier) {
+      if (classifier && strcmp(classifier, "")) {
 	if ( strcmp(classifier, old_classifier) == 0) {
 	  // same as before, avoid repeating error messages
 	  memcpy(out, in, size * 4); // of course assuming we are RGBA only
@@ -154,6 +155,12 @@ void FaceBl0r::update() {
 	return;
       }
   }
+
+  // sanitize parameters
+  recheck = CLAMP(recheck, 0.001, 1.0);
+  search_scale = CLAMP(search_scale, 0.11, 1.0);
+  neighbors = CLAMP(neighbors, 0.01, 1.0);
+
   if( !image )
       image = cvCreateImage( cvSize(width,height), IPL_DEPTH_8U, 4 );
 
