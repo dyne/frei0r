@@ -101,16 +101,16 @@ public:
         register_param(color[0], "Color 1", "The color of the first object");
         f0r_param_color color1 = {0.0, 0.5, 1.0};
         color[1] = color1;
-        register_param(color[0], "Color 2", "The color of the second object");
+        register_param(color[1], "Color 2", "The color of the second object");
         f0r_param_color color2 = {0.0, 1.0, 1.0};
         color[2] = color2;
-        register_param(color[0], "Color 3", "The color of the third object");
+        register_param(color[2], "Color 3", "The color of the third object");
         f0r_param_color color3 = {0.0, 1.0, 0.0};
         color[3] = color3;
-        register_param(color[0], "Color 4", "The color of the fourth object");
+        register_param(color[3], "Color 4", "The color of the fourth object");
         f0r_param_color color4 = {1.0, 0.5, 0.0};
         color[4] = color4;
-        register_param(color[0], "Color 5", "The color of the fifth object");
+        register_param(color[4], "Color 5", "The color of the fifth object");
         srand(::time(NULL));
     }
 
