@@ -1,0 +1,116 @@
+IIRblur does three different types of blur: Exponential Decay,
+Resonant Lowpass and Gaussian.
+They are all implemented as fast IIR filters, so the
+computation time does not depend on the blur size.
+
+
+Written by Marko Cebokli,  jul 2011  and released under GNU GPL
+
+
+RELEASE NOTES
+
+** jul 2011
+Version 0.1
+"pre-alpha" (throw it out and see what happens... :-)
+
+
+
+
+
+Description of the parameters:
+
+"Amount"
+Just that. Controls the effective size of the blur kernel, the
+bigger it is, the more the image is blurred.
+
+"Type"
+Selects among the three types of blur: Exponential Decay,
+Resonant Lowpass and Gaussian.
+- Exponential Decay is the fastest. It's equivalent kernel has
+a peak in the center, making the effect a little similar to
+those "soft focus" lens attachments.
+- Resonant Lowpass has a smoothness very similar to a
+Gaussian, and is the default choice.
+-Gaussian is the slowest of the three, and is included mostly
+for completeness sake. It is visually very similar to the
+resonant lowpass, so its main use would be in some scientific
+application, where a "measurement quality Gaussian" is
+required.
+
+"Edge"
+Enables edge compensation ("anti vignette"). At the
+edges of the image, the convolution kernel "hangs over",
+causing some vignetting, which is visible especially with
+larger blurs.
+This option uses an average of the edge pixels to eliminate
+that vignetting.
+
+
+
+
+
+A short explanation of blur techniques
+
+Image blur is a 2D convolution, which is a rather slow process.
+When done directly, the computation time is proportional to the
+square of the kernel size. Therefore, people have invented
+several techniques to speed it up.
+
+The most popular is the use of a Gaussian kernel, which can be
+separated into two 1D kernels. This way, the computation time
+is only proportional to the kernel size, not it's square. The
+"bokeh" of a Gaussian is very smooth.
+
+The fastest possible blur is a convolution with a flat 
+rectangular kernel ("Box blur"). Using the "running average"
+algorithm, it runs at just four additions per pixel per color,
+regardless of kernel size. However, it's anisotropic sinc type
+frequency response produces a very ugly "bokeh".
+
+Last but not least are IIR ("recursive") techniques, as used
+in this plugin. Somewhat more computation is needed than for
+box blur, but the amount is still independent of kernel size,
+and "bokeh" quality is way beyond box blur. Already with only
+two taps, a very nice "bokeh" can be achieved.
+
+
+
+
+A note about the functions in the "fibe.h" file
+
+FIBE stands for "Fast IIR Blur Engine". The functions
+implement quadrilateral IIR filters (the same IIR filter
+is run in four directions).
+
+FIBE-1 uses single delay IIR cells. Their exponential decay
+type response gives it a distinctive non-isotropic look,
+whose "diamond bokeh" might not be to everybody's liking.
+However, it is very fast, consuming only cca five MACs per
+pixel per channel (color), regardless of blur size.
+
+FIBE-2 uses two delays IIR cells, which can give a better
+circular symmetry. It runs at slightly more than nine MACs
+pppc, which is comparable to a 3x3 direct 2D convolution, and
+faster than all, except the tiniest size, separable FIR Gaussian
+blurs. It can give a very nice, soft and symmetric blur. I
+judged it's quality good enough, to merit being the default
+choice.
+
+FIBE-3 uses three delays IIR cells, which is enough for the
+Young-van Vliet [1] approximation of a Gaussian kernel to
+within 0.17% (9 bits). It runs at something more than 13
+MACs pppc.
+
+The algorithms are very simple, but the code is a bit bloated,
+because I did some optimizations for speed.
+The algorithms are so simple, that using SSE didn't bring
+much speedup - the limiting factor is memory bandwidth, not
+arithmetics. Therefore I decided not to include the SSE versions.
+
+
+
+[1]  Ian T. Young, Lucas J. van Vliet:
+     Recursive implementation of the Gaussian filter
+     Signal Processing 44 (1995) 139-151
+
+

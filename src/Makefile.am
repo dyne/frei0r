@@ -59,6 +59,7 @@ plugin_LTLIBRARIES = \
 	hqdn3d.la \
 	hue.la \
 	hueshift0r.la \
+	IIRblur.la \
 	invert0r.la \
 	ising0r.la \
 	lenscorrection.la \
@@ -174,6 +175,7 @@ gamma_la_SOURCES = filter/gamma/gamma.c
 glow_la_SOURCES = filter/glow/glow.c filter/glow/blur.h
 hqdn3d_la_SOURCES = filter/denoise/hqdn3d.c
 hueshift0r_la_SOURCES = filter/hueshift0r/hueshift0r.c filter/hueshift0r/matrix.h
+IIRblur_la_SOURCES = filter/blur/IIRblur.c filter/blur/fibe.h
 invert0r_la_SOURCES = filter/invert0r/invert0r.c
 lenscorrection_la_SOURCES = filter/lenscorrection/lenscorrection.c
 letterb0xed_la_SOURCES = filter/letterb0xed/letterb0xed.c
