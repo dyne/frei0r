@@ -812,10 +812,22 @@ for (j=0;j<w;j++)	//po stolpcih
 	s[j+h1w].r=s[j+h1w].r-a1*rep1.r-a2*rep2.r;
 	s[j+h1w].g=s[j+h1w].g-a1*rep1.g-a2*rep2.g;
 	s[j+h1w].b=s[j+h1w].b-a1*rep1.b-a2*rep2.b;
+	if (s[j+h1w].r>255) s[j+h1w].r=255.0;
+	if (s[j+h1w].r<0.0) s[j+h1w].r=0.0;
+	if (s[j+h1w].g>255) s[j+h1w].g=255.0;
+	if (s[j+h1w].g<0.0) s[j+h1w].g=0.0;
+	if (s[j+h1w].b>255) s[j+h1w].b=255.0;
+	if (s[j+h1w].b<0.0) s[j+h1w].b=0.0;
 	outframe[j+h1w]=((uint32_t)s[j+h1w].r&0xFF) + (((uint32_t)s[j+h1w].g&0xFF)<<8) + (((uint32_t)s[j+h1w].b&0xFF)<<16);
 	s[j+h2w].r=s[j+h2w].r-a1*s[j+h1w].r-a2*rep1.r;
 	s[j+h2w].g=s[j+h2w].g-a1*s[j+h1w].g-a2*rep1.g;
 	s[j+h2w].b=s[j+h2w].b-a1*s[j+h1w].b-a2*rep1.b;
+	if (s[j+h2w].r>255) s[j+h2w].r=255.0;
+	if (s[j+h2w].r<0.0) s[j+h2w].r=0.0;
+	if (s[j+h2w].g>255) s[j+h2w].g=255.0;
+	if (s[j+h2w].g<0.0) s[j+h2w].g=0.0;
+	if (s[j+h2w].b>255) s[j+h2w].b=255.0;
+	if (s[j+h2w].b<0.0) s[j+h2w].b=0.0;
 	outframe[j+h2w]=((uint32_t)s[j+h2w].r&0xFF) + (((uint32_t)s[j+h2w].g&0xFF)<<8) + (((uint32_t)s[j+h2w].b&0xFF)<<16);
 	}
 
@@ -828,6 +840,12 @@ for (i=h-3;i>=0;i--)		//gor
 		s[j+iw].r=s[j+iw].r-a1*s[j+i1w].r-a2*s[j+i2w].r;
 		s[j+iw].g=s[j+iw].g-a1*s[j+i1w].g-a2*s[j+i2w].g;
 		s[j+iw].b=s[j+iw].b-a1*s[j+i1w].b-a2*s[j+i2w].b;
+		if (s[j+iw].r>255) s[j+iw].r=255.0;
+		if (s[j+iw].r<0.0) s[j+iw].r=0.0;
+		if (s[j+iw].g>255) s[j+iw].g=255.0;
+		if (s[j+iw].g<0.0) s[j+iw].g=0.0;
+		if (s[j+iw].b>255) s[j+iw].b=255.0;
+		if (s[j+iw].b<0.0) s[j+iw].b=0.0;
 		outframe[j+iw]=((uint32_t)s[j+iw].r&0xFF) + (((uint32_t)s[j+iw].g&0xFF)<<8) + (((uint32_t)s[j+iw].b&0xFF)<<16);
 		}
 	}
