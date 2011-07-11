@@ -68,7 +68,6 @@ and therefore time consuming "walks" through memory.
 #define EDGEAVG 8
 
 #include <sys/types.h>
-#include <xmmintrin.h>
 
 
 //---------------------------------------------------------
