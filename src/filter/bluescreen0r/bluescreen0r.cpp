@@ -51,7 +51,7 @@ private:
 public:
 	bluescreen0r(unsigned int width, unsigned int height)
 	{
-		dist = 127;
+		dist = 0.288;
 		
 		color.r = 0;
 		color.g = 240;
@@ -88,5 +88,5 @@ public:
 };
 
 
-frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,1);
+frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,2);
 
