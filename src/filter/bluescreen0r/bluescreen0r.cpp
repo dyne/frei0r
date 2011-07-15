@@ -65,8 +65,8 @@ public:
 		const uint32_t* pixel	=in;
 			  uint32_t* outpixel= out;
 		
-		uint32_t distInt = (uint32_t) (dist*dist);
-		uint32_t distInt2 = (uint32_t) (dist*dist)/2;
+		uint32_t distInt = (uint32_t) (dist*dist*195075);
+		uint32_t distInt2 = distInt/2;
 		
 		while(pixel != in+size) {
 			*outpixel= (*pixel & 0x00FFFFFF); // copy all except alpha
