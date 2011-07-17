@@ -34,16 +34,17 @@ class bluescreen0r : public frei0r::filter
 private:
 	f0r_param_double dist;
 	f0r_param_color color;
+	uint32_t r256,g256,b256;
 	
 	// returns the distance to 'color', but does not normalize
 	inline uint32_t distance(uint32_t pixel) {
 		uint32_t d = 0;
 		int t;
-		t = ((pixel&0x00FF0000) >> 16) - color.b;
+		t = ((pixel&0x00FF0000) >> 16) - r256;
 		d += t*t;
-		t = ((pixel&0x0000FF00) >> 8)  - color.g;
+		t = ((pixel&0x0000FF00) >> 8)  - g256;
 		d += t*t;
-		t = ((pixel&0x000000FF) >> 0)  - color.r;
+		t = ((pixel&0x000000FF) >> 0)  - b256;
 		d += t*t;
 		
 		return (uint32_t) d; // no sqrtf
@@ -54,7 +55,7 @@ public:
 		dist = 0.288;
 		
 		color.r = 0;
-		color.g = 240;
+		color.g = 0.94;
 		color.b = 0;
 		
 		register_param(color,  "Color",    "The color to make transparent (B G R)");
@@ -67,6 +68,10 @@ public:
 		
 		uint32_t distInt = (uint32_t) (dist*dist*195075);
 		uint32_t distInt2 = distInt/2;
+		
+		r256=255*color.r;
+		g256=255*color.g;
+		b256=255*color.b;
 		
 		while(pixel != in+size) {
 			*outpixel= (*pixel & 0x00FFFFFF); // copy all except alpha
