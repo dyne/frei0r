@@ -40,11 +40,11 @@ private:
 	inline uint32_t distance(uint32_t pixel) {
 		uint32_t d = 0;
 		int t;
-		t = ((pixel&0x00FF0000) >> 16) - r256;
+		t = ((pixel&0x00FF0000) >> 16) - b256;
 		d += t*t;
 		t = ((pixel&0x0000FF00) >> 8)  - g256;
 		d += t*t;
-		t = ((pixel&0x000000FF) >> 0)  - b256;
+		t = ((pixel&0x000000FF) >> 0)  - r256;
 		d += t*t;
 		
 		return (uint32_t) d; // no sqrtf
@@ -93,5 +93,5 @@ public:
 };
 
 
-frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,2);
+frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,2,F0R_COLOR_MODEL_RGBA8888);
 
