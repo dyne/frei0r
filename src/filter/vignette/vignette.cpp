@@ -18,45 +18,52 @@
  */
 
 #include <cmath>
-#include <iostream>
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 
 
+/**
+  Lens vignetting effect.
+
+  This effect simulates «natural vignetting» whose light falloff can be described
+  with a cos⁴ curve. Additionally the x:y aspect ratio of the vignette can be
+  changed (note that normal cameras with a round aperture always have an aspect ratio
+  of 1:1, but for cinematic effects the aspect ratio is often adjusted to match
+  the frame's aspect ratio). The ClearCenter value allows to shift the vignetting away
+  from the center, preserving it from changes.
+
+  */
 class Vignette : public frei0r::filter
 {
 
 public:
 
-    f0r_param_double m_scaleY;
-    f0r_param_double m_cc;
-    f0r_param_double m_soft;
+    f0r_param_double m_aspect; ///< Neutral value: 0.5
+    f0r_param_double m_cc; ///< Neutral value: 0
+    f0r_param_double m_soft; ///< Suggested value: 0.6
 
     Vignette(unsigned int width, unsigned int height) :
         m_width(width),
         m_height(height)
     {
-        std::cout << "Vignette is " << width << "x" << height << std::endl;
-
-        register_param(m_scaleY, "scaleY", "Shapee");
+        register_param(m_aspect, "aspect", "Aspect ratio");
         register_param(m_cc, "clearCenter", "Size of the unaffected center");
         register_param(m_soft, "soft", "Softness");
-        m_scaleY = .5;
+
+        // Suggested default values
+        m_aspect = .5;
         m_cc = 0;
-        m_soft = 1;
+        m_soft = .6;
 
         m_initialized = width*height > 0;
         if (m_initialized) {
             m_vignette = new float[width*height];
             updateVignette();
-        } else {
-            std::cout << "Not initializing vignette, has size 0";
         }
     }
 
     ~Vignette()
     {
-        std::cout << "~Vignette()" << std::endl;
         if (m_initialized) {
             delete[] m_vignette;
         }
@@ -64,22 +71,20 @@ public:
 
     virtual void update()
     {
-        std::cout << "Update called for " << m_width << "x" << m_height << " vignette.\n";
         std::copy(in, in + m_width*m_height, out);
 
         // Rebuild the vignette matrix if a parameter has changed
-        if (m_prev_scaleY != m_scaleY
+        if (m_prev_aspect != m_aspect
                 || m_prev_cc != m_cc
                 || m_prev_soft != m_soft) {
-            std::cout << "Vignette needs to be updated." << std::endl;
             updateVignette();
         }
 
         unsigned char *pixel = (unsigned char *) in;
         unsigned char *dest = (unsigned char *) out;
 
+        // Darken the pixels by multiplying with the vignette's factor
         float *vignette = m_vignette;
-        std::cout << "Applying vignette.\n";
         for (int i = 0; i < size; i++) {
             *dest++ = (char) (*vignette * *pixel++);
             *dest++ = (char) (*vignette * *pixel++);
@@ -87,12 +92,11 @@ public:
             *dest++ = *pixel++;
             vignette++;
         }
-        std::cout << "Vignette applied.\n";
 
     }
 
 private:
-    f0r_param_double m_prev_scaleY;
+    f0r_param_double m_prev_aspect;
     f0r_param_double m_prev_cc;
     f0r_param_double m_prev_soft;
 
@@ -104,13 +108,26 @@ private:
 
     void updateVignette()
     {
-        std::cout << "Updating " << m_width << "x" << m_height << " vignette now.";
-        std::cout << "New settings: scaleY = " << m_scaleY << ", clear center = " << m_cc << ", soft = " << m_soft << std::endl;
-        m_prev_scaleY = m_scaleY;
+//        std::cout << "New settings: aspect = " << m_aspect << ", clear center = " << m_cc << ", soft = " << m_soft << std::endl;
+        m_prev_aspect = m_aspect;
         m_prev_cc = m_cc;
         m_prev_soft = m_soft;
 
-        float scaleY = 2*m_scaleY;
+        float soft = 5*std::pow(1-m_soft,2)+.01;
+        float scaleX = 1;
+        float scaleY = 1;
+
+        // Distance from 0.5 (\in [0,0.5]) scaled to [0,1]
+        float scale = std::fabs(m_aspect-.5)*2;
+        // Map scale to [0,5] in a way that values near 0 can be adjusted more precisely
+        scale = 1 + 4*std::pow(scale, 3);
+        // Scale either x or y, depending on the aspect value being above or below 0.5
+        if (m_aspect > 0.5) {
+            scaleX = scale;
+        } else {
+            scaleY = scale;
+        }
+//        std::cout << "Used values: soft=" << soft << ", x=" << scaleX << ", y=" << scaleY << std::endl;
 
         int cx = m_width/2;
         int cy = m_height/2;
@@ -119,11 +136,9 @@ private:
 
         for (int y = 0; y < m_height; y++) {
             for (int x = 0; x < m_width; x++) {
-//                std::cout << "\tv " << x << "/" << y;
-//                std::cout << ".";
 
                 // Euclidian distance to the center, normalized to [0,1]
-                r = std::sqrt(std::pow(x-cx, 2) + std::pow(scaleY*(y-cy), 2))/rmax;
+                r = std::sqrt(std::pow(scaleX*(x-cx), 2) + std::pow(scaleY*(y-cy), 2))/rmax;
 
                 // Subtract the clear center
                 r -= m_cc;
@@ -132,7 +147,7 @@ private:
                     // Clear center: Do not modify the brightness here
                     m_vignette[y*m_width+x] = 1;
                 } else {
-                    r *= m_soft;
+                    r *= soft;
                     if (r > M_PI_2) {
                         m_vignette[y*m_width+x] = 0;
                     } else {
@@ -143,7 +158,6 @@ private:
             }
         }
 
-        std::cout << "\nVignette updated.\n";
 
     }
 
@@ -152,7 +166,7 @@ private:
 
 
 frei0r::construct<Vignette> plugin("Vignette",
-                "Vignetting simulation",
+                "Lens vignetting effect, applies natural vignetting",
                 "Simon A. Eugster (Granjow)",
                 0,1,
                 F0R_COLOR_MODEL_RGBA8888);
