@@ -112,6 +112,7 @@ plugin_LTLIBRARIES = \
 	uvmap.la \
 	value.la \
 	vertigo.la \
+	vignette.la \
 	xfade0r.la
 
 if HAVE_GAVL
@@ -207,6 +208,7 @@ tint0r_la_SOURCES = filter/tint0r/tint0r.c
 transparency_la_SOURCES = filter/transparency/transparency.c
 twolay0r_la_SOURCES = filter/twolay0r/twolay0r.cpp
 vertigo_la_SOURCES = filter/vertigo/vertigo.c
+vignette_la_SOURCES = filter/vignette/vignette.cpp
 
 #
 # GENERATORS
