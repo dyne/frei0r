@@ -722,10 +722,10 @@ int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, unsigned cha
 	for (i=7;i>=0;i--)
 	{
 		x1=xx*PI;
-		wy[7-i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wy[7-i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xxx=(float)(2*i+1)-xx;
 		x1=xxx*PI;
-		wy[8+i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wy[8+i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xx=xx-1.0;
 	}
 	//se po x
@@ -733,10 +733,10 @@ int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, unsigned cha
 	for (i=7;i>=0;i--)
 	{
 		x1=xx*PI;
-		wx[7-i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wx[7-i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xxx=(float)(2*i+1)-xx;
 		x1=xxx*PI;
-		wx[8+i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wx[8+i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xx=xx-1.0;
 	}
 
@@ -781,10 +781,10 @@ int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, unsigned c
 	for (i=7;i>=0;i--)
 	{
 		x1=xx*PI;
-		wy[7-i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wy[7-i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xxx=(float)(2*i+1)-xx;
 		x1=xxx*PI;
-		wy[8+i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wy[8+i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xx=xx-1.0;
 	}
 	//se po x
@@ -792,10 +792,10 @@ int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, unsigned c
 	for (i=7;i>=0;i--)
 	{
 		x1=xx*PI;
-		wx[7-i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wx[7-i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xxx=(float)(2*i+1)-xx;
 		x1=xxx*PI;
-		wx[8+i]=(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125));
+		wx[8+i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xx=xx-1.0;
 	}
 
