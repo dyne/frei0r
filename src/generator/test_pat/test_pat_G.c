@@ -155,6 +155,7 @@ int i,j,kx,ky,z,pv,ps,zv,zs;
 unsigned char black,gray1,gray2,white;
 int ox,oy;
 
+if (size<1) size=1;
 kx=size; ky=size;
 kx=kx/ar;		//kao aspect!=1  (anamorph)
 
@@ -214,6 +215,8 @@ white=255;
 
 if (clr!=0) for (i=0;i<(w*h);i++) sl[i]=black;	//black background
 
+if (size1<1) size1=1;
+if (size2<1) size2=1;
 iz=h/2-size1*((h/2)/size1);
 for (i=iz;i<h;i=i+size1)	//hor. lines
 	draw_rectangle(sl,w,h,0,i-size2/2,w,size2,white);
@@ -233,6 +236,9 @@ white=255;
 
 if (clr!=0) for (i=0;i<(w*h);i++) sl[i]=black;	//black background
 
+if (size1<1) size1=1;
+if (size2<1) size2=1;
+if (ar==0) ar=1.0;
 size1=size1/ar;
 iz=w/2-size1*((w/2)/size1);
 for (i=iz;i<w;i=i+size1)	//vert. lines
@@ -245,6 +251,7 @@ for (i=iz;i<w;i=i+size1)	//vert. lines
 void mreza(unsigned char *sl, int w, int h, int size1, int size2, float ar)
 {
 
+if (ar==0) ar=1.0;
 hlines(sl, w, h, size1, size2, ar, 1);
 vlines(sl, w, h, size1/ar, size2, ar, 0);
 
@@ -263,6 +270,9 @@ white=255;
 
 for (i=0;i<(w*h);i++) sl[i]=black;	//black background
 
+if (size1<1) size1=1;
+if (size2<1) size2=1;
+if (ar==0) ar=1.0;
 size1a=size1/ar; size2a=size2/ar;
 iz=h/2-size1*((h/2)/size1);
 jz=w/2-size1a*((w/2)/size1a);
