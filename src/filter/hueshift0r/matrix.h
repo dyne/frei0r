@@ -10,9 +10,17 @@
 #include <math.h>
 #include <stdio.h>
 
+/*
+//Adobe ??  luma coeffs
 #define RLUM    (0.3086)
 #define GLUM    (0.6094)
 #define BLUM    (0.0820)
+*/
+
+//ITU_R BT 709 luma coeffs
+#define RLUM    (0.2126)
+#define GLUM    (0.7152)
+#define BLUM    (0.0722)
 
 #define OFFSET_R        0
 #define OFFSET_G        1
