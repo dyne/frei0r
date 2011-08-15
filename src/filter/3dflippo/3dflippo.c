@@ -442,4 +442,5 @@ static void recompute_mask(tdflippo_instance_t* inst)
 	  inst->mask[pos]=ny*inst->width+nx;
       }
     }
+  matfree(mat);
 }
