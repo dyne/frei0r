@@ -69,6 +69,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
   saturat0r_instance_t* inst = (saturat0r_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
+  inst->saturation=1.0/MAX_SATURATION;
   return (f0r_instance_t)inst;
 }
 
