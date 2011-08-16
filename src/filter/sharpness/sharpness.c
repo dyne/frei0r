@@ -230,6 +230,7 @@ return (f0r_instance_t)in;
 void f0r_destruct(f0r_instance_t instance)
 {
 inst *in;
+int i;
 
 in=(inst*)instance;
 
@@ -239,6 +240,7 @@ free(in->Bplani);
 free(in->Rplano);
 free(in->Gplano);
 free(in->Bplano);
+for (i=0;i<in->fp.msizeY;i++) free(in->fp.SC[i]);
 
 free(instance);
 }
