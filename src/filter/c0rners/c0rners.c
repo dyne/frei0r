@@ -895,7 +895,6 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		break;
         case 14:                //Alpha operation
             p->op=map_value_forward(*((double*)parm), 0.0, 4.9999);
-            printf("setting p->op: %i\n", p->op);
             break;
 	}
 
