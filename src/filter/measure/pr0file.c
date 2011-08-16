@@ -317,7 +317,7 @@ if (u!=0) for (i=0;i<8;i++) data[i]=data[i]*255.0;
 for (i=0;i<256;i++) {fs[i]=0; str[i]=0;}
 if ((dit&0x00000001)!=0)	//marker 1 value
   {
-  if (m1>=0)
+  if (m1>0)
     {
     forstr(data[0],1-u,0,frs);
     sprintf(fs,"%%s Mk1=%s", frs);
@@ -328,7 +328,7 @@ if ((dit&0x00000001)!=0)	//marker 1 value
   }
 if ((dit&0x00000004)!=0)	//marker 2 value
   {
-  if (m2>=0)
+  if (m2>0)
     {
     forstr(data[1],1-u,0,frs);
     sprintf(fs,"%%s Mk2=%s", frs);
@@ -339,7 +339,7 @@ if ((dit&0x00000004)!=0)	//marker 2 value
   }
 if ((dit&0x00000010)!=0)	//difference marker2-marker1
   {
-  if ((m2>=0)&&(m1>=0))
+  if ((m2>0)&&(m1>0))
     {
     forstr(data[2],1-u,0,frs);
     sprintf(fs,"%%s D=%s", frs);
@@ -764,8 +764,8 @@ in->y=height/2;
 in->tilt=0.0;
 in->len=3*width/4;
 in->chn=3;
-in->m1=-1;
-in->m2=-1;
+in->m1=0;
+in->m2=0;
 in->rt=1;
 in->gt=1;
 in->bt=1;
