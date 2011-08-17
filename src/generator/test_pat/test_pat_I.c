@@ -570,10 +570,10 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
       *p = map_value_backward(inst->pw, 1.0, 100.0);
       break;
     case 4:	//tilt
-      *p = map_value_backward_log(inst->tilt, -PI/2.0, PI/2.0);
+      *p = map_value_backward(inst->tilt, -PI/2.0, PI/2.0);
       break;
     case 5:	//negative
-      *p = map_value_backward_log(inst->neg, 0.0, 1.0);
+      *p = map_value_backward(inst->neg, 0.0, 1.0);
       break;
     }
 }
