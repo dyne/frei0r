@@ -140,6 +140,7 @@ void crta(float *sl, int w, int h, float size, float amp, float tilt)
 int i,j;
 float d,st,ct,g;
 
+if (size==0.0) return;
 st=sinf(tilt);
 ct=cosf(tilt);
 for (i=0;i<h;i++)
@@ -167,6 +168,7 @@ void crta_s(float *sl, int w, int h, float size, float amp, float tilt)
 int i,j;
 float d,st,ct,g;
 
+if (size==0.0) return;
 st=sinf(tilt);
 ct=cosf(tilt);
 for (i=0;i<h;i++)
@@ -197,6 +199,7 @@ void crta_r(float *sl, int w, int h, float size, float amp, float tilt)
 int i,j;
 float d,st,ct,g;
 
+if (size==0.0) return;
 st=sinf(tilt);
 ct=cosf(tilt);
 for (i=0;i<h;i++)
