@@ -134,6 +134,8 @@ zy=y;  if (zy<0) zy=0;
 kx=x+wr;  if (kx>w) kx=w;
 ky=y+hr;  if (ky>h) ky=h;
 
+if (f1==0.0) f1=1.0E-12;
+if (f2==0.0) f2=1.0E-12;
 dp1=PI*f1; dp2=PI*f2;  //phase steps
 dt1=1.0/dp1; dt2=1.0/dp2;
 a=a/2.0;
@@ -200,6 +202,8 @@ zy=y;  if (zy<0) zy=0;
 kx=x+wr;  if (kx>w) kx=w;
 ky=y+hr;  if (ky>h) ky=h;
 
+if (f1==0.0) f1=1.0E-12;
+if (f2==0.0) f2=1.0E-12;
 dp1=PI*f1; dp2=PI*f2;  //phase steps
 dt1=1.0/dp1; dt2=1.0/dp2;
 a=a/2.0;
@@ -262,6 +266,11 @@ int i,x,y;
 
 for (x=0;x<w*h;x++) sl[x]=0.0;	//black background
 
+if ((w==0)||(h==0)) return;
+if (ef==0.0) ef=1.0E-12;
+if (sf==0.0) sf=1.0E-12;
+if (ef==sf) ef=ef+1E-12;
+  
 if (a==0)
 	draw_sweep_1(sl,w,h,w/8,h/16,6*w/8,14*h/16, sf, ef, amp, 0, lps);
 else
@@ -344,6 +353,11 @@ float lf4[]={10.0,25.0,50.0,100.0,200.0,400.0,800.0};
 int i,x,y;
 
 for (x=0;x<w*h;x++) sl[x]=0.0;	//black background
+
+if ((w==0)||(h==0)) return;
+if (ef==0.0) ef=1.0E-12;
+if (sf==0.0) sf=1.0E-12;
+if (ef==sf) ef=ef+1E-12;
 
 if (a==0)
 	draw_sweep_2(sl,w,h,w/16,h/8,14*w/16,6*h/8, sf, ef, amp, 1, lps);
@@ -448,6 +462,8 @@ float k,m,g,p,da,r,rmax;
 int x,y;
 
 da=PI/2000.0;
+
+if (h==0) return;
 
 a=a/2.0;
 rmax=(float)h/2.1;
