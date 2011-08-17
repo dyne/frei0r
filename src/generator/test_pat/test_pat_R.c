@@ -1010,10 +1010,10 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
       *p = map_value_backward(inst->linp, 0.0, 1.0);
       break;
     case 4:	//frequency 1
-      *p = map_value_backward_log(inst->f1, 0.0, 1.0);
+      *p = map_value_backward(inst->f1, 0.0, 1.0);
       break;
     case 5:	//frequency 2
-      *p = map_value_backward_log(inst->f2, 0.0, 1.0);
+      *p = map_value_backward(inst->f2, 0.0, 1.0);
       break;
     case 6:	//aspect type
       *p = map_value_backward(inst->aspt, 0.0, 6.9999);
