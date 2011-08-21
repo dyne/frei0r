@@ -167,10 +167,19 @@ public:
         m_pSensitivity = 1;
         m_pBackgroundWeight = 0;
         m_pThresholdBrightness = 450;
+        m_pThresholdDifference = 0;
         m_pThresholdDiffSum = 0;
         m_pDim = 0;
         m_pSaturation = 1;
+        m_pLowerOverexposure = 0;
+        m_pStatsBrightness = false;
+        m_pStatsDiff = false;
+        m_pStatsDiffSum = false;
+        m_pReset = false;
+        m_pTransparentBackground = false;
         m_pBlackReference = false;
+        m_pLongAlpha = 0;
+        m_pNonlinearDim = 0;
 
     }
 
