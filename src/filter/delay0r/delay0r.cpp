@@ -14,6 +14,15 @@ public:
     register_param(delay,"DelayTime","the delay time");
   }
   
+  ~delay0r()
+  {
+    for (std::list< std::pair< double, unsigned int* > >::iterator i=buffer.begin(); i != buffer.end(); ++i)
+    {
+       delete[] i->second;
+       i=buffer.erase(i);
+    }
+  }
+  
   virtual void update()
   {
     unsigned int* reusable = 0;
