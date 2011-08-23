@@ -311,6 +311,7 @@ void f0r_update(f0r_instance_t instance, double time,
 	  dst2[0] = cc->r;
 	  dst2[1] = cc->g;
 	  dst2[2] = cc->b;
+	  dst2[3] = src2[3];
 
 	
 
