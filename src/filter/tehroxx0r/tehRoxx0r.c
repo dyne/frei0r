@@ -137,6 +137,8 @@ void f0r_update(f0r_instance_t instance, double time,
   step_x = (double)w / (double)small_w;
   step_y = (double)h / (double)small_h;
   
+  // make background black transparent
+  memset(outframe, 0, w * h * sizeof(uint32_t));
   
   // copy a downscaled version into the middle of the result frame 
   // (blocksize to x-blocksize and blocksize to y-blocksize)
