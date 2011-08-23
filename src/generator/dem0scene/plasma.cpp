@@ -222,12 +222,12 @@ void Plasma::update() {
 
 uint32_t Plasma::palette2rgb(uint8_t idx) {
   uint32_t rgba;
-  rgba = 0xffffffff;
   // just for little endian
   // TODO: big endian
   rgba = (colors[idx].r << 16) 
     | (colors[idx].g << 8)
-    | (colors[idx].b );
+    | (colors[idx].b )
+    | (0xff << 24);
   
   return rgba;
 }
