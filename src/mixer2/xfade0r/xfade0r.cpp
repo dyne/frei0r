@@ -7,6 +7,7 @@ class xfade0r : public frei0r::mixer2
 public:
   xfade0r(unsigned int width, unsigned int height)
   {
+    fader = 0.0;
     register_param(fader,"fader","the fader position");
   }
 
