@@ -143,7 +143,7 @@ switch(param_index)
 		break;
 	case 1:
 		info->name = "Transition width";
-		info->type = F0R_PARAM_BOOL;
+		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "";
 		break;
 	case 2:
