@@ -799,7 +799,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* tp_info)
   tp_info->color_model    = F0R_COLOR_MODEL_RGBA8888;
   tp_info->frei0r_version = FREI0R_MAJOR_VERSION;
   tp_info->major_version  = 0;
-  tp_info->minor_version  = 1;
+  tp_info->minor_version  = 2;
   tp_info->num_params     = 8;
   tp_info->explanation    = "Generates resolution test patterns";
 }

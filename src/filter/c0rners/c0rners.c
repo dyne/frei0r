@@ -679,7 +679,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=1;
+	info->minor_version=2;
 	info->num_params=15;
 	info->explanation="Four corners geometry engine";
 }

@@ -77,7 +77,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* flippoInfo)
   flippoInfo->color_model=F0R_COLOR_MODEL_PACKED32;
   flippoInfo->frei0r_version=FREI0R_MAJOR_VERSION;
   flippoInfo->major_version=0;
-  flippoInfo->minor_version=0;
+  flippoInfo->minor_version=1;
   flippoInfo->num_params=11;
   flippoInfo->explanation="Frame rotation in 3d-space";
 }

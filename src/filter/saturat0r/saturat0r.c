@@ -48,7 +48,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* saturat0r_info)
   saturat0r_info->color_model = F0R_COLOR_MODEL_RGBA8888;
   saturat0r_info->frei0r_version = FREI0R_MAJOR_VERSION;
   saturat0r_info->major_version = 0; 
-  saturat0r_info->minor_version = 2; 
+  saturat0r_info->minor_version = 3; 
   saturat0r_info->num_params =  1; 
   saturat0r_info->explanation = "Adjusts the saturation of a source image";
 }

@@ -126,7 +126,7 @@ info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
 info->color_model=F0R_COLOR_MODEL_RGBA8888;
 info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
-info->minor_version=1;
+info->minor_version=2;
 info->num_params=6;
 info->explanation="Fills alpha channel with a gradient";
 }
