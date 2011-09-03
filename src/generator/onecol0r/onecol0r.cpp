@@ -28,6 +28,7 @@ public:
   onecol0r(unsigned int width, unsigned int height)
   {
     register_param(color,"Color","the color of the image");
+    color.r = color.g = color.b = 0;
   }
   
   virtual void update()
@@ -51,5 +52,5 @@ private:
 frei0r::construct<onecol0r> plugin("onecol0r",
 				   "image with just one color",
 				   "Martin Bayer",
-				   0,1);
+				   0,2);
 
