@@ -562,7 +562,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* colordistance_info)
 	colordistance_info->color_model = F0R_COLOR_MODEL_RGBA8888;
 	colordistance_info->frei0r_version = FREI0R_MAJOR_VERSION;
 	colordistance_info->major_version = 0; 
-	colordistance_info->minor_version = 2; 
+	colordistance_info->minor_version = 3; 
 	colordistance_info->num_params = 2; 
 	colordistance_info->explanation = "Adjust the white balance / color temperature";
 }
@@ -655,6 +655,8 @@ void f0r_set_param_value(f0r_instance_t instance,
 		case 1:
 		{
 			double g = *((double*)param);
+			// convert frei0r range to natural range [1.0, 2.5]
+			g = 1.0 + (2.5 - 1.0) * g;
 			if (g != 1.2) {
 				inst->green = g;
 				setRGBmult(inst);
@@ -675,7 +677,8 @@ void f0r_get_param_value(f0r_instance_t instance,
 			*((f0r_param_color_t*)param) = inst->color;
 			break;
 		case 1:
-			*((double*)param) = inst->green;
+			// convert natural range [1.0, 2.5] to frei0r range [0,1]
+			*((double*)param) = (inst->green - 1.0) / (2.5 - 1.0);
 			break;
 	}
 
