@@ -190,7 +190,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* curves_info)
   curves_info->color_model = F0R_COLOR_MODEL_RGBA8888;
   curves_info->frei0r_version = FREI0R_MAJOR_VERSION;
   curves_info->major_version = 0;
-  curves_info->minor_version = 2;
+  curves_info->minor_version = 3;
   curves_info->num_params = 16;
   curves_info->explanation = "Adjust luminance or color channel intensity with curve level mapping";
 }
@@ -216,12 +216,12 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 2:
     info->name = "Graph position";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Output image corner where curve graph will be drawn (1 = TOP,LEFT; 2 = TOP,RIGHT; 3 = BOTTOM,LEFT; 4 = BOTTOM, RIGHT)";
+    info->explanation = "Output image corner where curve graph will be drawn (0.1 = TOP,LEFT; 0.2 = TOP,RIGHT; 0.3 = BOTTOM,LEFT; 0.4 = BOTTOM, RIGHT)";
     break;
   case 3:
     info->name = "Curve point number";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Number of points to use to build curve";
+    info->explanation = "Number of points to use to build curve (/10 to fit [0,1] parameter range). Minimum 2 (0.2), Maximum 5 (0.5). Not relevant for Bézier spline.";
     break;
   case 4:
     info->name = "Luma formula";
@@ -268,7 +268,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 
 void f0r_destruct(f0r_instance_t instance)
 {
-  free(((curves_instance_t*)instance)->bspline);
+  if (((curves_instance_t*)instance)->bspline)
+      free(((curves_instance_t*)instance)->bspline);
   free(((curves_instance_t*)instance)->bsplineMap);
   free(instance);
 }
@@ -313,10 +314,10 @@ void f0r_set_param_value(f0r_instance_t instance,
 	  inst->drawCurves =  *((f0r_param_double *)param);
 	  break;
 	case 2:
-	  inst->curvesPosition =  *((f0r_param_double *)param);
+	  inst->curvesPosition =  floor(*((f0r_param_double *)param) * 10);
 	  break;
 	case 3:
-	  inst->pointNumber = *((f0r_param_double *)param);
+	  inst->pointNumber = floor(*((f0r_param_double *)param) * 10);
 	  break;
         case 4:
           inst->formula = *((f0r_param_double *)param);
@@ -351,10 +352,10 @@ void f0r_get_param_value(f0r_instance_t instance,
 	*((f0r_param_double *)param) = inst->drawCurves;
 	break;
   case 2:
-	*((f0r_param_double *)param) = inst->curvesPosition;
+	*((f0r_param_double *)param) = inst->curvesPosition / 10.;
 	break;
   case 3:
-	*((f0r_param_double *)param) = inst->pointNumber;
+	*((f0r_param_double *)param) = inst->pointNumber / 10.;
 	break;
   case 4:
         *((f0r_param_double *)param) = inst->formula;
@@ -703,7 +704,7 @@ void f0r_update(f0r_instance_t instance, double time,
       points = (double*)calloc(inst->pointNumber * 2, sizeof(double));
       i = inst->pointNumber * 2;
       //copy point values 
-      while(--i)
+      while(--i > 0)
           points[i] = inst->points[i];
       //sort point values by X component
       for(i = 1; i < inst->pointNumber; i++)
