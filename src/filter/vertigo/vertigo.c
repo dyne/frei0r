@@ -66,7 +66,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* vertigoInfo)
   vertigoInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
   vertigoInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   vertigoInfo->major_version = 1;
-  vertigoInfo->minor_version = 0;
+  vertigoInfo->minor_version = 1;
   vertigoInfo->num_params =  2;
   vertigoInfo->explanation = "alpha blending with zoomed and rotated images";
 }
@@ -143,7 +143,7 @@ void f0r_set_param_value(f0r_instance_t instance,
     break;
   case 1:
     /* zoomrate */
-    inst->zoomrate = *((double*)param);
+    inst->zoomrate = *((double*)param) * 5;
     inst->tfactor = (inst->xc+inst->yc) * inst->zoomrate;
     break;
   }
@@ -163,7 +163,7 @@ void f0r_get_param_value(f0r_instance_t instance,
     break;
   case 1:
     /* zoomrate */
-    *((double*)param) = (double) (inst->zoomrate);
+    *((double*)param) = (double) (inst->zoomrate) / 5.;
     break;
   }
 }
