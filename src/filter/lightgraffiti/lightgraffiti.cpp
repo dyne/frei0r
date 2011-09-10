@@ -147,14 +147,14 @@ public:
         m_prevMask = std::vector<RGBFloat>(width*height, rgb0);
 #endif
 
-        register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)"); // [0,5]
-        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through"); // [0,1]
-        register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background"); // {0...765}
-        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguish between fore- and background"); // {0...255}
-        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences. Can in most cases be ignored (set to 0)."); // {0...765}
-        register_param(m_pDim, "dim", "Dimming of the light mask"); // [0,1]
-        register_param(m_pSaturation, "saturation", "Saturation of lights"); // [0,4] (higher values hardly meaningful)
-        register_param(m_pLowerOverexposure, "lowerOverexposure", "Prevents some overexposure if the light source stays steady too long (varying speed)"); // {0...5}
+        register_param(m_pSensitivity, "sensitivity", "Sensitivity of the effect for light (higher sensitivity will lead to brighter lights)");
+        register_param(m_pBackgroundWeight, "backgroundWeight", "Describes how strong the (accumulated) background should shine through");
+        register_param(m_pThresholdBrightness, "thresholdBrightness", "Brightness threshold to distinguish between foreground and background");
+        register_param(m_pThresholdDifference, "thresholdDifference", "Threshold: Difference to background to distinguish between fore- and background");
+        register_param(m_pThresholdDiffSum, "thresholdDiffSum", "Threshold for sum of differences. Can in most cases be ignored (set to 0).");
+        register_param(m_pDim, "dim", "Dimming of the light mask");
+        register_param(m_pSaturation, "saturation", "Saturation of lights");
+        register_param(m_pLowerOverexposure, "lowerOverexposure", "Prevents some overexposure if the light source stays steady too long (varying speed)");
         register_param(m_pStatsBrightness, "statsBrightness", "Display the brightness and threshold, for adjusting the brightness threshold parameter");
         register_param(m_pStatsDiff, "statsDifference", "Display the background difference and threshold");
         register_param(m_pStatsDiffSum, "statsDiffSum", "Display the sum of the background difference and the threshold");
@@ -164,13 +164,13 @@ public:
         register_param(m_pLongAlpha, "longAlpha", "Alpha value for moving average");
         register_param(m_pNonlinearDim, "nonlinearDim", "Nonlinear dimming (may look more natural)");
         m_pLongAlpha = 1/128.0;
-        m_pSensitivity = 1;
+        m_pSensitivity = 1 / 5.;
         m_pBackgroundWeight = 0;
-        m_pThresholdBrightness = 450;
+        m_pThresholdBrightness = 450 / 765.;
         m_pThresholdDifference = 0;
         m_pThresholdDiffSum = 0;
         m_pDim = 0;
-        m_pSaturation = 1;
+        m_pSaturation = 1 / 4.;
         m_pLowerOverexposure = 0;
         m_pStatsBrightness = false;
         m_pStatsDiff = false;
@@ -203,6 +203,13 @@ public:
 
     virtual void update()
     {
+        double sensitivity = m_pSensitivity * 5;
+        double thresholdBrightness = m_pThresholdBrightness * 765;
+        double thresholdDifference = m_pThresholdDifference * 255;
+        double thresholdDiffSum = m_pThresholdDiffSum * 765;
+        double saturation = m_pSaturation * 4;
+        double lowerOverexposure = m_pLowerOverexposure * 10;
+
         // Copy everything to the output image.
         // Most of the image will very likely not change at all.
         std::copy(in, in + width*height, out);
@@ -757,9 +764,9 @@ public:
                     sum = GETR(out[pixel]) + GETG(out[pixel]) + GETB(out[pixel]);
 
                     if (
-                            maxDiff > m_pThresholdDifference
-                            && temp > m_pThresholdDiffSum
-                            && sum > m_pThresholdBrightness
+                            maxDiff > thresholdDifference
+                            && temp > thresholdDiffSum
+                            && sum > thresholdBrightness
                             // If all requirements are met, then this should be a light source.
                         )
                     {
@@ -769,7 +776,7 @@ public:
                         fg = CLAMP(g)/255.0;
                         fb = CLAMP(b)/255.0;
 
-                        f = (fr + fg + fb) / 3 * m_pSensitivity;
+                        f = (fr + fg + fb) / 3 * sensitivity;
                         fr *= f;
                         fg *= f;
                         fb *= f;
@@ -799,7 +806,7 @@ public:
 
                         // Add the brightness of the light source to the brightness map (alpha map)
                         y = REC709Y(CLAMP(r), CLAMP(g), CLAMP(b)) / 255.0;
-                        y = y * m_pSensitivity;
+                        y = y * sensitivity;
                         m_alphaMap[4*pixel] += y;
 #endif
                     } else {
@@ -837,12 +844,12 @@ public:
                         fg = m_rgbLightMask[pixel].g;
                         fb = m_rgbLightMask[pixel].b;
 
-                        if (m_pLowerOverexposure > 0) {
+                        if (lowerOverexposure > 0) {
                             // Comparisation of plots with octave:
                             // clf;hold on;plot([0 1],[0 1],'k');plot(range,ones(length(range),1),'k');plot(range,sqrt(range));plot(range,log(1+range),'k');plot(range,log(1+range),'g');plot(range,(log(1+range)/3).^.5,'r');axis equal
-                            fr = pow( log(1+fr)/m_pLowerOverexposure, .5 );
-                            fg = pow( log(1+fg)/m_pLowerOverexposure, .5 );
-                            fb = pow( log(1+fb)/m_pLowerOverexposure, .5 );
+                            fr = pow( log(1+fr)/lowerOverexposure, .5 );
+                            fg = pow( log(1+fg)/lowerOverexposure, .5 );
+                            fb = pow( log(1+fb)/lowerOverexposure, .5 );
                         }
 
 
@@ -876,8 +883,8 @@ public:
                         // Increase the saturation if the average brightness is below a certain level
                         // Do not use Rec709 Luma since we want to consider all colours to equal parts.
                         fy = (fr + fg + fb) / 3;
-                        if (fy < 1 && m_pSaturation > 0) {
-                            fsat = 1 + m_pSaturation*(1-fy);
+                        if (fy < 1 && saturation > 0) {
+                            fsat = 1 + saturation*(1-fy);
 
                             fr = fy + fsat * (fr-fy);
                             fg = fy + fsat * (fg-fy);
@@ -974,7 +981,7 @@ public:
                         r = .8*sum/3;
                         g = .8*sum/3;
                         b = .8*sum/3;
-                        if (sum > m_pThresholdBrightness) {
+                        if (sum > thresholdBrightness) {
                             b = 255;
                         }
                         out[pixel] = RGBA(r,g,b,0xFF);
@@ -988,7 +995,7 @@ public:
                             b = r;
                         }
 
-                        if (maxDiff > m_pThresholdDifference) {
+                        if (maxDiff > thresholdDifference) {
                             g = 255;
                         }
                         out[pixel] = RGBA(r,g,b,0xFF);
@@ -1003,7 +1010,7 @@ public:
                         if (!m_pStatsBrightness) {
                             b = r;
                         }
-                        if (temp > m_pThresholdDiffSum) {
+                        if (temp > thresholdDiffSum) {
                             r = 255;
                         }
                         out[pixel] = RGBA(r,g,b,0xFF);
@@ -1052,5 +1059,5 @@ private:
 frei0r::construct<LightGraffiti> plugin("Light Graffiti",
                 "Creates light graffitis from a video by keeping the brightest spots.",
                 "Simon A. Eugster (Granjow)",
-                0,1,
+                0,2,
                 F0R_COLOR_MODEL_RGBA8888);
