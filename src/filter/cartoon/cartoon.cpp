@@ -59,8 +59,8 @@ public:
 
   Cartoon(unsigned int width, unsigned int height) {
     int c;
-    register_param(triplevel, "triplevel", "level of trip: use high numbers, incremented by 100");
-    register_param(diffspace, "diffspace", "difference space: a value from 0 to 256");
+    register_param(triplevel, "triplevel", "level of trip: mapped to [0,1] asymptotical");
+    register_param(diffspace, "diffspace", "difference space: a value from 0 to 256 (mapped to [0,1])");
 
     geo = new ScreenGeometry();
     geo->w = width;
@@ -79,8 +79,8 @@ public:
       powprecal[c] = c*c;
     black = 0xFF000000;
 
-    triplevel = 1000;
-    diffspace = 1;
+    triplevel = 1 - 1 / (1000 + 1);
+    diffspace = 1 / 256.;
 
   }
   
@@ -97,13 +97,14 @@ public:
     // Cartoonify picture, do a form of edge detect 
     int x, y, t;
 
+    m_diffspace = diffspace * 256;
 
-    for (x=(int)diffspace;x<geo->w-(1+(int)diffspace);x++) {
+    for (x=m_diffspace;x<geo->w-(1+m_diffspace);x++) {
 
-      for (y=(int)diffspace;y<geo->h-(1+(int)diffspace);y++) {
+      for (y=m_diffspace;y<geo->h-(1+m_diffspace);y++) {
 	
 	t = GetMaxContrast((int32_t*)in,x,y);
-	if (t > triplevel) {
+	if (t > 1 / (1 - triplevel) - 1) {
 	  
 	  //  Make a border pixel 
 	  *(out+x+yprecal[y]) = black;
@@ -129,6 +130,7 @@ private:
   int *yprecal;
   uint16_t powprecal[256];
   int32_t black;
+  int m_diffspace;
   
   void FlattenColor(int32_t *c);
   long GetMaxContrast(int32_t *src,int x,int y);
@@ -163,23 +165,23 @@ long Cartoon::GetMaxContrast(int32_t *src,int x,int y) {
   long error,max=0;
   
   /* Assumes PrePixelModify has been run */
-  c1 = *PIXELAT(x-(int)diffspace,y,src);
-  c2 = *PIXELAT(x+(int)diffspace,y,src);	
+  c1 = *PIXELAT(x-m_diffspace,y,src);
+  c2 = *PIXELAT(x+m_diffspace,y,src);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
   
-  c1 = *PIXELAT(x,y-(int)diffspace,src);
-  c2 = *PIXELAT(x,y+(int)diffspace,src);
+  c1 = *PIXELAT(x,y-m_diffspace,src);
+  c2 = *PIXELAT(x,y+m_diffspace,src);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
   
-  c1 = *PIXELAT(x-(int)diffspace,y-(int)diffspace,src);
-  c2 = *PIXELAT(x+(int)diffspace,y+(int)diffspace,src);
+  c1 = *PIXELAT(x-m_diffspace,y-m_diffspace,src);
+  c2 = *PIXELAT(x+m_diffspace,y+m_diffspace,src);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
   
-  c1 = *PIXELAT(x+(int)diffspace,y-(int)diffspace,src);
-  c2 = *PIXELAT(x-(int)diffspace,y+(int)diffspace,src);
+  c1 = *PIXELAT(x+m_diffspace,y-m_diffspace,src);
+  c2 = *PIXELAT(x-m_diffspace,y+m_diffspace,src);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
   
@@ -189,6 +191,4 @@ long Cartoon::GetMaxContrast(int32_t *src,int x,int y) {
 frei0r::construct<Cartoon> plugin("Cartoon",
 				  "Cartoonify video, do a form of edge detect",
 				  "Dries Pruimboom, Jaromil",
-				  2,0);
-
-
+				  2,1);
