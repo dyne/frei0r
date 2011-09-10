@@ -64,7 +64,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* levels_instance_t)
   levels_instance_t->color_model = F0R_COLOR_MODEL_RGBA8888;
   levels_instance_t->frei0r_version = FREI0R_MAJOR_VERSION;
   levels_instance_t->major_version = 0; 
-  levels_instance_t->minor_version = 1; 
+  levels_instance_t->minor_version = 2; 
   levels_instance_t->num_params = 8; 
   levels_instance_t->explanation = "Adjust luminance or color channel intensity";
 }
@@ -104,7 +104,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
     info->explanation = "White output";
 	break;
   case 6:
-    info->name = "Show histogram";		
+    info->name = "Show histogram";
     info->type = F0R_PARAM_BOOL;
     info->explanation = "Show histogram";
 	break;
@@ -145,7 +145,7 @@ void f0r_set_param_value(f0r_instance_t instance,
   switch(param_index)
   {
 	case 0:
-	  inst->channel = *((f0r_param_double *)param);
+	  inst->channel = floor(*((f0r_param_double *)param) * 10);
 	  break;
 	case 1:
 	  inst->inputMin =  *((f0r_param_double *)param);
@@ -166,7 +166,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 	  inst->showHistogram = *((f0r_param_bool *)param);
 	  break;
 	case 7:
-	  inst->histogramPosition = *((f0r_param_double *)param);
+	  inst->histogramPosition = floor(*((f0r_param_double *)param) * 10);
 	  break;
   }
 }
@@ -180,7 +180,7 @@ void f0r_get_param_value(f0r_instance_t instance,
   switch(param_index)
   {
   case 0:
-	*((f0r_param_double *)param) = inst->channel;
+	*((f0r_param_double *)param) = inst->channel / 10.;
 	break;
   case 1:
 	*((f0r_param_double *)param) = inst->inputMin;
@@ -201,7 +201,7 @@ void f0r_get_param_value(f0r_instance_t instance,
 	*((f0r_param_bool *)param) = inst->showHistogram;
 	break;
   case 7:
-	*((f0r_param_double *)param) = inst->histogramPosition;
+	*((f0r_param_double *)param) = inst->histogramPosition / 10.;
 	break;
   }
 }
@@ -392,4 +392,3 @@ void f0r_update(f0r_instance_t instance, double time,
 	}
   }
 }
-
