@@ -92,19 +92,19 @@ public:
         register_param(bPower, "bPower", "Power (Gamma) of the blue color component");
         register_param(aPower, "aPower", "Power (Gamma) of the alpha component");
         register_param(saturation, "saturation", "Overall saturation");
-        rSlope = 1;
-        gSlope = 1;
-        bSlope = 1;
-        aSlope = 1;
-        rOffset = 0;
-        gOffset = 0;
-        bOffset = 0;
-        aOffset = 0;
-        rPower = 1;
-        gPower = 1;
-        bPower = 1;
-        aPower = 1;
-        saturation = 200;
+        rSlope = 1 / 20.;
+        gSlope = 1 / 20.;
+        bSlope = 1 / 20.;
+        aSlope = 1 / 20.;
+        rOffset = (0 - (-4)) / (double)(4 - (-4));
+        gOffset = (0 - (-4)) / (double)(4 - (-4));
+        bOffset = (0 - (-4)) / (double)(4 - (-4));
+        aOffset = (0 - (-4)) / (double)(4 - (-4));
+        rPower = 1 / 20.;
+        gPower = 1 / 20.;
+        bPower = 1 / 20.;
+        aPower = 1 / 20.;
+        saturation = 1 / 10.;
 
         // Pre-build the lookup table.
         // For 1080p, rendering a 5-second video took
@@ -171,22 +171,22 @@ private:
     double m_sat;
 
     void updateLUT() {
-        double rS = rSlope;
-        double gS = gSlope;
-        double bS = bSlope;
-        double aS = aSlope;
+        double rS = rSlope * 20;
+        double gS = gSlope * 20;
+        double bS = bSlope * 20;
+        double aS = aSlope * 20;
 
-        double rO = rOffset;
-        double gO = gOffset;
-        double bO = bOffset;
-        double aO = aOffset;
+        double rO = -4 + rOffset * (4 - (-4));
+        double gO = -4 + gOffset * (4 - (-4));
+        double bO = -4 + bOffset * (4 - (-4));
+        double aO = -4 + aOffset * (4 - (-4));
 
-        double rP = rPower;
-        double gP = gPower;
-        double bP = bPower;
-        double aP = aPower;
+        double rP = rPower * 20;
+        double gP = gPower * 20;
+        double bP = bPower * 20;
+        double aP = aPower * 20;
 
-        m_sat = saturation;
+        m_sat = saturation * 10;
 
         for (int i = 0; i < 256; i++) {
             // above0 avoids overflows for negative numbers.
@@ -212,5 +212,5 @@ private:
 frei0r::construct<SOPSat> plugin("SOP/Sat",
                 "Slope/Offset/Power and Saturation color corrections according to the ASC CDL (Color Decision List)",
                 "Simon A. Eugster (Granjow)",
-                0,1,
+                0,2,
                 F0R_COLOR_MODEL_RGBA8888);
