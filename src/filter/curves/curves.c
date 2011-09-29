@@ -504,6 +504,8 @@ double spline(double x, double* points, size_t pointSize, double* coeffs) {
 		double dx = x - coeffs[offset];
 		return ((coeffs[offset + 4] * dx / 6. + coeffs[offset + 3] / 2.) * dx + coeffs[offset + 2]) * dx + coeffs[offset + 1];
 	}
+    /* This should never be reached, statement passifies the compiler*/
+    return -1.0;
 }
 
 void swap(double *points, int i, int j) {
