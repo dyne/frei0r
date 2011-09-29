@@ -90,7 +90,7 @@ public:
         register_param(smallest, "Smallest", "Minimum window size in pixels, divided by 1000");
         scale = 1.0 / 1.5;
         register_param(scale, "Scale", "Down scale the image prior detection");
-        stroke = CV_FILLED;
+        stroke = 0.0;
         register_param(stroke, "Stroke", "Line width, divided by 100, or fill if 0");
         antialias = false;
         register_param(antialias, "Antialias", "Draw with antialiasing");
