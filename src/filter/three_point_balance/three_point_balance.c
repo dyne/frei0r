@@ -263,15 +263,22 @@ void f0r_update(f0r_instance_t instance, double time,
 	for(int i = 0; i < inst->height; i++) {
 	  int offset = (i * inst->width + j) * 4;
 	  if (copyPixel) {
-		dst[offset] = src[offset++];
-		dst[offset] = src[offset++];
-		dst[offset] = src[offset++];
+		dst[offset] = src[offset];
+		offset++;
+		dst[offset] = src[offset];
+		offset++;
+		dst[offset] = src[offset];
+		offset++;
 	  } else {
-		dst[offset] = mapRed[src[offset++]];
-		dst[offset] = mapGreen[src[offset++]];
-		dst[offset] = mapBlue[src[offset++]];
+		dst[offset] = mapRed[src[offset]];
+		offset++;
+		dst[offset] = mapGreen[src[offset]];
+		offset++;
+		dst[offset] = mapBlue[src[offset]];
+		offset++;
 	  }
-	  dst[offset] = src[offset++]; // copy alpha
+	  dst[offset] = src[offset]; // copy alpha
+	  offset++;
 	}
   }
   

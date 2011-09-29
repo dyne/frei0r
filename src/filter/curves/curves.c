@@ -875,9 +875,12 @@ void f0r_update(f0r_instance_t instance, double time,
 		for(int j = 0; j < scale; j++) {
 		  if (j % cellSize > lineWidth) { //point doesn't aly on the grid
 			int offset = ((maxYvalue - i + graphYOffset) * stride + j + graphXOffset) * 4;
-			dst[offset] = (dst[offset++] >> 1) + 0x7F;
-			dst[offset] = (dst[offset++] >> 1) + 0x7F;
-			dst[offset] = (dst[offset++] >> 1) + 0x7F;
+			dst[offset] = (dst[offset] >> 1) + 0x7F;
+			offset++;
+			dst[offset] = (dst[offset] >> 1) + 0x7F;
+			offset++;
+			dst[offset] = (dst[offset] >> 1) + 0x7F;
+			offset++;
 		  }
 		}
 	}
