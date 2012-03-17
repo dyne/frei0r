@@ -113,7 +113,7 @@ private:
         m_prev_cc = m_cc;
         m_prev_soft = m_soft;
 
-        float soft = 5*std::pow(1-m_soft,2)+.01;
+        float soft = 5*std::pow(float(1)-m_soft,2)+.01;
         float scaleX = 1;
         float scaleY = 1;
 
@@ -131,7 +131,7 @@ private:
 
         int cx = m_width/2;
         int cy = m_height/2;
-        float rmax = std::sqrt(std::pow(cx, 2) + std::pow(cy, 2));
+        float rmax = std::sqrt(std::pow(float(cx), 2) + std::pow(float(cy), 2));
         float r;
 
         for (int y = 0; y < m_height; y++) {
