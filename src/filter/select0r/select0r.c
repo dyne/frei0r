@@ -627,7 +627,7 @@ info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
 info->color_model=F0R_COLOR_MODEL_RGBA8888;
 info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
-info->minor_version=1;
+info->minor_version=2;
 info->num_params=9;
 info->explanation="Color based alpha selection";
 }
@@ -836,7 +836,10 @@ inst *in;
 float_rgba key;
 triplet d,n;
 int i;
-uint32_t a,t;
+uint32_t t;
+unsigned char *cin, *cout;
+float f1=1.0/256.0;
+unsigned char a1,a2;
 
 assert(instance);
 in=(inst*)instance;
@@ -853,11 +856,13 @@ n.y=in->nud2;
 n.z=in->nud3;
 
 //convert to float
+cin=(unsigned char *)inframe;
 for (i=0;i<in->h*in->w;i++)
 	{
-	in->sl[i].r=((float)(inframe[i]&0x000000FF))*0.00392157;
-	in->sl[i].g=((float)((inframe[i]&0x0000FF00)>>8))*0.00392157;
-	in->sl[i].b=((float)((inframe[i]&0x00FF0000)>>16))*0.00392157;
+	in->sl[i].r=f1*(float)*cin++;
+	in->sl[i].g=f1*(float)*cin++;
+	in->sl[i].b=f1*(float)*cin++;
+	cin++;
 	}
 
 //make the selection
@@ -882,46 +887,63 @@ if (in->inv==1)
 		in->sl[i].a = 1.0 - in->sl[i].a;
 
 //apply alpha
+cin=(unsigned char *)inframe;
+cout=(unsigned char *)outframe;
 switch (in->op)
 	{
 	case 0:		//write on clear
 		for (i=0;i<in->h*in->w;i++)
 			{
-			a=((uint32_t)(in->sl[i].a*255.0))<<24;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | a;
+			*cout++ = *cin++;	//copy R
+			*cout++ = *cin++;	//copy G
+			*cout++ = *cin++;	//copy B
+			*cout++ = (unsigned char)(in->sl[i].a*255.0);
+			cin++;
 			}
 		break;
 	case 1:		//max
 		for (i=0;i<in->h*in->w;i++)
 			{
-			a=((uint32_t)(in->sl[i].a*255.0))<<24;
-			t=((inframe[i]&0xFF000000)>a) ? inframe[i]&0xFF000000 : a;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+			*cout++ = *cin++;	//copy R
+			*cout++ = *cin++;	//copy G
+			*cout++ = *cin++;	//copy B
+			a1 = *cin++;
+			a2 = (unsigned char)(in->sl[i].a*255.0);
+			*cout++ = (a1>a2) ? a1 : a2;
 			}
 		break;
 	case 2:		//min
 		for (i=0;i<in->h*in->w;i++)
 			{
-			a=((uint32_t)(in->sl[i].a*255.0))<<24;
-			t=((inframe[i]&0xFF000000)<a) ? inframe[i]&0xFF000000 : a;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+			*cout++ = *cin++;	//copy R
+			*cout++ = *cin++;	//copy G
+			*cout++ = *cin++;	//copy B
+			a1 = *cin++;
+			a2 = (unsigned char)(in->sl[i].a*255.0);
+			*cout++ = (a1<a2) ? a1 : a2;
 			}
 		break;
 	case 3:		//add
 		for (i=0;i<in->h*in->w;i++)
 			{
-			a=((uint32_t)(in->sl[i].a*255.0))<<24;
-			t=((inframe[i]&0xFF000000)>>1)+(a>>1);
-			t = (t>0x7F800000) ? 0xFF000000 : t<<1;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+			*cout++ = *cin++;	//copy R
+			*cout++ = *cin++;	//copy G
+			*cout++ = *cin++;	//copy B
+			a1 = *cin++;
+			a2 = (unsigned char)(in->sl[i].a*255.0);
+			t=(uint32_t)a1+(uint32_t)a2;
+			*cout++ = (t<=255) ? (unsigned char)t : 255;
 			}
 		break;
 	case 4:		//subtract
 		for (i=0;i<in->h*in->w;i++)
 			{
-			a=((uint32_t)(in->sl[i].a*255.0))<<24;
-			t= ((inframe[i]&0xFF000000)>a) ? (inframe[i]&0xFF000000)-a : 0;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+			*cout++ = *cin++;	//copy R
+			*cout++ = *cin++;	//copy G
+			*cout++ = *cin++;	//copy B
+			a1 = *cin++;
+			a2 = (unsigned char)(in->sl[i].a*255.0);
+			*cout++ = (a1>a2) ? a1-a2 : 0;
 			}
 		break;
 	default:
