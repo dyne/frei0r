@@ -27,7 +27,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 //compile: gcc -c -fPIC -Wall select0r.c -o select0r.o
 //link: gcc -shared -o select0r.so select0r.o
 
-//#include <stdio.h>
+//#include <stdio.h>	/* for debug printf only +/
 #include <frei0r.h>
 #include <stdlib.h>
 #include <math.h>
@@ -627,7 +627,7 @@ info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
 info->color_model=F0R_COLOR_MODEL_RGBA8888;
 info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
-info->minor_version=2;
+info->minor_version=3;
 info->num_params=9;
 info->explanation="Color based alpha selection";
 }
@@ -762,24 +762,44 @@ switch(param_index)
 		p->del3=tmpf;
 		break;
 	case 5:		//subspace
-                tmpi=map_value_forward(*((double*)parm), 0.0, 2.9999);
-                if (p->subsp != tmpi) chg=1;
-                p->subsp=tmpi;
+		tmpf=*((double*)parm);
+		if (tmpf>=1.0)
+			tmpi=(int)tmpf;
+		else
+			tmpi = map_value_forward(tmpf, 0.0, 2.9999); //N-0.0001
+		if ((tmpi<0)||(tmpi>2.0)) break;
+		if (p->subsp != tmpi) chg=1;
+		p->subsp = tmpi;
                 break;
 	case 6:		//shape
-                tmpi=map_value_forward(*((double*)parm), 0.0, 2.9999);
-                if (p->sshape != tmpi) chg=1;
-                p->sshape=tmpi;
+		tmpf=*((double*)parm);
+		if (tmpf>=1.0)
+			tmpi=(int)tmpf;
+		else
+			tmpi = map_value_forward(tmpf, 0.0, 2.9999); //N-0.0001
+		if ((tmpi<0)||(tmpi>2.0)) break;
+		if (p->sshape != tmpi) chg=1;
+		p->sshape = tmpi;
 		break;
 	case 7:		//edge mode
-                tmpi=map_value_forward(*((double*)parm), 0.0, 3.9999);
-                if (p->soft != tmpi) chg=1;
-                p->soft=tmpi;
+		tmpf=*((double*)parm);
+		if (tmpf>=1.0)
+			tmpi=(int)tmpf;
+		else
+			tmpi = map_value_forward(tmpf, 0.0, 3.9999); //N-0.0001
+		if ((tmpi<0)||(tmpi>3.0)) break;
+		if (p->soft != tmpi) chg=1;
+		p->soft = tmpi;
 		break;
 	case 8:		//operation
-                tmpi=map_value_forward(*((double*)parm), 0.0, 4.9999);
-                if (p->op != tmpi) chg=1;
-                p->op=tmpi;
+		tmpf=*((double*)parm);
+		if (tmpf>=1.0)
+			tmpi=(int)tmpf;
+		else
+			tmpi = map_value_forward(tmpf, 0.0, 4.9999); //N-0.0001
+		if ((tmpi<0)||(tmpi>4.0)) break;
+		if (p->op != tmpi) chg=1;
+		p->op = tmpi;
 		break;
 	}
 
@@ -791,8 +811,6 @@ if (chg==0) return;
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 inst *p;
-double tmpf;
-int tmpi;
 
 p=(inst*)instance;
 
