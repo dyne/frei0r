@@ -2,7 +2,7 @@
 select0r.c
 
 This frei0r plugin   makes a color based alpha selection
-Version 0.1	jul 2010
+Version 0.4	apr 2012
 
 Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
@@ -23,6 +23,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 */
 
+//	apr 2012	added slope parameter
 
 //compile: gcc -c -fPIC -Wall select0r.c -o select0r.o
 //link: gcc -shared -o select0r.so select0r.o
@@ -189,6 +190,12 @@ inline float skiny(float a)
 return (a<1.0) ? 1.0-a : 0.0;
 }
 
+inline float slope(float a, float is)
+{
+a = (a<1.0) ? 1.0 : 1.0-is*(a-1);
+return (a>=0) ? a : 0.0;
+}
+
 //----------------------------------------------------------
 //RGB selection
 //d = deltas (size of subspace)
@@ -197,11 +204,12 @@ return (a<1.0) ? 1.0-a : 0.0;
 //thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
 //avoids switch () inside inner loop for speed - this means
 //a big, repetitive switch statement outside....
-void sel_rgb(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, int ss, int thr)
+void sel_rgb(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
 {
 float kr,kg,kb,dd;
 int i,s;
 float ddx,ddy,ddz;
+float islp;
 
 //add nudge
 kr=key.r+n.x;
@@ -210,6 +218,8 @@ kb=key.b+n.z;
 ddx = (d.x!=0) ? 1.0/d.x : 1.0E6; 
 ddy = (d.y!=0) ? 1.0/d.y : 1.0E6;
 ddz = (d.z!=0) ? 1.0/d.z : 1.0E6;
+
+islp = (slp>0.000001) ? 0.2/slp : 200000.0;
 
 s=10*ss+thr;	//to avoid nested switch statements
 
@@ -243,6 +253,13 @@ switch (s)
 			slika[i].a = skiny(dd);
 			}
 		break;
+	case 4:		//box, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			dd = dist_box(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
+			slika[i].a = slope(dd, islp);
+			}
+		break;
 
 	case 10:	//ellipsoid, thresholded
 		for (i=0;i<w*h;i++)
@@ -272,6 +289,13 @@ switch (s)
 			slika[i].a = skiny(dd);
 			}
 		break;
+	case 14:	//ellipsoid, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
+			slika[i].a = slope(dd, islp);
+			}
+		break;
 
 	case 20:	//octahedron, thresholded
 		for (i=0;i<w*h;i++)
@@ -299,6 +323,13 @@ switch (s)
 			{
 			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
 			slika[i].a = skiny(dd);
+			}
+		break;
+	case 24:	//octahedron, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
+			slika[i].a = slope(dd, islp);
 			}
 		break;
 	default:
@@ -314,11 +345,12 @@ switch (s)
 //thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
 //avoids switch () inside inner loop for speed - this means
 //a big, repetitive switch statement outside....
-void sel_abi(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, int ss, int thr)
+void sel_abi(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
 {
 float ka,kb,ki,k32,dd;
 int i,s;
 float dda,ddb,ddi,sa,sb,si;
+float islp;
 
 dda = (d.x!=0) ? 1.0/d.x : 1.0E6; 
 ddb = (d.y!=0) ? 1.0/d.y : 1.0E6;
@@ -329,6 +361,8 @@ k32=sqrtf(3.0)/2.0;
 ka=key.r-0.5*key.g-0.5*key.b+n.x;
 kb=k32*(key.g-key.b)+n.y;
 ki=0.3333*(key.r+key.g+key.b)+n.z;
+
+islp = (slp>0.000001) ? 0.2/slp : 200000.0;
 
 s=10*ss+thr;	//to avoid nested switch statements
 
@@ -366,6 +400,14 @@ switch (s)
 			slika[i].a = skiny(dd);
 			}
 		break;
+	case 4:		//box, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
+			dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
+			slika[i].a = slope(dd, islp);
+			}
+		break;
 
 	case 10:	//ellipsoid, thresholded
 		for (i=0;i<w*h;i++)
@@ -399,6 +441,14 @@ switch (s)
 			slika[i].a = skiny(dd);
 			}
 		break;
+	case 14:	//ellipsoid, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
+			dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
+			slika[i].a = slope(dd, islp);
+			}
+		break;
 
 	case 20:	//octahedron, thresholded
 		for (i=0;i<w*h;i++)
@@ -430,6 +480,14 @@ switch (s)
 			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
 			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
 			slika[i].a = skiny(dd);
+			}
+		break;
+	case 24:	//octahedron, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
+			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
+			slika[i].a = slope(dd, islp);
 			}
 		break;
 	default:
@@ -445,11 +503,12 @@ switch (s)
 //thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
 //avoids switch () inside inner loop for speed - this means
 //a big, repetitive switch statement outside....
-void sel_hci(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, int ss, int thr)
+void sel_hci(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
 {
 float ka,kb,ki,kh,kc,k32,dd;
 int i,s;
 float ddh,ddc,ddi,sh,sc,si,ipi2;
+float islp;
 
 ipi2=0.5/PI;
 ddh = (d.x!=0) ? 1.0/d.x : 1.0E6; 
@@ -463,6 +522,8 @@ kb=k32*(key.g-key.b);
 ki=0.3333*(key.r+key.g+key.b)+n.z;
 kh=atan2f(kb,ka)*ipi2+n.x;
 kc=hypotf(ka,kb)+n.y;
+
+islp = (slp>0.000001) ? 0.2/slp : 200000.0;
 
 s=10*ss+thr;	//to avoid nested switch statements
 
@@ -500,6 +561,14 @@ switch (s)
 			slika[i].a = skiny(dd);
 			}
 		break;
+	case 4:		//box, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
+			dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
+			slika[i].a = slope(dd, islp);
+			}
+		break;
 
 	case 10:	//ellipsoid, thresholded
 		for (i=0;i<w*h;i++)
@@ -533,6 +602,14 @@ switch (s)
 			slika[i].a = skiny(dd);
 			}
 		break;
+	case 14:	//ellipsoid, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
+			dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
+			slika[i].a = slope(dd, islp);
+			}
+		break;
 
 	case 20:	//octahedron, thresholded
 		for (i=0;i<w*h;i++)
@@ -564,6 +641,14 @@ switch (s)
 			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
 			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
 			slika[i].a = skiny(dd);
+			}
+		break;
+	case 24:	//octahedron, linear slope
+		for (i=0;i<w*h;i++)
+			{
+			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
+			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
+			slika[i].a = slope(dd, islp);
 			}
 		break;
 	default:
@@ -581,6 +666,7 @@ f0r_param_color_t col;
 int subsp;
 int sshape;
 float del1,del2,del3;
+float slp;
 float nud1,nud2,nud3;
 int soft;
 int inv;
@@ -627,8 +713,8 @@ info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
 info->color_model=F0R_COLOR_MODEL_RGBA8888;
 info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
-info->minor_version=3;
-info->num_params=9;
+info->minor_version=4;
+info->num_params=10;
 info->explanation="Color based alpha selection";
 }
 
@@ -663,21 +749,26 @@ switch(param_index)
 		info->explanation = "";
 		break;
 	case 5:
-		info->name = "Selection subspace";
+		info->name = "Slope";
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "";
 		break;
 	case 6:
-		info->name = "Subspace shape";
+		info->name = "Selection subspace";
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "";
 		break;
 	case 7:
-		info->name = "Edge mode";
+		info->name = "Subspace shape";
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "";
 		break;
 	case 8:
+		info->name = "Edge mode";
+		info->type = F0R_PARAM_DOUBLE;
+		info->explanation = "";
+		break;
+	case 9:
 		info->name = "Operation";
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "";
@@ -702,6 +793,7 @@ in->subsp=0;
 in->sshape=0;
 in->del1=0.2; in->del2=0.2; in->del3=0.2;
 in->nud1=0.0; in->nud2=0.0; in->nud3=0.0;
+in->slp=0.0;
 in->soft=0;
 in->inv=0;
 in->op=0;
@@ -761,7 +853,12 @@ switch(param_index)
 		if (tmpf!=p->del3) chg=1;
 		p->del3=tmpf;
 		break;
-	case 5:		//subspace
+	case 5:		//slope 1
+		tmpf=*(double*)parm;
+		if (tmpf!=p->slp) chg=1;
+		p->slp=tmpf;
+		break;
+	case 6:		//subspace
 		tmpf=*((double*)parm);
 		if (tmpf>=1.0)
 			tmpi=(int)tmpf;
@@ -771,7 +868,7 @@ switch(param_index)
 		if (p->subsp != tmpi) chg=1;
 		p->subsp = tmpi;
                 break;
-	case 6:		//shape
+	case 7:		//shape
 		tmpf=*((double*)parm);
 		if (tmpf>=1.0)
 			tmpi=(int)tmpf;
@@ -781,17 +878,17 @@ switch(param_index)
 		if (p->sshape != tmpi) chg=1;
 		p->sshape = tmpi;
 		break;
-	case 7:		//edge mode
+	case 8:		//edge mode
 		tmpf=*((double*)parm);
 		if (tmpf>=1.0)
 			tmpi=(int)tmpf;
 		else
-			tmpi = map_value_forward(tmpf, 0.0, 3.9999); //N-0.0001
-		if ((tmpi<0)||(tmpi>3.0)) break;
+			tmpi = map_value_forward(tmpf, 0.0, 4.9999); //N-0.0001
+		if ((tmpi<0)||(tmpi>4.0)) break;
 		if (p->soft != tmpi) chg=1;
 		p->soft = tmpi;
 		break;
-	case 8:		//operation
+	case 9:		//operation
 		tmpf=*((double*)parm);
 		if (tmpf>=1.0)
 			tmpi=(int)tmpf;
@@ -832,15 +929,18 @@ switch(param_index)
 		*((double*)param)=p->del3;
 		break;
 	case 5:
-                *((double*)param)=map_value_backward(p->subsp, 0.0, 2.9999);
+		*((double*)param)=p->slp;
 		break;
 	case 6:
-                *((double*)param)=map_value_backward(p->sshape, 0.0, 2.9999);
+                *((double*)param)=map_value_backward(p->subsp, 0.0, 2.9999);
 		break;
 	case 7:
-                *((double*)param)=map_value_backward(p->soft, 0.0, 3.9999);
+                *((double*)param)=map_value_backward(p->sshape, 0.0, 2.9999);
 		break;
 	case 8:
+                *((double*)param)=map_value_backward(p->soft, 0.0, 3.9999);
+		break;
+	case 9:
                 *((double*)param)=map_value_backward(p->op, 0.0, 4.9999);
 		break;
 	}
@@ -887,13 +987,13 @@ for (i=0;i<in->h*in->w;i++)
 switch (in->subsp)
 	{
 	case 0:
-		sel_rgb(in->sl, in->w, in->h, key, d, n, in->sshape, in->soft);
+		sel_rgb(in->sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
 		break;
 	case 1:
-		sel_abi(in->sl, in->w, in->h, key, d, n, in->sshape, in->soft);
+		sel_abi(in->sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
 		break;
 	case 2:
-		sel_hci(in->sl, in->w, in->h, key, d, n, in->sshape, in->soft);
+		sel_hci(in->sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
 		break;
 	default:
 		break;

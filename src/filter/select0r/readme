@@ -22,6 +22,9 @@ is now endian independent
 Version 0.3
 adds double mapping of list parameters
 
+** apr 2012
+Version 0.4
+adds "Slope" edge mode and parameter
 
 
 DESCRIPTION
@@ -44,6 +47,13 @@ For example, setting a high I delta (in ABI and HCI), will allow
 the selection of a specific color in both light and shadows, but
 will also discard most of the high-bandwidth luma signal, making
 the selection less spatially accurate.
+
+Slope:
+When edge mode is set to "Slope", this parameter controls a
+gradual transition between opaque and transparent. Slope=0 gives
+a "hard" key, increasing the value of this parameter increases
+the range of colors around the selected color, that will be rendered
+partially transparent.
 
 Selection subspace:
 specifies in which of the three color spaces (RGB, ABI, HCI) the
@@ -70,10 +80,12 @@ diamond touch the ellipsoid, and the box, at the center of the
 sides of the box.
 
 Edge mode:
-has four options: "Hard", "Fat", "Normal" and "Skinny".
+has five options: "Hard", "Fat", "Normal", "Skinny" and "Slope".
 "Hard" means the alpha channel will be thresholded to two values only,
 fully opaque and fully transparent. This is mainly useful for
-keying. 
+keying.
+The "Slope" mode is also intended for keying. It is particularly
+useful when keying partly transparent or fuzzy (like hair) objects.
 The remaining options ("Fat", "Normal" and "Skinny") create a gradual
 transition between transparent and opaque. Alpha will be a function of
 the difference of color from the selected color, with cutoff at the
