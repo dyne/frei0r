@@ -935,9 +935,9 @@ float_rgba key;
 triplet d,n;
 int i;
 uint32_t t;
-unsigned char *cin, *cout;
+uint8_t *cin, *cout;
 float f1=1.0/256.0;
-unsigned char a1,a2;
+uint8_t a1,a2;
 
 assert(instance);
 in=(inst*)instance;
@@ -954,7 +954,7 @@ n.y=in->nud2;
 n.z=in->nud3;
 
 //convert to float
-cin=(unsigned char *)inframe;
+cin=(uint8_t *)inframe;
 for (i=0;i<in->h*in->w;i++)
 	{
 	in->sl[i].r=f1*(float)*cin++;
@@ -985,8 +985,8 @@ if (in->inv==1)
 		in->sl[i].a = 1.0 - in->sl[i].a;
 
 //apply alpha
-cin=(unsigned char *)inframe;
-cout=(unsigned char *)outframe;
+cin=(uint8_t *)inframe;
+cout=(uint8_t *)outframe;
 switch (in->op)
 	{
 	case 0:		//write on clear
@@ -995,7 +995,7 @@ switch (in->op)
 			*cout++ = *cin++;	//copy R
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
-			*cout++ = (unsigned char)(in->sl[i].a*255.0);
+			*cout++ = (uint8_t)(in->sl[i].a*255.0);
 			cin++;
 			}
 		break;
@@ -1006,7 +1006,7 @@ switch (in->op)
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (unsigned char)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(in->sl[i].a*255.0);
 			*cout++ = (a1>a2) ? a1 : a2;
 			}
 		break;
@@ -1017,7 +1017,7 @@ switch (in->op)
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (unsigned char)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(in->sl[i].a*255.0);
 			*cout++ = (a1<a2) ? a1 : a2;
 			}
 		break;
@@ -1028,9 +1028,9 @@ switch (in->op)
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (unsigned char)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(in->sl[i].a*255.0);
 			t=(uint32_t)a1+(uint32_t)a2;
-			*cout++ = (t<=255) ? (unsigned char)t : 255;
+			*cout++ = (t<=255) ? (uint8_t)t : 255;
 			}
 		break;
 	case 4:		//subtract
@@ -1040,7 +1040,7 @@ switch (in->op)
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (unsigned char)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(in->sl[i].a*255.0);
 			*cout++ = (a1>a2) ? a1-a2 : 0;
 			}
 		break;
