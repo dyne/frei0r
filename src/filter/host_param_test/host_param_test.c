@@ -129,7 +129,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 			break;
 		case 4:
 		{
-			char* sval = ((char*)param);
+			char* sval = (*(char**)param);
 			inst->svalue = (char*)realloc( inst->svalue, strlen(sval) + 1 );
 			strcpy( inst->svalue, sval );
 			break;
