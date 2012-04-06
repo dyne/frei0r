@@ -859,42 +859,22 @@ switch(param_index)
 		p->slp=tmpf;
 		break;
 	case 6:		//subspace
-		tmpf=*((double*)parm);
-		if (tmpf>=1.0)
-			tmpi=(int)tmpf;
-		else
-			tmpi = map_value_forward(tmpf, 0.0, 2.9999); //N-0.0001
-		if ((tmpi<0)||(tmpi>2.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 2.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
 		if (p->subsp != tmpi) chg=1;
 		p->subsp = tmpi;
                 break;
 	case 7:		//shape
-		tmpf=*((double*)parm);
-		if (tmpf>=1.0)
-			tmpi=(int)tmpf;
-		else
-			tmpi = map_value_forward(tmpf, 0.0, 2.9999); //N-0.0001
-		if ((tmpi<0)||(tmpi>2.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 2.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
 		if (p->sshape != tmpi) chg=1;
 		p->sshape = tmpi;
 		break;
 	case 8:		//edge mode
-		tmpf=*((double*)parm);
-		if (tmpf>=1.0)
-			tmpi=(int)tmpf;
-		else
-			tmpi = map_value_forward(tmpf, 0.0, 4.9999); //N-0.0001
-		if ((tmpi<0)||(tmpi>4.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 4.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
 		if (p->soft != tmpi) chg=1;
 		p->soft = tmpi;
 		break;
 	case 9:		//operation
-		tmpf=*((double*)parm);
-		if (tmpf>=1.0)
-			tmpi=(int)tmpf;
-		else
-			tmpi = map_value_forward(tmpf, 0.0, 4.9999); //N-0.0001
-		if ((tmpi<0)||(tmpi>4.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 4.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
 		if (p->op != tmpi) chg=1;
 		p->op = tmpi;
 		break;
