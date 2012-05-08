@@ -550,7 +550,6 @@ void trans_mask(float_rgba *s, int w, int h, float *mask, float amp)
 {
 int i;
 float ia;
-printf("Trans mask, amp=%f\n",amp);
 //partially transparent areas
 ia=1.0-amp;
 for (i=0;i<w*h;i++)
