@@ -62,6 +62,7 @@ plugin_LTLIBRARIES = \
 	IIRblur.la \
 	invert0r.la \
 	ising0r.la \
+	keyspillm0pup.la \
 	lenscorrection.la \
 	letterb0xed.la \
 	levels.la \
@@ -178,6 +179,7 @@ hqdn3d_la_SOURCES = filter/denoise/hqdn3d.c
 hueshift0r_la_SOURCES = filter/hueshift0r/hueshift0r.c filter/hueshift0r/matrix.h
 IIRblur_la_SOURCES = filter/blur/IIRblur.c filter/blur/fibe.h
 invert0r_la_SOURCES = filter/invert0r/invert0r.c
+keyspillm0pup_la_SOURCES = filter/keyspillm0pup/keyspillm0pup.c
 lenscorrection_la_SOURCES = filter/lenscorrection/lenscorrection.c
 letterb0xed_la_SOURCES = filter/letterb0xed/letterb0xed.c
 levels_la_SOURCES = filter/levels/levels.c
