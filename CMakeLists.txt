@@ -4,11 +4,16 @@ list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 project (frei0r)
 
-find_package (OpenCV)
+option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
+if (NOT WITHOUT_OPENCV)
+  find_package (OpenCV)
+endif ()
+
 include(FindPkgConfig)
-if (PKG_CONFIG_FOUND)
-   pkg_check_modules(GAVL gavl)
-endif (PKG_CONFIG_FOUND)
+option (WITHOUT_GAVL "Disable plugins dependent upon gavl" OFF)
+if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
+  pkg_check_modules(GAVL gavl)
+endif ()
 
 include_directories (AFTER include)
 
