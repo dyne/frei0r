@@ -107,6 +107,7 @@ plugin_LTLIBRARIES = \
 	three_point_balance.la \
 	threshold0r.la \
 	threelay0r.la \
+	timeout.la \
 	tint0r.la \
 	transparency.la \
 	twolay0r.la \
@@ -206,6 +207,7 @@ tehroxx0r_la_SOURCES = filter/tehroxx0r/tehRoxx0r.c
 threelay0r_la_SOURCES = filter/threelay0r/threelay0r.cpp
 three_point_balance_la_SOURCES = filter/three_point_balance/three_point_balance.c
 threshold0r_la_SOURCES = filter/threshold0r/threshold0r.c
+timeout_la_SOURCES = filter/timeout/timeout.cpp
 tint0r_la_SOURCES = filter/tint0r/tint0r.c
 transparency_la_SOURCES = filter/transparency/transparency.c
 twolay0r_la_SOURCES = filter/twolay0r/twolay0r.cpp
