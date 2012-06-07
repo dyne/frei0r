@@ -27,6 +27,7 @@
 #include <math.h>
 
 #include "frei0r.h"
+#include "frei0r_math.h"
 
 double PI = 3.14159; 
 double pixelScale = 255.9;
@@ -88,9 +89,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	emboss_instance_t* inst = (emboss_instance_t*)calloc(1, sizeof(*inst));
 	inst->width = width; 
   inst->height = height;
-  inst->azimuth = 135.0;
-  inst->elevation = 30.0;
-  inst->width45 = 3.0;
+  inst->azimuth = 135.0 / 360.0; //input range 0 - 1 will be interpreted as angle 0 - 360
+  inst->elevation = 30.0 / 90.0;//input range 0 - 1 will be interpreted as lighness value 0 - 90
+  inst->width45 = 10.0 / 40.0;//input range 0 - 1 will be interpreted as bump height value 1 - 40
 	return (f0r_instance_t)inst;
 }
 
@@ -146,10 +147,20 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   emboss_instance_t* inst = (emboss_instance_t*)instance;
  
-  // Get render params
-	double azimuth = inst->azimuth * PI / 180.0; 
-  double elevation = inst->elevation * PI / 180.0;
-	double width45 = inst->width45;
+  // Get render params values 0.0-1.0 in range used by filter
+  double azimuthInput = inst->azimuth * 360.0;
+  double elevationInput = inst->elevation * 90.0;
+	double widthInput = inst->width45 * 40.0;
+
+  // Force correct ranges on input
+  azimuthInput = CLAMP(azimuthInput, 0.0, 360.0);
+  elevationInput = CLAMP(elevationInput, 0.0, 90.0);
+  widthInput = CLAMP(widthInput, 1.0, 40.0);
+
+  // Convert to filter input values
+	double azimuth = azimuthInput * PI / 180.0; 
+  double elevation = elevationInput * PI / 180.0;
+	double width45 = widthInput;
 
   // Create brightness image
   unsigned int len = inst->width * inst->height;

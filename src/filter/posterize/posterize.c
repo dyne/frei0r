@@ -61,7 +61,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   switch(param_index)
   {
   case 0:
-    info->name = "levels"; // range 2 - 50
+    info->name = "levels"; 
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Number of values per channel";
     break;
@@ -73,7 +73,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	posterize_instance_t* inst = (posterize_instance_t*)calloc(1, sizeof(*inst));
 	inst->width = width; 
   inst->height = height;
-	inst->levels = 5.0;
+	inst->levels = 5.0 / 48.0;// input range 0 - 1 will be interpreted as levels range 2 - 50
 	return (f0r_instance_t)inst;
 }
 
@@ -117,9 +117,12 @@ void f0r_update(f0r_instance_t instance, double time,
   posterize_instance_t* inst = (posterize_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
 
+  // convert input value 0.0-1.0 to int value 2-50
+  double levelsInput = inst->levels * 48.0;
+  levelsInput = CLAMP(levelsInput, 0.0, 48.0) + 2.0;
+  int numLevels = (int)levelsInput;
+
   // create levels table
-  int numLevels = (int)inst->levels;
-  numLevels = CLAMP(numLevels, 2, 50);// "working" range of values for this param
   unsigned char levels[256];
   int i;
   for (i = 0; i < 256; i++)

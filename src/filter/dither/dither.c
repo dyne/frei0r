@@ -170,12 +170,12 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 0:
     info->name = "levels";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Number of values per channel"; // range 2 - 50
+    info->explanation = "Number of values per channel";
     break;
   case 1:
     info->name = "matrixid";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Id of matrix used for dithering"; // range 0 - 9
+    info->explanation = "Id of matrix used for dithering";
     break;
   }
 }
@@ -185,8 +185,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	dither_instance_t* inst = (dither_instance_t*)calloc(1, sizeof(*inst));
 	inst->width = width; 
   inst->height = height;
-	inst->levels = 5.0;
-  inst->matrixid = 10;
+	inst->levels = 5.0 / 48.0;// input range 0.0 - 1.0 will be interpreted as levels range 2 - 50
+  inst->matrixid = 1.0; // input range 0.0 - 1.0 will be interpreted as matrixid 0 - 9
+                        // e.g. values 0.0, 0.12, 0.23, 0.34, 0.45, 0.56, 0.67, 0.78, 0.89, 1.0
+                        // will select matrixes 0 to 9
 	return (f0r_instance_t)inst;
 }
 
@@ -237,12 +239,14 @@ void f0r_update(f0r_instance_t instance, double time,
   dither_instance_t* inst = (dither_instance_t*)instance;
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
-    
-  int levels = (int)inst->levels;
-  levels = CLAMP(levels, 2, 50);
 
-  int matrixid = (int)inst->matrixid;
-  matrixid = CLAMP(matrixid, 0, 9);
+  double levelsInput = inst->levels * 48.0;
+  levelsInput = CLAMP(levelsInput, 0.0, 48.0) + 2.0;
+  int levels = (int)levelsInput;
+
+  double matrixIdInput = inst->matrixid * 9.0;
+  matrixIdInput = CLAMP(matrixIdInput, 0.0, 9.0);
+  int matrixid = (int)matrixIdInput;
   int* matrix = matrixes[matrixid];
   int matrixLength = matrixSizes[matrixid];
 
