@@ -245,7 +245,7 @@ void DelayGrab::createDelaymap(int mode) {
 	break;
       } // switch
       /* Clip values */
-      if (*curdelaymap<0) {
+      if ((int)(*curdelaymap)<0) {
 	*curdelaymap=0;
       } else if (*curdelaymap>(QUEUEDEPTH-1)) {
 	*curdelaymap=(QUEUEDEPTH-1);

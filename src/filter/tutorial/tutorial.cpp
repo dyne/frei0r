@@ -135,7 +135,7 @@ public:
 
                     // Add g+b and clamp with the second lookup table
                     *out_pointer = additionTable[*in_pointer + *(in_pointer+1)];
-                    *out_pointer++;  *in_pointer++;
+                    out_pointer++;  in_pointer++;
 
                     // Copy the other channels
                     *out_pointer++ = *in_pointer++;

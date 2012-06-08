@@ -835,7 +835,7 @@ public:
                      */
 #ifdef LG_ADV
                     if (
-                            m_rgbLightMask[pixel].r != 0 || m_rgbLightMask[pixel].g != 0 || m_rgbLightMask[pixel].b != 0
+                            (m_rgbLightMask[pixel].r != 0 || m_rgbLightMask[pixel].g != 0 || m_rgbLightMask[pixel].b != 0)
                             && !m_pStatsBrightness && !m_pStatsDiff && !m_pStatsDiffSum
                        )
                     {
@@ -1016,6 +1016,8 @@ public:
                         out[pixel] = RGBA(r,g,b,0xFF);
                     }
                 }
+                break;
+            default:
                 break;
         }
     }
