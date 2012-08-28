@@ -19,6 +19,9 @@ RELEASE NOTES
 Version 0.1
 "pre-alpha" (throw it out and see what happens... :-)
 
+** aug 2012
+Version 0.2
+Endian proofing  (use uint8_t* to access image data)
 
 
 ALPHAOPS:

@@ -21,6 +21,10 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
  along with this program; if not, write to the Free Software
  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+
+
+  28 aug 2012	ver 0.2		endian proofing
+
 */
 
 
@@ -50,66 +54,73 @@ int sga;
 int inv;
 
 float *falpha,*ab;
+uint8_t *infr,*oufr;
 } inst;
 
 
 //---------------------------------------------------
-//RGBA8888 little endian
 void alphagray(inst *in, const uint32_t* inframe, uint32_t* outframe)
 {
-uint32_t s;
+uint8_t s;
 int i;
 
 if (in->din==0)
 	for (i=0;i<in->w*in->h;i++)
 		{
-		s=(outframe[i]&0xFF000000)>>24;
-		s=s+(s<<8)+(s<<16);
-		outframe[i]=(outframe[i]&0xFF000000)|s;
+		s=in->oufr[4*i+3];
+		in->oufr[4*i]=s;
+		in->oufr[4*i+1]=s;
+		in->oufr[4*i+2]=s;
+		in->oufr[4*i+3]=0xFF;
 		}
 else
 	for (i=0;i<in->w*in->h;i++)
 		{
-		s=(inframe[i]&0xFF000000)>>24;
-		s=s+(s<<8)+(s<<16);
-		outframe[i]=(outframe[i]&0xFF000000)+s;
+		s=in->infr[4*i+3];
+		in->oufr[4*i]=s;
+		in->oufr[4*i+1]=s;
+		in->oufr[4*i+2]=s;
+		in->oufr[4*i+3]=0xFF;
 		}
 }
 
 //---------------------------------------------------
-//RGBA8888 little endian
 void grayred(inst *in, const uint32_t* inframe, uint32_t* outframe)
 {
-int i;
-uint32_t r,g,b,a,y,s;
+int i,rr;
+uint8_t r,g,b,a,y;
 
 if (in->din==0)
 	for (i=0;i<in->w*in->h;i++)
 		{
-		b=(inframe[i]&0x00FF0000)>>16;
-		g=(inframe[i]&0x0000FF00)>>8;
-		r=inframe[i]&0x000000FF;
-		a=(outframe[i]&0xFF000000)>>24;
+		b=in->infr[4*i+2];
+		g=in->infr[4*i+1];
+		r=in->infr[4*i];
+		a=in->oufr[4*i+3];
 		y=(r>>2)+(g>>1)+(b>>2);	//approx luma
 		y=64+(y>>1);
-		r=y+(a>>1);
-		if (r>255) r=255;
-		s=r+(y<<8)+(y<<16);
-		outframe[i]=(inframe[i]&0xFF000000)+s;
+		rr=y+(a>>1);
+		if (rr>255) rr=255;
+		in->oufr[4*i]=rr;
+		in->oufr[4*i+1]=y;
+		in->oufr[4*i+2]=y;
+		in->oufr[4*i+3]=0xFF;
 		}
 else
 	for (i=0;i<in->w*in->h;i++)
 		{
-		b=(inframe[i]&0x00FF0000)>>16;
-		g=(inframe[i]&0x0000FF00)>>8;
-		r=inframe[i]&0x000000FF;
-		a=(inframe[i]&0xFF000000)>>24;
-		y=(r>>2)+(g>>1)+(b>>2);
+		b=in->infr[4*i+2];
+		g=in->infr[4*i+1];
+		r=in->infr[4*i];
+		a=in->infr[4*i+3];
+		y=(r>>2)+(g>>1)+(b>>2);	//approx luma
 		y=64+(y>>1);
-		r=y+(a<<1);
-		if (r>255) r=255;
-		s=r+(y<<8)+(y<<16);
-		outframe[i]=(inframe[i]&0xFF000000)+s;
+		rr=y+(a>>1);
+		if (rr>255) rr=255;
+		in->oufr[4*i]=rr;
+		in->oufr[4*i+1]=y;
+		in->oufr[4*i+2]=y;
+		in->oufr[4*i+3]=0xFF;
 		}
 }
 
@@ -118,7 +129,7 @@ void drawsel(inst *in, const uint32_t* inframe, uint32_t* outframe, int bg)
 {
 int i;
 uint32_t bk;
-uint32_t r,g,b,a,s;
+uint32_t r,g,b,a;
 
 switch (bg)
 	{
@@ -138,18 +149,17 @@ if (in->din==0)
 			else
 				bk=0x9B;
 			}
-		b=(outframe[i]&0x00FF0000)>>16;
-		g=(outframe[i]&0x0000FF00)>>8;
-		r=outframe[i]&0x000000FF;
-		a=(outframe[i]&0xFF000000)>>24;
-		r=a*r+(255-a)*bk;
-		r=r>>8;
-		g=a*g+(255-a)*bk;
-		g=g>>8;
-		b=a*b+(255-a)*bk;
-		b=b>>8;
-		s=r+(g<<8)+(b<<16);
-		outframe[i]=(inframe[i]&0xFF000000)+s;
+		b=in->oufr[4*i+2];
+		g=in->oufr[4*i+1];
+		r=in->oufr[4*i];
+		a=in->oufr[4*i+3];
+		r=(a*r+(255-a)*bk)>>8;
+		g=(a*g+(255-a)*bk)>>8;
+		b=(a*b+(255-a)*bk)>>8;
+		in->oufr[4*i]=r;
+		in->oufr[4*i+1]=g;
+		in->oufr[4*i+2]=b;
+		in->oufr[4*i+3]=0xFF;
 		}
 else
 	for (i=0;i<in->w*in->h;i++)
@@ -161,18 +171,17 @@ else
 			else
 				bk=0x9B;
 			}
-		b=(inframe[i]&0x00FF0000)>>16;
-		g=(inframe[i]&0x0000FF00)>>8;
-		r=inframe[i]&0x000000FF;
-		a=(inframe[i]&0xFF000000)>>24;
-		r=a*r+(255-a)*bk;
-		r=r>>8;
-		g=a*g+(255-a)*bk;
-		g=g>>8;
-		b=a*b+(255-a)*bk;
-		b=b>>8;
-		s=r+(g<<8)+(b<<16);
-		outframe[i]=(inframe[i]&0xFF000000)+s;
+		b=in->infr[4*i+2];
+		g=in->infr[4*i+1];
+		r=in->infr[4*i];
+		a=in->infr[4*i+3];
+		r=(a*r+(255-a)*bk)>>8;
+		g=(a*g+(255-a)*bk)>>8;
+		b=(a*b+(255-a)*bk)>>8;
+		in->oufr[4*i]=r;
+		in->oufr[4*i+1]=g;
+		in->oufr[4*i+2]=b;
+		in->oufr[4*i+3]=0xFF;
 		}
 }
 
@@ -378,7 +387,7 @@ info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
 info->color_model=F0R_COLOR_MODEL_RGBA8888;
 info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
-info->minor_version=1;
+info->minor_version=2;
 info->num_params=6;
 info->explanation="Display and manipulation of the alpha channel";
 }
@@ -507,8 +516,6 @@ if (chg==0) return;
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 inst *p;
-double tmpf;
-int tmpi;
 
 p=(inst*)instance;
 
@@ -544,11 +551,13 @@ int i;
 
 assert(instance);
 in=(inst*)instance;
+in->infr=(uint8_t*)inframe;
+in->oufr=(uint8_t*)outframe;
 
 //printf("update, op=%d, inv=%d disp=%d\n",in->op,in->inv,in->disp);
 
 for (i=0;i<in->w*in->h;i++)
-	in->falpha[i]=(inframe[i]&0xFF000000)>>24;
+	in->falpha[i]=in->infr[4*i+3];
 
 switch (in->op)
 	{
@@ -585,8 +594,11 @@ if (in->inv==1)
 		in->falpha[i]=255.0-in->falpha[i];
 
 for (i=0;i<in->w*in->h;i++)
-	outframe[i] = (inframe[i]&0x00FFFFFF) | (((uint32_t)in->falpha[i])<<24);
-
+	{
+	outframe[i] = inframe[i];
+	in->oufr[4*i+3] = (uint8_t)in->falpha[i];
+	}
+	
 switch (in->disp)
 	{
 	case 0:
