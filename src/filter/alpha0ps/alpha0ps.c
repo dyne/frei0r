@@ -24,6 +24,8 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 
   28 aug 2012	ver 0.2		endian proofing
+  
+  03 sep 2012	ver 0.3		add alpha blur
 
 */
 
@@ -37,6 +39,9 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <math.h>
 #include <assert.h>
 
+double PI=3.14159265358979;
+
+#include "fibe_f.c"
 
 
 //----------------------------------------
@@ -46,20 +51,26 @@ typedef struct
 int h;
 int w;
 
+//parameters
 int disp;
 int din;
 int op;
 float thr;
-int sga;
+float sga;
 int inv;
 
+//buffers & pointers
 float *falpha,*ab;
 uint8_t *infr,*oufr;
+
+//auxilliary variables for fibe2o
+float f,q,a0,a1,a2,b0,b1,b2,rd1,rd2,rs1,rs2,rc1,rc2;
+
 } inst;
 
 
 //---------------------------------------------------
-void alphagray(inst *in, const uint32_t* inframe, uint32_t* outframe)
+void alphagray(inst *in)
 {
 uint8_t s;
 int i;
@@ -85,7 +96,7 @@ else
 }
 
 //---------------------------------------------------
-void grayred(inst *in, const uint32_t* inframe, uint32_t* outframe)
+void grayred(inst *in)
 {
 int i,rr;
 uint8_t r,g,b,a,y;
@@ -125,7 +136,7 @@ else
 }
 
 //---------------------------------------------------
-void drawsel(inst *in, const uint32_t* inframe, uint32_t* outframe, int bg)
+void drawsel(inst *in, int bg)
 {
 int i;
 uint32_t bk;
@@ -349,6 +360,53 @@ for (i=0;i<w*h;i++)
 	al[i] = (al[i]>thr) ? hi : lo;
 }
 
+//----------------------------------------------------------
+void blur_alpha(inst *in)
+{
+int i;
+
+for (i=0;i<in->w*in->h;i++) in->falpha[i]*=0.0039215;
+
+fibe2o_f(in->falpha, in->w, in->h, in->a1, in->a2, in->rd1, in->rd2, in->rs1, in->rs2, in->rc1, in->rc2, 1);
+
+for (i=0;i<in->w*in->h;i++)
+	{
+	in->falpha[i]*=255.0;
+	if (in->falpha[i]>255.0) in->falpha[i]=255.0;
+	if (in->falpha[i]<0.0) in->falpha[i]=0.0;
+	}
+}
+
+//--------------------------------------------------------
+//Aitken-Neville interpolacija iz 4 tock (tretjega reda)
+//t = stevilo tock v arrayu
+//array xt naj bo v rastocem zaporedju, lahko neekvidistanten
+float AitNev3(int t, float xt[], float yt[], float x)
+{
+float p[10];
+int i,j,m;
+
+if ((x<xt[0])||(x>xt[t-1]))
+	{
+//	printf("\n\n x=%f je izven mej tabele!",x);
+	return 1.0/0.0;
+	}
+
+//poisce, katere tocke bo uporabil
+m=0; while (x>xt[m++]);
+m=m-4/2-1; if (m<0) m=0; if ((m+4)>(t-1)) m=t-4;
+
+for (i=0;i<4;i++)
+	p[i]=yt[i+m];
+
+for (j=1;j<4;j++)
+	for (i=(4-1);i>=j;i--)
+		{
+		p[i]=p[i]+(x-xt[i+m])/(xt[i+m]-xt[i-j+m])*(p[i]-p[i-1]);
+		}
+return p[4-1];
+}
+
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
 float map_value_forward(double v, float min, float max)
@@ -387,7 +445,7 @@ info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
 info->color_model=F0R_COLOR_MODEL_RGBA8888;
 info->frei0r_version=FREI0R_MAJOR_VERSION;
 info->major_version=0;
-info->minor_version=2;
+info->minor_version=3;
 info->num_params=6;
 info->explanation="Display and manipulation of the alpha channel";
 }
@@ -418,7 +476,7 @@ switch(param_index)
 		info->explanation = "";
 		break;
 	case 4:
-		info->name = "Shrink/grow amount";
+		info->name = "Shrink/Grow/Blur amount";
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "";
 		break;
@@ -443,11 +501,18 @@ in->disp=0;
 in->din=0;
 in->op=0;
 in->thr=0.5;
-in->sga=1;
+in->sga=1.0;
 in->inv=0;
 
 in->falpha=(float*)calloc(in->w*in->h,sizeof(float));
 in->ab=(float*)calloc(in->w*in->h,sizeof(float));
+
+in->f=0.05; in->q=0.55;		//blur
+calcab_lp1(in->f, in->q, &in->a0, &in->a1, &in->a2, &in->b0, &in->b1, &in->b2);
+in->a1=in->a1/in->a0; in->a2=in->a2/in->a0;
+rep(-0.5, 0.5, 0.0, &in->rd1, &in->rd2, 256, in->a1, in->a2);
+rep(1.0, 1.0, 0.0, &in->rs1, &in->rs2, 256, in->a1, in->a2);
+rep(0.0, 0.0, 1.0, &in->rc1, &in->rc2, 256, in->a1, in->a2);
 
 return (f0r_instance_t)in;
 }
@@ -473,35 +538,39 @@ int tmpi,chg;
 
 p=(inst*)instance;
 
+float am1[]={0.499999,0.7,1.0,1.5,2.0,3.0,4.0,5.0,7.0,10.0,15.0,20.0,30.0,40.0,50.0,70.0,100.0,150.0,200.00001};
+float iir2f[]={0.475,0.39,0.325,0.26,0.21,0.155,0.112,0.0905,0.065,0.0458,0.031,0.0234,0.01575,0.0118,0.0093,0.00725,0.00505,0.0033,0.0025};
+float iir2q[]={0.53,0.53,0.54,0.54,0.54,0.55,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6};
+
 chg=0;
 switch(param_index)
 	{
-	case 0:
+	case 0:		//Display
                 tmpi=map_value_forward(*((double*)parm), 0.0, 6.9999);
                 if (p->disp != tmpi) chg=1;
                 p->disp=tmpi;
 		break;
-	case 1:
+	case 1:		//Display input alpha
                 tmpi=map_value_forward(*((double*)parm), 0.0, 1.0); //BOOL!!
                 if (p->din != tmpi) chg=1;
                 p->din=tmpi;
 		break;
-	case 2:
-                tmpi=map_value_forward(*((double*)parm), 0.0, 6.9999);
+	case 2:		//Operation
+                tmpi=map_value_forward(*((double*)parm), 0.0, 7.9999);
                 if (p->op != tmpi) chg=1;
                 p->op=tmpi;
 		break;
-	case 3:
+	case 3:		//Threshold
 		tmpf=*(double*)parm;
 		if (tmpf!=p->thr) chg=1;
 		p->thr=tmpf;
 		break;
-	case 4:
-                tmpi=map_value_forward(*((double*)parm), 0.0, 2.9999);
-                if (p->sga != tmpi) chg=1;
-                p->sga=tmpi;
+	case 4:		//Shrink/Grow/Blur amount
+                tmpf=map_value_forward(*((double*)parm), 0.0, 4.9999);
+                if (p->sga != tmpf) chg=1;
+                p->sga=tmpf;
 		break;
-	case 5:
+	case 5:		//Invert
                 tmpi=map_value_forward(*((double*)parm), 0.0, 1.0); //BOOL!!
                 if (p->inv != tmpi) chg=1;
                 p->inv=tmpi;
@@ -509,6 +578,17 @@ switch(param_index)
 	}
 
 if (chg==0) return;
+
+if (param_index==4)	// blur amount changed
+	{
+	p->f=AitNev3(19, am1, iir2f, 0.5+3.0*p->sga);
+	p->q=AitNev3(19, am1, iir2q, 0.5+3.0*p->sga);
+	calcab_lp1(p->f, p->q, &p->a0, &p->a1, &p->a2, &p->b0, &p->b1, &p->b2);
+	p->a1=p->a1/p->a0; p->a2=p->a2/p->a0;
+	rep(-0.5, 0.5, 0.0, &p->rd1, &p->rd2, 256, p->a1, p->a2);
+	rep(1.0, 1.0, 0.0, &p->rs1, &p->rs2, 256, p->a1, p->a2);
+	rep(0.0, 0.0, 1.0, &p->rc1, &p->rc2, 256, p->a1, p->a2);
+	}
 
 }
 
@@ -543,7 +623,6 @@ switch(param_index)
 }
 
 //-------------------------------------------------
-//RGBA8888 little endian
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 inst *in;
@@ -553,8 +632,6 @@ assert(instance);
 in=(inst*)instance;
 in->infr=(uint8_t*)inframe;
 in->oufr=(uint8_t*)outframe;
-
-//printf("update, op=%d, inv=%d disp=%d\n",in->op,in->inv,in->disp);
 
 for (i=0;i<in->w*in->h;i++)
 	in->falpha[i]=in->infr[4*i+3];
@@ -585,6 +662,9 @@ switch (in->op)
 	case 6:
 		threshold_alpha(in->falpha, in->w, in->h, 255.0*in->thr, 255.0, 0.0);
 		break;
+	case 7:
+		blur_alpha(in);
+		break;
 	default:
 		break;
 	}
@@ -604,22 +684,22 @@ switch (in->disp)
 	case 0:
 		break;
 	case 1:
-		alphagray(in, inframe, outframe);
+		alphagray(in);
 		break;
 	case 2:
-		grayred(in, inframe, outframe);
+		grayred(in);
 		break;
 	case 3:
-		drawsel(in, inframe, outframe, 0);
+		drawsel(in, 0);
 		break;
 	case 4:
-		drawsel(in, inframe, outframe, 1);
+		drawsel(in, 1);
 		break;
 	case 5:
-		drawsel(in, inframe, outframe, 2);
+		drawsel(in, 2);
 		break;
 	case 6:
-		drawsel(in, inframe, outframe, 3);
+		drawsel(in, 3);
 		break;
 	default:
 		break;

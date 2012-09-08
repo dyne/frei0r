@@ -153,7 +153,7 @@ endif
 # FILTERS
 #
 3dflippo_la_SOURCES = filter/3dflippo/3dflippo.c
-alpha0ps_la_SOURCES = filter/alpha0ps/alpha0ps.c
+alpha0ps_la_SOURCES = filter/alpha0ps/alpha0ps.c filter/alpha0ps/fibe_f.c
 alphagrad_la_SOURCES = filter/alpha0ps/alphagrad.c
 alphaspot_la_SOURCES = filter/alpha0ps/alphaspot.c
 B_la_SOURCES = filter/RGB/B.c

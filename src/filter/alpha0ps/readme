@@ -23,6 +23,12 @@ Version 0.1
 Version 0.2
 Endian proofing  (use uint8_t* to access image data)
 
+** sep 2012
+Version 0.3
+Add alpha blur
+Some code cleaning
+
+
 
 ALPHAOPS:
 
