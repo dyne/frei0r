@@ -1,4 +1,4 @@
-//fibe1_f.c
+//fibe1_f.h
 
 //Skalarna (float) verzija
 
@@ -6,6 +6,8 @@
 
 
 #define EDGEAVG 8
+
+double PI=3.14159265358979;
 
 //---------------------------------------------------------
 //koeficienti za biquad lowpass  iz f in q

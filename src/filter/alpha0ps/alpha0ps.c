@@ -39,9 +39,8 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <math.h>
 #include <assert.h>
 
-double PI=3.14159265358979;
 
-#include "fibe_f.c"
+#include "fibe_f.h"
 
 
 //----------------------------------------

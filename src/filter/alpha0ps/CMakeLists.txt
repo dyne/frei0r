@@ -1,4 +1,4 @@
-set (O_SOURCES alpha0ps.c fibe_f.c)
+set (O_SOURCES alpha0ps.c fibe_f.h)
 set (G_SOURCES alphagrad.c)
 set (S_SOURCES alphaspot.c)
 
