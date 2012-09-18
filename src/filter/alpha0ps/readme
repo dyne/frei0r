@@ -57,9 +57,9 @@ we are getting on the input)
 
 Operation:
 select the operation to be done on the alpha channel. Currently
-there are six choices: NO OP, Shave, Shrink hard, Shrink soft, Grow
-hard, Grow soft, Threshold.
-"Shave" tris to remove the "hairy" stuff, and also shrinks the selecton
+there are seven choices: NO OP, Shave, Shrink hard, Shrink soft,
+Grow hard, Grow soft, Threshold and blur.
+"Shave" tries to remove the "hairy" stuff, and also shrinks the selection
 a bit.
 The "hard" operations introduce no new values to the alpha channel,
 so if you have a "hard" key (only 0 and 255) it will stay that way.
@@ -67,12 +67,13 @@ The "soft" operations will introduce interpolated values, making
 the edge softer.
 NOTE: the shave, shrink and grow operations are quite slow, because they
 do many conditional operations on each pixel.
+"Blur" simply blurs the alpha channel with a quasi Gaussian blur.
 
 Threshold:
 this is only used for the Threshold operation.
 
-Shrink/grow amount:
-how far the shrinking/growing will extend.
+Shrink/Grow/Blur amount:
+how far the shrinking/growing will extend, or the amount of blur.
 
 Invert:
 Inverts the input alpha channel, transparent will become opaque
@@ -109,7 +110,7 @@ Max:
 maximum value of the alpha channel, "after" the gradient.
 
 Operation:
-slects between "Draw on clear", "Min", "Max", "Add" and "Subtract".
+selects between "Draw on clear", "Min", "Max", "Add" and "Subtract".
 The last four options combine the drawn gradient with pre-existing
 alpha.
 
@@ -149,7 +150,7 @@ Max:
 value of alpha inside of the shape.
 
 Operation:
-slects between Draw on clear, Min, Max, Add, Subtract. The last
+selects between Draw on clear, Min, Max, Add, Subtract. The last
 four options combine the drawn shape with pre-existing alpha.
 
 
