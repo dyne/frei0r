@@ -479,7 +479,8 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 		break;
 
 	case COLOR_TEMPERATURE:
-		inst->color_temperature = *((double *)param);
+		// Map frei0r range [0, 1] to temperature range [0, 15000].
+		inst->color_temperature = *((double *)param) * 15000.0;
 		if (inst->color_temperature < 1000.0 || inst->color_temperature > 15000.0) {
 			inst->color_temperature = 6500.0;
 		}
@@ -499,7 +500,8 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 		break;
 
 	case COLOR_TEMPERATURE:
-		*((double *)param) = inst->color_temperature;
+		// Map temperature range [0, 15000] to frei0r range [0, 1].
+		*((double *)param) = inst->color_temperature / 15000.0;
 		break;
 	}
 }
