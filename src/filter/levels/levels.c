@@ -216,22 +216,22 @@ void f0r_update(f0r_instance_t instance, double time,
   
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
-  int b, g, r;
-  int luma;
+  int r, g, b;
 
   double levels[256];
-  int map[256];
-  double mapLuma[256];
+  unsigned int map[256];
 
   double inScale = inst->inputMax != inst->inputMin?inst->inputMax - inst->inputMin:1;
   double exp = inst->gamma == 0?1:1/inst->gamma;
   double outScale = inst->outputMax - inst->outputMin;
 
   for(int i = 0; i < 256; i++) {
-	double v = i / 255.;
-	double w = pow((v - inst->inputMin) / inScale, exp) * outScale + inst->outputMin;
-	map[i] = CLAMP(w,0,1) * 255;
-	mapLuma[i] = i == 0?w:w / v;
+	double v = i / 255. - inst->inputMin;
+	if (v < 0.0) {
+		v = 0.0;
+	}           
+	double w = pow(v / inScale, exp) * outScale + inst->outputMin;
+	map[i] = CLAMP0255(lrintf(w * 255.0));
   }
 
   if (inst->showHistogram)
@@ -244,15 +244,13 @@ void f0r_update(f0r_instance_t instance, double time,
 	g = *src++;
 	b = *src++;
 
-	if (inst->channel == CHANNEL_LUMA)
-	  luma = CLAMP0255((unsigned int)(b * .114 + g * .587 + r * .299));
 	if (inst->showHistogram) {
-	  int intencity = 
+	  int intensity = 
 	    inst->channel == CHANNEL_RED?r:
 	    inst->channel == CHANNEL_GREEN?g:
 	    inst->channel == CHANNEL_BLUE?b:
-		luma;
-	  int index = CLAMP0255(intencity);
+	        CLAMP0255(b * .114 + g * .587 + r * .299);
+	  int index = CLAMP0255(intensity);
 	  levels[index]++;
 	  if (levels[index] > maxHisto)
 		maxHisto = levels[index];
@@ -275,15 +273,9 @@ void f0r_update(f0r_instance_t instance, double time,
 	  *dst++ = map[b];
 	  break;
 	case CHANNEL_LUMA:
-	  if (luma == 0) {
-		*dst++ = mapLuma[luma];
-		*dst++ = mapLuma[luma];
-		*dst++ = mapLuma[luma];
-	  } else {
-		*dst++ = CLAMP0255((unsigned int)(r * mapLuma[luma]));
-		*dst++ = CLAMP0255((unsigned int)(g * mapLuma[luma]));
-		*dst++ = CLAMP0255((unsigned int)(b * mapLuma[luma]));
-	  }
+	  *dst++ = map[r];
+	  *dst++ = map[g];
+	  *dst++ = map[b];
 	  break;
 	}
 
