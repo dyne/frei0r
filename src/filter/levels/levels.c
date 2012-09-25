@@ -64,7 +64,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* levels_instance_t)
   levels_instance_t->color_model = F0R_COLOR_MODEL_RGBA8888;
   levels_instance_t->frei0r_version = FREI0R_MAJOR_VERSION;
   levels_instance_t->major_version = 0; 
-  levels_instance_t->minor_version = 2; 
+  levels_instance_t->minor_version = 3; 
   levels_instance_t->num_params = 8; 
   levels_instance_t->explanation = "Adjust luminance or color channel intensity";
 }
