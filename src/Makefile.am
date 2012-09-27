@@ -99,6 +99,7 @@ plugin_LTLIBRARIES = \
 	select0r.la \
 	sharpness.la \
 	sobel.la \
+	softglow.la \
 	softlight.la \
 	sopsat.la \
 	spillsupress.la \
@@ -214,6 +215,7 @@ scanline0r_la_SOURCES = filter/scanline0r/scanline0r.cpp
 select0r_la_SOURCES = filter/select0r/select0r.c
 sharpness_la_SOURCES = filter/sharpness/sharpness.c
 sobel_la_SOURCES = filter/sobel/sobel.cpp
+softglow_la_SOURCES = filter/softglow/softglow.c
 sopsat_la_SOURCES = filter/sopsat/sopsat.cpp
 spillsupress_la_SOURCES = filter/spillsupress/spillsupress.c
 squareblur_la_SOURCES = filter/squareblur/squareblur.c
