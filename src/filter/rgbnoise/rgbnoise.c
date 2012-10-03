@@ -29,6 +29,12 @@
 #include "frei0r.h"
 #include "frei0r_math.h"
 
+static int MY_MAX_RAND = 32767;// I assume RAND_MAX to be at least this big.
+static double gaussian_lookup[32767];
+static int TABLE_INITED = 0;
+static int next_gaussian_index = 0;
+static int last_in_range = 32766;
+
 typedef struct rgbnoise_instance
 {
   unsigned int width;
@@ -36,13 +42,10 @@ typedef struct rgbnoise_instance
   double noise;
 } rgbnoise_instance_t;
 
-int f0r_init()
-{
-  return 1;
-}
+
 
 void f0r_deinit()
-{ /* no initialization required */ }
+{}
 
 void f0r_get_plugin_info(f0r_plugin_info_t* rgbnoiseInfo)
 {
@@ -130,16 +133,55 @@ static inline double gauss()
   return x;
 }
 
+static void create_new_lookup_range()
+{
+    int first, last, tmp;
+    first = rand() % (MY_MAX_RAND - 1);
+    last = rand() % (MY_MAX_RAND - 1);
+    if (first > last)
+    {
+      tmp = last;
+      last = first;
+      first = tmp;
+    }
+    next_gaussian_index = first;
+    last_in_range = last;
+}
+
+static inline double next_gauss()
+{
+  next_gaussian_index++;
+  if (next_gaussian_index >= last_in_range)
+  {
+    create_new_lookup_range(); 
+  }
+  return gaussian_lookup[next_gaussian_index];
+}
+
 static inline int addNoise(int sample, double noise)
 {
   int byteNoise = 0;
   int noiseSample = 0;
 
-  byteNoise = (int) (noise * gauss() * 127.0);
+  byteNoise = (int) (noise * next_gauss() * 127.0);
   noiseSample = sample + byteNoise;
   noiseSample = CLAMP(noiseSample, 0, 255);
   return noiseSample;
 }	
+
+int f0r_init()
+{
+  if (TABLE_INITED == 0)
+  {
+    int i;
+    for( i = 0; i < MY_MAX_RAND; i++)
+    {
+      gaussian_lookup[i] = gauss();
+    }
+    TABLE_INITED = 1;
+  }
+  return 1;
+}
 
 void rgb_noise(f0r_instance_t instance, double time,
 		const uint32_t* inframe, uint32_t* outframe)
