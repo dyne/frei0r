@@ -163,7 +163,7 @@ static inline int addNoise(int sample, double noise)
   int byteNoise = 0;
   int noiseSample = 0;
 
-  byteNoise = (int) (noise * next_gauss() * 127.0);
+  byteNoise = (int) (noise * next_gauss());
   noiseSample = sample + byteNoise;
   noiseSample = CLAMP(noiseSample, 0, 255);
   return noiseSample;
@@ -176,7 +176,7 @@ int f0r_init()
     int i;
     for( i = 0; i < MY_MAX_RAND; i++)
     {
-      gaussian_lookup[i] = gauss();
+      gaussian_lookup[i] = gauss() * 127.0;
     }
     TABLE_INITED = 1;
   }
