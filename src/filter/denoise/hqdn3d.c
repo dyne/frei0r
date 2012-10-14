@@ -66,7 +66,7 @@ unsigned char *Rplani,*Gplani,*Bplani,*Rplano,*Gplano,*Bplano;
 //deNoise and PrecalaCoefs  are from Mplayer "hqdn3d" filter
 //by Daniel Moreno <comac@comac.darktech.org>
 
-inline unsigned int LowPassMul(unsigned int PrevMul, unsigned int CurrMul, int* Coef){
+static inline unsigned int LowPassMul(unsigned int PrevMul, unsigned int CurrMul, int* Coef){
 //    int dMul= (PrevMul&0xFFFFFF)-(CurrMul&0xFFFFFF);
     int dMul= PrevMul-CurrMul;
     unsigned int d=((dMul+0x10007FF)>>12);

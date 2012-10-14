@@ -62,7 +62,7 @@ double PI=3.14159265358979;
 //  returns square of distance
 //  r==1 is edge of subspace
 //box shape
-inline float dist_box(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
+static inline float dist_box(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
 {
 float ax,ay,az,r;
 
@@ -76,7 +76,7 @@ r=r*r;
 return r;
 }
 //ellipsoid shape
-inline float dist_eli(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
+static inline float dist_eli(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
 {
 float ax,ay,az,r;
 
@@ -87,7 +87,7 @@ r=ax*ax+ay*ay+az*az;
 return r;
 }
 //octahedron shape
-inline float dist_oct(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
+static inline float dist_oct(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
 {
 float ax,ay,az,r;
 
@@ -99,7 +99,7 @@ r=r*r;
 return r;
 }
 //box shape, cylindrical space
-inline float dist_box_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
+static inline float dist_box_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
 {
 float ax,ay,az,r;
 
@@ -116,7 +116,7 @@ r=r*r;
 return r;
 }
 //ellipsoid shape, cylindrical space
-inline float dist_eli_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
+static inline float dist_eli_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
 {
 float ax,ay,az,r;
 
@@ -130,7 +130,7 @@ r=ax*ax+ay*ay+az*az;
 return r;
 }
 //octahedron shape, cylindrical space
-inline float dist_oct_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
+static inline float dist_oct_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
 {
 float ax,ay,az,r;
 
@@ -147,7 +147,7 @@ return r;
 
 //----------------------------------------------------------
 //inline RGB to ABI conversion function
-inline void rgb2abi(float k32, float r, float g, float b, float *a, float *bb, float *i)
+static inline void rgb2abi(float k32, float r, float g, float b, float *a, float *bb, float *i)
 {
 *a=r-0.5*g-0.5*b;
 *bb=k32*(g-b);
@@ -156,7 +156,7 @@ inline void rgb2abi(float k32, float r, float g, float b, float *a, float *bb, f
 
 //----------------------------------------------------------
 //inline RGB to HCI conversion function
-inline void rgb2hci(float ipi2, float k32, float r, float g, float b, float *h, float *c, float *i)
+static inline void rgb2hci(float ipi2, float k32, float r, float g, float b, float *h, float *c, float *i)
 {
 float a,bb;
 a=r-0.5*g-0.5*b;
@@ -168,29 +168,29 @@ bb=k32*(g-b);
 
 //------------------------------------------------------
 //thresholding inline functions  (hard and soft)
-inline float thres(float a)
+static inline float thres(float a)
 {
 return (a<1.0) ? 1.0 : 0.0;
 }
 
-inline float fat(float a)
+static inline float fat(float a)
 {
 a=a*a*a*a;
 return (a<1.0) ? 1.0-a : 0.0;
 }
 
-inline float norm(float a)
+static inline float norm(float a)
 {
 a=a*a;
 return (a<1.0) ? 1.0-a : 0.0;
 }
 
-inline float skiny(float a)
+static inline float skiny(float a)
 {
 return (a<1.0) ? 1.0-a : 0.0;
 }
 
-inline float slope(float a, float is)
+static inline float slope(float a, float is)
 {
 a = (a<1.0) ? 1.0 : 1.0-is*(a-1);
 return (a>=0) ? a : 0.0;
