@@ -330,7 +330,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
     case 0:
       info->name = "table";
       info->type = F0R_PARAM_STRING;
-      info->explanation = "Lookup table used to filter colors";
+      info->explanation = "Lookup table used to filter colors. One of: xpro, sepia, heat, red_green, old_photo, xray, esses, yellow_blue";
       break;
   }
 }
