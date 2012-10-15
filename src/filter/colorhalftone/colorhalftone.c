@@ -173,31 +173,31 @@ void f0r_get_plugin_info(f0r_plugin_info_t* colorhalftoneInfo)
   colorhalftoneInfo->major_version = 0; 
   colorhalftoneInfo->minor_version = 9; 
   colorhalftoneInfo->num_params =  4; 
-  colorhalftoneInfo->explanation = "Applies  colorhalftone filter";
+  colorhalftoneInfo->explanation = "Filters image to resemble a halftone print in which tones are represented as variable sized dots";
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
 	switch ( param_index ) {
 		case 0:
-			info->name = "dot_radius";
+			info->name = "dot radius";
 			info->type = F0R_PARAM_DOUBLE;
 			info->explanation = "Halftone pattern dot size";
 			break;
     case 1:
-      info->name = "cyan_angle";
+      info->name = "cyan angle";
       info->type = F0R_PARAM_DOUBLE;
       info->explanation = "Cyan dots angle";
       break;
     case 2:
-      info->name = "magenta_angle";
+      info->name = "magenta angle";
       info->type = F0R_PARAM_DOUBLE;
       info->explanation = "Magenta dots angle";
       break;
     case 3:
-      info->name = "yellow_angle";
+      info->name = "yellow angle";
       info->type = F0R_PARAM_DOUBLE;
-      info->explanation = "Magenta dots angle";
+      info->explanation = "Yellow dots angle";
       break;
 	}
 }
