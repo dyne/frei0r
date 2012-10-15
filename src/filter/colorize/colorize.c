@@ -1,11 +1,12 @@
 /*
  * This file is a port of Colorize plug-in from Gimp.
- * It contains code from files listed below, see those for copyrights:
- *
+ * It contains code from files listed below:
  * gimpoperationcolorize.c
  * gimpcolortypes.h
  * gimpcolorspace.c
  * gimprgb.h
+ * Copyright (C) 1995 Spencer Kimball and Peter Mattis
+ * Copyright (C) 2007 Michael Natterer
  *
  * This file, colorize.c
  * Copyright 2012 Janne Liljeblad 
