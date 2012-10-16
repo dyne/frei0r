@@ -35,6 +35,7 @@ plugin_LTLIBRARIES = \
 	colgate.la \
 	coloradj_RGB.la \
 	colordistance.la \
+	colorhalftone.la \
 	colorize.la \
 	color_only.la \
 	composition.la \
@@ -172,6 +173,7 @@ cluster_la_SOURCES = filter/cluster/cluster.c
 colgate_la_SOURCES = filter/colgate/colgate.c
 coloradj_RGB_la_SOURCES = filter/coloradj/coloradj_RGB.c
 colordistance_la_SOURCES = filter/colordistance/colordistance.c
+colorhalftone_la_SOURCES = filter/colorhalftone/colorhalftone.c
 colorize_la_SOURCES = filter/colorize/colorize.c
 contrast0r_la_SOURCES = filter/contrast0r/contrast0r.c
 curves_la_SOURCES = filter/curves/curves.c
