@@ -37,6 +37,7 @@ plugin_LTLIBRARIES = \
 	colordistance.la \
 	colorhalftone.la \
 	colorize.la \
+	colortap.la \
 	color_only.la \
 	composition.la \
 	contrast0r.la \
@@ -176,6 +177,7 @@ coloradj_RGB_la_SOURCES = filter/coloradj/coloradj_RGB.c
 colordistance_la_SOURCES = filter/colordistance/colordistance.c
 colorhalftone_la_SOURCES = filter/colorhalftone/colorhalftone.c
 colorize_la_SOURCES = filter/colorize/colorize.c
+colortap_la_SOURCES = filter/colortap/colortap.c
 contrast0r_la_SOURCES = filter/contrast0r/contrast0r.c
 curves_la_SOURCES = filter/curves/curves.c
 d90stairsteppingfix_la_SOURCES = filter/d90stairsteppingfix/d90stairsteppingfix.cpp
