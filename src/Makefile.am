@@ -99,6 +99,7 @@ plugin_LTLIBRARIES = \
 	screen.la \
 	select0r.la \
 	sharpness.la \
+	sigmoidaltransfer.la \
 	sobel.la \
 	softglow.la \
 	softlight.la \
@@ -216,6 +217,7 @@ saturat0r_la_SOURCES = filter/saturat0r/saturat0r.c
 scanline0r_la_SOURCES = filter/scanline0r/scanline0r.cpp
 select0r_la_SOURCES = filter/select0r/select0r.c
 sharpness_la_SOURCES = filter/sharpness/sharpness.c
+sigmoidaltransfer_la_SOURCES = filter/sigmoidaltransfer/sigmoidaltransfer.c
 sobel_la_SOURCES = filter/sobel/sobel.cpp
 softglow_la_SOURCES = filter/softglow/softglow.c
 sopsat_la_SOURCES = filter/sopsat/sopsat.cpp
