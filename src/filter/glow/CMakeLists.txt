@@ -1,4 +1,4 @@
-set (SOURCES glow.c blur.h)
+set (SOURCES glow.c)
 set (TARGET glow)
 
 if (MSVC)

@@ -1,8 +1,7 @@
-/* squareblur.c
+/* blur.h
  * Copyright (C) 2004--2005 Mathieu Guindon
  *                          Julien Keable
  *                          Jean-Sebastien Senecal (js@drone.ws)
- * This file is a Frei0r plugin.
  *
  * Modified by Richard Spindler (richard.spindler AT gmail.com) for blurring in
  * the mask0mate Frei0r plugin.
@@ -71,7 +70,7 @@ typedef struct squareblur_instance
 } squareblur_instance_t;
 
 /* Updates the summed area table. */
-void update_summed_area_table(squareblur_instance_t *inst, const uint32_t *src)
+static void update_summed_area_table(squareblur_instance_t *inst, const uint32_t *src)
 {
   register unsigned char *iter_data;
   register uint32_t *iter_mem;
@@ -128,28 +127,7 @@ void update_summed_area_table(squareblur_instance_t *inst, const uint32_t *src)
   }
 }
 
-int blur_init()
-{
-  return 1;
-}
-
-void blur_deinit()
-{ /* no initialization required */ }
-
-void blur_get_plugin_info(f0r_plugin_info_t* squareblur_info)
-{
-  squareblur_info->name = "Squareblur";
-  squareblur_info->author = "Drone";
-  squareblur_info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  squareblur_info->color_model = F0R_COLOR_MODEL_RGBA8888;
-  squareblur_info->frei0r_version = FREI0R_MAJOR_VERSION;
-  squareblur_info->major_version = 0; 
-  squareblur_info->minor_version = 1; 
-  squareblur_info->num_params =  1; 
-  squareblur_info->explanation = "Variable-size square blur";
-}
-
-void blur_get_param_info(f0r_param_info_t* info, int param_index)
+static void blur_get_param_info(f0r_param_info_t* info, int param_index)
 {
   switch(param_index)
   {
@@ -161,7 +139,7 @@ void blur_get_param_info(f0r_param_info_t* info, int param_index)
   }
 }
 
-f0r_instance_t blur_construct(unsigned int width, unsigned int height)
+static f0r_instance_t blur_construct(unsigned int width, unsigned int height)
 {
   squareblur_instance_t* inst = 
     (squareblur_instance_t*)malloc(sizeof(squareblur_instance_t));
@@ -187,7 +165,7 @@ f0r_instance_t blur_construct(unsigned int width, unsigned int height)
   return (f0r_instance_t)inst;
 }
 
-void blur_destruct(f0r_instance_t instance)
+static void blur_destruct(f0r_instance_t instance)
 {
   squareblur_instance_t* inst = 
     (squareblur_instance_t*)instance;
@@ -196,7 +174,7 @@ void blur_destruct(f0r_instance_t instance)
   free(instance);
 }
 
-void blur_set_param_value(f0r_instance_t instance, 
+static void blur_set_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
   assert(instance);
@@ -211,7 +189,7 @@ void blur_set_param_value(f0r_instance_t instance,
   }
 }
 
-void blur_get_param_value(f0r_instance_t instance,
+static void blur_get_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
   assert(instance);
@@ -225,7 +203,7 @@ void blur_get_param_value(f0r_instance_t instance,
   }
 }
 
-void blur_update(f0r_instance_t instance, double time,
+static void blur_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
   assert(instance);
@@ -234,8 +212,8 @@ void blur_update(f0r_instance_t instance, double time,
   unsigned int width = inst->width;
   unsigned int height = inst->height;
   unsigned int acc_width = width+1; /* width of the summed area table */
-  
-  unsigned int kernel_size = (unsigned int) (inst->kernel * (MAX(width, height) / 2.0));
+  unsigned int max = MAX(width, height);
+  unsigned int kernel_size = (unsigned int) (inst->kernel * max / 2.0);
 
   unsigned int x, y;
   unsigned int x0, x1, y0, y1;

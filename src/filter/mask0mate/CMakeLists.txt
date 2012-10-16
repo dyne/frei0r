@@ -1,4 +1,4 @@
-set (SOURCES mask0mate.c blur.h)
+set (SOURCES mask0mate.c)
 set (TARGET mask0mate)
 
 if (MSVC)
