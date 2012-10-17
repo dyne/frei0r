@@ -15,6 +15,14 @@ if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
   pkg_check_modules(GAVL gavl)
 endif ()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(CMAKE_CC "clang")
+  set(CMAKE_CXX "clang")
+  set(CMAKE_C_FLAGS "-m32 -m64")
+  set(CMAKE_CXX_FLAGS "-m32 -m64")
+endif ()
+
+
 include_directories (AFTER include)
 
 if (MSVC)
