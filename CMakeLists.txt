@@ -37,5 +37,5 @@ INCLUDE( cmake/modules/TargetDistclean.cmake OPTIONAL)
 # See this thread for a ridiculous discussion about the simple question how to install a header file with CMake: http://www.cmake.org/pipermail/cmake/2009-October/032874.html
 install (DIRECTORY include DESTINATION . FILES_MATCHING PATTERN "frei0r.h" PATTERN "msvc" EXCLUDE)
 
-
+add_subdirectory (doc)
 add_subdirectory (src)
