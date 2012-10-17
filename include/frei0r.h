@@ -110,6 +110,15 @@
  * For example:
  *
  * FREI0R_PATH=/home/foo/frei0r-plugins:/usr/lib/frei0r-1:/etc/frei0r
+ *
+ * On Windows platforms a semicolon ';' must be used instead of colon
+ * ':' to separate FREI0R_PATH entries (due to the way filenames are
+ * interpreted), hence a cross-platform host application should detect
+ * the platform running and adjust the parsed char accordingly, for
+ * example:
+ *
+ * FREI0R_PATH=C:\Program Files\frei0r-1;%%PROGRAMFILES%\frei0r-1
+ *
  */
 
 /**
