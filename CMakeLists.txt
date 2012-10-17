@@ -16,10 +16,10 @@ if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_CC "clang")
-  set(CMAKE_CXX "clang")
-  set(CMAKE_C_FLAGS "-m32 -m64")
-  set(CMAKE_CXX_FLAGS "-m32 -m64")
+  set(CMAKE_C_COMPILER "clang")
+  set(CMAKE_CXX_COMPILER "clang++")
+  set(CMAKE_C_FLAGS "-arch x86_64 -arch i386")
+  set(CMAKE_CXX_FLAGS "-arch x86_64 -arch i386")
 endif ()
 
 
