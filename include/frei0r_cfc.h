@@ -294,3 +294,26 @@ for (i=0;i<w*h;i++)
 
 #undef MSWF
 
+
+//--------------------------------------------------
+//  -- Single value conversion --
+//there is no function for single uint8 to float, because
+//that is just a simple table lookup
+//
+//because float_2_uint8() can be called immediately after
+//the input value has been created, type punning has to be
+//done properly, with a union
+
+//#if FREI0R_BYTE_ORDER == FREI0R_LITTLE_ENDIAN
+static inline float_2_uint8(const float *in, uint8_t *tab)
+{
+return tab[((flint*)in)->i[1]];
+}
+//endif
+
+//#if FREI0R_BYTE_ORDER == FREI0R_BIG_ENDIAN
+//static inline float_2_uint8(const float *in, uint8_t *tab)
+//{
+//return tab[((flint*)in)->i[0]];
+//}
+//#endif
