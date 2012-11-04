@@ -44,7 +44,7 @@ typedef struct
 //--------------------------------------------------------
 //rec 709 gamma forward (linear to gamma)
 //a = input, should be in the 0.0 to 1.0 range
-float gamma_709_f(float a)
+static inline float gamma_709_f(float a)
 {
 return (a<=0.018) ? 4.5*a : 1.099*powf(a,0.45)-0.099;
 }
@@ -52,7 +52,7 @@ return (a<=0.018) ? 4.5*a : 1.099*powf(a,0.45)-0.099;
 //--------------------------------------------------------
 //rec 709 gamma backward (gamma to linear)
 //a = input, should be in the 0.0 to 1.0 range
-float gamma_709_b(float a)
+static inline float gamma_709_b(float a)
 {
 return (a<=0.081) ? a/4.5 : powf((a+0.099)/1.099,1.0/0.45);
 }
@@ -60,7 +60,7 @@ return (a<=0.081) ? a/4.5 : powf((a+0.099)/1.099,1.0/0.45);
 //----------------------------------------------------
 //sRGB gamma forward (linear to gamma)
 //a = input, should be in the 0.0 to 1.0 range
-float gamma_sRGB_f(float a)
+static inline float gamma_sRGB_f(float a)
 {
 return (a<=0.0031308) ? 12.92*a : 1.055*powf(a,1.0/2.4)-0.055;
 }
@@ -68,7 +68,7 @@ return (a<=0.0031308) ? 12.92*a : 1.055*powf(a,1.0/2.4)-0.055;
 //--------------------------------------------------------
 //sRGB gamma backward (gamma to linear)
 //a = input, should be in the 0.0 to 1.0 range
-float gamma_sRGB_b(float a)
+static inline float gamma_sRGB_b(float a)
 {
 return (a<=0.04045) ? a/12.92 : powf((a+0.055)/1.055,2.4);
 }
@@ -76,7 +76,7 @@ return (a<=0.04045) ? a/12.92 : powf((a+0.055)/1.055,2.4);
 //----------------------------------------------------
 //plain gamma (power function) forward (linear to gamma)
 //a = input, should be in the 0.0 to 1.0 range
-float gamma_plain_f(float a, float g)
+static inline float gamma_plain_f(float a, float g)
 {
 return powf(a,1.0/g);
 }
@@ -84,7 +84,7 @@ return powf(a,1.0/g);
 //--------------------------------------------------------
 //plain gamma (power function) backward (gamma to linear)
 //a = input, should be in the 0.0 to 1.0 range
-float gamma_plain_b(float a, float g)
+static inline float gamma_plain_b(float a, float g)
 {
 return powf(a,g);
 }
@@ -92,7 +92,7 @@ return powf(a,g);
 //--------------------------------------------------------
 //dummy function for linear tables (no gamma)
 //g = gamma value
-float gamma_none(float a)
+static inline float gamma_none(float a)
 {
 return a;
 }
@@ -103,7 +103,7 @@ return a;
 //(for values up to 2500 use 1.0001 and 0.493)
 //input [0...1]
 //output [0...250]
-float exp_hl(float a)
+static inline float exp_hl(float a)
 {
 return (a<=0.4781) ? a : 0.25/(1.001-a);
 }
@@ -114,7 +114,7 @@ return (a<=0.4781) ? a : 0.25/(1.001-a);
 //(for values up to 2500 use 1.0001 and 0.493)
 //input [0...250]
 //output [0...1]
-float cps_hl(float a)
+static inline float cps_hl(float a)
 {
 return (a<=0.4781) ? a : 1.001-0.25/a;
 }
@@ -147,7 +147,7 @@ typedef union
 //	types 0...3 map to [0...1] linear float range
 //	type 4 maps to [0...250] linear float range
 //g = gamma value, 0.3 to 3.0 (only used with type=1)
-void cfc_tab_8(uint8_t *ft, float *bt, int type, float g)
+static inline void cfc_tab_8(uint8_t *ft, float *bt, int type, float g)
 {
 uint16_t i;
 float a;
@@ -208,7 +208,7 @@ for (i=0;i<=255;i++)
 //w,h are width and height of the image
 //tab = table used for RGB conversion
 //atab = table used for alpha converion (usually linear)
-void RGBA8_2_float(const uint32_t *in, float_rgba *out, int w, int h, float *tab, float *atab)
+static inline void RGBA8_2_float(const uint32_t *in, float_rgba *out, int w, int h, float *tab, float *atab)
 {
 int i;
 uint8_t *cin=(uint8_t *)in;
@@ -227,7 +227,7 @@ for (i=0;i<w*h;i++)
 //covert RGB only, SKIP ALPHA
 //w,h are width and height of the image
 //tab = table used for RGB conversion
-void RGB8_2_float(const uint32_t *in, float_rgba *out, int w, int h, float *tab)
+static inline void RGB8_2_float(const uint32_t *in, float_rgba *out, int w, int h, float *tab)
 {
 int i;
 uint8_t *cin=(uint8_t *)in;
@@ -260,7 +260,7 @@ for (i=0;i<w*h;i++)
 //convert from packed float RGBA to packed uchar RGBA
 //tab = table used for RGB conversion
 //atab = table used for alpha converion (usually linear)
-void float_2_RGBA8(const float_rgba *in, uint32_t *out, int w, int h, uint8_t *tab, uint8_t *atab)
+static inline void float_2_RGBA8(const float_rgba *in, uint32_t *out, int w, int h, uint8_t *tab, uint8_t *atab)
 {
 int i;
 uint8_t *cout=(uint8_t *)out;
@@ -278,7 +278,7 @@ for (i=0;i<w*h;i++)
 //convert from packed float RGBA to packed uchar RGBA
 //covert RGB only, SKIP ALPHA
 //tab = table used for RGB conversion
-void float_2_RGB8(const float_rgba *in, uint32_t *out, int w, int h, uint8_t *tab)
+static inline void float_2_RGB8(const float_rgba *in, uint32_t *out, int w, int h, uint8_t *tab)
 {
 int i;
 uint8_t *cout=(uint8_t *)out;
@@ -305,7 +305,7 @@ for (i=0;i<w*h;i++)
 //done properly, with a union
 
 //#if FREI0R_BYTE_ORDER == FREI0R_LITTLE_ENDIAN
-static inline float_2_uint8(const float *in, uint8_t *tab)
+static inline uint8_t float_2_uint8(const float *in, uint8_t *tab)
 {
 return tab[((flint*)in)->i[1]];
 }
