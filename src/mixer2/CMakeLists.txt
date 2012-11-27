@@ -1,3 +1,8 @@
+if (${Cairo_FOUND})
+add_subdirectory (cairoaffineblend)
+add_subdirectory (cairoblend)
+endif (${Cairo_FOUND})
+
 add_subdirectory (addition)
 add_subdirectory (addition_alpha)
 add_subdirectory (alphaatop)
