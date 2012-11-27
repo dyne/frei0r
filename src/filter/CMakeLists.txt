@@ -9,6 +9,11 @@ if (${OpenCV_FOUND})
     add_subdirectory (facedetect)
 endif (${OpenCV_FOUND})
 
+if (${Cairo_FOUND})
+  add_subdirectory (cairoimagegrid)
+  add_subdirectory (cairogradient)
+endif (${Cairo_FOUND})
+
 add_subdirectory (3dflippo)
 add_subdirectory (alpha0ps)
 add_subdirectory (balanc0r)
