@@ -10,6 +10,8 @@ if (NOT WITHOUT_OPENCV)
   find_package (OpenCV)
 endif ()
 
+find_package (Cairo)
+
 include(FindPkgConfig)
 option (WITHOUT_GAVL "Disable plugins dependent upon gavl" OFF)
 if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
