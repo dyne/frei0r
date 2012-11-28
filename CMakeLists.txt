@@ -3,6 +3,7 @@ cmake_minimum_required (VERSION 2.8)
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 project (frei0r)
+set (VERSION 1.3.0)
 
 option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
 if (NOT WITHOUT_OPENCV)
@@ -47,3 +48,11 @@ install (DIRECTORY include DESTINATION . FILES_MATCHING PATTERN "frei0r.h" PATTE
 
 add_subdirectory (doc)
 add_subdirectory (src)
+
+# Generate frei0r.pc and install it.
+set (prefix "${CMAKE_INSTALL_PREFIX}")
+set (exec_prefix "${CMAKE_INSTALL_PREFIX}")
+set (libdir "${CMAKE_INSTALL_PREFIX}/lib")
+set (includedir "${CMAKE_INSTALL_PREFIX}/include")
+configure_file ("frei0r.pc.in" "frei0r.pc" @ONLY)
+install (FILES "${CMAKE_CURRENT_BINARY_DIR}/frei0r.pc" DESTINATION lib/pkgconfig)
