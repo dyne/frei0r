@@ -156,6 +156,28 @@ facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
 facedetect_la_LIBADD = @OPENCV_LIBS@
 endif
 
+if HAVE_CAIRO
+plugin_LTLIBRARIES += cairogradient.la
+cairogradient_la_SOURCES = filter/cairogradient/cairogradient.c
+cairogradient_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
+cairogradient_la_LIBADD = @CAIRO_LIBS@
+
+plugin_LTLIBRARIES += cairoimagegrid.la
+cairoimagegrid_la_SOURCES = filter/cairoimagegrid/cairoimagegrid.c
+cairoimagegrid_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
+cairoimagegrid_la_LIBADD = @CAIRO_LIBS@
+
+plugin_LTLIBRARIES += cairoaffineblend.la
+cairoaffineblend_la_SOURCES = mixer2/cairoaffineblend/cairoaffineblend.c
+cairoaffineblend_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
+cairoaffineblend_la_LIBADD = @CAIRO_LIBS@
+
+plugin_LTLIBRARIES += cairoblend.la
+cairoblend_la_SOURCES = mixer2/cairoblend/cairoblend.c
+cairoblend_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
+cairoblend_la_LIBADD = @CAIRO_LIBS@
+endif
+
 #
 # FILTERS
 #

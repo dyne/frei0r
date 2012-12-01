@@ -107,6 +107,10 @@ HAVE_GAVL=false
 PKG_CHECK_MODULES(GAVL, gavl >= 0.2.3, [HAVE_GAVL=true], [true])
 AM_CONDITIONAL([HAVE_GAVL], [test x$HAVE_GAVL = xtrue])
 
+HAVE_CAIRO=false
+PKG_CHECK_MODULES(CAIRO, cairo >= 1.0.0, [HAVE_CAIRO=true], [true])
+AM_CONDITIONAL([HAVE_CAIRO], [test x$HAVE_CAIRO = xtrue])
+
 AC_CHECK_PROG([DOXYGEN], [doxygen], [doxygen])
 
 
@@ -149,6 +153,15 @@ echo "    - gavl: NO"
 echo "            gavl >= 0.2.3 not found - this program enables optional"
 echo "            plugin with the gmerlin audio video library >= 0.2.3"
 echo "            http://gmerlin.sourceforge.net/"
+fi
+
+if test x$HAVE_CAIRO = xtrue; then
+echo "    - cairo: YES"
+else
+echo "    - cairo: NO"
+echo "            cairo >= 1.0.0 not found - this program enables optional"
+echo "            plugin with the Cairo 2D vector graphics library >= 1.0.0"
+echo "            http://www.cairographics.org/"
 fi
 
 echo
