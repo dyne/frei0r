@@ -66,7 +66,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
   info->major_version = 0;
   info->minor_version = 9; 
   info->num_params = 9; 
-  info->explanation = "Composites source image on destination image applying user defined transformation, opacity and blend mode";
+  info->explanation = "Composites second input on first input applying user-defined transformation, opacity and blend mode";
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
@@ -75,32 +75,32 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		case 0:
 			info->name = "x";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "X position of source image, value interperted as range -2*width - 3*width";
+			info->explanation = "X position of second input, value interperted as range -2*width - 3*width";
 			break;
 		case 1:
 			info->name = "y";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Y position of source image, value interperted as range -2*height - 3*height";
+			info->explanation = "Y position of second input, value interperted as range -2*height - 3*height";
 			break;
 		case 2:
 			info->name = "x scale";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "X scale of source image, value interperted as range 0 - 5";
+			info->explanation = "X scale of second input, value interperted as range 0 - 5";
 			break;
 		case 3:
 			info->name = "y scale";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Y scale of source image,  value interperted as range 0 - 5";
+			info->explanation = "Y scale of second input, value interperted as range 0 - 5";
 			break;
 		case 4:
 			info->name = "rotation";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Rotation of source image,  value interperted as range 0 - 360";
+			info->explanation = "Rotation of second input, value interperted as range 0 - 360";
 			break;
 		case 5:
 			info->name = "opacity";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Opacity of source image";
+			info->explanation = "Opacity of second input";
 			break;
 		case 6:
 			info->name = "blend mode";
@@ -110,12 +110,12 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		case 7:
 			info->name = "anchor x";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "X position of rotation center within the source image";
+			info->explanation = "X position of rotation center within the second input";
 			break;
 		case 8:
 			info->name = "anchor y";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation ="Y position of rotation center within the source image";
+			info->explanation ="Y position of rotation center within the second input";
 			break;
 	}  
 }
