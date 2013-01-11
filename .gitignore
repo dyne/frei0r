@@ -3,15 +3,11 @@ autom4te.cache
 config.h
 config.log
 config.status
-config.guess
-config.sub
 configure
 config.h.in
 cscope.out
 depcomp
-install-sh
 libtool
-ltmain.sh
 missing
 stamp-h1
 tags
