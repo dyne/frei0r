@@ -56,6 +56,7 @@ add_subdirectory (levels)
 add_subdirectory (lightgraffiti)
 add_subdirectory (luminance)
 add_subdirectory (mask0mate)
+add_subdirectory (medians)
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # clang 3.1 on OSX fails to compile this one
   add_subdirectory (measure)

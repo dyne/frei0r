@@ -77,6 +77,7 @@ plugin_LTLIBRARIES = \
 	lissajous0r.la \
 	luminance.la \
 	mask0mate.la \
+	medians.la \
 	multiply.la \
 	nervous.la \
 	nois0r.la \
@@ -226,6 +227,7 @@ levels_la_SOURCES = filter/levels/levels.c
 lightgraffiti_la_SOURCES = filter/lightgraffiti/lightgraffiti.cpp
 luminance_la_SOURCES = filter/luminance/luminance.c
 mask0mate_la_SOURCES = filter/mask0mate/mask0mate.c
+medians_la_SOURCES = filter/medians/medians.c filter/medians/ctmf.h filter/medians/small_medians.h
 nervous_la_SOURCES = filter/nervous/nervous.cpp
 nosync0r_la_SOURCES = filter/nosync0r/nosync0r.cpp
 partik0l_la_SOURCES = generator/partik0l/partik0l.cpp
