@@ -422,7 +422,7 @@ switch(param_index)
 	case 0:
 		info->name = "Type";
 		info->type = F0R_PARAM_STRING;
-		info->explanation = "Choose type of median";
+		info->explanation = "Choose type of median: Cross5, Square3x3, Bilevel, Diamond3x3, Square5x5, Temp3, Temp5, ArceBI, ML3D, ML3dEX, VarSize";
 		break;
 	case 1:
 		info->name = "Size";
@@ -446,7 +446,9 @@ in=calloc(1,sizeof(inst));
 in->w=width;
 in->h=height;
 
-in->type=0;
+in->type=1;
+in->liststr=calloc(1,strlen("Square3x3"));
+strcpy(in->liststr,"Square3x3");
 in->size=5;
 
 in->f1=calloc(in->w*in->h,sizeof(uint32_t));
@@ -486,8 +488,9 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 {
 inst *p;
 double tmpf;
-int tmpi,chg,nc;
+int chg;
 char *tmpch;
+char list1[][11]={"Cross5", "Square3x3", "Bilevel", "Diamond3x3", "Square5x5", "Temp3", "Temp5", "ArceBI", "ML3D", "ML3dEX", "VarSize"};
 
 p=(inst*)instance;
 
@@ -498,28 +501,15 @@ switch(param_index)
 		tmpch = (*(char**)parm);
 		p->liststr = (char*)realloc( p->liststr, strlen(tmpch) + 1 );
 		strcpy( p->liststr, tmpch );
-		nc=sscanf(p->liststr,"%d",&tmpi);
-//		if ((nc<=0)||(tmpi<0)||(tmpi>3)) tmpi=1;
-		if ((nc<=0)||(tmpi<0)||(tmpi>10)) break;
-		if (p->type != tmpi) chg=1;
-		p->type = tmpi;
+		p->type=0;
+		while (strcmp(p->liststr,list1[p->type])!=0) p->type++;
 		break;
 	case 1:
                 tmpf=map_value_forward(*((double*)parm), 0.0, 50); 
 		if (tmpf!=p->size) chg=1;
 		p->size=tmpf;
 		break;
-/*	case 2:
-		tmpf=*(double*)parm;
-		if (tmpf!=p->hlp) chg=1;
-		p->hlp=tmpf;
-		break;
-	case 3:
-		tmpi=map_value_forward(*((double*)parm), 0.0, 1.0); //BOOL!!
-		if (p->kb != tmpi) chg=1;
-		p->kb=tmpi;
-		break;
-*/	}
+	}
 
 if (chg==0) return;
 
@@ -535,20 +525,12 @@ p=(inst*)instance;
 switch(param_index)
 	{
 	case 0:		//(string based list)
-		p->liststr=realloc(p->liststr,16);
-		sprintf(p->liststr,"%d",p->type);
 		*((char**)param) = p->liststr;
 		break;
 	case 1:
 		*((double*)param)=map_value_backward(p->size, 0.0, 50);
 		break;
-/*	case 2:
-                *((double*)param)=map_value_backward(p->kb, -0.5, 0.5);//BOOL!!
-		break;
-	case 3:
-                *((double*)param)=map_value_backward(p->kw, 0.0, 1.0);//BOOL!!
-		break;
-*/	}
+	}
 }
 
 //-------------------------------------------------
