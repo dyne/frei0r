@@ -447,7 +447,7 @@ in->w=width;
 in->h=height;
 
 in->type=1;
-in->liststr=calloc(1,strlen("Square3x3"));
+in->liststr=calloc(1,strlen("Square3x3")+1);
 strcpy(in->liststr,"Square3x3");
 in->size=5;
 
