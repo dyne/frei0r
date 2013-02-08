@@ -10,7 +10,7 @@ typedef uint8_t pixelvalue;
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median3(uint32_t *mm)
+static inline uint32_t median3(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
@@ -24,7 +24,7 @@ return mm[1];
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median5(uint32_t *mm)
+static inline uint32_t median5(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
@@ -42,7 +42,7 @@ return mm[2];
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median7(uint32_t *mm)
+static inline uint32_t median7(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
@@ -66,7 +66,7 @@ return mm[3];
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median9(uint32_t *mm)
+static inline uint32_t median9(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
@@ -96,7 +96,7 @@ return(mm[4]);
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median11(uint32_t *mm)
+static inline uint32_t median11(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
@@ -133,7 +133,7 @@ return mm[5];
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median13(uint32_t *mm)
+static inline uint32_t median13(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
@@ -178,7 +178,7 @@ return mm[6];
 //packed char RGB image (uint32_t)
 //does separate medians on R,G,B
 //scrambles the input array!
-inline uint32_t median25(uint32_t *mm)
+static inline uint32_t median25(uint32_t *mm)
 {
 uint8_t *m=(uint8_t*)mm;
 //     -R-              -G-              -B-
