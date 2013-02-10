@@ -502,7 +502,7 @@ switch(param_index)
 		p->liststr = (char*)realloc( p->liststr, strlen(tmpch) + 1 );
 		strcpy( p->liststr, tmpch );
 		p->type=0;
-		while (strcmp(p->liststr,list1[p->type])!=0) p->type++;
+		while ((strcmp(p->liststr,list1[p->type])!=0)&&(p->type<10)) p->type++;
 		break;
 	case 1:
                 tmpf=map_value_forward(*((double*)parm), 0.0, 50); 
