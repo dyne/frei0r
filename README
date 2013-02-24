@@ -6,49 +6,31 @@
     \___  /   |__|    \___  >__|\_____  /__|
         \/                \/          \/
 
-  Minimalistic plugin API for video effects  v.1.3
+  Minimalistic plugin API for video effects  v1.4
+		by the Piksel Developers Union
 
-http://frei0r.dyne.org	      	    by the Piksel Developers Union
+  Updated info on http://frei0r.dyne.org
 
-
-Table of Contents
-=================
-Introduction 
-    What Frei0r is 
-    What Frei0r is not 
-    Current status 
-    Code gallery 
-    History 
-Download 
-    Source code 
-        Build dependencies 
-    Debian / Ubuntu 
-    Apple / OSX 
-Documentation 
-    API explanation 
-    C++ Filter example 
-Communication 
-Acknowledgments 
 
 
 Introduction 
 ~~~~~~~~~~~~~
 
 
-What Frei0r is 
+What frei0r is 
 ===============
 
 Frei0r is a minimalistic plugin API for video effects.
 
-The main emphasis  is on simplicity for an API that  will round up the
+The main emphasis is on simplicity for an API that will round up the
 most common video effects into simple filters, sources and mixers that
 can be controlled by parameters.
 
 It's our hope that this way these simple effects can be shared between
-many  applications,  avoiding   their  reimplementation  by  different
+many applications, avoiding their reimplementation by different
 projects.
 
-What Frei0r is not 
+What frei0r is not 
 ===================
 
 Frei0r is not meant as a competing standard to more ambitious efforts
@@ -60,28 +42,16 @@ as it doesn't provides things like an extensive parameter mechanism or
 event handling.
 
 Eventually the frei0r API can be wrapped by higher level APIs
-expanding its functionalities (for instance as GStreamer, MLT, FFmpeg
-and others do).
+expanding its functionalities
+(for instance as GStreamer, MLT, FFmpeg and others do).
 
 Current status 
 ===============
 
-
-If you like to  peek in what's boiling in the pot,  have a look at our
-TODO
-
-Developers  are sporadically  contributing and  we are  happy  if more
+Developers are sporadically contributing and we are happy if more
 people like to get involved, so let us know about your creations! Code
-and  patches  are  well  accepted,   get  in  touch  with  us  on  the
-mailinglist.
-
-
-Code gallery 
-=============
- 
-You might want to look at the code in frei0r more in detail, then
-browse the existing effects by visiting the Frei0r plugin gallery
-online.
+and patches are well accepted, get in touch with us on the
+mailinglist (see the section Communication below).
 
 
 History 
@@ -91,12 +61,14 @@ Frei0r has been around since 2004, born from yearly brainstormings
 held at the Piksel conference with the participation of various free
 and open source video software developers.
 
-It is mostly adopted on GNU/Linux and OSX platforms, counts more than
-80 effects implemented and is used by free video applications as
-PureData, Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, MøB,
-VeeJay, MLT and KDEnLive among the others.
+It works on all hardware platforms without the need for any particular
+hardware acceleration (GNU/Linux, Apple/OSX and MS/Win) and consists
+of more than 100 plugins. Among the free and open source video
+application supporting frei0r are: KDEnLive, FFMpeg, MLT, PureData,
+Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, VeeJay and Flowblade
+among the others.
 
-Wikipedia page about Frei0r: http://en.wikipedia.org/wiki/Frei0r
+Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 
 
 [Piksel]: http://www.piksel.no
@@ -110,6 +82,7 @@ Wikipedia page about Frei0r: http://en.wikipedia.org/wiki/Frei0r
 [VeeJay]: http://veejayhq.net
 [MLT]: http://www.mltframework.org/
 [KDEnLive]: http://www.kdenlive.org/
+[Flowblade]: http://code.google.com/p/flowblade/
 
 
 Download 
@@ -120,7 +93,7 @@ Source code
 
 Stable frei0r releases are packaged periodically and distributed on
 
- ftp://ftp.dyne.org/frei0r
+ http://files.dyne.org/frei0r
 
 We encourage the unauthorized mirroring of this source repository by
 all those interested, using the command
@@ -139,48 +112,44 @@ revisioning system *GIT*
 Some clones made by developers are also found on github, but basically
 we coalesce around this repository online to pack releases. Make sure
 to get in touch with our mailinglist if you like to see your code in
-there.
+there (see the section Communication below).
 
 Build dependencies 
 -------------------
 
- + GNU autotools ( ./configure && make )
-   or
- + CMake ( cmake . && make )
-
 Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms,
-possibly in even more environments like embedded devices/
+possibly in even more environments like embedded devices.
 
-* Optional Dependencies 
-  
-  + [Gavl] ( required for scale0tilt and vectorscope filters )
-    [Gavl]: http://gmerlin.sourceforge.net
+For details see the INSTALL file, short and to the point.
 
-  + [OpenCV] (required for facebl0r filter )
-    [OpenCV]: http://opencvlibrary.sourceforge.net
+GNU / Linux
+============
 
-Debian / Ubuntu 
-================
+Binary packages are mantained on various distributions.
 
-Binary packages  are mantained  for Debian ([QA])  and Ubuntu  ([pkg]), to
-install the stable version distributed use *apt-get* or *synaptic*:
-
- sudo apt-get install frei0r-plugins
-
-
- [QA]: http://packages.qa.debian.org/f/frei0r.html
- [pkg]: http://packages.ubuntu.com/search?searchon=names&keywords=frei0r
+For an overview see http://oswatershed.org/pkg/frei0r-plugins
 
 Apple / OSX 
 ============
 
-[MacPorts] provide ready  to install packages for OSX:  in case you have
-this packaging system installed, you  just need to open a terminal and
-give the following command:
-
-sudo port install frei0r-plugins
-
+MacPorts provides packages for OSX:
 [MacPorts]: http://www.macports.org
+          $ sudo port install frei0r-plugins
+
+Pre-compiled binaries are also uploaded on our website.
+
+We encourage Apple/OSX application distributors to compile the plugins
+directly and to include frei0r within their bundle.
+
+
+
+Microsoft / Windows
+====================
+
+Pre-compiled binaries are uploaded on our website.
+
+We encourage MS/Win application distributors to compile the plugins
+directly and to include frei0r within their bundle.
 
 
 Documentation 
@@ -193,7 +162,7 @@ and well documented, or the doxygen code documentation in doc/
 API explanation 
 ================
 
-While  the main  source of  documentation for  the Frei0r  API  is the
+While  the main  source of  documentation for  the frei0r  API  is the
 header, the  sourcecode is  well commented so  you can study  its full
 [doxyfied documentation] online.
 
@@ -255,49 +224,26 @@ Communication
 You  can get  in touch  with our  developer community,  send  your new
 effects and share your intentions with us.
 
-We have a  free mailinglist open to subscription  on [frei0r-devel] with
-[public archives] that are also [searchable and indexed] online.
+We have a free mailinglist open to [subscription] and we provide
+[public archives] of the discussions there that are also searchable
+and indexed online.
 
-For   effective   and   indexed   bug   reporting   regarding   plugin
-implementations  and platform  builds,  here is  a publicly  available
-[issue tracker].
+For bug reporting the mailinglist is preferred, but is also possible
+to use an [issue tracker].
 
 
-[frei0r-devel]: https://piksel.no/mailman/listinfo/frei0r-devel
-[public archives]: http://piksel.no/pipermail/frei0r-devel/
-[searchable and indexed]: http://blog.gmane.org/gmane.comp.video.frei0r.devel
-[issue tracker]: http://www.piksel.no/projects/frei0r/report
+[subscribe]: http://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r
+[public archives]: http://lists.dyne.org/lurker/list/frei0r.en.html
+[issue tracker]: http://bugs.dyne.org
 
 Acknowledgments 
 ~~~~~~~~~~~~~~~~
 
-
 Frei0r is the result of a collective effort in coordination with
-several software developers meeting at [Piksel] between 2003 and 2005
-to find a common standard for video effect plugins to be used among
-their applications: Andraz Tori (Cinelerra/CVS), Daniel Fischer
-(Pakt/GStreamet), Denis Jaromil Rojo (FreeJ/Dyne), Gabriel "Salsaman"
-Finch (LiVES), Kentaro Fukuchi (EffecTV), Niels Elburg (VeeJay),
-Øyvind Kolås (Gegl/Babl/Gimp), Tom Schouten (PDP/PureData), Georg
-Seidel, Martin Bayer and Phillip Promesberger (Gephex).
+several software developers meeting to find a common standard for
+video effect plugins to be used among their applications.
 
-
-We first aimed at the realisation of a comprehensive specification for
-dynamically loaded plugins named LiViDO, which then spawned two
-implementations: one being Frei0r, a minimalistic implementation
-contributed by the Gephex team and the other one being the WEED
-implementation by LiVES developer Salsaman, sporting more features for
-GUI integration and scriptability.
-
-
-Within the span of a few years, the minimalistic approach of *frei0r*
-has been widely adopted among more applications and became a *de-facto
-standard*.  Maintenance and further refinements were contributed by
-Carlo Prelz (MøB/BEK), Richard Spindler (Open Movie Editor) and Dan
-Dennedy (MLT/KDEnLive), while Debian/Ubuntu packaging and build system
-standardization were taken care of by dyne.org developers Filippo
-Giunchedi and Luca Bigliardi.
-
----------------------------------------------------------------------
+For a full list of contributors and the project history, see the file
+AUTHORS, the ChangeLog and the project web page http://frei0r.dyne.org
 
 

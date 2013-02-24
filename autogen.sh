@@ -65,6 +65,7 @@ fi
 echo "Generating configuration files for $package, please wait...."
 
 echo "  $ACLOCAL"
+mkdir -p m4
 $ACLOCAL || exit -1
 echo "  $AUTOHEADER"
 $AUTOHEADER || exit -1

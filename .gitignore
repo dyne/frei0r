@@ -5,6 +5,7 @@ config.log
 config.status
 config.guess
 config.sub
+m4
 configure
 config.h.in
 cscope.out
