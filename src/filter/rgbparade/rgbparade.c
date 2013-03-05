@@ -45,6 +45,8 @@ typedef struct rgbparade {
 	gavl_video_scaler_t* parade_scaler;
 	gavl_video_frame_t* parade_frame_src;
 	gavl_video_frame_t* parade_frame_dst;
+  double mix;
+  double overlay_sides;
 } rgbparade_t;
 
 int f0r_init()
@@ -62,19 +64,36 @@ void f0r_get_plugin_info( f0r_plugin_info_t* info )
 	info->color_model = F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version = FREI0R_MAJOR_VERSION;
 	info->major_version = 0; 
-	info->minor_version = 1; 
-	info->num_params =  0; 
+	info->minor_version = 2; 
+	info->num_params =  2; 
 	info->explanation = "Displays a histogram of R, G and B of the video-data";
 }
 
 void f0r_get_param_info( f0r_param_info_t* info, int param_index )
-{ /* empty */ }
+{
+  switch(param_index)
+  {
+  case 0:
+    info->name = "mix";
+    info->type = F0R_PARAM_DOUBLE;
+    info->explanation = "The amount of source image mixed into background of display";
+    break;
+  case 1:
+    info->name = "overlay sides";
+    info->type = F0R_PARAM_BOOL;
+    info->explanation = "If false, the sides of image are shown without overlay";
+    break;
+  } 
+}
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
 	rgbparade_t* inst = (rgbparade_t*)calloc(1, sizeof(*inst));
 	inst->w = width;
 	inst->h = height;
+
+  inst->mix = 0.0;
+  inst->overlay_sides = 1.0;
 
 	inst->scala = (unsigned char*)malloc( width * height * 4 );
 
@@ -196,10 +215,36 @@ void f0r_destruct(f0r_instance_t instance)
 }
 
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
-{ /* empty */ }
+{  
+  assert(instance);
+  rgbparade_t* inst = (rgbparade_t*)instance;
+  
+  switch(param_index)
+  {
+  case 0:
+	  *((double *)param) = inst->mix;
+	  break;
+  case 1:
+	  *((double *)param) = inst->overlay_sides;
+	  break;
+  }
+}
 
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
-{ /* empty */ }
+{ 
+  assert(instance);
+  rgbparade_t* inst = (rgbparade_t*)instance;
+
+  switch(param_index)
+  {
+	case 0:
+	  inst->mix = *((double *)param);
+	  break;
+	case 1:
+	  inst->overlay_sides = *((double *)param);
+	  break;
+  }
+}
 
 void draw_grid(unsigned char* scope, double width, double height)
 {
@@ -230,7 +275,8 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	rgbparade_t* inst = (rgbparade_t*)instance;
 
 	int width = inst->w;
-	int height = inst->h;	
+	int height = inst->h;
+  double mix = inst->mix;
 	int len = inst->w * inst->h;
 	int parade_len = width * PARADE_HEIGHT;
 
@@ -250,9 +296,17 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	src_end = src + len;
 	parade_end = parade + parade_len;
 
-	while ( dst < dst_end ) {
-		*(dst++) = 0xFF000000;
-	}
+  if ( inst->overlay_sides > 0.5) {
+	  while ( dst < dst_end ) {
+		  *(dst++) = 0xFF000000;
+	  }
+  } else {
+	  while ( dst < dst_end ) {
+		  *(dst++) = *(src++);
+	  }
+    src -= len;
+  }
+
 	dst = outframe;
 	while ( parade < parade_end ) {
 		*(parade++) = 0xFF000000;
@@ -291,17 +345,34 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 
 	gavl_video_scaler_scale( inst->parade_scaler, inst->parade_frame_src, inst->parade_frame_dst );
 
-	unsigned char *scala8, *dst8, *dst8_end;
+	unsigned char *scala8, *dst8, *dst8_end, *src8;
 
 	scala8 = inst->scala;
+  src8 = (unsigned char*)inframe;
 	dst8 = (unsigned char*)outframe;
 	dst8_end = dst8 + ( len * 4 );
-	while ( dst8 < dst8_end ) {
-		dst8[0] = ( ( ( scala8[0] - dst8[0] ) * 255 * scala8[3] ) >> 16 ) + dst8[0];
-		dst8[1] = ( ( ( scala8[1] - dst8[1] ) * 255 * scala8[3] ) >> 16 ) + dst8[1];
-		dst8[2] = ( ( ( scala8[2] - dst8[2] ) * 255 * scala8[3] ) >> 16 ) + dst8[2];
-		scala8 += 4;
-		dst8 += 4;
-	}
+  if (mix > 0.001 ) { // to not lose performance for non-mixing users
+	  while ( dst8 < dst8_end ) {
+		  dst8[0] = ( ( ( scala8[0] - dst8[0] ) * 255 * scala8[3] ) >> 16 ) + dst8[0];
+		  dst8[1] = ( ( ( scala8[1] - dst8[1] ) * 255 * scala8[3] ) >> 16 ) + dst8[1];
+		  dst8[2] = ( ( ( scala8[2] - dst8[2] ) * 255 * scala8[3] ) >> 16 ) + dst8[2];
+		  if (dst8[0] == 0 && dst8[1] == 0 && dst8[2] == 0){
+        dst8[0] = src8[0] * mix;
+        dst8[1] = src8[1] * mix;
+        dst8[2] = src8[2] * mix;
+      }
+		  scala8 += 4;
+		  dst8 += 4;
+      src8 += 4;
+    }
+  } else {
+	  while ( dst8 < dst8_end ) {
+	    dst8[0] = ( ( ( scala8[0] - dst8[0] ) * 255 * scala8[3] ) >> 16 ) + dst8[0];
+	    dst8[1] = ( ( ( scala8[1] - dst8[1] ) * 255 * scala8[3] ) >> 16 ) + dst8[1];
+	    dst8[2] = ( ( ( scala8[2] - dst8[2] ) * 255 * scala8[3] ) >> 16 ) + dst8[2];
+	    scala8 += 4;
+	    dst8 += 4;
+    }
+  }
 }
 
