@@ -21,6 +21,7 @@
 
 
 #include <cairo.h>
+#include <string.h>
 
 /**
 * String identifiers for gradient types available using Cairo.
