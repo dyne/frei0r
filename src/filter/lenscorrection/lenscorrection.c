@@ -62,27 +62,27 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 	switch(param_index)
 	{
 		case 0:
-			info->name = "xcenter";
+			info->name = "X center";
 			info->type = F0R_PARAM_DOUBLE;
 			info->explanation = "";
 			break;
 		case 1:
-			info->name = "ycenter";
+			info->name = "Y center";
 			info->type = F0R_PARAM_DOUBLE;
 			info->explanation = "";
 			break;
 		case 2:
-			info->name = "correctionnearcenter";
+			info->name = "Correction near center";
 			info->type = F0R_PARAM_DOUBLE;
 			info->explanation = "";
 			break;
 		case 3:
-			info->name = "correctionnearedges";
+			info->name = "Correction near edges";
 			info->type = F0R_PARAM_DOUBLE;
 			info->explanation = "";
 			break;
 		case 4:
-			info->name = "brightness";
+			info->name = "Brightness";
 			info->type = F0R_PARAM_DOUBLE;
 			info->explanation = "";
 			break;
