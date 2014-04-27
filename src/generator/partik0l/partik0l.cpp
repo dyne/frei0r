@@ -38,6 +38,7 @@
 
 #include <time.h>
 #include <inttypes.h>
+#include <limits.h>
 
 /* defines for blob size and roundness */
 #define LIM 8 // 25
@@ -185,13 +186,13 @@ void Partik0l::update() {
 
 void Partik0l::blossom_recal(bool r) {
 
-  float z = ((PRIMES-2)*fastrand()/RAND_MAX)+1;
-  blossom_m = 1.0+(30.0)*fastrand()/RAND_MAX;
-  blossom_n = 1.0+(30.0)*fastrand()/RAND_MAX;
-  blossom_i = prime[ (int) (z*fastrand()/RAND_MAX) ];
-  blossom_j = prime[ (int) (z*fastrand()/RAND_MAX) ];
-  blossom_k = prime[ (int) (z*fastrand()/RAND_MAX) ];
-  blossom_l = prime[ (int) (z*fastrand()/RAND_MAX) ];
+  float z = ((PRIMES-2)*fastrand()/INT_MAX)+1;
+  blossom_m = 1.0+(30.0)*fastrand()/INT_MAX;
+  blossom_n = 1.0+(30.0)*fastrand()/INT_MAX;
+  blossom_i = prime[ (int) (z*fastrand()/INT_MAX) ];
+  blossom_j = prime[ (int) (z*fastrand()/INT_MAX) ];
+  blossom_k = prime[ (int) (z*fastrand()/INT_MAX) ];
+  blossom_l = prime[ (int) (z*fastrand()/INT_MAX) ];
   wd = (double)w;
   hd = (double)h;
   if(r)
