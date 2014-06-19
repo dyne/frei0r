@@ -61,6 +61,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # clang 3.1 on OSX fails to compile this one
   add_subdirectory (measure)
 endif ()
+add_subdirectory (ndvi)
 add_subdirectory (nervous)
 add_subdirectory (nosync0r)
 add_subdirectory (perspective)
