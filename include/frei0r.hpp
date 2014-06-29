@@ -86,11 +86,11 @@ namespace frei0r
       s_params.push_back(param_info(name,desc,F0R_PARAM_POSITION));
     }
     
-    void register_param(const std::string& p_loc,
+    void register_param(std::string& p_loc,
 			const std::string& name,
 			const std::string& desc)
     {
-      param_ptrs.push_back(new std::string(p_loc));
+      param_ptrs.push_back(&p_loc);
       s_params.push_back(param_info(name,desc,F0R_PARAM_STRING));
     }
     
@@ -147,10 +147,9 @@ namespace frei0r
 	    =  *static_cast<f0r_param_position*>(param);
 	    break;
 	case F0R_PARAM_STRING:
-	  delete static_cast<std::string*>(ptr);
-	  param_ptrs[param_index]
-	    = new std::string(*static_cast<f0r_param_string*>(param));
-	  break;
+	    *static_cast<std::string*>(ptr)
+	      = *static_cast<f0r_param_string*>(param);
+	    break;
 	}
       
     }
@@ -165,10 +164,6 @@ namespace frei0r
     
     virtual ~fx()
     {
-      for (int i = 0; i < s_params.size(); i++) {
-        if (s_params[i].m_type == F0R_PARAM_STRING)
-          delete static_cast<std::string*>(param_ptrs[i]);
-      }
     }
   };
   
