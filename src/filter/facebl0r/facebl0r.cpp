@@ -35,8 +35,6 @@ typedef struct {
   CvBox2D curr_box;  //current face location estimate
 } TrackedObj;
 
-#define FACEBL0R_PARAM_CLASSIFIER (0)
-
 class FaceBl0r: public frei0r::filter {
 
 public:
@@ -68,6 +66,7 @@ private:
     CvMemStorage* storage;
 
     // plugin parameters
+    std::string classifier;
     f0r_param_bool ellipse;
     f0r_param_double recheck;
     f0r_param_double threads;
@@ -76,8 +75,7 @@ private:
     f0r_param_double smallest;
     f0r_param_double largest;
 
-    f0r_param_string classifier;
-    char old_classifier[512];
+    std::string old_classifier;
   
 
     unsigned int face_found;
@@ -100,7 +98,8 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   cascade = 0;
   storage = 0;
   
-  register_param("/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
+  classifier = "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml";
+  register_param(classifier,
                  "Classifier",
                  "Full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades");
   ellipse = false;
@@ -133,18 +132,17 @@ void FaceBl0r::update() {
 
   if (!cascade) {
       cvSetNumThreads(cvRound(threads * 100));
-      get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
-      if (classifier && strcmp(classifier, "")) {
-	if ( strcmp(classifier, old_classifier) == 0) {
+      if (classifier.length() > 0) {
+	if (classifier == old_classifier) {
 	  // same as before, avoid repeating error messages
 	  memcpy(out, in, size * 4); // of course assuming we are RGBA only
 	  return;
-	} else strcpy(old_classifier, classifier);
+	} else old_classifier = classifier;
 
-	cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
+	cascade = (CvHaarClassifierCascade*) cvLoad(classifier.c_str(), 0, 0, 0 );
 	if (!cascade) {
 	  fprintf(stderr, "ERROR in filter facebl0r, classifier cascade not found:\n");
-	  fprintf(stderr, " %s\n", classifier);
+	  fprintf(stderr, " %s\n", classifier.c_str());
 	  memcpy(out, in, size * 4);
 	  return;
 	}
