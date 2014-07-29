@@ -32,8 +32,6 @@
 #define USE_ROI
 #define PAD (40)
 
-#define FACEBL0R_PARAM_CLASSIFIER (0)
-
 class FaceDetect;
 frei0r::construct<FaceDetect> plugin("opencvfacedetect",
 				  "detect faces and draw shapes on them",
@@ -52,6 +50,7 @@ private:
     CvHaarClassifierCascade *cascade;
 
     // plugin parameters
+    std::string classifier;
     f0r_param_double shape;
     f0r_param_double recheck;
     f0r_param_double threads;
@@ -73,7 +72,8 @@ public:
         , cascade(0)
     {
         roi.width = roi.height = 0;
-        register_param("/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
+        classifier = "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml";
+        register_param(classifier,
                        "Classifier",
                        "Full path to the XML pattern model for recognition; look in /usr/share/opencv/haarcascades"); 
         threads = 0.01; //number of CPUs
@@ -124,12 +124,10 @@ public:
     {
         if (!cascade) {
             cvSetNumThreads(cvRound(threads * 100));
-            f0r_param_string classifier;
-            get_param_value(&classifier, FACEBL0R_PARAM_CLASSIFIER);
-            if (classifier && strcmp(classifier, "")) {
-                cascade = (CvHaarClassifierCascade*) cvLoad(classifier, 0, 0, 0 );
+            if (classifier.length() > 0) {
+                cascade = (CvHaarClassifierCascade*) cvLoad(classifier.c_str(), 0, 0, 0 );
                 if (!cascade)
-                    fprintf(stderr, "ERROR: Could not load classifier cascade %s\n", classifier);
+                    fprintf(stderr, "ERROR: Could not load classifier cascade %s\n", classifier.c_str());
                 storage = cvCreateMemStorage(0);
             }
             else {
