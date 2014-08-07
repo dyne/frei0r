@@ -23,13 +23,24 @@
 #include <stdlib.h>
 
 /**
-This filter calculates NDVI values from near-infrared + blue (infrablue) video.
-The NDVI values are mapped to a false color image.
+This filter calculates NDVI or VI values from near-infrared + visible video.
+The index values are mapped to a false color image.
 */
 
 static inline double N2P(double ndvi) {
-    // Convert NDVi value (-1 to 1) to position (0 to 1).
+    // Convert an index value (-1.0 to 1.0) to position (0.0 to 1.0).
     return (ndvi + 1.0) / 2.0;
+}
+
+static unsigned int ColorIndex(const std::string& str) {
+    // Convert a color initial to a component index.
+    if(str == "r" || str == "R") {
+        return 0;
+    } else if(str == "g" || str == "G") {
+        return 1;
+    } else { // "b"
+        return 2;
+    }
 }
 
 class Ndvi : public frei0r::filter
@@ -40,6 +51,8 @@ public:
 
 private:
     void initLut();
+    double getComponent(uint8_t *sample, unsigned int chan, double offset, double scale);
+    void setColor(uint8_t *sample, double index);
 
     double paramLutLevels;
     std::string paramColorMap;
@@ -47,6 +60,9 @@ private:
     double paramVisOffset;
     double paramNirScale;
     double paramNirOffset;
+    std::string paramVisChan;
+    std::string paramNirChan;
+    std::string paramIndex;
     unsigned int lutLevels;
     std::string colorMap;
     GradientLut gradient;
@@ -59,6 +75,8 @@ Ndvi::Ndvi(unsigned int width, unsigned int height)
  , paramVisOffset(0.5)
  , paramNirScale(0.1)
  , paramNirOffset(0.5)
+ , paramVisChan("b")
+ , paramNirChan("r")
  , lutLevels(0)
  , colorMap("")
  , gradient()
@@ -75,6 +93,12 @@ Ndvi::Ndvi(unsigned int width, unsigned int height)
             "A scaling factor to be applied to the near-infrared component (divided by 10).");
     register_param(paramNirOffset, "NIR Offset",
             "An offset to be applied to the near-infrared component (mapped to [-100%, 100%].");
+    register_param(paramVisChan,  "Visible Channel",
+            "The channel to use for the visible component. One of 'r', 'g', or 'b'.");
+    register_param(paramNirChan,  "NIR Channel",
+            "The channel to use for the near-infrared component. One of 'r', 'g', or 'b'.");
+    register_param(paramIndex,  "Index Calculation",
+            "The index calculation to use. One of 'ndvi' or 'vi'.");
 }
 
 void Ndvi::update() {
@@ -84,25 +108,29 @@ void Ndvi::update() {
     double visOffset =  (paramVisOffset * 510) - 255;
     double nirScale = paramNirScale * 10.0;
     double nirOffset = (paramNirOffset * 510) - 255;
+    unsigned int visChan = ColorIndex(paramVisChan);
+    unsigned int nirChan = ColorIndex(paramNirChan);
 
     initLut();
 
-    for (int i = 0; i < size; i++) {
-        double vis =  inP[2]; // blue channel
-        double nir =  inP[0]; // red channel
-        vis = (vis + visOffset) * visScale;
-        vis = CLAMP(vis, 0.0, 255.0);
-        nir = (nir + nirOffset) * nirScale;
-        nir = CLAMP(nir, 0.0, 255.0);
-        double ndvi = (nir -vis) / (nir + vis);
-        double pos = N2P(ndvi);
-        const GradientLut::Color& falseColor = gradient[pos];
-        outP[0] = falseColor.r;
-        outP[1] = falseColor.g;
-        outP[2] = falseColor.b;
-        outP[3] = 0xff;
-        inP += 4;
-        outP += 4;
+    if (paramIndex == "vi") {
+        for (int i = 0; i < size; i++) {
+            double vis =  getComponent(inP, visChan, visOffset, visScale);
+            double nir =  getComponent(inP, nirChan, nirOffset, nirScale);
+            double vi = (nir - vis) / 255.0;
+            setColor(outP, vi);
+            inP += 4;
+            outP += 4;
+        }
+    } else { // ndvi
+        for (int i = 0; i < size; i++) {
+            double vis =  getComponent(inP, visChan, visOffset, visScale);
+            double nir =  getComponent(inP, nirChan, nirOffset, nirScale);
+            double ndvi = (nir - vis) / (nir + vis);
+            setColor(outP, ndvi);
+            inP += 4;
+            outP += 4;
+        }
     }
 }
 
@@ -170,8 +198,26 @@ void Ndvi::initLut() {
     }
 }
 
+inline double Ndvi::getComponent(uint8_t *sample, unsigned int chan, double offset, double scale)
+{
+    double c =  sample[chan];
+    c = (c + offset) * scale;
+    c = CLAMP(c, 0.0, 255.0);
+    return c;
+}
+
+inline void Ndvi::setColor(uint8_t *sample, double index)
+{
+    double pos = N2P(index);
+    const GradientLut::Color& falseColor = gradient[pos];
+    sample[0] = falseColor.r;
+    sample[1] = falseColor.g;
+    sample[2] = falseColor.b;
+    sample[3] = 0xff;
+}
+
 frei0r::construct<Ndvi> plugin("NDVI filter",
-            "This filter creates a NDVI false image from an infrablue source.",
+            "This filter creates a false image from a visible + infrared source.",
             "Brian Matherly",
             0,1,
             F0R_COLOR_MODEL_RGBA8888);
