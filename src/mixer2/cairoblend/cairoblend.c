@@ -182,7 +182,11 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   unsigned char* src = (unsigned char*)inframe1;
   unsigned char* dst = (unsigned char*)inframe2;
   unsigned char* out = (unsigned char*)outframe;
+  int pixels = inst->width * inst->height;
 
+  frei0r_cairo_premultiply_rgba (src, pixels);
+  frei0r_cairo_premultiply_rgba (dst, pixels);
   draw_composite (inst, out, src, dst, time);
+  frei0r_cairo_unpremultiply_rgba (out, pixels);
 }
 

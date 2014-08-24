@@ -220,4 +220,40 @@ double frei0r_cairo_get_scale (double norm_scale)
   return norm_scale * 5.0;
 }
 
+/**
+ * Convert frei0r RGBA to pre-multiplied alpha as needed by Cairo.
+ *
+ * \param rgba the image buffer with format F0R_COLOR_MODEL_RGBA8888
+ * \param pixels the size of the image buffer in number of pixels
+ * \see frei0r_cairo_unpremultiply_rgba
+ */
+void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels)
+{
+  int i = pixels + 1;
+  while ( --i ) {
+    register unsigned char a = rgba[3];
+    rgba[0] = ( rgba[0] * a ) >> 8;
+    rgba[1] = ( rgba[1] * a ) >> 8;
+    rgba[2] = ( rgba[2] * a ) >> 8;
+    rgba += 4;
+  }
+}
 
+/**
+ * Convert Cairo ARGB pre-multiplied alpha to frei0r straight RGBA.
+ *
+ * \param rgba the image buffer with format CAIRO_FORMAT_ARGB32
+ * \param pixels the size of the image buffer in number of pixels
+ * \see frei0r_cairo_premultiply_rgba
+ */
+void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
+{
+  int i = pixels + 1;
+  while ( --i ) {
+    register unsigned char a = rgba[3];
+    rgba[0] = ( rgba[0] << 8 ) / a;
+    rgba[1] = ( rgba[1] << 8 ) / a;
+    rgba[2] = ( rgba[2] << 8 ) / a;
+    rgba += 4;
+  }
+}
