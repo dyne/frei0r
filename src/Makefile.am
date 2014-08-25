@@ -79,7 +79,7 @@ plugin_LTLIBRARIES = \
 	mask0mate.la \
 	medians.la \
 	multiply.la \
-    ndvi.la \
+	ndvi.la \
 	nervous.la \
 	nois0r.la \
 	nosync0r.la \
@@ -178,6 +178,9 @@ plugin_LTLIBRARIES += cairoblend.la
 cairoblend_la_SOURCES = mixer2/cairoblend/cairoblend.c
 cairoblend_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
 cairoblend_la_LIBADD = @CAIRO_LIBS@
+
+ndvi_la_CPPFLAGS = @CAIRO_CFLAGS@ @CPPFLAGS@ -DHAVE_CAIRO
+ndvi_la_LIBADD = @CAIRO_LIBS@
 endif
 
 #
@@ -229,7 +232,7 @@ lightgraffiti_la_SOURCES = filter/lightgraffiti/lightgraffiti.cpp
 luminance_la_SOURCES = filter/luminance/luminance.c
 mask0mate_la_SOURCES = filter/mask0mate/mask0mate.c
 medians_la_SOURCES = filter/medians/medians.c filter/medians/ctmf.h filter/medians/small_medians.h
-ndvi_la_SOURCES = filter/ndvi/ndvi.cpp
+ndvi_la_SOURCES = filter/ndvi/ndvi.cpp filter/ndvi/gradientlut.hpp
 nervous_la_SOURCES = filter/nervous/nervous.cpp
 nosync0r_la_SOURCES = filter/nosync0r/nosync0r.cpp
 partik0l_la_SOURCES = generator/partik0l/partik0l.cpp
