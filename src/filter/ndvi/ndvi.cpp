@@ -15,7 +15,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+#ifdef HAVE_CAIRO
+#include <cairo.h>
+#endif
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 #include "gradientlut.hpp"
@@ -23,13 +25,24 @@
 #include <stdlib.h>
 
 /**
-This filter calculates NDVI values from near-infrared + blue (infrablue) video.
-The NDVI values are mapped to a false color image.
+This filter calculates NDVI or VI values from near-infrared + visible video.
+The index values are mapped to a false color image.
 */
 
 static inline double N2P(double ndvi) {
-    // Convert NDVi value (-1 to 1) to position (0 to 1).
+    // Convert an index value (-1.0 to 1.0) to position (0.0 to 1.0).
     return (ndvi + 1.0) / 2.0;
+}
+
+static unsigned int ColorIndex(const std::string& str) {
+    // Convert a color initial to a component index.
+    if(str == "r" || str == "R") {
+        return 0;
+    } else if(str == "g" || str == "G") {
+        return 1;
+    } else { // "b"
+        return 2;
+    }
 }
 
 class Ndvi : public frei0r::filter
@@ -40,6 +53,12 @@ public:
 
 private:
     void initLut();
+    double getComponent(uint8_t *sample, unsigned int chan, double offset, double scale);
+    void setColor(uint8_t *sample, double index);
+    void drawLegend();
+    void drawRect( uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h );
+    void drawGradient( unsigned int x, unsigned int y, unsigned int w, unsigned int h );
+    void drawText( std::string text, unsigned int x, unsigned int y, unsigned int textHeight );
 
     double paramLutLevels;
     std::string paramColorMap;
@@ -47,6 +66,10 @@ private:
     double paramVisOffset;
     double paramNirScale;
     double paramNirOffset;
+    std::string paramVisChan;
+    std::string paramNirChan;
+    std::string paramIndex;
+    std::string paramLegend;
     unsigned int lutLevels;
     std::string colorMap;
     GradientLut gradient;
@@ -59,6 +82,10 @@ Ndvi::Ndvi(unsigned int width, unsigned int height)
  , paramVisOffset(0.5)
  , paramNirScale(0.1)
  , paramNirOffset(0.5)
+ , paramVisChan("b")
+ , paramNirChan("r")
+ , paramIndex("ndvi")
+ , paramLegend("off")
  , lutLevels(0)
  , colorMap("")
  , gradient()
@@ -75,6 +102,14 @@ Ndvi::Ndvi(unsigned int width, unsigned int height)
             "A scaling factor to be applied to the near-infrared component (divided by 10).");
     register_param(paramNirOffset, "NIR Offset",
             "An offset to be applied to the near-infrared component (mapped to [-100%, 100%].");
+    register_param(paramVisChan,  "Visible Channel",
+            "The channel to use for the visible component. One of 'r', 'g', or 'b'.");
+    register_param(paramNirChan,  "NIR Channel",
+            "The channel to use for the near-infrared component. One of 'r', 'g', or 'b'.");
+    register_param(paramIndex,  "Index Calculation",
+            "The index calculation to use. One of 'ndvi' or 'vi'.");
+    register_param(paramLegend,  "Legend",
+            "Control legend display. One of 'off' or 'bottom'.");
 }
 
 void Ndvi::update() {
@@ -84,25 +119,33 @@ void Ndvi::update() {
     double visOffset =  (paramVisOffset * 510) - 255;
     double nirScale = paramNirScale * 10.0;
     double nirOffset = (paramNirOffset * 510) - 255;
+    unsigned int visChan = ColorIndex(paramVisChan);
+    unsigned int nirChan = ColorIndex(paramNirChan);
 
     initLut();
 
-    for (int i = 0; i < size; i++) {
-        double vis =  inP[2]; // blue channel
-        double nir =  inP[0]; // red channel
-        vis = (vis + visOffset) * visScale;
-        vis = CLAMP(vis, 0.0, 255.0);
-        nir = (nir + nirOffset) * nirScale;
-        nir = CLAMP(nir, 0.0, 255.0);
-        double ndvi = (nir -vis) / (nir + vis);
-        double pos = N2P(ndvi);
-        const GradientLut::Color& falseColor = gradient[pos];
-        outP[0] = falseColor.r;
-        outP[1] = falseColor.g;
-        outP[2] = falseColor.b;
-        outP[3] = 0xff;
-        inP += 4;
-        outP += 4;
+    if (paramIndex == "vi") {
+        for (int i = 0; i < size; i++) {
+            double vis =  getComponent(inP, visChan, visOffset, visScale);
+            double nir =  getComponent(inP, nirChan, nirOffset, nirScale);
+            double vi = (nir - vis) / 255.0;
+            setColor(outP, vi);
+            inP += 4;
+            outP += 4;
+        }
+    } else { // ndvi
+        for (int i = 0; i < size; i++) {
+            double vis =  getComponent(inP, visChan, visOffset, visScale);
+            double nir =  getComponent(inP, nirChan, nirOffset, nirScale);
+            double ndvi = (nir - vis) / (nir + vis);
+            setColor(outP, ndvi);
+            inP += 4;
+            outP += 4;
+        }
+    }
+
+    if( paramLegend == "bottom" ) {
+        drawLegend();
     }
 }
 
@@ -170,8 +213,118 @@ void Ndvi::initLut() {
     }
 }
 
+inline double Ndvi::getComponent(uint8_t *sample, unsigned int chan, double offset, double scale)
+{
+    double c =  sample[chan];
+    c = (c + offset) * scale;
+    c = CLAMP(c, 0.0, 255.0);
+    return c;
+}
+
+inline void Ndvi::setColor(uint8_t *sample, double index)
+{
+    double pos = N2P(index);
+    const GradientLut::Color& falseColor = gradient[pos];
+    sample[0] = falseColor.r;
+    sample[1] = falseColor.g;
+    sample[2] = falseColor.b;
+    sample[3] = 0xff;
+}
+
+void Ndvi::drawLegend()
+{
+    unsigned int legendHeight = height / 20;
+
+    // Black border above legend
+    unsigned int borderHeight = legendHeight / 15;
+    unsigned int borderY = height - legendHeight;
+    drawRect( 0, 0, 0, 0, borderY, width, borderHeight );
+
+    // Gradient
+    unsigned int gradientHeight = legendHeight - borderHeight;
+    unsigned int gradientY = height - gradientHeight;
+    drawGradient( 0, gradientY, width, gradientHeight );
+
+    // Text
+    unsigned int textHeight = gradientHeight * 8 / 10;
+    unsigned int textY = height - ( gradientHeight - textHeight ) / 2;
+    unsigned int textX = width / 25;
+    if (paramIndex == "vi") {
+        drawText( "0", textX, textY , textHeight );
+        drawText( "VI", width / 2, textY , textHeight );
+        drawText( "1", width - textX, textY , textHeight );
+    } else { // ndvi
+        drawText( "-1", textX, textY , textHeight );
+        drawText( "NDVI", width / 2, textY , textHeight );
+        drawText( "1", width - textX, textY , textHeight );
+    }
+}
+
+void Ndvi::drawRect( uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h )
+{
+    for (unsigned int i = 0; i < h; i++) {
+        uint8_t *sample = (uint8_t*)(out + ((i + y) * width) + x);
+        for (unsigned int j = 0; j < w; j++) {
+            sample[0] = r;
+            sample[1] = g;
+            sample[2] = b;
+            sample += 4;
+        }
+    }
+}
+
+void Ndvi::drawGradient( unsigned int x, unsigned int y, unsigned int w, unsigned int h )
+{
+    for (unsigned int i = 0; i < w; i++) {
+        double pos = (double)i / (double)w;
+        const GradientLut::Color& falseColor = gradient[pos];
+        uint8_t *sample = (uint8_t*)(out + (y * width) + x + i);
+        for (unsigned int j = 0; j < h; j++) {
+            sample[0] = falseColor.r;
+            sample[1] = falseColor.g;
+            sample[2] = falseColor.b;
+            sample += width * 4;
+        }
+    }
+}
+
+void Ndvi::drawText( std::string text, unsigned int x, unsigned int y, unsigned int textHeight )
+{
+#ifdef HAVE_CAIRO
+    int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, width);
+    cairo_surface_t* surface = cairo_image_surface_create_for_data((unsigned char*)out,
+                                                                   CAIRO_FORMAT_ARGB32,
+                                                                   width,
+                                                                   height,
+                                                                   stride);
+    cairo_t *cr = cairo_create(surface);
+    cairo_text_extents_t te;
+    cairo_font_extents_t fe;
+
+    cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, textHeight);
+    cairo_text_extents(cr, text.c_str(), &te);
+    cairo_font_extents(cr, &fe);
+
+    // Center text on x
+    x -= te.width / 2;
+    // Align bottom of text on y (assume no characters go below baseline)
+    y -= (fe.height - fe.ascent + 1) / 2;
+
+    cairo_move_to(cr, x, y);
+    cairo_text_path(cr, text.c_str());
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_fill_preserve(cr);
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_set_line_width(cr, textHeight / 20);
+    cairo_stroke (cr);
+    cairo_surface_destroy (surface);
+    cairo_destroy(cr);
+#endif
+}
+
 frei0r::construct<Ndvi> plugin("NDVI filter",
-            "This filter creates a NDVI false image from an infrablue source.",
+            "This filter creates a false image from a visible + infrared source.",
             "Brian Matherly",
             0,1,
             F0R_COLOR_MODEL_RGBA8888);
