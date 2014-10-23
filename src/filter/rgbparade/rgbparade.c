@@ -164,7 +164,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	gavl_video_frame_destroy( frame_src );
 	gavl_video_frame_null( frame_dst );
 	gavl_video_frame_destroy( frame_dst );
-	gavl_video_frame_null( padded );
 	gavl_video_frame_destroy( padded );
 	
 	options = gavl_video_scaler_get_options( inst->parade_scaler );
@@ -374,5 +373,6 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			dst8 += 4;
 		}
 	}
+	free(parade);
 }
 
