@@ -179,17 +179,21 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	frame_src->planes[0] = (uint8_t *)vectorscope_image.pixel_data;
 	frame_dst->planes[0] = (uint8_t *)inst->scala;
 	
+	/* Pad the source image to make the stride a multiple of 16. */
+	gavl_video_frame_t* padded = gavl_video_frame_create( &format_src );
+	gavl_video_frame_copy( &format_src, padded, frame_src );
+	
 	float transparent[4] = { 0.0, 0.0, 0.0, 0.0 };
 	gavl_video_frame_fill( frame_dst, &format_dst, transparent );
-	//gavl_video_frame_clear( frame_dst, &format_dst );
 	
-	gavl_video_scaler_scale( video_scaler, frame_src, frame_dst );
+	gavl_video_scaler_scale( video_scaler, padded, frame_dst );
 	
 	gavl_video_scaler_destroy(video_scaler);
 	gavl_video_frame_null( frame_src );
 	gavl_video_frame_destroy( frame_src );
 	gavl_video_frame_null( frame_dst );
 	gavl_video_frame_destroy( frame_dst );
+	gavl_video_frame_destroy( padded );
 	
 	inst->scope_scaler = gavl_video_scaler_create();
 	inst->scope_frame_src = gavl_video_frame_create(0);
