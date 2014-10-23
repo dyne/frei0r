@@ -34,6 +34,8 @@ typedef struct scale0tilt_instance {
 	gavl_video_frame_t* frame_src;
 	gavl_video_frame_t* frame_dst;
 	int do_scale;
+	gavl_video_format_t format_src;
+	gavl_video_frame_t* padded;
 } scale0tilt_instance_t;
 
 void update_scaler( scale0tilt_instance_t* inst )
@@ -87,10 +89,9 @@ void update_scaler( scale0tilt_instance_t* inst )
 
 	gavl_video_options_t* options = gavl_video_scaler_get_options( inst->video_scaler );
 
-	gavl_video_format_t format_src;
 	gavl_video_format_t format_dst;
 
-	memset(&format_src, 0, sizeof(format_src));
+	memset(&inst->format_src, 0, sizeof(inst->format_src));
 	memset(&format_dst, 0, sizeof(format_dst));
 
 	format_dst.frame_width  = inst->w;
@@ -101,13 +102,13 @@ void update_scaler( scale0tilt_instance_t* inst )
 	format_dst.pixel_height = 1;
 	format_dst.pixelformat = GAVL_RGBA_32;
 	
-	format_src.frame_width  = inst->w;
-	format_src.frame_height = inst->h;
-	format_src.image_width  = inst->w;
-	format_src.image_height = inst->h;
-	format_src.pixel_width = 1;
-	format_src.pixel_height = 1;
-	format_src.pixelformat = GAVL_RGBA_32;
+	inst->format_src.frame_width  = inst->w;
+	inst->format_src.frame_height = inst->h;
+	inst->format_src.image_width  = inst->w;
+	inst->format_src.image_height = inst->h;
+	inst->format_src.pixel_width = 1;
+	inst->format_src.pixel_height = 1;
+	inst->format_src.pixelformat = GAVL_RGBA_32;
 
 	gavl_rectangle_f_t src_rect;
 	gavl_rectangle_i_t dst_rect;
@@ -123,7 +124,7 @@ void update_scaler( scale0tilt_instance_t* inst )
 	dst_rect.h = lroundf(dst_h);
 	
 	gavl_video_options_set_rectangles( options, &src_rect, &dst_rect );
-	gavl_video_scaler_init( inst->video_scaler, &format_src, &format_dst );
+	gavl_video_scaler_init( inst->video_scaler, &inst->format_src, &format_dst );
 }
 
 int f0r_init()
@@ -203,8 +204,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	inst->frame_src = gavl_video_frame_create( 0 );
 	inst->frame_dst = gavl_video_frame_create( 0 );
 	inst->frame_src->strides[0] = width * 4;
-	inst->frame_dst->strides[0] = width * 4;
+    inst->frame_dst->strides[0] = width * 4;
 	update_scaler(inst);
+	if ( inst->frame_src->strides[0] % 16 )
+		inst->padded = gavl_video_frame_create( &inst->format_src );
 	return (f0r_instance_t)inst;
 }
 void f0r_destruct(f0r_instance_t instance)
@@ -215,6 +218,8 @@ void f0r_destruct(f0r_instance_t instance)
 	gavl_video_frame_destroy( inst->frame_src );
 	gavl_video_frame_null( inst->frame_dst );
 	gavl_video_frame_destroy( inst->frame_dst );
+	if ( inst->padded )
+		gavl_video_frame_destroy( inst->padded );
 	free(instance);
 }
 void f0r_set_param_value(f0r_instance_t instance, 
@@ -284,6 +289,7 @@ void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
 	scale0tilt_instance_t* inst = (scale0tilt_instance_t*)instance;
+	gavl_video_frame_t* frame_src = inst->frame_src;
 	inst->frame_src->planes[0] = (uint8_t *)inframe;
 	inst->frame_dst->planes[0] = (uint8_t *)outframe;
 	int len = inst->w * inst->h;
@@ -291,7 +297,12 @@ void f0r_update(f0r_instance_t instance, double time,
 	for ( i = 0; i < len; i++ ) {
 		outframe[i] = 0;
 	}
-	if(inst->do_scale)
-		gavl_video_scaler_scale( inst->video_scaler, inst->frame_src, inst->frame_dst );
+	if ( inst->do_scale ) {
+		if ( inst->padded ) {
+			gavl_video_frame_copy( &inst->format_src, inst->padded, frame_src );
+			frame_src = inst->padded;
+		}
+		gavl_video_scaler_scale( inst->video_scaler, frame_src, inst->frame_dst );
+	}
 }
 
