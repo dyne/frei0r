@@ -385,5 +385,6 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			dst8 += 4;
 		}
 	}
+	free(scope);
 }
 
