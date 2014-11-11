@@ -251,9 +251,11 @@ void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
   int i = pixels + 1;
   while ( --i ) {
     register unsigned char a = rgba[3];
-    rgba[0] = ( rgba[0] << 8 ) / a;
-    rgba[1] = ( rgba[1] << 8 ) / a;
-    rgba[2] = ( rgba[2] << 8 ) / a;
+	if (a != 0) {
+		rgba[0] = ( rgba[0] << 8 ) / a;
+		rgba[1] = ( rgba[1] << 8 ) / a;
+		rgba[2] = ( rgba[2] << 8 ) / a;
+	}
     rgba += 4;
   }
 }
