@@ -7,6 +7,7 @@
  *
  *				Paul Haeberli - 1993
  */
+#include "frei0r_math.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -26,13 +27,6 @@
 #define OFFSET_G        1
 #define OFFSET_B        2
 #define OFFSET_A        3
-
-unsigned char CLAMP0255(int32_t a)
-{
-  return (unsigned char)
-    ( (((-a) >> 31) & a)  // 0 if the number was negative
-      | (255 - a) >> 31); // -1 if the number was greater than 255
-}
 
 /* 
  *	printmat -	

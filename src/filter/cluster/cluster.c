@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #include "frei0r.h"
+#include "frei0r_math.h"
 
 #define MAXNUM 40
 
@@ -63,14 +64,6 @@ typedef struct cluster_instance
 
 	int initted;
 } cluster_instance_t;
-
-/* Clamps a int32-range int between 0 and 255 inclusive. */
-unsigned char CLAMP0255(int32_t a)
-{
-  return (unsigned char)
-    ( (((-a) >> 31) & a)  // 0 if the number was negative
-      | (255 - a) >> 31); // -1 if the number was greater than 255
-}
 
 
 int f0r_init()
