@@ -31,7 +31,11 @@ public:
     color.r = color.g = color.b = 0;
   }
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     unsigned int col;
     unsigned char* c = reinterpret_cast<unsigned char*>(&col);
@@ -52,5 +56,5 @@ private:
 frei0r::construct<onecol0r> plugin("onecol0r",
 				   "image with just one color",
 				   "Martin Bayer",
-				   0,2);
+				   0,3);
 

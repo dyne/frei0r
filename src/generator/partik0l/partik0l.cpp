@@ -52,7 +52,11 @@ public:
   Partik0l(unsigned int width, unsigned int height);
   ~Partik0l();
   
-  void update();
+  void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3);
 
   int w, h;
 
@@ -81,8 +85,8 @@ private:
   double wd, hd;
 
 
-  void blob(int x, int y);
-  void blossom();
+  void blob(uint32_t* out, int x, int y);
+  void blossom(uint32_t* out);
   void blob_init(int ray);
   void blossom_recal(bool r);
 
@@ -156,7 +160,11 @@ Partik0l::~Partik0l() {
 
 
 
-void Partik0l::update() {
+void Partik0l::update(double time,
+                      uint32_t* out,
+		              const uint32_t* in1,
+		              const uint32_t* in2,
+		              const uint32_t* in3) {
   /* automatic random recalculation:
      if( !blossom_count ) {    
      recalculate();
@@ -180,7 +188,7 @@ void Partik0l::update() {
 
   memset(out,0,size);
 
-  blossom();
+  blossom(out);
 
 }
 
@@ -201,7 +209,7 @@ void Partik0l::blossom_recal(bool r) {
     blossom_r = (blossom_r<=0.1)?0.1:blossom_r-0.1;
 }  
 
-void Partik0l::blossom() {
+void Partik0l::blossom(uint32_t* out) {
   
   float	a;
   int x, y;
@@ -218,7 +226,7 @@ void Partik0l::blossom() {
     y = (int)(hd*(0.47+ (blossom_r*cos(blossom_j*zx+blossom_a)+
 			 (1.0-blossom_r)*cos(blossom_l*zy+blossom_a)) /2.2 ));
     
-    blob(x,y);
+    blob(out, x,y);
     
   } 
 
@@ -263,7 +271,7 @@ void Partik0l::blob_init(int ray) {
 }
   
 
-void Partik0l::blob(int x, int y) {
+void Partik0l::blob(uint32_t* out, int x, int y) {
   //  if(y>h-blob_size) return;
   //  if(x>w-blob_size) return;
 
@@ -368,4 +376,4 @@ bool Partik0l::keypress(int key) {
 frei0r::construct<Partik0l> plugin("Partik0l",
 				 "Particles generated on prime number sinusoidal blossoming",
 				 "Jaromil",
-				 0,2);
+				 0,3);

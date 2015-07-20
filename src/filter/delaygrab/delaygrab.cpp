@@ -59,7 +59,11 @@ public:
   DelayGrab(int wdt, int hgt);
   ~DelayGrab();
 
-  virtual void update();
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3);
 
 
 private:
@@ -135,7 +139,11 @@ DelayGrab::~DelayGrab() {
 
 
 
-void DelayGrab::update() {
+void DelayGrab::update(double time,
+                       uint32_t* out,
+		               const uint32_t* in,
+		               const uint32_t* in2,
+		               const uint32_t* in3) {
 
   /* Update queue pointer */
   if (curqueuenum==0) {
@@ -286,4 +294,4 @@ int DelayGrab::isqrt(unsigned int x) {
 frei0r::construct<DelayGrab> plugin("Delaygrab",
 				  "delayed frame blitting mapped on a time bitmap",
 				  "Bill Spinhover, Andreas Schiffler, Jaromil",
-				  3,0);
+				  3,1);

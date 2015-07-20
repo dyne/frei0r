@@ -93,7 +93,11 @@ public:
     delete geo;
   }
 
-  virtual void update() {
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3) {
     // Cartoonify picture, do a form of edge detect 
     int x, y, t;
 
@@ -191,4 +195,4 @@ long Cartoon::GetMaxContrast(int32_t *src,int x,int y) {
 frei0r::construct<Cartoon> plugin("Cartoon",
 				  "Cartoonify video, do a form of edge detect",
 				  "Dries Pruimboom, Jaromil",
-				  2,1);
+				  2,2);

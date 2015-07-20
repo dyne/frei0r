@@ -40,11 +40,9 @@ namespace frei0r
   {
   public:
     
-    double time;
     unsigned int width;
     unsigned int height;
     unsigned int size; // = width * height
-    uint32_t* out;
     std::vector<void*> param_ptrs;
 
     fx()
@@ -154,13 +152,11 @@ namespace frei0r
       
     }
       
-    virtual void update_l(double time,
-			  const uint32_t* inframe1,
-			  const uint32_t* inframe2,
-			  const uint32_t* inframe3,
-			  uint32_t* outframe) = 0;
-    
-    virtual void update() = 0;
+    virtual void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3) = 0;
     
     virtual ~fx()
     {
@@ -174,94 +170,34 @@ namespace frei0r
       
     public:
       virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_SOURCE; }
-      
-      virtual void update_l(double time_,
-			    const uint32_t* inframe1,
-			    const uint32_t* inframe2,
-			    const uint32_t* inframe3,
-			    uint32_t* outframe_)
-      {
-	time = time_;
-	out = outframe_;
-	update();
-      }
   };
 
   class filter : public fx
   {
   protected:
-    const uint32_t* in;
     filter() {}
     
   public:
     virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_FILTER; }
-    
-    virtual void update_l(double time_,
-			  const uint32_t* inframe1,
-			  const uint32_t* inframe2,
-			  const uint32_t* inframe3,
-			  uint32_t* outframe)
-    {
-      time = time_;
-      out = outframe;
-      in = inframe1;
-      update();
-    }
-      
   };
 
   class mixer2 : public fx
   {
   protected:
-    const uint32_t* in1;
-    const uint32_t* in2;
-    
     mixer2() {}
       
   public:
     virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_MIXER2; }
-    
-      virtual void update_l(double time_,
-			    const uint32_t* inframe1,
-			    const uint32_t* inframe2,
-			    const uint32_t* inframe3,
-			    uint32_t* outframe)
-	{
-	  time = time_;
-	  out = outframe;
-	  in1 = inframe1;
-	  in2 = inframe2;
-	  update();
-	}
   };
 
   
   class mixer3 : public fx
   {
   protected:
-    const uint32_t* in1;
-    const uint32_t* in2;
-    const uint32_t* in3;
-      
     mixer3() {}
       
   public:
     virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_MIXER3; }
-    
-    virtual void update_l(double time_,
-			  const uint32_t* inframe1,
-			  const uint32_t* inframe2,
-			  const uint32_t* inframe3,
-			  uint32_t* outframe)
-    {
-      time = time_;
-      out = outframe;
-      in1 = inframe1;
-      in2 = inframe1;
-      in3 = inframe1;
-      update();
-    }
-      
   };
 
   
@@ -361,11 +297,11 @@ void f0r_update2(f0r_instance_t instance, double time,
 		 const uint32_t* inframe3,
 		 uint32_t* outframe)
 {
-  static_cast<frei0r::fx*>(instance)->update_l(time,
-					       inframe1,
-					       inframe2,
-					       inframe3,
-					       outframe);
+  static_cast<frei0r::fx*>(instance)->update(time,
+                                             outframe,
+                                             inframe1,
+                                             inframe2,
+                                             inframe3);
 }
 
 // compability for frei0r 1.0 

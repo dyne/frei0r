@@ -49,7 +49,11 @@ public:
   Baltan(int wdt, int hgt);
   ~Baltan();
 
-  virtual void update();
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3);
 
 private:
   ScreenGeometry geo;
@@ -84,7 +88,11 @@ Baltan::~Baltan() {
   free(procbuf);
 }
 
-void Baltan::update() {
+void Baltan::update(double time,
+                    uint32_t* out,
+	                const uint32_t* in,
+	                const uint32_t* in2,
+	                const uint32_t* in3) {
   int i, cf;
 
   uint32_t *src = (uint32_t*)in;
@@ -122,4 +130,4 @@ void Baltan::_init(int wdt, int hgt) {
 frei0r::construct<Baltan> plugin("Baltan",
 				  "delayed alpha smoothed blit of time",
 				  "Kentaro, Jaromil",
-				  3,0);
+				  3,1);

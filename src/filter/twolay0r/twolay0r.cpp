@@ -37,7 +37,11 @@ public:
   {
   }
 
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     histogram h;
     
@@ -98,5 +102,5 @@ public:
 frei0r::construct<twolay0r> plugin("Twolay0r",
 				  "dynamic thresholding",
 				  "Martin Bayer",
-				  0,1);
+				  0,2);
 

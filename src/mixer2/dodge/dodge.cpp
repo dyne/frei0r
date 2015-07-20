@@ -39,7 +39,11 @@ public:
    * D = saturation of 255 or (A * 256) / (256 - B)
    *
    **/
-  void update()
+  void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3)
   {
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
     const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
@@ -71,6 +75,6 @@ frei0r::construct<dodge> plugin("dodge",
                                 "Perform an RGB[A] dodge operation between the pixel sources, using the generalised algorithm:\n"
                                 "D = saturation of 255 or (A * 256) / (256 - B)",
                                 "Jean-Sebastien Senecal",
-                                0,1,
+                                0,2,
                                 F0R_COLOR_MODEL_RGBA8888);
 

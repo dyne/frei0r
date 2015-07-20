@@ -29,7 +29,11 @@ public:
   {
   }
 
-  void update()
+  void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3)
   {
     uint8_t *dst = reinterpret_cast<uint8_t*>(out);
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
@@ -65,6 +69,6 @@ public:
 frei0r::construct<alphaout> plugin("alphaout",
                                     "the alpha OUT operation",
                                     "Jean-Sebastien Senecal",
-                                    0,1,
+                                    0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
 

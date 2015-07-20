@@ -40,7 +40,11 @@ public:
     register_param(lredscale, "lredscale", "multiplier for downscaling non-edge brightness");
   }
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     std::copy(in, in + width*height, out);
     for (unsigned int y=1; y<height-1; ++y)
@@ -182,6 +186,6 @@ public:
 frei0r::construct<edgeglow> plugin("Edgeglow",
                                 "Edgeglow filter",
                                 "Salsaman",
-                                0,1,
+                                0,2,
                                 F0R_COLOR_MODEL_RGBA8888);
 

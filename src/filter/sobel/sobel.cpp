@@ -28,7 +28,11 @@ public:
   {
   }
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     std::copy(in, in + width*height, out);
     for (unsigned int y=1; y<height-1; ++y)
@@ -62,6 +66,6 @@ public:
 frei0r::construct<sobel> plugin("Sobel",
                                 "Sobel filter",
                                 "Jean-Sebastien Senecal (Drone)",
-                                0,1,
+                                0,2,
                                 F0R_COLOR_MODEL_RGBA8888);
 

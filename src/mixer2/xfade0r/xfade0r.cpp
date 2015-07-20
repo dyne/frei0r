@@ -26,7 +26,11 @@ public:
     uint8_t fader_pos;
   };
   
-  void update()
+  void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3)
   {
     std::transform(reinterpret_cast<const uint8_t*>(in1),
 		   reinterpret_cast<const uint8_t*>(in1)+(width*height*4),
@@ -43,5 +47,5 @@ private:
 frei0r::construct<xfade0r> plugin("xfade0r",
 				  "a simple xfader",
 				  "Martin Bayer",
-				  0,1);
+				  0,2);
 

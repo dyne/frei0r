@@ -195,7 +195,11 @@ public:
         delete[] m_mesh;
     }
 
-    virtual void update()
+    virtual void update(double time,
+	                    uint32_t* out,
+		                const uint32_t* in,
+		                const uint32_t* in2,
+		                const uint32_t* in3)
     {
 
         if (height == 720) {
@@ -245,5 +249,5 @@ private:
 frei0r::construct<D90StairsteppingFix> plugin("Nikon D90 Stairstepping fix",
                 "Removes the Stairstepping from Nikon D90 videos (720p only) by interpolation",
                 "Simon A. Eugster (Granjow)",
-                0,1,
+                0,2,
                 F0R_COLOR_MODEL_RGBA8888);

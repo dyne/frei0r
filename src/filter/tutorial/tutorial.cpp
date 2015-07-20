@@ -103,7 +103,11 @@ public:
         // Delete member variables if necessary.
     }
 
-    virtual void update()
+    virtual void update(double time,
+	                    uint32_t* out,
+		                const uint32_t* in,
+		                const uint32_t* in2,
+		                const uint32_t* in3)
     {
         // Just copy input to output.
         // This is useful if ony few changes are made to the output.
@@ -173,5 +177,5 @@ private:
 frei0r::construct<Tutorial> plugin("Tutorial filter",
                 "This is an example filter, kind of a quick howto showing how to add a frei0r filter.",
                 "Your Name",
-                0,1,
+                0,2,
                 F0R_COLOR_MODEL_RGBA8888);

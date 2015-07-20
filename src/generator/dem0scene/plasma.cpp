@@ -52,7 +52,11 @@ public:
   Plasma(int wdt, int hgt);
   ~Plasma();
 
-  virtual void update();
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3);
 
 private:
 
@@ -159,7 +163,11 @@ Plasma::~Plasma() {
 
 }
 
-void Plasma::update() {
+void Plasma::update(double time,
+                    uint32_t* out,
+	                const uint32_t* in,
+	                const uint32_t* in2,
+	                const uint32_t* in3) {
   uint16_t i, j;
   uint8_t index;
   int x;
@@ -235,4 +243,4 @@ uint32_t Plasma::palette2rgb(uint8_t idx) {
 frei0r::construct<Plasma> plugin("Plasma",
 				   "Demo scene 8bit plasma",
 				   "Jaromil",
-				   0,2);
+				   0,3);

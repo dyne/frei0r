@@ -39,7 +39,11 @@ public:
    * D =  A * (B + (2 * B) * (255 - A))
    *
    **/
-  void update()
+  void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3)
   {
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
     const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
@@ -72,6 +76,6 @@ frei0r::construct<overlay> plugin("overlay",
                                   "Perform an RGB[A] overlay operation between the pixel sources, using the generalised algorithm:\n"
 								  "D =  A * (B + (2 * B) * (255 - A))",
                                   "Jean-Sebastien Senecal",
-                                  0,1,
+                                  0,2,
                                   F0R_COLOR_MODEL_RGBA8888);
 

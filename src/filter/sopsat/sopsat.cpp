@@ -128,7 +128,11 @@ public:
         free(m_lutA);
     }
 
-    virtual void update()
+    virtual void update(double time,
+	                    uint32_t* out,
+		                const uint32_t* in,
+		                const uint32_t* in2,
+		                const uint32_t* in3)
     {
         // Rebuild the lookup table in case the prarameters have changed.
         updateLUT();
@@ -212,5 +216,5 @@ private:
 frei0r::construct<SOPSat> plugin("SOP/Sat",
                 "Slope/Offset/Power and Saturation color corrections according to the ASC CDL (Color Decision List)",
                 "Simon A. Eugster (Granjow)",
-                0,2,
+                0,3,
                 F0R_COLOR_MODEL_RGBA8888);

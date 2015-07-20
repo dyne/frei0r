@@ -10,7 +10,11 @@ public:
     //register_param(hsync,"HSync","the hsync offset");
   }
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     for (unsigned int line=0; line < height; line+=4)
       {
@@ -27,5 +31,5 @@ private:
 frei0r::construct<scanline0r> plugin("scanline0r",
 				     "interlaced blak lines",
 				     "Martin Bayer",
-				     0,1);
+				     0,2);
 

@@ -201,7 +201,11 @@ public:
 
 
 
-    virtual void update()
+    virtual void update(double time,
+	                    uint32_t* out,
+		                const uint32_t* in,
+		                const uint32_t* in2,
+		                const uint32_t* in3)
     {
         double sensitivity = m_pSensitivity * 5;
         double thresholdBrightness = m_pThresholdBrightness * 765;
@@ -1061,5 +1065,5 @@ private:
 frei0r::construct<LightGraffiti> plugin("Light Graffiti",
                 "Creates light graffitis from a video by keeping the brightest spots.",
                 "Simon A. Eugster (Granjow)",
-                0,2,
+                0,3,
                 F0R_COLOR_MODEL_RGBA8888);

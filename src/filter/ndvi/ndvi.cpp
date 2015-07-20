@@ -49,15 +49,19 @@ class Ndvi : public frei0r::filter
 {
 public:
     Ndvi(unsigned int width, unsigned int height);
-    virtual void update();
+    virtual void update(double time,
+	                    uint32_t* out,
+		                const uint32_t* in,
+		                const uint32_t* in2,
+		                const uint32_t* in3);
 
 private:
     void initLut();
     double getComponent(uint8_t *sample, unsigned int chan, double offset, double scale);
     void setColor(uint8_t *sample, double index);
-    void drawLegend();
-    void drawRect( uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h );
-    void drawGradient( unsigned int x, unsigned int y, unsigned int w, unsigned int h );
+    void drawLegend(uint32_t *out);
+    void drawRect( uint32_t* out, uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h );
+    void drawGradient( uint32_t* out, unsigned int x, unsigned int y, unsigned int w, unsigned int h );
     void drawText( std::string text, unsigned int x, unsigned int y, unsigned int textHeight );
 
     double paramLutLevels;
@@ -112,7 +116,11 @@ Ndvi::Ndvi(unsigned int width, unsigned int height)
             "Control legend display. One of 'off' or 'bottom'.");
 }
 
-void Ndvi::update() {
+void Ndvi::update(double time,
+                  uint32_t* out,
+	              const uint32_t* in,
+	              const uint32_t* in2,
+	              const uint32_t* in3) {
     uint8_t *inP = (uint8_t*)in;
     uint8_t *outP = (uint8_t*)out;
     double visScale = paramVisScale * 10.0;
@@ -145,7 +153,7 @@ void Ndvi::update() {
     }
 
     if( paramLegend == "bottom" ) {
-        drawLegend();
+        drawLegend(out);
     }
 }
 
@@ -231,19 +239,19 @@ inline void Ndvi::setColor(uint8_t *sample, double index)
     sample[3] = 0xff;
 }
 
-void Ndvi::drawLegend()
+void Ndvi::drawLegend(uint32_t* out)
 {
     unsigned int legendHeight = height / 20;
 
     // Black border above legend
     unsigned int borderHeight = legendHeight / 15;
     unsigned int borderY = height - legendHeight;
-    drawRect( 0, 0, 0, 0, borderY, width, borderHeight );
+    drawRect( out, 0, 0, 0, 0, borderY, width, borderHeight );
 
     // Gradient
     unsigned int gradientHeight = legendHeight - borderHeight;
     unsigned int gradientY = height - gradientHeight;
-    drawGradient( 0, gradientY, width, gradientHeight );
+    drawGradient( out, 0, gradientY, width, gradientHeight );
 
     // Text
     unsigned int textHeight = gradientHeight * 8 / 10;
@@ -260,7 +268,7 @@ void Ndvi::drawLegend()
     }
 }
 
-void Ndvi::drawRect( uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h )
+void Ndvi::drawRect( uint32_t* out, uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h )
 {
     for (unsigned int i = 0; i < h; i++) {
         uint8_t *sample = (uint8_t*)(out + ((i + y) * width) + x);
@@ -273,7 +281,7 @@ void Ndvi::drawRect( uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned i
     }
 }
 
-void Ndvi::drawGradient( unsigned int x, unsigned int y, unsigned int w, unsigned int h )
+void Ndvi::drawGradient( uint32_t* out, unsigned int x, unsigned int y, unsigned int w, unsigned int h )
 {
     for (unsigned int i = 0; i < w; i++) {
         double pos = (double)i / (double)w;
@@ -326,5 +334,5 @@ void Ndvi::drawText( std::string text, unsigned int x, unsigned int y, unsigned 
 frei0r::construct<Ndvi> plugin("NDVI filter",
             "This filter creates a false image from a visible + infrared source.",
             "Brian Matherly",
-            0,1,
+            0,2,
             F0R_COLOR_MODEL_RGBA8888);

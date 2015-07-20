@@ -35,7 +35,7 @@ class equaliz0r : public frei0r::filter
   unsigned int ghist[256];
   unsigned int bhist[256];
 
-  void updateLookUpTables()
+  void updateLookUpTables(const uint32_t* in)
   {
     unsigned int size = width*height;
     
@@ -88,10 +88,14 @@ public:
   {
   }
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     std::copy(in, in + width*height, out);
-    updateLookUpTables();
+    updateLookUpTables(in);
     unsigned int size = width*height;
     const unsigned char *in_ptr = (const unsigned char*) in;
     unsigned char *out_ptr = (unsigned char*) out;
@@ -109,6 +113,6 @@ public:
 frei0r::construct<equaliz0r> plugin("Equaliz0r",
                                     "Equalizes the intensity histograms",
                                     "Jean-Sebastien Senecal (Drone)",
-                                    0,1,
+                                    0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
 

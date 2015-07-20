@@ -23,7 +23,11 @@ public:
     }
   }
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     unsigned int* reusable = 0;
     // remove old frames
@@ -75,5 +79,5 @@ private:
 frei0r::construct<delay0r> plugin("delay0r",
 				  "video delay",
 				  "Martin Bayer",
-				  0,1);
+				  0,2);
 

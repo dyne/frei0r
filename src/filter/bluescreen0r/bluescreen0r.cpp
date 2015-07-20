@@ -62,7 +62,11 @@ public:
 		register_param(dist, "Distance", "Distance to Color (127 is good)");
 	}
 
-	virtual void update() {
+	virtual void update(double time,
+	                    uint32_t* out,
+		                const uint32_t* in,
+		                const uint32_t* in2,
+		                const uint32_t* in3) {
 		const uint32_t* pixel	=in;
 			  uint32_t* outpixel= out;
 		
@@ -93,5 +97,5 @@ public:
 };
 
 
-frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,2,F0R_COLOR_MODEL_RGBA8888);
+frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,3,F0R_COLOR_MODEL_RGBA8888);
 

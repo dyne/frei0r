@@ -37,7 +37,11 @@ public:
    * in1 and in2.
    *
    **/
-  void update()
+  void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3)
   {
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
     const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
@@ -78,6 +82,6 @@ public:
 frei0r::construct<hardlight> plugin("hardlight",
                                     "Perform an RGB[A] hardlight operation between the pixel sources",
                                     "Jean-Sebastien Senecal",
-                                    0,1,
+                                    0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
 

@@ -47,7 +47,11 @@ public:
   }
 
   
-  virtual void update()
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3)
   {
     wnoise wn(0x0f0f0f0f ^ (unsigned int)(time*100000.0));
     
@@ -59,5 +63,5 @@ public:
 frei0r::construct<nois0r> plugin("Nois0r",
 				   "Generates white noise images",
 				   "Martin Bayer",
-				   0,2);
+				   0,3);
 

@@ -57,7 +57,11 @@ public:
 
   ~Nervous();
 
-  virtual void update();
+  virtual void update(double time,
+                      uint32_t* out,
+		              const uint32_t* in,
+		              const uint32_t* in2,
+		              const uint32_t* in3);
 
 private:
 
@@ -111,7 +115,11 @@ void Nervous::_init(int wdt, int hgt) {
 
 
 
-void Nervous::update() {
+void Nervous::update(double time,
+                     uint32_t* out,
+	                 const uint32_t* in,
+	                 const uint32_t* in2,
+	                 const uint32_t* in3) {
   memcpy(planetable[plane],in,geo.size);
 
   if(stock<PLANES) stock++;
@@ -144,4 +152,4 @@ void Nervous::update() {
 frei0r::construct<Nervous> plugin("Nervous",
 				"flushes frames in time in a nervous way",
 				"Tannenbaum, Kentaro, Jaromil",
-				3,0);
+				3,1);
