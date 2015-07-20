@@ -62,7 +62,7 @@ private:
     void drawLegend(uint32_t *out);
     void drawRect( uint32_t* out, uint8_t r, uint8_t g, uint8_t b, unsigned int x, unsigned int y, unsigned int w, unsigned int h );
     void drawGradient( uint32_t* out, unsigned int x, unsigned int y, unsigned int w, unsigned int h );
-    void drawText( std::string text, unsigned int x, unsigned int y, unsigned int textHeight );
+    void drawText( uint32_t* out, std::string text, unsigned int x, unsigned int y, unsigned int textHeight );
 
     double paramLutLevels;
     std::string paramColorMap;
@@ -258,13 +258,13 @@ void Ndvi::drawLegend(uint32_t* out)
     unsigned int textY = height - ( gradientHeight - textHeight ) / 2;
     unsigned int textX = width / 25;
     if (paramIndex == "vi") {
-        drawText( "0", textX, textY , textHeight );
-        drawText( "VI", width / 2, textY , textHeight );
-        drawText( "1", width - textX, textY , textHeight );
+        drawText( out, "0", textX, textY , textHeight );
+        drawText( out, "VI", width / 2, textY , textHeight );
+        drawText( out, "1", width - textX, textY , textHeight );
     } else { // ndvi
-        drawText( "-1", textX, textY , textHeight );
-        drawText( "NDVI", width / 2, textY , textHeight );
-        drawText( "1", width - textX, textY , textHeight );
+        drawText( out, "-1", textX, textY , textHeight );
+        drawText( out, "NDVI", width / 2, textY , textHeight );
+        drawText( out, "1", width - textX, textY , textHeight );
     }
 }
 
@@ -296,7 +296,7 @@ void Ndvi::drawGradient( uint32_t* out, unsigned int x, unsigned int y, unsigned
     }
 }
 
-void Ndvi::drawText( std::string text, unsigned int x, unsigned int y, unsigned int textHeight )
+void Ndvi::drawText( uint32_t* out, std::string text, unsigned int x, unsigned int y, unsigned int textHeight )
 {
 #ifdef HAVE_CAIRO
     int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, width);
