@@ -120,7 +120,11 @@ public:
         if (storage) cvReleaseMemStorage(&storage);        
     }
 
-    void update()
+    void update(double time,
+                uint32_t* out,
+                const uint32_t* in,
+                const uint32_t* in2,
+                const uint32_t* in3)
     {
         if (!cascade) {
             cvSetNumThreads(cvRound(threads * 100));
