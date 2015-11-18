@@ -225,9 +225,10 @@ double frei0r_cairo_get_scale (double norm_scale)
  *
  * \param rgba the image buffer with format F0R_COLOR_MODEL_RGBA8888
  * \param pixels the size of the image buffer in number of pixels
+ * \param alpha if >= 0, the alpha channel will be set to this value
  * \see frei0r_cairo_unpremultiply_rgba
  */
-void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels)
+void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
 {
   int i = pixels + 1;
   while ( --i ) {
@@ -235,6 +236,7 @@ void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels)
     rgba[0] = ( rgba[0] * a ) >> 8;
     rgba[1] = ( rgba[1] * a ) >> 8;
     rgba[2] = ( rgba[2] * a ) >> 8;
+    if (alpha >= 0) rgba[3] = alpha;
     rgba += 4;
   }
 }
