@@ -671,8 +671,6 @@ typedef struct
 	int soft;
 	int inv;
 	int op;
-	
-	float_rgba *sl;
 } inst;
 
 //-----------------------------------------------------
@@ -713,7 +711,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=4;
+	info->minor_version=5;
 	info->num_params=10;
 	info->explanation="Color based alpha selection";
 }
@@ -798,8 +796,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	in->inv=0;
 	in->op=0;
 	
-	in->sl=(float_rgba*)calloc(in->w*in->h,sizeof(float_rgba));
-	
 	return (f0r_instance_t)in;
 }
 
@@ -810,7 +806,6 @@ void f0r_destruct(f0r_instance_t instance)
 	
 	in=(inst*)instance;
 	
-	free(in->sl);
 	free(instance);
 }
 
@@ -938,7 +933,8 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	uint8_t *cin, *cout;
 	float f1=1.0/256.0;
 	uint8_t a1,a2;
-	
+	float_rgba *sl;
+
 	assert(instance);
 	in=(inst*)instance;
 	
@@ -954,12 +950,13 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	n.z=in->nud3;
 	
 	//convert to float
+	sl = calloc(in->w * in->h, sizeof(float_rgba));
 	cin=(uint8_t *)inframe;
 	for (i=0;i<in->h*in->w;i++)
 	{
-		in->sl[i].r=f1*(float)*cin++;
-		in->sl[i].g=f1*(float)*cin++;
-		in->sl[i].b=f1*(float)*cin++;
+		sl[i].r=f1*(float)*cin++;
+		sl[i].g=f1*(float)*cin++;
+		sl[i].b=f1*(float)*cin++;
 		cin++;
 	}
 	
@@ -967,13 +964,13 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	switch (in->subsp)
 	{
 	case 0:
-		sel_rgb(in->sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
+		sel_rgb(sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
 		break;
 	case 1:
-		sel_abi(in->sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
+		sel_abi(sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
 		break;
 	case 2:
-		sel_hci(in->sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
+		sel_hci(sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
 		break;
 	default:
 		break;
@@ -982,7 +979,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	//invert selection if required
 	if (in->inv==1)
 		for (i=0;i<in->h*in->w;i++)
-			in->sl[i].a = 1.0 - in->sl[i].a;
+			sl[i].a = 1.0 - sl[i].a;
 	
 	//apply alpha
 	cin=(uint8_t *)inframe;
@@ -995,7 +992,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			*cout++ = *cin++;	//copy R
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
-			*cout++ = (uint8_t)(in->sl[i].a*255.0);
+			*cout++ = (uint8_t)(sl[i].a*255.0);
 			cin++;
 		}
 		break;
@@ -1006,7 +1003,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (uint8_t)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(sl[i].a*255.0);
 			*cout++ = (a1>a2) ? a1 : a2;
 		}
 		break;
@@ -1017,7 +1014,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (uint8_t)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(sl[i].a*255.0);
 			*cout++ = (a1<a2) ? a1 : a2;
 		}
 		break;
@@ -1028,7 +1025,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (uint8_t)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(sl[i].a*255.0);
 			t=(uint32_t)a1+(uint32_t)a2;
 			*cout++ = (t<=255) ? (uint8_t)t : 255;
 		}
@@ -1040,14 +1037,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 			*cout++ = *cin++;	//copy G
 			*cout++ = *cin++;	//copy B
 			a1 = *cin++;
-			a2 = (uint8_t)(in->sl[i].a*255.0);
+			a2 = (uint8_t)(sl[i].a*255.0);
 			*cout++ = (a1>a2) ? a1-a2 : 0;
 		}
 		break;
 	default:
 		break;
 	}
-	
+	free(sl);
 }
 
 //**********************************************************
