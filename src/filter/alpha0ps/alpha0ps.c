@@ -58,10 +58,6 @@ typedef struct
 	float sga;
 	int inv;
 	
-	//buffers & pointers
-	float *falpha,*ab;
-	uint8_t *infr,*oufr;
-	
 	//auxilliary variables for fibe2o
 	float f,q,a0,a1,a2,b0,b1,b2,rd1,rd2,rs1,rs2,rc1,rc2;
 	
@@ -69,7 +65,7 @@ typedef struct
 
 
 //---------------------------------------------------
-void alphagray(inst *in)
+void alphagray(inst *in, uint8_t *infr, uint8_t *oufr)
 {
 	uint8_t s;
 	int i;
@@ -77,25 +73,25 @@ void alphagray(inst *in)
 	if (in->din==0)
 		for (i=0;i<in->w*in->h;i++)
 		{
-			s=in->oufr[4*i+3];
-			in->oufr[4*i]=s;
-			in->oufr[4*i+1]=s;
-			in->oufr[4*i+2]=s;
-			in->oufr[4*i+3]=0xFF;
+			s=oufr[4*i+3];
+			oufr[4*i]=s;
+			oufr[4*i+1]=s;
+			oufr[4*i+2]=s;
+			oufr[4*i+3]=0xFF;
 		}
 	else
 		for (i=0;i<in->w*in->h;i++)
 		{
-			s=in->infr[4*i+3];
-			in->oufr[4*i]=s;
-			in->oufr[4*i+1]=s;
-			in->oufr[4*i+2]=s;
-			in->oufr[4*i+3]=0xFF;
+			s=infr[4*i+3];
+			oufr[4*i]=s;
+			oufr[4*i+1]=s;
+			oufr[4*i+2]=s;
+			oufr[4*i+3]=0xFF;
 		}
 }
 
 //---------------------------------------------------
-void grayred(inst *in)
+void grayred(inst *in, uint8_t *infr, uint8_t *oufr)
 {
 	int i,rr;
 	uint8_t r,g,b,a,y;
@@ -103,39 +99,39 @@ void grayred(inst *in)
 	if (in->din==0)
 		for (i=0;i<in->w*in->h;i++)
 		{
-			b=in->infr[4*i+2];
-			g=in->infr[4*i+1];
-			r=in->infr[4*i];
-			a=in->oufr[4*i+3];
+			b=infr[4*i+2];
+			g=infr[4*i+1];
+			r=infr[4*i];
+			a=oufr[4*i+3];
 			y=(r>>2)+(g>>1)+(b>>2);	//approx luma
 			y=64+(y>>1);
 			rr=y+(a>>1);
 			if (rr>255) rr=255;
-			in->oufr[4*i]=rr;
-			in->oufr[4*i+1]=y;
-			in->oufr[4*i+2]=y;
-			in->oufr[4*i+3]=0xFF;
+			oufr[4*i]=rr;
+			oufr[4*i+1]=y;
+			oufr[4*i+2]=y;
+			oufr[4*i+3]=0xFF;
 		}
 	else
 		for (i=0;i<in->w*in->h;i++)
 		{
-			b=in->infr[4*i+2];
-			g=in->infr[4*i+1];
-			r=in->infr[4*i];
-			a=in->infr[4*i+3];
+			b=infr[4*i+2];
+			g=infr[4*i+1];
+			r=infr[4*i];
+			a=infr[4*i+3];
 			y=(r>>2)+(g>>1)+(b>>2);	//approx luma
 			y=64+(y>>1);
 			rr=y+(a>>1);
 			if (rr>255) rr=255;
-			in->oufr[4*i]=rr;
-			in->oufr[4*i+1]=y;
-			in->oufr[4*i+2]=y;
-			in->oufr[4*i+3]=0xFF;
+			oufr[4*i]=rr;
+			oufr[4*i+1]=y;
+			oufr[4*i+2]=y;
+			oufr[4*i+3]=0xFF;
 		}
 }
 
 //---------------------------------------------------
-void drawsel(inst *in, int bg)
+void drawsel(inst *in, uint8_t *infr, uint8_t *oufr, int bg)
 {
 	int i;
 	uint32_t bk;
@@ -159,17 +155,17 @@ void drawsel(inst *in, int bg)
 				else
 					bk=0x9B;
 			}
-			b=in->oufr[4*i+2];
-			g=in->oufr[4*i+1];
-			r=in->oufr[4*i];
-			a=in->oufr[4*i+3];
+			b=oufr[4*i+2];
+			g=oufr[4*i+1];
+			r=oufr[4*i];
+			a=oufr[4*i+3];
 			r=(a*r+(255-a)*bk)>>8;
 			g=(a*g+(255-a)*bk)>>8;
 			b=(a*b+(255-a)*bk)>>8;
-			in->oufr[4*i]=r;
-			in->oufr[4*i+1]=g;
-			in->oufr[4*i+2]=b;
-			in->oufr[4*i+3]=0xFF;
+			oufr[4*i]=r;
+			oufr[4*i+1]=g;
+			oufr[4*i+2]=b;
+			oufr[4*i+3]=0xFF;
 		}
 	else
 		for (i=0;i<in->w*in->h;i++)
@@ -181,17 +177,17 @@ void drawsel(inst *in, int bg)
 				else
 					bk=0x9B;
 			}
-			b=in->infr[4*i+2];
-			g=in->infr[4*i+1];
-			r=in->infr[4*i];
-			a=in->infr[4*i+3];
+			b=infr[4*i+2];
+			g=infr[4*i+1];
+			r=infr[4*i];
+			a=infr[4*i+3];
 			r=(a*r+(255-a)*bk)>>8;
 			g=(a*g+(255-a)*bk)>>8;
 			b=(a*b+(255-a)*bk)>>8;
-			in->oufr[4*i]=r;
-			in->oufr[4*i+1]=g;
-			in->oufr[4*i+2]=b;
-			in->oufr[4*i+3]=0xFF;
+			oufr[4*i]=r;
+			oufr[4*i+1]=g;
+			oufr[4*i+2]=b;
+			oufr[4*i+3]=0xFF;
 		}
 }
 
@@ -360,19 +356,19 @@ void threshold_alpha(float *al, int w, int h, float thr, float hi, float lo)
 }
 
 //----------------------------------------------------------
-void blur_alpha(inst *in)
+void blur_alpha(inst *in, float *falpha)
 {
 	int i;
 	
-	for (i=0;i<in->w*in->h;i++) in->falpha[i]*=0.0039215;
+	for (i=0;i<in->w*in->h;i++) falpha[i]*=0.0039215;
 	
-	fibe2o_f(in->falpha, in->w, in->h, in->a1, in->a2, in->rd1, in->rd2, in->rs1, in->rs2, in->rc1, in->rc2, 1);
+	fibe2o_f(falpha, in->w, in->h, in->a1, in->a2, in->rd1, in->rd2, in->rs1, in->rs2, in->rc1, in->rc2, 1);
 	
 	for (i=0;i<in->w*in->h;i++)
 	{
-		in->falpha[i]*=255.0;
-		if (in->falpha[i]>255.0) in->falpha[i]=255.0;
-		if (in->falpha[i]<0.0) in->falpha[i]=0.0;
+		falpha[i]*=255.0;
+		if (falpha[i]>255.0) falpha[i]=255.0;
+		if (falpha[i]<0.0) falpha[i]=0.0;
 	}
 }
 
@@ -444,7 +440,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=3;
+	info->minor_version=4;
 	info->num_params=6;
 	info->explanation="Display and manipulation of the alpha channel";
 }
@@ -503,9 +499,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	in->sga=1.0;
 	in->inv=0;
 	
-	in->falpha=(float*)calloc(in->w*in->h,sizeof(float));
-	in->ab=(float*)calloc(in->w*in->h,sizeof(float));
-	
 	in->f=0.05; in->q=0.55;		//blur
 	calcab_lp1(in->f, in->q, &in->a0, &in->a1, &in->a2, &in->b0, &in->b1, &in->b2);
 	in->a1=in->a1/in->a0; in->a2=in->a2/in->a0;
@@ -523,8 +516,6 @@ void f0r_destruct(f0r_instance_t instance)
 	
 	in=(inst*)instance;
 	
-	free(in->falpha);
-	free(in->ab);
 	free(instance);
 }
 
@@ -626,43 +617,47 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 {
 	inst *in;
 	int i;
+	float *falpha, *ab;
+	uint8_t *infr, *oufr;
 	
 	assert(instance);
 	in=(inst*)instance;
-	in->infr=(uint8_t*)inframe;
-	in->oufr=(uint8_t*)outframe;
-	
+	infr=(uint8_t*)inframe;
+	oufr=(uint8_t*)outframe;
+
+	falpha = calloc(in->w * in->h, sizeof(float));
+	ab = calloc(in->w * in->h, sizeof(float));
 	for (i=0;i<in->w*in->h;i++)
-		in->falpha[i]=in->infr[4*i+3];
+		falpha[i] = infr[4*i+3];
 	
 	switch (in->op)
 	{
 	case 0: break;
 	case 1:
 		for (i=0;i<in->sga;i++)
-			shave_alpha(in->falpha, in->ab, in->w, in->h);
+			shave_alpha(falpha, ab, in->w, in->h);
 		break;
 	case 2:
 		for (i=0;i<in->sga;i++)
-			shrink_alpha(in->falpha, in->ab, in->w, in->h, 0);
+			shrink_alpha(falpha, ab, in->w, in->h, 0);
 		break;
 	case 3:
 		for (i=0;i<in->sga;i++)
-			shrink_alpha(in->falpha, in->ab, in->w, in->h, 1);
+			shrink_alpha(falpha, ab, in->w, in->h, 1);
 		break;
 	case 4:
 		for (i=0;i<in->sga;i++)
-			grow_alpha(in->falpha, in->ab, in->w, in->h, 0);
+			grow_alpha(falpha, ab, in->w, in->h, 0);
 		break;
 	case 5:
 		for (i=0;i<in->sga;i++)
-			grow_alpha(in->falpha, in->ab, in->w, in->h, 1);
+			grow_alpha(falpha, ab, in->w, in->h, 1);
 		break;
 	case 6:
-		threshold_alpha(in->falpha, in->w, in->h, 255.0*in->thr, 255.0, 0.0);
+		threshold_alpha(falpha, in->w, in->h, 255.0*in->thr, 255.0, 0.0);
 		break;
 	case 7:
-		blur_alpha(in);
+		blur_alpha(in, falpha);
 		break;
 	default:
 		break;
@@ -670,12 +665,12 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	
 	if (in->inv==1)
 		for (i=0;i<in->w*in->h;i++)
-			in->falpha[i]=255.0-in->falpha[i];
+			falpha[i] = 255.0 - falpha[i];
 	
 	for (i=0;i<in->w*in->h;i++)
 	{
 		outframe[i] = inframe[i];
-		in->oufr[4*i+3] = (uint8_t)in->falpha[i];
+		oufr[4*i+3] = (uint8_t) falpha[i];
 	}
 	
 	switch (in->disp)
@@ -683,27 +678,28 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	case 0:
 		break;
 	case 1:
-		alphagray(in);
+		alphagray(in, infr, oufr);
 		break;
 	case 2:
-		grayred(in);
+		grayred(in, infr, oufr);
 		break;
 	case 3:
-		drawsel(in, 0);
+		drawsel(in, infr, oufr, 0);
 		break;
 	case 4:
-		drawsel(in, 1);
+		drawsel(in, infr, oufr, 1);
 		break;
 	case 5:
-		drawsel(in, 2);
+		drawsel(in, infr, oufr, 2);
 		break;
 	case 6:
-		drawsel(in, 3);
+		drawsel(in, infr, oufr, 3);
 		break;
 	default:
 		break;
 	}
-	
+	free(falpha);
+	free(ab);
 }
 
 //**********************************************************
