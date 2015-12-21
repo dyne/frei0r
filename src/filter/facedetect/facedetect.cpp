@@ -261,7 +261,7 @@ private:
     {
         double scale = this->scale == 0? 1.0 : this->scale;
         CvScalar colors[5] = {
-#if (CV_VERSION_EPOCH >= 3)
+#if (CV_VERSION_EPOCH != 2)
             CvScalar(cvRound(color[0].r * 255), cvRound(color[0].g * 255), cvRound(color[0].b * 255), cvRound(alpha * 255)),
             CvScalar(cvRound(color[1].r * 255), cvRound(color[1].g * 255), cvRound(color[1].b * 255), cvRound(alpha * 255)),
             CvScalar(cvRound(color[2].r * 255), cvRound(color[2].g * 255), cvRound(color[2].b * 255), cvRound(alpha * 255)),
@@ -297,7 +297,7 @@ private:
                 }
             case 1:
                 {
-#if (CV_VERSION_EPOCH >= 3)
+#if (CV_VERSION_EPOCH != 2)
                     CvBox2D box = CvBox2D(CvPoint2D32f(center.x, center.y), CvSize2D32f(r->width / scale, (r->height / scale) * 1.2), 90);
 #else
                     CvBox2D box = {{center.x, center.y}, {r->width / scale, (r->height / scale) * 1.2}, 90};
@@ -307,7 +307,7 @@ private:
                 }
             case 2:
                 {
-#if (CV_VERSION_EPOCH >= 3)
+#if (CV_VERSION_EPOCH != 2)
                     CvPoint pt1 = CvPoint(r->x / scale, r->y / scale);
                     CvPoint pt2 = CvPoint((r->x + r->width) / scale, (r->y + r->height) / scale);
 #else
