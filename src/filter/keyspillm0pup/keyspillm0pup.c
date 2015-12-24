@@ -676,10 +676,6 @@ typedef struct
 	int fo;		//foreground only (speed)
 	int cm;		//color model 0=rec601  1=rec 709
 	
-	//video buffers
-	float_rgba *sl;
-	float *mask;
-	
 	//internal variables
 	float_rgba krgb;
 	float_rgba trgb;
@@ -725,7 +721,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=2;
+	info->minor_version=3;
 	info->num_params=13;
 	info->explanation="Reduces the visibility of key color spill in chroma keying";
 }
@@ -812,9 +808,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	in->w=width;
 	in->h=height;
 	
-	in->sl=calloc(in->w*in->h,sizeof(float_rgba));
-	in->mask=calloc(in->w*in->h,sizeof(float));
-	
 	//defaults
 	in->key.r = 0.1; 
 	in->key.g = 0.8; 
@@ -846,13 +839,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 //---------------------------------------------------
 void f0r_destruct(f0r_instance_t instance)
 {
-	inst *in;
-	
-	in=(inst*)instance;
-	
-	free(in->sl);
-	free(in->mask);
-	free(in->liststr);
 	free(instance);
 }
 
@@ -889,9 +875,11 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		p->trgb.b=p->tgt.b;
 		break;
 	case 2:		//Mask type (list)
-		tmpch = (*(char**)parm);
-		p->liststr = (char*)realloc( p->liststr, strlen(tmpch) + 1 );
-		strcpy( p->liststr, tmpch );
+		tmpch = (*(f0r_param_string*)parm);
+		if (strcmp(p->liststr, tmpch)) {
+			p->liststr = realloc( p->liststr, strlen(tmpch) + 1 );
+			strcpy( p->liststr, tmpch );
+		}
 		nc=sscanf(p->liststr,"%d",&tmpi);
 		//		if ((nc<=0)||(tmpi<0)||(tmpi>3)) tmpi=1;
 		if ((nc<=0)||(tmpi<0)||(tmpi>3)) break;
@@ -919,9 +907,11 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		p->Sthresh=tmpf;
 		break;
 	case 7:		//Operation 1 (list)
-		tmpch = (*(char**)parm);
-		p->liststr = (char*)realloc( p->liststr, strlen(tmpch) + 1 );
-		strcpy( p->liststr, tmpch );
+		tmpch = (*(f0r_param_string*)parm);
+		if (strcmp(p->liststr, tmpch)) {
+			p->liststr = realloc( p->liststr, strlen(tmpch) + 1 );
+			strcpy( p->liststr, tmpch );
+		}
 		nc=sscanf(p->liststr,"%d",&tmpi);
 		//		if ((nc<=0)||(tmpi<0)||(tmpi>4)) tmpi=0;
 		if ((nc<=0)||(tmpi<0)||(tmpi>4)) break;
@@ -934,9 +924,11 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		p->am1=tmpf;
 		break;
 	case 9:		//Operation 2 (list)
-		tmpch = (*(char**)parm);
-		p->liststr = (char*)realloc( p->liststr, strlen(tmpch) + 1 );
-		strcpy( p->liststr, tmpch );
+		tmpch = (*(f0r_param_string*)parm);
+		if (strcmp(p->liststr, tmpch)) {
+			p->liststr = realloc( p->liststr, strlen(tmpch) + 1 );
+			strcpy( p->liststr, tmpch );
+		}
 		nc=sscanf(p->liststr,"%d",&tmpi);
 		//		if ((nc<=0)||(tmpi<0)||(tmpi>4)) tmpi=0;
 		if ((nc<=0)||(tmpi<0)||(tmpi>4)) break;
@@ -1027,60 +1019,66 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 	inst *in;
+	//video buffers
+	float *mask;
+	float_rgba *sl;
 	
 	assert(instance);
 	in=(inst*)instance;
 	
-	RGBA8888_2_float(inframe, in->sl, in->w, in->h);
+	sl = calloc(in->w * in->h, sizeof(float_rgba));
+	mask = calloc(in->w * in->h, sizeof(float));
+	
+	RGBA8888_2_float(inframe, sl, in->w, in->h);
 	
 	switch(in->maskType)		//GENERATE MASK
 	{
 	case 0:		//Color distance based mask
 	{
-		rgb_mask(in->sl, in->w, in->h, in->mask, in->krgb, in->tol, in->slope, in->fo);
+		rgb_mask(sl, in->w, in->h, mask, in->krgb, in->tol, in->slope, in->fo);
 		break;
 	}
 	case 1:		//Transparency based mask
 	{
-		trans_mask(in->sl, in->w, in->h, in->mask, in->tol);
+		trans_mask(sl, in->w, in->h, mask, in->tol);
 		break;
 	}
 	case 2:		//Edge based mask inwards
 	{
-		edge_mask(in->sl, in->w, in->h, in->mask, in->tol*200.0, -1);
+		edge_mask(sl, in->w, in->h, mask, in->tol*200.0, -1);
 		break;
 	}
 	case 3:		//Edge based mask outwards
 	{
-		edge_mask(in->sl, in->w, in->h, in->mask, in->tol*200.0, 1);
+		edge_mask(sl, in->w, in->h, mask, in->tol*200.0, 1);
 		break;
 	}
 	}
 	
-	hue_gate(in->sl, in->w, in->h, in->mask, in->krgb, in->Hgate, 0.5*in->Hgate);
-	sat_thres(in->sl, in->w, in->h, in->mask, in->Sthresh);
+	hue_gate(sl, in->w, in->h, mask, in->krgb, in->Hgate, 0.5*in->Hgate);
+	sat_thres(sl, in->w, in->h, mask, in->Sthresh);
 	
 	switch(in->op1)		//OPERATION 1
 	{
 	case 0: break;
 	case 1:	//De-Key
 	{
-		clean_rad_m(in->sl, in->w, in->h, in->krgb, in->mask, in->am1);
+		clean_rad_m(sl, in->w, in->h, in->krgb, mask, in->am1);
 		break;
 	}
 	case 2:	//Target
 	{
-		clean_tgt_m(in->sl, in->w, in->h, in->krgb, in->mask, in->am1, in->trgb);
+		clean_tgt_m(sl, in->w, in->h, in->krgb, mask, in->am1, in->trgb);
 		break;
 	}
 	case 3:	//Desaturate
 	{
-		desat_m(in->sl, in->w, in->h, in->mask, in->am1, in->cm);
+		desat_m(sl, in->w, in->h, mask, in->am1, in->cm);
 		break;
 	}
 	case 4:	//Luma adjust
 	{
-		luma_m(in->sl, in->w, in->h, in->mask, in->am1, in->cm);
+		luma_m(sl, in->w, in->h, mask, in->am1, in->cm);
 		break;
 	}
 	}
@@ -1090,36 +1088,38 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	case 0: break;
 	case 1:	//De-Key
 	{
-		clean_rad_m(in->sl, in->w, in->h, in->krgb, in->mask, in->am2);
+		clean_rad_m(sl, in->w, in->h, in->krgb, mask, in->am2);
 		break;
 	}
 	case 2:	//Target
 	{
-		clean_tgt_m(in->sl, in->w, in->h, in->krgb, in->mask, in->am2, in->trgb);
+		clean_tgt_m(sl, in->w, in->h, in->krgb, mask, in->am2, in->trgb);
 		break;
 	}
 	case 3:	//Desaturate
 	{
-		desat_m(in->sl, in->w, in->h, in->mask, in->am2, in->cm);
+		desat_m(sl, in->w, in->h, mask, in->am2, in->cm);
 		break;
 	}
 	case 4:	//Luma adjust
 	{
-		luma_m(in->sl, in->w, in->h, in->mask, in->am2, in->cm);
+		luma_m(sl, in->w, in->h, mask, in->am2, in->cm);
 		break;
 	}
 	}
 	
 	if (in->showmask)	//REPLACE IMAGE WITH THE MASK
 	{
-		copy_mask_i(in->sl, in->w, in->h, in->mask);
+		copy_mask_i(sl, in->w, in->h, mask);
 	}
 	
 	if (in->m2a)		//REPLACE ALPHA WITH THE MASK
 	{
-		copy_mask_a(in->sl, in->w, in->h, in->mask);
+		copy_mask_a(sl, in->w, in->h, mask);
 	}      
 	
 	
-	float_2_RGBA8888(in->sl, outframe, in->w, in->h);
+	float_2_RGBA8888(sl, outframe, in->w, in->h);
+	free(mask);
+	free(sl);
 }
