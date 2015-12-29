@@ -10,12 +10,10 @@ srcdir=`dirname $0`
 
 AUTOHEADER=autoheader
 if [ "`uname -s`" = "Darwin" ]; then
-  LIBTOOL=glibtool
   LIBTOOLIZE=glibtoolize
   ACLOCAL=aclocal
   AUTOMAKE=automake
 else
-  LIBTOOL=libtool
   LIBTOOLIZE=libtoolize
   ACLOCAL=aclocal
   AUTOMAKE=automake
@@ -44,7 +42,7 @@ DIE=0
 	DIE=1
 }
 
-($LIBTOOL --version) < /dev/null > /dev/null 2>&1 || {
+($LIBTOOLIZE --version) < /dev/null > /dev/null 2>&1 || {
 	echo
 	echo "You must have libtool installed to compile $package."
 	echo "Download the appropriate package for your system,"
