@@ -160,6 +160,8 @@ void Ndvi::update(double time,
 void Ndvi::initLut() {
     // Only update the LUT if a parameter has changed.
     unsigned int paramLutLevelsInt = paramLutLevels * 1000.0 + 0.5;
+    if (paramLutLevelsInt < 2) paramLutLevelsInt = 2;
+    if (paramLutLevelsInt > 1000) paramLutLevelsInt = 1000;
     if (lutLevels == paramLutLevelsInt &&
         colorMap == paramColorMap) {
         return;
