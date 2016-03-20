@@ -64,9 +64,9 @@ and open source video software developers.
 It works on all hardware platforms without the need for any particular
 hardware acceleration (GNU/Linux, Apple/OSX and MS/Win) and consists
 of more than 100 plugins. Among the free and open source video
-application supporting frei0r are: KDEnLive, FFMpeg, MLT, PureData,
-Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, VeeJay and Flowblade
-among the others.
+application supporting frei0r are: KDEnLive, FFmpeg, MLT, PureData,
+Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, VeeJay, Flowblade, and
+Shotcut among the others.
 
 Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 
@@ -83,6 +83,7 @@ Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 [MLT]: http://www.mltframework.org/
 [KDEnLive]: http://www.kdenlive.org/
 [Flowblade]: http://code.google.com/p/flowblade/
+[Shotcut]: https://www.shotcut.org/
 
 
 Download 
