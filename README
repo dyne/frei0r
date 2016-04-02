@@ -6,7 +6,7 @@
     \___  /   |__|    \___  >__|\_____  /__|
         \/                \/          \/
 
-  Minimalistic plugin API for video effects  v1.4
+  Minimalistic plugin API for video effects  v1.5
 		by the Piksel Developers Union
 
   Updated info on http://frei0r.dyne.org
@@ -94,12 +94,7 @@ Source code
 
 Stable frei0r releases are packaged periodically and distributed on
 
- http://files.dyne.org/frei0r
-
-We encourage the unauthorized mirroring of this source repository by
-all those interested, using the command
-
- rsync -Pr rsync.dyne.org::frei0r .
+ https://files.dyne.org/frei0r
 
 Frei0r sourcecode is released under the terms of the GNU General
 Public License and, eventually other compatible Free Software
@@ -110,10 +105,13 @@ revisioning system *GIT*
 
  git clone git://code.dyne.org/frei0r.git
 
-Some clones made by developers are also found on github, but basically
-we coalesce around this repository online to pack releases. Make sure
-to get in touch with our mailinglist if you like to see your code in
-there (see the section Communication below).
+A repository is also maintained on Gitlab
+
+ https://github.com/ddennedy/frei0r
+
+
+Make sure to get in touch with our mailinglist if you like to
+contribute.
 
 Build dependencies 
 -------------------
@@ -147,7 +145,7 @@ directly and to include frei0r within their bundle.
 Microsoft / Windows
 ====================
 
-Pre-compiled binaries are uploaded on our website.
+Pre-compiled binaries are often provided by third-parties
 
 We encourage MS/Win application distributors to compile the plugins
 directly and to include frei0r within their bundle.
@@ -175,7 +173,7 @@ C++ Filter example
 
 A simple skeleton for a frei0r video filter looks like this:
 
-
+```c++
   #include <frei0r.hpp>
   
   typedef struct {
@@ -216,7 +214,7 @@ A simple skeleton for a frei0r video filter looks like this:
   frei0r::construct<MyExample>
           plugin("MyExample", "short and simple description for my example",
                  "Who did it", 1, 0);
-
+```
 
 
 Communication 
@@ -233,9 +231,9 @@ For bug reporting the mailinglist is preferred, but is also possible
 to use an [issue tracker].
 
 
-[subscribe]: http://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r
+[subscribe]: https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r
 [public archives]: http://lists.dyne.org/lurker/list/frei0r.en.html
-[issue tracker]: http://bugs.dyne.org
+[issue tracker]: https://github.com/ddennedy/frei0r/issues
 
 Acknowledgments 
 ~~~~~~~~~~~~~~~~

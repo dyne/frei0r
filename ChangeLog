@@ -1,7 +1,6 @@
-
 *** See also the Changes @section in include/frei0r.h or git log
 
-1.5.0 - 19 March 2016
+1.5.0 - 2 April 2016
 
 	This release fixes several major bugs in existing plugins and adds
 	one new filter: NDVI (Normalized Difference Vegetation Index).
@@ -53,4 +52,3 @@
 
 
 *** At last, see also git --log from repository
-
