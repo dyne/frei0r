@@ -13,6 +13,10 @@ add_library (alpha0ps MODULE ${O_SOURCES})
 add_library (alphagrad MODULE ${G_SOURCES})
 add_library (alphaspot MODULE ${S_SOURCES})
 
+target_link_libraries(alpha0ps -lm)
+target_link_libraries(alphagrad -lm)
+target_link_libraries(alphaspot -lm)
+
 set_target_properties (alpha0ps PROPERTIES PREFIX "")
 set_target_properties (alphagrad PROPERTIES PREFIX "")
 set_target_properties (alphaspot PROPERTIES PREFIX "")

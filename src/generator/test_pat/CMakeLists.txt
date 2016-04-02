@@ -15,6 +15,7 @@ if (MSVC)
   set (R_SOURCES ${R_SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
+link_libraries(m)
 add_library (test_pat_B MODULE ${B_SOURCES})
 add_library (test_pat_C MODULE ${C_SOURCES})
 add_library (test_pat_G MODULE ${G_SOURCES})
