@@ -105,9 +105,9 @@ revisioning system *GIT*
 
  git clone git://code.dyne.org/frei0r.git
 
-A repository is also maintained on Gitlab
+A repository is also maintained on GitHub:
 
- https://github.com/ddennedy/frei0r
+ https://github.com/dyne/frei0r
 
 
 Make sure to get in touch with our mailinglist if you like to
@@ -233,7 +233,7 @@ to use an [issue tracker].
 
 [subscribe]: https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r
 [public archives]: http://lists.dyne.org/lurker/list/frei0r.en.html
-[issue tracker]: https://github.com/ddennedy/frei0r/issues
+[issue tracker]: https://github.com/dyne/frei0r/issues
 
 Acknowledgments 
 ~~~~~~~~~~~~~~~~
