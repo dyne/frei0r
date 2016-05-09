@@ -21,12 +21,15 @@ typedef struct grid_point
 typedef struct distorter_instance
 {
   unsigned int width, height;
-  double amplitude, frequency;
+  double amplitude, frequency, change_speed;
   grid_point_t* grid;
+  double time_stack;
+  double mode;
 } distorter_instance_t;
 
 //const double AMPLTUDE_SCALE = 10.0;
 const double FREQUENCY_SCALE = 200.0;
+const double SPEED_SCALE = 2.0;
 
 void interpolateGrid(grid_point_t* grid, unsigned int w, unsigned int h,
 		     const uint32_t* src, uint32_t* dst);
@@ -47,8 +50,8 @@ void f0r_get_plugin_info(f0r_plugin_info_t* distorterInfo)
   distorterInfo->color_model = F0R_COLOR_MODEL_PACKED32;
   distorterInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   distorterInfo->major_version = 0; 
-  distorterInfo->minor_version = 9; 
-  distorterInfo->num_params =  2; 
+  distorterInfo->minor_version = 10;
+  distorterInfo->num_params =  4;
   distorterInfo->explanation = "Plasma";
 }
 
@@ -66,6 +69,16 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
       info->type = F0R_PARAM_DOUBLE;
       info->explanation = "The frequency of the plasma signal";
       break;
+    case 2:
+      info->name = "Use Velocity";
+      info->type = F0R_PARAM_BOOL;
+      info->explanation = "\'Time Based\' or \'Adjustable Velocity\'";
+      break;
+    case 3:
+      info->name = "Velocity";
+      info->type = F0R_PARAM_DOUBLE;
+      info->explanation = "Changing speed of the plasma signal";
+      break;
     }
 }
 
@@ -78,6 +91,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 			  ((width/GRID_SIZE)+1)*((height/GRID_SIZE)+1));
   inst->amplitude = 1.0;
   inst->frequency = 1.0;
+  inst->change_speed = 1.0;
+  inst->time_stack = 0.0;
+  inst->mode = 0.0;
   return (f0r_instance_t)inst;
 }
 
@@ -90,21 +106,28 @@ void f0r_destruct(f0r_instance_t instance)
 
 void f0r_set_param_value(f0r_instance_t instance, 
 			 f0r_param_t param, int param_index)
-{ 
+{
   assert(instance);
   distorter_instance_t* inst = (distorter_instance_t*)instance;
 
   switch(param_index)
     {
     case 0:
-      // scale
+      // don't scale
       inst->amplitude = *((double*)param);
       break;
     case 1:
       // scale
       inst->frequency = *((double*)param) * FREQUENCY_SCALE;
       break;
-    }  
+    case 2:
+      inst->mode = *((f0r_param_bool *)param);
+      break;
+    case 3:
+      // scale
+      inst->change_speed = *((double*)param) * SPEED_SCALE;
+      break;
+    }
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
@@ -125,6 +148,14 @@ void f0r_get_param_value(f0r_instance_t instance,
     case 1:
       // scale to [0..1]
       scaled = inst->frequency / FREQUENCY_SCALE;
+      *((double*)param) = scaled;
+      break;
+    case 2:
+      *((f0r_param_bool *)param) = inst->mode;
+      break;
+    case 3:
+      // scale to [0..1]
+      scaled = inst->change_speed / SPEED_SCALE;
       *((double*)param) = scaled;
       break;
     }
@@ -156,13 +187,15 @@ void f0r_update(f0r_instance_t instance, double time,
   unsigned int w = inst->width;
   unsigned int h = inst->height;
   unsigned int x,y;
-  
+
+  inst->time_stack+=inst->change_speed;
+
   grid_point_t* pt = inst->grid;
   for(y=0;y<=h;y+= GRID_SIZE)    
       for(x=0;x<=w;x+=GRID_SIZE,++pt)
 	{
 	  plasmaFunction(&pt->u, &pt->v, x, y, w, h, 
-			 inst->amplitude, inst->frequency, time);
+	                 inst->amplitude, inst->frequency, inst->mode?inst->time_stack:time);
 	}
 
   interpolateGrid(inst->grid, w, h, inframe, outframe);
