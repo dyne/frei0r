@@ -43,9 +43,7 @@ public:
 
     void update(double time,
                 uint32_t* out,
-                const uint32_t* in,
-                const uint32_t* in2,
-                const uint32_t* in3);
+                const uint32_t* in);
 
 private:
     
@@ -134,9 +132,7 @@ FaceBl0r::~FaceBl0r() {
 
 void FaceBl0r::update(double time,
                       uint32_t* out,
-		                  const uint32_t* in,
-		                  const uint32_t* in2,
-		                  const uint32_t* in3) {
+                          const uint32_t* in) {
 
   if (!cascade) {
       cvSetNumThreads(cvRound(threads * 100));

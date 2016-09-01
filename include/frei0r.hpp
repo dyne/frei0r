@@ -170,6 +170,19 @@ namespace frei0r
       
     public:
       virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_SOURCE; }
+      virtual void update(double time, uint32_t* out) = 0;
+
+    private:
+      virtual void update(double time,
+                uint32_t* out,
+                const uint32_t* in1,
+                const uint32_t* in2,
+                const uint32_t* in3) {
+          (void)in1; // unused
+          (void)in2; // unused
+          (void)in3; // unused
+          update(time, out);
+      }
   };
 
   class filter : public fx
@@ -179,6 +192,18 @@ namespace frei0r
     
   public:
     virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_FILTER; }
+    virtual void update(double time, uint32_t* out, const uint32_t* in1) = 0;
+
+  private:
+    virtual void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3) {
+        (void)in2; // unused
+        (void)in3; // unused
+        update(time, out, in1);
+    }
   };
 
   class mixer2 : public fx
@@ -188,6 +213,17 @@ namespace frei0r
       
   public:
     virtual unsigned int effect_type(){ return F0R_PLUGIN_TYPE_MIXER2; }
+    virtual void update(double time, uint32_t* out, const uint32_t* in1, const uint32_t* in2) = 0;
+
+  private:
+    virtual void update(double time,
+              uint32_t* out,
+              const uint32_t* in1,
+              const uint32_t* in2,
+              const uint32_t* in3) {
+        (void)in3; // unused
+        update(time, out, in1, in2);
+    }
   };
 
   

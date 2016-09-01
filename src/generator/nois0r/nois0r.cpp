@@ -48,10 +48,7 @@ public:
 
   
   virtual void update(double time,
-                      uint32_t* out,
-		              const uint32_t* in,
-		              const uint32_t* in2,
-		              const uint32_t* in3)
+                      uint32_t* out)
   {
     wnoise wn(0x0f0f0f0f ^ (unsigned int)(time*100000.0));
     

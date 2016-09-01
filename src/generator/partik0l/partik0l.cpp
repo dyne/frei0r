@@ -53,10 +53,7 @@ public:
   ~Partik0l();
   
   void update(double time,
-              uint32_t* out,
-              const uint32_t* in1,
-              const uint32_t* in2,
-              const uint32_t* in3);
+              uint32_t* out);
 
   int w, h;
 
@@ -161,10 +158,7 @@ Partik0l::~Partik0l() {
 
 
 void Partik0l::update(double time,
-                      uint32_t* out,
-		              const uint32_t* in1,
-		              const uint32_t* in2,
-		              const uint32_t* in3) {
+                      uint32_t* out) {
   /* automatic random recalculation:
      if( !blossom_count ) {    
      recalculate();

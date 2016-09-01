@@ -42,8 +42,7 @@ public:
   void update(double time,
               uint32_t* out,
               const uint32_t* in1,
-              const uint32_t* in2,
-              const uint32_t* in3)
+              const uint32_t* in2)
   {
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
     const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);

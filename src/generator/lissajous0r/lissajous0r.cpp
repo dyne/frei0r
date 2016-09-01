@@ -41,10 +41,7 @@ public:
 
   
   virtual void update(double time,
-                      uint32_t* out,
-		              const uint32_t* in,
-		              const uint32_t* in2,
-		              const uint32_t* in3)
+                      uint32_t* out)
   {
     std::fill(out, out+width*height, 0x00000000);
 

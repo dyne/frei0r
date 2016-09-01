@@ -52,11 +52,7 @@ public:
   Plasma(int wdt, int hgt);
   ~Plasma();
 
-  virtual void update(double time,
-                      uint32_t* out,
-		              const uint32_t* in,
-		              const uint32_t* in2,
-		              const uint32_t* in3);
+  virtual void update(double time, uint32_t* out);
 
 private:
 
@@ -163,11 +159,7 @@ Plasma::~Plasma() {
 
 }
 
-void Plasma::update(double time,
-                    uint32_t* out,
-	                const uint32_t* in,
-	                const uint32_t* in2,
-	                const uint32_t* in3) {
+void Plasma::update(double time, uint32_t* out) {
   uint16_t i, j;
   uint8_t index;
   int x;

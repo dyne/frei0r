@@ -59,9 +59,7 @@ public:
 
   virtual void update(double time,
                       uint32_t* out,
-		              const uint32_t* in,
-		              const uint32_t* in2,
-		              const uint32_t* in3);
+                      const uint32_t* in);
 
 private:
 
@@ -117,9 +115,7 @@ void Nervous::_init(int wdt, int hgt) {
 
 void Nervous::update(double time,
                      uint32_t* out,
-	                 const uint32_t* in,
-	                 const uint32_t* in2,
-	                 const uint32_t* in3) {
+                     const uint32_t* in) {
   memcpy(planetable[plane],in,geo.size);
 
   if(stock<PLANES) stock++;
