@@ -49,8 +49,8 @@ void f0r_get_plugin_info(f0r_plugin_info_t* distorterInfo)
   distorterInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
   distorterInfo->color_model = F0R_COLOR_MODEL_PACKED32;
   distorterInfo->frei0r_version = FREI0R_MAJOR_VERSION;
-  distorterInfo->major_version = 0; 
-  distorterInfo->minor_version = 10;
+  distorterInfo->major_version = 1;
+  distorterInfo->minor_version = 0;
   distorterInfo->num_params =  4;
   distorterInfo->explanation = "Plasma";
 }
