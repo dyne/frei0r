@@ -1,3 +1,5 @@
+set (CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
+link_libraries(m)
 add_subdirectory (filter)
 add_subdirectory (generator)
 add_subdirectory (mixer2)
