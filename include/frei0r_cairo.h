@@ -22,6 +22,7 @@
 
 #include <cairo.h>
 #include <string.h>
+#include "frei0r_math.h"
 
 /**
 * String identifiers for gradient types available using Cairo.
@@ -254,9 +255,9 @@ void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
   while ( --i ) {
     register unsigned char a = rgba[3];
 	if (a != 0) {
-		rgba[0] = ( rgba[0] << 8 ) / a;
-		rgba[1] = ( rgba[1] << 8 ) / a;
-		rgba[2] = ( rgba[2] << 8 ) / a;
+            rgba[0] = MIN(( rgba[0] << 8 ) / a, 255);
+            rgba[1] = MIN(( rgba[1] << 8 ) / a, 255);
+            rgba[2] = MIN(( rgba[2] << 8 ) / a, 255);
 	}
     rgba += 4;
   }
