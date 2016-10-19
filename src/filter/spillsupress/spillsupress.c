@@ -124,7 +124,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 0:
     info->name = "supresstype";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Defines if green or blue screen spill supress is applied";
+    info->explanation = "Defines if green or blue screen spill suppress is applied";
     break;
   }
 }
