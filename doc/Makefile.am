@@ -22,10 +22,10 @@ dist-hook:
 	-cp -ra html $(distdir)/doc/
 
 install-data:
-	install -c -m 644 -d $(htmldocs_DATA) $(htmldocsdir)
+	install -c -m 644 -d $(htmldocs_DATA) $(DESTDIR)$(htmldocsdir)
 
 # Modify the install hook, so we can install directories
 install-htmldocsDATA:
-	mkdir -p $(htmldocsdir)
-	cp -r ./html $(htmldocsdir)/
+	mkdir -p $(DESTDIR)$(htmldocsdir)
+	cp -r ./html $(DESTDIR)$(htmldocsdir)/
 
