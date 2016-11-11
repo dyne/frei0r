@@ -29,6 +29,7 @@ class blend : public frei0r::mixer2
 public:
   blend(unsigned int width, unsigned int height)
   {
+  	blend_factor = 0.5;
   	register_param(blend_factor,"blend","blend factor");
   }
 
