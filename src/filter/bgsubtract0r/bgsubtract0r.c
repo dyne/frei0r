@@ -93,7 +93,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
   bgsubtract0r_instance_t* inst = (bgsubtract0r_instance_t*)instance;
-  if (inst->reference) free(inst->reference);
+  free(inst->reference);
   free(inst->mask);
   free(inst);
 }
@@ -171,10 +171,12 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 inline static uint8_t dst(uint32_t x, uint32_t y)
 {
   uint8_t d;
+  uint8_t* px = (uint8_t*)&x;
+  uint8_t* py = (uint8_t*)&y;
 
-  d = abs((x&0xff)-(y&0xff));
-  d = MAX(d, abs(((x>>8)&0xff)-((y>>8)&0xff)));
-  d = MAX(d, abs(((x>>16)&0xff)-((y>>16)&0xff)));
+  d = abs(px[0]-py[0]);
+  d = MAX(d, abs(px[1]-py[1]));
+  d = MAX(d, abs(px[2]-py[2]));
 
   return d;
 }
@@ -191,6 +193,8 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
   int i;
   int j;
   int n;
+  uint8_t* pi;
+  uint8_t* po;
 
   if (!inst->reference)
   {
@@ -223,7 +227,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
       }
 
   for (i=0; i<len; i++)
-    outframe[i] = inframe[i] & 0xffffff | mask[i] << 24;
+    {
+      pi = (uint8_t*)&inframe[i];
+      po = (uint8_t*)&outframe[i];
+      po[0] = pi[0];
+      po[1] = pi[1];
+      po[2] = pi[2];
+      po[3] = mask[i];
+    }
 
   if (blur)
   {
@@ -248,7 +259,8 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
               a += mask[width*jj+ii];
           }
         a /= s;
-        outframe[width*j+i] = (outframe[width*j+i] & 0xffffff) | a << 24;
+        po = (uint8_t*)&outframe[width*j+i];
+        po[3] = a;
       }
   }
 }
