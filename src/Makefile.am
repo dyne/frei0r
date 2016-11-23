@@ -26,6 +26,7 @@ plugin_LTLIBRARIES = \
 	baltan.la \
 	blend.la \
 	bluescreen0r.la \
+	bgsubtract0r.la \
 	brightness.la \
 	burn.la \
 	bw0r.la \
@@ -193,6 +194,7 @@ alphaspot_la_SOURCES = filter/alpha0ps/alphaspot.c
 B_la_SOURCES = filter/RGB/B.c
 balanc0r_la_SOURCES = filter/balanc0r/balanc0r.c
 baltan_la_SOURCES = filter/baltan/baltan.cpp
+bgsubtract0r_la_SOURCES = filter/bgsubtract0r/bgsubtract0r.c
 bluescreen0r_la_SOURCES = filter/bluescreen0r/bluescreen0r.cpp
 brightness_la_SOURCES = filter/brightness/brightness.c
 bw0r_la_SOURCES = filter/bw0r/bw0r.c
