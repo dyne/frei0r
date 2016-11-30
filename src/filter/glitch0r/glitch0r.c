@@ -27,9 +27,15 @@
 #include "frei0r.h"
 
 /* cheap & fast randomizer (by Fukuchi Kentarou) */
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
 static uint32_t randval;
 inline static uint32_t fastrand() { return (randval=randval*1103515245+12345); };
 static void fastsrand(uint32_t seed) { randval = seed; };
+=======
+uint32_t randval;
+inline uint32_t fastrand() { return (randval=randval*1103515245+12345); };
+void fastsrand(uint32_t seed) { randval = seed; };
+>>>>>>> Add glitch0r plugin
 
 struct glitch0r_state // helps to save time when allocating in a loop
 {
@@ -60,12 +66,20 @@ typedef struct glitch0r_instance
 } glitch0r_instance_t;
 
 
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
 inline static unsigned int rnd (unsigned int min, unsigned int max)
+=======
+inline unsigned int rnd (unsigned int min, unsigned int max)
+>>>>>>> Add glitch0r plugin
 {
     return fastrand() % (max - min + 1) + min;
 }
 
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
 inline static void glitch0r_state_reset(glitch0r_instance_t *inst)
+=======
+inline void glitch0r_state_reset(glitch0r_instance_t *inst)
+>>>>>>> Add glitch0r plugin
 {
     g0r_state.currentPos = 0;
     g0r_state.currentBlock = rnd(1, inst->maxBlockSize);
@@ -74,13 +88,19 @@ inline static void glitch0r_state_reset(glitch0r_instance_t *inst)
 
     if (inst->doColorDistortion)
     {
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
         g0r_state.distortionSeed1 = rnd(0x00000000, 0xfffffffe);
         g0r_state.distortionSeed2 = rnd(0x00000000, 0xfffffffe);
+=======
+        g0r_state.distortionSeed1 = rnd(0x00000000, 0x00ffffff);
+        g0r_state.distortionSeed2 = rnd(0x00000000, 0x00ffffff);
+>>>>>>> Add glitch0r plugin
         g0r_state.howToDistort1 = rnd (0, inst->colorGlitchIntensity);
         g0r_state.howToDistort2 = rnd (0, inst->colorGlitchIntensity);
     }
 }
 
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
 inline static void glitch0r_pixel_dist0rt (uint32_t *pixel,
             uint32_t distortionSeed, short int howToDistort)
 {
@@ -93,6 +113,15 @@ inline static void glitch0r_pixel_dist0rt (uint32_t *pixel,
     switch (howToDistort)
     {
         case 0 : return; // ok, let this pixel live (just shift)
+=======
+inline void glitch0r_pixel_dist0rt (uint32_t *pixel,
+            uint32_t distortionSeed, short int howToDistort)
+{
+    // Choose from five levels of madness:
+    switch (howToDistort)
+    {
+        case 0 : break; // ok, let this pixel live (just shift)
+>>>>>>> Add glitch0r plugin
 
         case 1 : // lightest distortion: just invert
             *(pixel) = ~*(pixel);
@@ -110,9 +139,12 @@ inline static void glitch0r_pixel_dist0rt (uint32_t *pixel,
             *(pixel) = distortionSeed & *(pixel);
             break;
     }  
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
 
     // Restore alpha
     px[3] = alpha;
+=======
+>>>>>>> Add glitch0r plugin
 }
 
 int f0r_init()
@@ -142,7 +174,11 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
     switch(param_index) {
         case 0:
         {
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
             info->name = "Glitch frequency";
+=======
+            info->name = "GlitchFrequency";
+>>>>>>> Add glitch0r plugin
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "How frequently the glitch should be applied";
             break;
@@ -150,7 +186,11 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
         case 1:
         {
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
             info->name = "Block height";
+=======
+            info->name = "BlockHeight";
+>>>>>>> Add glitch0r plugin
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "Height range of the block that will be shifted/glitched";
             break;
@@ -158,7 +198,11 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
         case 2:
         {
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
             info->name = "Shift intensity";
+=======
+            info->name = "ShiftIntensity";
+>>>>>>> Add glitch0r plugin
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "How much we should move blocks when glitching";
             break;
@@ -166,7 +210,11 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
         case 3:
         {
+<<<<<<< 79239c58e582b1cc9200901fcce0a5a616c75b7c
             info->name = "Color glitching intensity";
+=======
+            info->name = "ColorGlitchingIntensity";
+>>>>>>> Add glitch0r plugin
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "How intensive should be color distortion";
             break;
