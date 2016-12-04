@@ -27,9 +27,9 @@
 #include "frei0r.h"
 
 /* cheap & fast randomizer (by Fukuchi Kentarou) */
-uint32_t randval;
-inline uint32_t fastrand() { return (randval=randval*1103515245+12345); };
-void fastsrand(uint32_t seed) { randval = seed; };
+static uint32_t randval;
+inline static uint32_t fastrand() { return (randval=randval*1103515245+12345); };
+static void fastsrand(uint32_t seed) { randval = seed; };
 
 struct glitch0r_state // helps to save time when allocating in a loop
 {
@@ -60,12 +60,12 @@ typedef struct glitch0r_instance
 } glitch0r_instance_t;
 
 
-inline unsigned int rnd (unsigned int min, unsigned int max)
+inline static unsigned int rnd (unsigned int min, unsigned int max)
 {
     return fastrand() % (max - min + 1) + min;
 }
 
-inline void glitch0r_state_reset(glitch0r_instance_t *inst)
+inline static void glitch0r_state_reset(glitch0r_instance_t *inst)
 {
     g0r_state.currentPos = 0;
     g0r_state.currentBlock = rnd(1, inst->maxBlockSize);
@@ -74,20 +74,25 @@ inline void glitch0r_state_reset(glitch0r_instance_t *inst)
 
     if (inst->doColorDistortion)
     {
-        g0r_state.distortionSeed1 = rnd(0x00000000, 0x00ffffff);
-        g0r_state.distortionSeed2 = rnd(0x00000000, 0x00ffffff);
+        g0r_state.distortionSeed1 = rnd(0x00000000, 0xfffffffe);
+        g0r_state.distortionSeed2 = rnd(0x00000000, 0xfffffffe);
         g0r_state.howToDistort1 = rnd (0, inst->colorGlitchIntensity);
         g0r_state.howToDistort2 = rnd (0, inst->colorGlitchIntensity);
     }
 }
 
-inline void glitch0r_pixel_dist0rt (uint32_t *pixel,
+inline static void glitch0r_pixel_dist0rt (uint32_t *pixel,
             uint32_t distortionSeed, short int howToDistort)
 {
+
+    // Save alpha
+    uint8_t *px = (uint8_t *)pixel;
+    uint8_t alpha = px[3];
+
     // Choose from five levels of madness:
     switch (howToDistort)
     {
-        case 0 : break; // ok, let this pixel live (just shift)
+        case 0 : return; // ok, let this pixel live (just shift)
 
         case 1 : // lightest distortion: just invert
             *(pixel) = ~*(pixel);
@@ -105,6 +110,9 @@ inline void glitch0r_pixel_dist0rt (uint32_t *pixel,
             *(pixel) = distortionSeed & *(pixel);
             break;
     }  
+
+    // Restore alpha
+    px[3] = alpha;
 }
 
 int f0r_init()
@@ -134,7 +142,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
     switch(param_index) {
         case 0:
         {
-            info->name = "GlitchFrequency";
+            info->name = "Glitch frequency";
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "How frequently the glitch should be applied";
             break;
@@ -142,7 +150,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
         case 1:
         {
-            info->name = "BlockHeight";
+            info->name = "Block height";
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "Height range of the block that will be shifted/glitched";
             break;
@@ -150,7 +158,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
         case 2:
         {
-            info->name = "ShiftIntensity";
+            info->name = "Shift intensity";
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "How much we should move blocks when glitching";
             break;
@@ -158,7 +166,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
         case 3:
         {
-            info->name = "ColorGlitchingIntensity";
+            info->name = "Color glitching intensity";
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "How intensive should be color distortion";
             break;
