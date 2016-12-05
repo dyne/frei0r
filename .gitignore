@@ -23,6 +23,7 @@ tags
 cmake_install.cmake
 CMakeFiles
 CMakeCache.txt
+install_manifest.txt
 *~
 Makefile.in
 Makefile
