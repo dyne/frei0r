@@ -98,6 +98,7 @@ plugin_LTLIBRARIES = \
 	R.la \
 	RGB.la \
 	rgbnoise.la \
+	rgbsplit0r.la \
 	saturation.la \
 	saturat0r.la \
 	scanline0r.la \
@@ -248,6 +249,7 @@ pr0file_la_SOURCES = filter/measure/pr0file.c filter/measure/measure.h filter/me
 primaries_la_SOURCES = filter/primaries/primaries.cpp
 R_la_SOURCES = filter/RGB/R.c
 rgbnoise_la_SOURCES = filter/rgbnoise/rgbnoise.c
+rgbsplit0r_la_SOURCES = filter/rgbsplit0r/rgbsplit0r.c
 saturat0r_la_SOURCES = filter/saturat0r/saturat0r.c
 scanline0r_la_SOURCES = filter/scanline0r/scanline0r.cpp
 select0r_la_SOURCES = filter/select0r/select0r.c
