@@ -1,5 +1,13 @@
 *** See also the Changes @section in include/frei0r.h or git log
 
+1.6.0 - 24 March 2017
+
+	This release contains new filters and some bugfixes to parameters
+	and building environment, documentation is updated accordingly.
+	New filters (3): bgsubtract0r, glitch0r, rgbsplit0r
+	Updated (2): Distort0r now mode and velocity, Curves has improved
+	precision.
+
 1.5.0 - 2 April 2016
 
 	This release fixes several major bugs in existing plugins and adds
