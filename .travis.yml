@@ -4,6 +4,6 @@ before_script:
 - sudo apt-get build-dep frei0r-plugins
 script:
 - ./configure && make -j
-sudo: false
+sudo: required
 dist: trusty
 
