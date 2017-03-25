@@ -5,7 +5,7 @@ AC_PREREQ(2.59c)
 AC_INIT(frei0r-plugins, [1.5.0], [frei0r-devel@dyne.org])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 # Checks for programs.
 AC_PROG_CXX

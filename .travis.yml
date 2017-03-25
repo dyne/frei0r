@@ -1,0 +1,9 @@
+language: c
+before_script:
+- sudo apt-get -qq update
+- sudo apt-get build-dep frei0r-plugins
+script:
+- ./configure && make -j
+sudo: false
+dist: trusty
+
