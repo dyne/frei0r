@@ -16,4 +16,4 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = frei0r.pc
 
 docsdir = ${prefix}/share/doc/${PACKAGE}
-docs_DATA = README ChangeLog TODO AUTHORS 
+docs_DATA = README.md ChangeLog TODO AUTHORS 
