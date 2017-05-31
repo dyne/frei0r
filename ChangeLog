@@ -1,5 +1,9 @@
 *** See also the Changes @section in include/frei0r.h or git log
 
+1.6.1 - 25 May 2017
+
+	Minor fixes to the build system. Version correctly updated.
+
 1.6.0 - 24 March 2017
 
 	This release contains new filters and some bugfixes to parameters
