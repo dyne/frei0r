@@ -64,11 +64,11 @@ uint8_t MAX255(uint32_t a) { return (uint8_t) (a | ((a & 256) - ((a & 256) >> 8)
 #endif
 
 #ifndef MIN
-#define MIN(x, y)  ((x) < (y) ? (x) : (y));
+#define MIN(x, y)  ((x) < (y) ? (x) : (y))
 #endif
 
 #ifndef MAX
-#define MAX(x, y)  ((x) > (y) ? (x) : (y));
+#define MAX(x, y)  ((x) > (y) ? (x) : (y))
 #endif
 
 #endif
