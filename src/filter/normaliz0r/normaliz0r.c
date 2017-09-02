@@ -144,9 +144,10 @@ f0r_instance_t
 f0r_construct (unsigned int width, unsigned int height)
 {
   normaliz0r_instance_t* inst = (normaliz0r_instance_t*)calloc(1, sizeof(*inst));
+  int c;
   inst->num_pixels = width * height;
   inst->frame_num = 0;
-  for (int c = 0; c < 3; c++)
+  for (c = 0; c < 3; c++)
   {
     inst->min[c].history_sum = 0;
     inst->max[c].history_sum = 0;
@@ -240,6 +241,7 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
 {
   assert(instance);
   normaliz0r_instance_t* inst = (normaliz0r_instance_t*)instance;
+  int c;
 
   // Per-extrema, per-channel local variables.
   struct
@@ -282,7 +284,7 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
     if (inst->frame_num >= inst->history_len)
     {
       //The history is full; drop oldest value and cap num_history_vals.
-      for (int c = 0; c < 3; c++)
+      for (c = 0; c < 3; c++)
       {
         inst->min[c].history_sum -= inst->min[c].history[history_idx];
         inst->max[c].history_sum -= inst->max[c].history[history_idx];
@@ -291,7 +293,7 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
     }
     // For each extremum, update history_sum and calculate smoothed value as
     // the rolling average of the history entries.
-    for (int c = 0; c < 3; c++)
+    for (c = 0; c < 3; c++)
     {
       inst->min[c].history_sum += (inst->min[c].history[history_idx] = min[c].in);
       min[c].smoothed = (float)inst->min[c].history_sum / (float)num_history_vals;
@@ -313,7 +315,7 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
   // Now, process each channel to determine the input and output range and
   // build the lookup tables.
   uint8_t lut[3][256];
-  for (int c = 0; c < 3; c++)
+  for (c = 0; c < 3; c++)
   {
     // Adjust the input range for this channel [min.smoothed,max.smoothed] by
     // mixing in the correct proportion of the linked normalization input range
@@ -339,7 +341,8 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
     if (min[c].smoothed == max[c].smoothed)
     {
       // There is no dynamic range to expand.  No mapping for this channel.
-      for (int in_val = min[c].in; in_val <= max[c].in; in_val++)
+      int in_val;
+      for (in_val = min[c].in; in_val <= max[c].in; in_val++)
         lut[c][in_val] = min[c].out;
     }
     else
@@ -349,7 +352,8 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
       // [min.smoothed,max.smoothed], some output values may fall outside the
       // [0,255] dynamic range.  We need to CLAMP() them.
       float scale = (max[c].out - min[c].out) / (max[c].smoothed - min[c].smoothed);
-      for (int in_val = min[c].in; in_val <= max[c].in; in_val++)
+      int in_val;
+      for (in_val = min[c].in; in_val <= max[c].in; in_val++)
       {
         int out_val = ROUND((in_val - min[c].smoothed) * scale + min[c].out);
         lut[c][in_val] = CLAMP(out_val, 0, 255);
