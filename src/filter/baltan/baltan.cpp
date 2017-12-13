@@ -83,6 +83,7 @@ Baltan::Baltan(int wdt, int hgt) {
 }
 
 Baltan::~Baltan() {
+  free(planebuf);
   free(procbuf);
 }
 
