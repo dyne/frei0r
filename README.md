@@ -133,7 +133,7 @@ If you are new to frei0r (but not to programming) the best thing is probably to 
 
 ## C++ Filter example 
 
-You could find a tutorial filter [here](/src/filter/tutorial) in the source code.
+You could find a tutorial filter [here](https://github.com/dyne/frei0r/tree/master/src/filter/tutorial) in the source code.
 A simple skeleton for a frei0r video filter looks like this:
 
 ```c++
