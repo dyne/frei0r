@@ -164,8 +164,8 @@ void f0r_update(f0r_instance_t instance, double time,
 
   // Create brightness image
   unsigned int len = inst->width * inst->height;
-  unsigned char bumpPixels[len];
-  unsigned char alphaVals[len];
+  unsigned char *bumpPixels=malloc(len);
+  unsigned char *alphaVals=malloc(len);
   unsigned int index, r, g, b, a = 0;
   const unsigned char* src = (unsigned char*)inframe;
   while (len--)
@@ -228,5 +228,7 @@ void f0r_update(f0r_instance_t instance, double time,
       *dst++ = alphaVals[s1]; //copy alpha
     }  
   }
+  free(alphaVals);
+  free(bumpPixels);
 }
 
