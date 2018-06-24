@@ -78,8 +78,8 @@ void f0r_get_plugin_info(f0r_plugin_info_t* rgbsplit0rInfo)
     rgbsplit0rInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
     rgbsplit0rInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
     rgbsplit0rInfo->frei0r_version = FREI0R_MAJOR_VERSION;
-    rgbsplit0rInfo->major_version = 0; 
-    rgbsplit0rInfo->minor_version = 1; 
+    rgbsplit0rInfo->major_version = 1;
+    rgbsplit0rInfo->minor_version = 0;
     rgbsplit0rInfo->num_params =  2;
     rgbsplit0rInfo->explanation = "RGB splitting and shifting";
 }
@@ -109,6 +109,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
     rgbsplit0r_instance_t* inst = (rgbsplit0r_instance_t*)calloc(1, sizeof(*inst));
     inst->width = width; inst->height = height;
+    inst->shiftY = 0.5;
+    inst->shiftX = 0.5;
 
     return (f0r_instance_t)inst;
 }
@@ -129,7 +131,8 @@ void f0r_set_param_value(f0r_instance_t instance,
 
         case 0 : // vertical shift
         {
-            double shiftY = *((double*)param);
+            // scale to [-1/16..1/16]
+            double shiftY = *((double*)param) - 0.5;
 
             // Convert to range from 0 to one eighth of height
             shiftY = ((inst->height / 8) * shiftY);
@@ -140,7 +143,8 @@ void f0r_set_param_value(f0r_instance_t instance,
 
         case 1 : // horizontal shift
         {
-            double shiftX = *((double*)param);
+            // scale to [-1/16..1/16]
+            double shiftX = *((double*)param) - 0.5;
             
             // Convert to range from 0 to one eighth of width
             shiftX = ((inst->width / 8) * shiftX);
@@ -163,14 +167,14 @@ void f0r_get_param_value(f0r_instance_t instance,
         case 0 : // vertical shift
         {
             // convert plugin's param to frei0r range
-            *((double*)param) = (inst->shiftY) / (inst->height / 8);
+            *((double*)param) = (inst->shiftY) / (inst->height / 8) + 0.5;
             break;
         }
 
         case 1 : // horizontal shift
         {
             // convert plugin's param to frei0r range
-            *((double*)param) = (inst->shiftX) / (inst->width / 8);
+            *((double*)param) = (inst->shiftX) / (inst->width / 8) + 0.5;
             break;
         }
     }
