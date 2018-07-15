@@ -327,8 +327,8 @@ value_la_SOURCES = mixer2/value/value.cpp
 xfade0r_la_SOURCES = mixer2/xfade0r/xfade0r.cpp
 
 
-AM_CPPFLAGS = -I@top_srcdir@/include 
-AM_CFLAGS = -I@top_srcdir@/include 
+AM_CPPFLAGS = -I@top_srcdir@/include -Wrestrict -Waddress -Wtype-limits -Wsign-compare
+AM_CFLAGS = -I@top_srcdir@/include -Wrestrict -Waddress -Wtype-limits -Wsign-compare
 AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
 AM_LIBTOOLFLAGS = --tag=disable-static
 
