@@ -15,11 +15,17 @@
  */
 
 
+#include <opencv2/core/version.hpp>
+#define CV_VERSION_NUM (CV_VERSION_MAJOR * 10000 \
+                      + CV_VERSION_MINOR * 100 \
+                      + CV_VERSION_REVISION)
 #include <stdio.h>
 #include <stdlib.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#if CV_VERSION_NUM > 30401
 #include <opencv2/imgproc.hpp>
+#endif
 
 #include <frei0r.hpp>
 #include <frei0r_math.h>
