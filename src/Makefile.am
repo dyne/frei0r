@@ -95,6 +95,7 @@ plugin_LTLIBRARIES = \
 	posterize.la \
 	pr0be.la \
 	pr0file.la \
+	premultiply.la \
 	primaries.la \
 	R.la \
 	RGB.la \
@@ -248,6 +249,7 @@ pixeliz0r_la_SOURCES = filter/pixeliz0r/pixeliz0r.c
 posterize_la_SOURCES = filter/posterize/posterize.c
 pr0be_la_SOURCES = filter/measure/pr0be.c filter/measure/measure.h filter/measure/font2.h
 pr0file_la_SOURCES = filter/measure/pr0file.c filter/measure/measure.h filter/measure/font2.h
+premultiply_la_SOURCES = filter/premultiply/premultiply.cpp
 primaries_la_SOURCES = filter/primaries/primaries.cpp
 R_la_SOURCES = filter/RGB/R.c
 rgbnoise_la_SOURCES = filter/rgbnoise/rgbnoise.c
