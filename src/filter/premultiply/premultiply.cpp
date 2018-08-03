@@ -48,25 +48,24 @@ public:
                 dst[0] = (src[0] * a) >> 8;
                 dst[1] = (src[1] * a) >> 8;
                 dst[2] = (src[2] * a) >> 8;
-                dst[3] =  src[3];
+                dst[3] =  a;
                 src += 4;
                 dst += 4;
             }
         } else {
             // unpremultiply
             while (--n) {
-                uint16_t a = src[3];
+                uint8_t a = src[3];
                 if (a > 0 && a < 255) {
-                    a = (1 << 8) / a;
-                    dst[0] = MIN(a * src[0], 255);
-                    dst[1] = MIN(a * src[1], 255);
-                    dst[2] = MIN(a * src[2], 255);
+                    dst[0] = MIN((src[0] << 8) / a, 255);
+                    dst[1] = MIN((src[1] << 8) / a, 255);
+                    dst[2] = MIN((src[2] << 8) / a, 255);
                 } else {
                     dst[0] = src[0];
                     dst[1] = src[1];
                     dst[2] = src[2];
                 }
-                dst[3] = src[3];
+                dst[3] = a;
                 src += 4;
                 dst += 4;
             }
@@ -80,5 +79,5 @@ private:
 frei0r::construct<Premultiply> plugin("Premultiply or Unpremultiply",
                 "Multiply (or divide) each color component by the pixel's alpha value",
                 "Dan Dennedy",
-                0, 1,
+                0, 2,
                 F0R_COLOR_MODEL_RGBA8888);
