@@ -237,12 +237,12 @@ void cetverokotnik4(int wi, int hi, int wo, int ho, tocka2 vog[], int str, float
 				}
 			}
 			aa=b+d*v1; bb=f+h*v1;
-			if (fabsf(aa)>fabsf(bb))
+			if (fabs(aa)>fabs(bb))
 				u1 = (aa!=0.0) ? -(a+c*v1)/aa : 1000.0;
 			else
 				u1 = (bb!=0.0) ? -(e+g*v1)/bb : 1000.0;
 			aa=b+d*v2; bb=f+h*v2;
-			if (fabsf(aa)>fabsf(bb))
+			if (fabs(aa)>fabs(bb))
 				u2 = (aa!=0.0) ? -(a+c*v2)/aa : 1000.0;
 			else
 				u2 = (bb!=0.0) ? -(e+g*v2)/bb : 1000.0;
