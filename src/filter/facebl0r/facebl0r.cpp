@@ -16,8 +16,8 @@
 
 
 #include <opencv2/core/version.hpp>
-#define CV_VERSION_NUM (CV_VERSION_MAJOR * 10000 \
-                      + CV_VERSION_MINOR * 100 \
+#define CV_VERSION_NUM (CV_MAJOR_VERSION * 10000 \
+                      + CV_MINOR_VERSION * 100 \
                       + CV_VERSION_REVISION)
 #include <stdio.h>
 #include <stdlib.h>
