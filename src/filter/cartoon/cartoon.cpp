@@ -136,19 +136,7 @@ private:
   
   void FlattenColor(int32_t *c);
   long GetMaxContrast(int32_t *src,int x,int y);
-  
-  inline uint16_t gmerror(int32_t a, int32_t b);
 };
-
-/* the following should be faster on older CPUs
-   but runs slower than the GMERROR define on SSE units*/
-inline uint16_t Cartoon::gmerror(int32_t a, int32_t b) {
-  register int dr, dg, db;
-  if((dr = RED(a) - RED(b)) < 0) dr = -dr;
-  if((dg = GREEN(a) - GREEN(b)) < 0) dg = -dg;
-  if((db = BLUE(a) - BLUE(b)) < 0) db = -db;
-  return(powprecal[dr]+powprecal[dg]+powprecal[db]);
-}
 
 
 void Cartoon::FlattenColor(int32_t *c) {
