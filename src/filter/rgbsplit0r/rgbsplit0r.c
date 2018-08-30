@@ -109,8 +109,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
     rgbsplit0r_instance_t* inst = (rgbsplit0r_instance_t*)calloc(1, sizeof(*inst));
     inst->width = width; inst->height = height;
-    inst->shiftY = 0.5;
-    inst->shiftX = 0.5;
+    inst->shiftY = 0;
+    inst->shiftX = 0;
 
     return (f0r_instance_t)inst;
 }
@@ -197,8 +197,8 @@ void f0r_update(f0r_instance_t instance, double time,
         {
 
             // First make a blue layer shifted back
-            if (((int)(x - inst->shiftX) >= 0) &&
-                ((int)(y - inst->shiftY) >= 0))
+            if (((x - inst->shiftX) < inst->width) &&
+                ((y - inst->shiftY) < inst->height))
             {
                 rgbsplit0r_extract_color((uint32_t *)(src +
                     (x - inst->shiftX) +
