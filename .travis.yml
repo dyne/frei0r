@@ -1,14 +1,18 @@
-sudo: required
-
+notifications:
+  email: false
+env:
+  - RELEASE_BRANCH="master"
 language: c
-
+os:
+- linux
+- osx
+sudo: required
 services:
   - docker
 
 before_install:
-- docker pull dyne/devuan:beowulf
-- docker build -t freior/pugins .
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull dyne/devuan:beowulf && docker build -t freior/pugins .; fi
 
 script:
 - cmake . && make
-
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git clean -fd && ./autogen.sh && ./configure && make ; fi
