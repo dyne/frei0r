@@ -72,7 +72,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* bgsubtract0r_info)
   bgsubtract0r_info->color_model = F0R_COLOR_MODEL_RGBA8888;
   bgsubtract0r_info->frei0r_version = FREI0R_MAJOR_VERSION;
   bgsubtract0r_info->major_version = 0;
-  bgsubtract0r_info->minor_version = 2;
+  bgsubtract0r_info->minor_version = 3;
   bgsubtract0r_info->num_params =  3;
   bgsubtract0r_info->explanation = "Bluescreen the background of a static video.";
 }
@@ -86,7 +86,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->blur = 0;
   inst->threshold = 26;
   inst->reference = NULL;
-  inst->mask = malloc(width*height);
+  inst->mask = malloc(sizeof(uint8_t)*width*height);
   return (f0r_instance_t)inst;
 }
 
@@ -201,7 +201,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     int blen = sizeof(uint32_t)*len;
     inst->reference = malloc(blen);
     memmove(inst->reference, inframe, blen);
-    memset(mask, 0, blen);
+    memset(mask, 0, sizeof(uint8_t)*len);
   }
   else
   {
