@@ -221,6 +221,7 @@ distort0r_la_SOURCES = filter/distort0r/distort0r.c
 dither_la_SOURCES = filter/dither/dither.c
 edgeglow_la_SOURCES = filter/edgeglow/edgeglow.cpp
 emboss_la_SOURCES = filter/emboss/emboss.c
+emboss_la_LIBADD = -lm
 equaliz0r_la_SOURCES = filter/equaliz0r/equaliz0r.cpp
 flippo_la_SOURCES = filter/flippo/flippo.c
 G_la_SOURCES = filter/RGB/G.c
