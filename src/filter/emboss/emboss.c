@@ -166,7 +166,7 @@ void f0r_update(f0r_instance_t instance, double time,
   unsigned int len = inst->width * inst->height;
   unsigned char *bumpPixels=malloc(len);
   unsigned char *alphaVals=malloc(len);
-  unsigned int index, r, g, b, a = 0;
+  unsigned int index = 0, r = 0, g = 0, b = 0, a = 0;
   const unsigned char* src = (unsigned char*)inframe;
   while (len--)
   {
