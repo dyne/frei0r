@@ -36,19 +36,15 @@ struct ABGR {
             std::cerr << "Timeout indicator: Opacity must be within 0 and 1!" << std::endl;
         }
 #endif
-        const float l = opacity;
-        const float r = 1-opacity;
+        const float o1 = opacity;
+        const float o2= 1-opacity;
         ABGR ret;
-        ret.r = l*r + r*other.r;
-        ret.g = l*g + r*other.g;
-        ret.b = l*b + r*other.b;
-        ret.a =         other.a;
+        ret.r = o1*r + o2*other.r;
+        ret.g = o1*g + o2*other.g;
+        ret.b = o1*b + o2*other.b;
+        ret.a =          other.a;
         return ret;
     }
-};
-union ABGRPixel {
-    ABGR color;
-    uint32_t value;
 };
 
 class Timeout : public frei0r::filter
@@ -103,7 +99,7 @@ public:
 #endif
 
 
-        for (int y = y0; y >= int(yt); y--) {
+        for (int y = y0; y > int(yt); y--) {
 
             float factor = 1-m_transparency;
             if (y == int(yt)) {
@@ -120,10 +116,9 @@ public:
 
 private:
     // The various f0r_params are adjustable parameters.
-    // This one determines the size of the black bar in this example.
-    f0r_param_double m_time;
-    f0r_param_color m_color;
-    f0r_param_double m_transparency;
+    f0r_param_double m_time = 0.0;
+    f0r_param_color m_color = {0.0, 0.0, 0.0};
+    f0r_param_double m_transparency = 0.0;
 
     unsigned int x0, y0;
     unsigned int W , H ;
