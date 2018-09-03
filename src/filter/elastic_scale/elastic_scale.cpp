@@ -137,7 +137,7 @@ private:
     unsigned int m_borderXAbsRightDst;
     bool m_initialized;
 
-    TransformationElem* m_transformationCalculations = nullptr;
+    TransformationElem* m_transformationCalculations = NULL;
 
     void updateScalingFactors()
     {
@@ -173,7 +173,7 @@ private:
 
     void calcTransformationFactors()
     {
-        if (m_transformationCalculations == nullptr)
+        if (m_transformationCalculations == NULL)
         {
             m_transformationCalculations = new TransformationElem[m_width];
         }
