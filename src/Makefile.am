@@ -54,6 +54,7 @@ plugin_LTLIBRARIES = \
 	divide.la \
 	dodge.la \
 	edgeglow.la \
+	elastic_scale.la \
 	emboss.la \
 	equaliz0r.la \
 	flippo.la \
@@ -220,6 +221,7 @@ delaygrab_la_SOURCES = filter/delaygrab/delaygrab.cpp
 distort0r_la_SOURCES = filter/distort0r/distort0r.c
 dither_la_SOURCES = filter/dither/dither.c
 edgeglow_la_SOURCES = filter/edgeglow/edgeglow.cpp
+elastic_scale_la_SOURCES = filter/elastic_scale/elastic_scale.cpp
 emboss_la_SOURCES = filter/emboss/emboss.c
 emboss_la_LIBADD = -lm
 equaliz0r_la_SOURCES = filter/equaliz0r/equaliz0r.cpp
