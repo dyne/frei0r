@@ -124,6 +124,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 
 void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsigned char* src)
 {
+  int x, y;
   int w = inst->width;
   int h = inst->height;
   int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, w);
@@ -142,10 +143,11 @@ void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsig
                                                stride);
 
   cairo_pattern_t *pattern = cairo_pattern_create_for_surface (image);
-  cairo_pattern_set_extend (pattern, CAIRO_EXTEND_REPEAT);
 
   double rows = 1 + (MAX_ROWS - 1) * inst->rows;
   double columns = 1 + (MAX_ROWS - 1) * inst->columns;
+  int pw = (int)(w/columns);
+  int ph = (int)(h/rows);
 
   cairo_matrix_t   matrix;
   cairo_matrix_init_scale (&matrix, columns, rows);
@@ -153,8 +155,16 @@ void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsig
 
   cairo_set_source (cr, pattern);
 
-  cairo_rectangle (cr, 0, 0, w, h);
+  cairo_rectangle (cr, 0, 0, pw, ph);
   cairo_fill (cr);
+
+  uint32_t *dst32 = (uint32_t *) dst;
+
+  for (y = 0; y < h; y++) {
+    for (x = 0; x < w; x++) {
+	dst32[y*w+x] = dst32[(y % ph) * w + (x % pw)];
+    }
+  }
 
   cairo_pattern_destroy (pattern);
   cairo_surface_destroy (image);
