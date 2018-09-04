@@ -82,13 +82,12 @@ Nervous::Nervous(int wdt, int hgt) {
     int c;
     _init(wdt, hgt);
     
-    buffer = (int32_t*) malloc(geo.size*PLANES);
+    buffer = (int32_t*) calloc(geo.size, PLANES);
     if(!buffer) {
       fprintf(stderr,"ERROR: nervous plugin can't allocate needed memory: %u bytes\n",
 	      geo.size*PLANES);
       return;
     }
-    memset(buffer,0,geo.size*PLANES);
     for(c=0;c<PLANES;c++)
       planetable[c] = &buffer[geo.w*geo.h*c];
     
