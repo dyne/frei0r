@@ -281,10 +281,10 @@ void f0r_update(f0r_instance_t instance, double time,
 	  int dist_ind = 0;
 
 	  for (k = 0; k < inst->num; k++) {
-		  struct cluster_center cc = inst->clusters[k];	
+		  struct cluster_center *cc = &inst->clusters[k];
 
 		  float kdist = find_dist(src2[0], src2[1], src2[2], x,y, 
-				  cc.r, cc.g, cc.b, cc.x, cc.y,
+				  cc->r, cc->g, cc->b, cc->x, cc->y,
 				  max_space_dist, inst->dist_weight); //, inst->color_weight);
 
 		  if (kdist < dist) {
