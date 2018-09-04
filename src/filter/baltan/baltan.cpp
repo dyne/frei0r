@@ -60,7 +60,6 @@ private:
   
   uint32_t *planebuf;
   uint32_t *planetable[PLANES];
-  void *procbuf;
   int plane;
   int pixels;
 };
@@ -71,20 +70,16 @@ Baltan::Baltan(int wdt, int hgt) {
   _init(wdt, hgt);
   pixels = geo.w*geo.h;
   
-  planebuf = (uint32_t*)malloc(geo.size*PLANES);
-  memset(planebuf, 0, geo.size*PLANES);
+  planebuf =  (uint32_t*)calloc(geo.size, PLANES);
     
   for(i=0;i<PLANES;i++)
     planetable[i] = &planebuf[pixels*i];
 
-  procbuf = malloc(geo.size);
-    
   plane = 0;
 }
 
 Baltan::~Baltan() {
   free(planebuf);
-  free(procbuf);
 }
 
 void Baltan::update(double time,
