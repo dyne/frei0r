@@ -100,11 +100,12 @@ namespace frei0r
       switch (s_params[param_index].m_type)
 	{
 	case F0R_PARAM_BOOL :
-	  *static_cast<f0r_param_bool*>(param) = ptr ? 0.0 : 1.0;
+	  *static_cast<f0r_param_bool*>(param)
+	    = *static_cast<f0r_param_bool*>(ptr) > 0.5 ? 1.0 : 0.0;
 	  break;
 	case F0R_PARAM_DOUBLE:
 	  *static_cast<f0r_param_double*>(param)
-	    = *static_cast<double*>(ptr);
+	    = *static_cast<f0r_param_double*>(ptr);
 	  break;
 	case F0R_PARAM_COLOR:
 	  *static_cast<f0r_param_color*>(param)

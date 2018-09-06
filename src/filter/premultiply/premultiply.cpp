@@ -41,7 +41,7 @@ public:
         uint8_t *src = (uint8_t*) in;
         uint8_t *dst = (uint8_t*) out;
         unsigned int n = width * height + 1;
-        if (m_unpremultiply == 0.0) {
+        if (!m_unpremultiply) {
             // premultiply
             while (--n) {
                 uint8_t a = src[3];
@@ -73,7 +73,8 @@ public:
     }
 
 private:
-    f0r_param_bool m_unpremultiply;
+    bool m_unpremultiply;
+
 };
 
 frei0r::construct<Premultiply> plugin("Premultiply or Unpremultiply",
