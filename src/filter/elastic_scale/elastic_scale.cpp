@@ -54,10 +54,10 @@ public:
     ElasticScale(unsigned int width, unsigned int height) : m_width(width), m_height(height)
 
     {
-        register_param(m_scaleCenter,"scaleCenter","Center position of the linearly scaled area");
-        register_param(m_linearScaleArea,"linearScaleArea","Area of the linearly scaled area");
-        register_param(m_linearScaleFactor,"linearScaleFactor","Amount how much the image is scaled");
-        register_param(m_nonLinearScaleFactor,"polynomialFactor","Polynomial factor for the transition between linear and non-linear scaling");
+        register_param(m_scaleCenter,"scaleCenter","Center position of the linear scaled area");
+        register_param(m_linearScaleArea,"linearScaleArea","Width of linear sclaed area");
+        register_param(m_linearScaleFactor,"linearScaleFactor","Amount how much the linearScaleArea is scaled");
+        register_param(m_nonLinearScaleFactor,"nonLinearScaleFactor","Amount how much the outer left and outer righter area are scaled non linearly");
 
         // default values for sinus based scaling
         m_scaleCenter = 0.5;
