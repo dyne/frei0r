@@ -1039,22 +1039,22 @@ private:
     std::vector<RGBFloat> m_prevMask;
 #endif
 
-    f0r_param_double m_pLongAlpha;
-    f0r_param_double m_pSensitivity;
-    f0r_param_double m_pBackgroundWeight;
-    f0r_param_double m_pThresholdBrightness;
-    f0r_param_double m_pThresholdDifference;
-    f0r_param_double m_pThresholdDiffSum;
-    f0r_param_double m_pDim;
-    f0r_param_double m_pSaturation;
-    f0r_param_double m_pLowerOverexposure;
-    f0r_param_bool m_pStatsBrightness;
-    f0r_param_bool m_pStatsDiff;
-    f0r_param_bool m_pStatsDiffSum;
-    f0r_param_bool m_pTransparentBackground;
-    f0r_param_bool m_pBlackReference;
-    f0r_param_bool m_pNonlinearDim;
-    f0r_param_bool m_pReset;
+    double m_pLongAlpha;
+    double m_pSensitivity;
+    double m_pBackgroundWeight;
+    double m_pThresholdBrightness;
+    double m_pThresholdDifference;
+    double m_pThresholdDiffSum;
+    double m_pDim;
+    double m_pSaturation;
+    double m_pLowerOverexposure;
+    bool m_pStatsBrightness;
+    bool m_pStatsDiff;
+    bool m_pStatsDiffSum;
+    bool m_pTransparentBackground;
+    bool m_pBlackReference;
+    bool m_pNonlinearDim;
+    bool m_pReset;
 
 };
 

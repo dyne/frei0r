@@ -163,8 +163,8 @@ public:
 private:
     // The various f0r_params are adjustable parameters.
     // This one determines the size of the black bar in this example.
-    f0r_param_double m_barSize;
-    f0r_param_bool m_pointerMethod;
+    double m_barSize;
+    bool m_pointerMethod;
     std::vector<uint8_t> lookupTable;
     std::vector<uint8_t> additionTable;
 

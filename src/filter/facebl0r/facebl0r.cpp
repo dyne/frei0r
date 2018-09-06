@@ -76,13 +76,13 @@ private:
 
     // plugin parameters
     std::string classifier;
-    f0r_param_bool ellipse;
-    f0r_param_double recheck;
-    f0r_param_double threads;
-    f0r_param_double search_scale;
-    f0r_param_double neighbors;
-    f0r_param_double smallest;
-    f0r_param_double largest;
+    bool ellipse;
+    double recheck;
+    double threads;
+    double search_scale;
+    double neighbors;
+    double smallest;
+    double largest;
 
     std::string old_classifier;
   
