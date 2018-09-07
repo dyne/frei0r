@@ -25,7 +25,8 @@
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>
-#include <opencv/cv.h>
+#include <opencv2/objdetect.hpp>
+#include <opencv2/imgproc.hpp>
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 
@@ -50,16 +51,16 @@ private:
 
     // plugin parameters
     std::string classifier;
-    f0r_param_double shape;
-    f0r_param_double recheck;
-    f0r_param_double threads;
-    f0r_param_double search_scale;
-    f0r_param_double neighbors;
-    f0r_param_double smallest;
-    f0r_param_double scale;
-    f0r_param_double stroke;
-    f0r_param_bool   antialias;
-    f0r_param_double alpha;
+    double shape;
+    double recheck;
+    double threads;
+    double search_scale;
+    double neighbors;
+    double smallest;
+    double scale;
+    double stroke;
+    bool   antialias;
+    double alpha;
     f0r_param_color  color[5];
 	
 public:
@@ -212,7 +213,7 @@ private:
             int minx = width * scale;
             int miny = height * scale;
             int maxx, maxy = 0;
-            for (int i = 0; i < faces.size(); i++)
+            for (size_t i = 0; i < faces.size(); i++)
             {
                 faces[i].x+= roi.x * scale;
                 faces[i].y+= roi.y * scale;
@@ -247,7 +248,7 @@ private:
             cv::Scalar(cvRound(color[4].r * 255), cvRound(color[4].g * 255), cvRound(color[4].b * 255), cvRound(alpha * 255)),
         }; 
         
-        for (int i = 0; i < objects.size(); i++)
+        for (size_t i = 0; i < objects.size(); i++)
         {
             cv::Rect* r = (cv::Rect*) &objects[i];
             cv::Point center;
