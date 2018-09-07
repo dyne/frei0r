@@ -62,7 +62,7 @@ public:
         // default values for sinus based scaling
         m_scaleCenter = 0.5;
         m_linearScaleArea = 0.0;
-        m_linearScaleFactor = 0.0;
+        m_linearScaleFactor = 0.7;
         m_nonLinearScaleFactor = 0.085;
 
         updateScalingFactors();
@@ -155,6 +155,13 @@ private:
 
         if (m_linearScaleFactor <= 0)
         { m_linearScaleFactor = 0; }
+        else if (m_linearScaleFactor >= 2)
+        { m_linearScaleFactor = 2; }
+
+        if (m_nonLinearScaleFactor <= -0.2)
+        { m_nonLinearScaleFactor = -0.2; }
+        else if (m_nonLinearScaleFactor >= 0.2)
+        { m_nonLinearScaleFactor = 0.2; }
 
         // update changed parameters
         m_prev_scaleCenter = m_scaleCenter;
@@ -168,6 +175,28 @@ private:
 
         m_borderXAbsRightSrc = int(m_scaleCenter * m_width + m_linearScaleArea / 2 * m_width);
         m_borderXAbsRightDst = int(m_scaleCenter * m_width + m_linearScaleArea / 2 * m_width * m_linearScaleFactor);
+
+        // validate if resulting borders are still within the valid range for later calculation [1,m_width-1]
+        if (m_borderXAbsLeftSrc <= 1)
+        { m_borderXAbsLeftSrc = 1; }
+        else if (m_borderXAbsLeftSrc >= m_width-1)
+        { m_borderXAbsLeftSrc = m_width-1; }
+
+        if (m_borderXAbsRightSrc <= 1)
+        { m_borderXAbsRightSrc = 1; }
+        else if (m_borderXAbsRightSrc >= m_width-1)
+        { m_borderXAbsRightSrc = m_width-1; }
+
+        if (m_borderXAbsLeftDst <= 1)
+        { m_borderXAbsLeftDst = 1; }
+        else if (m_borderXAbsLeftDst >= m_width-1)
+        { m_borderXAbsLeftDst = m_width-1; }
+
+        if (m_borderXAbsRightDst <= 1)
+        { m_borderXAbsRightDst = 1; }
+        else if (m_borderXAbsRightDst >= m_width-1)
+        { m_borderXAbsRightDst = m_width-1; }
+
         
     }
 
