@@ -54,8 +54,8 @@ typedef struct {
 class Cartoon: public frei0r::filter {
 public:
 
-  f0r_param_double triplevel;
-  f0r_param_double diffspace;
+  double triplevel;
+  double diffspace;
 
   Cartoon(unsigned int width, unsigned int height) {
     int c;
