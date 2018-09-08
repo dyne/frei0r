@@ -33,7 +33,7 @@ union px_t {
 
 class primaries : public frei0r::filter {
 private:
-	f0r_param_double factor;
+	double factor;
 	
 public:
 	primaries(unsigned int width, unsigned int height) {

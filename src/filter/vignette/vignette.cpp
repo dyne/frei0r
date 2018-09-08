@@ -38,9 +38,9 @@ class Vignette : public frei0r::filter
 
 public:
 
-    f0r_param_double m_aspect; ///< Neutral value: 0.5
-    f0r_param_double m_cc; ///< Neutral value: 0
-    f0r_param_double m_soft; ///< Suggested value: 0.6
+    double m_aspect; ///< Neutral value: 0.5
+    double m_cc; ///< Neutral value: 0
+    double m_soft; ///< Suggested value: 0.6
 
     Vignette(unsigned int width, unsigned int height) :
         m_width(width),
@@ -98,9 +98,9 @@ public:
     }
 
 private:
-    f0r_param_double m_prev_aspect;
-    f0r_param_double m_prev_cc;
-    f0r_param_double m_prev_soft;
+    double m_prev_aspect;
+    double m_prev_cc;
+    double m_prev_soft;
 
     float *m_vignette;
     bool m_initialized;

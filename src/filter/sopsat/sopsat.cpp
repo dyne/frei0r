@@ -62,19 +62,19 @@ class SOPSat : public frei0r::filter
 
 public:
 
-    f0r_param_double rSlope;
-    f0r_param_double gSlope;
-    f0r_param_double bSlope;
-    f0r_param_double aSlope;
-    f0r_param_double rOffset;
-    f0r_param_double gOffset;
-    f0r_param_double bOffset;
-    f0r_param_double aOffset;
-    f0r_param_double rPower;
-    f0r_param_double gPower;
-    f0r_param_double bPower;
-    f0r_param_double aPower;
-    f0r_param_double saturation;
+    double rSlope;
+    double gSlope;
+    double bSlope;
+    double aSlope;
+    double rOffset;
+    double gOffset;
+    double bOffset;
+    double aOffset;
+    double rPower;
+    double gPower;
+    double bPower;
+    double aPower;
+    double saturation;
 
     SOPSat(unsigned int, unsigned int)
     {
