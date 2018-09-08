@@ -66,7 +66,7 @@ typedef struct {
 class Water: public frei0r::filter {
 public:
 
-  f0r_param_double physics;
+  double physics;
   bool rain;
   bool distort;
   bool smooth;

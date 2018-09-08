@@ -24,7 +24,7 @@ public:
   }
   
 private:
-  f0r_param_double hsync;
+  double hsync;
 };
 
 

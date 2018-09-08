@@ -25,9 +25,9 @@ class edgeglow : public frei0r::filter
 {
 public:
 
-  f0r_param_double lthresh;
-  f0r_param_double lupscale;
-  f0r_param_double lredscale;
+  double lthresh;
+  double lupscale;
+  double lredscale;
 
 
   edgeglow(unsigned int width, unsigned int height)

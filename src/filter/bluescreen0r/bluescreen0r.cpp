@@ -32,7 +32,7 @@
 class bluescreen0r : public frei0r::filter
 {
 private:
-	f0r_param_double dist;
+	double dist;
 	f0r_param_color color;
 	uint32_t r256,g256,b256;
 	

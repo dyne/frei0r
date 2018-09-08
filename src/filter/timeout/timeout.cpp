@@ -116,9 +116,9 @@ public:
 
 private:
     // The various f0r_params are adjustable parameters.
-    f0r_param_double m_time = 0.0;
+    double m_time = 0.0;
     f0r_param_color m_color = {0.0, 0.0, 0.0};
-    f0r_param_double m_transparency = 0.0;
+    double m_transparency = 0.0;
 
     unsigned int x0, y0;
     unsigned int W , H ;
