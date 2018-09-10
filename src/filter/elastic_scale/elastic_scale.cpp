@@ -28,8 +28,9 @@
 #define PI 3.141592654
 
 /**
-This is a frei0r filter which allows to achieve an elastic scale.
-It allows to scale 4:3 footage to 16:9 footage non-linearly.
+This is a frei0r filter which allows to scale video footage non-linearly.
+In combination with a linear scale filter, it allows to scale 4:3 footage
+to 16:9 and maintain the original aspect ratio in the center part of the image.
 */
 
 typedef struct {
@@ -63,7 +64,7 @@ public:
         m_scaleCenter = 0.5;
         m_linearScaleArea = 0.0;
         m_linearScaleFactor = 0.7;
-        m_nonLinearScaleFactor = 0.085;
+        m_nonLinearScaleFactor = 0.7125;
 
         updateScalingFactors();
         calcTransformationFactors();
@@ -127,6 +128,11 @@ private:
     f0r_param_double m_prev_linearScaleFactor;
     f0r_param_double m_prev_nonLinearScaleFactor;
 
+    f0r_param_double m_intern_scaleCenter;
+    f0r_param_double m_intern_linearScaleArea;
+    f0r_param_double m_intern_linearScaleFactor;
+    f0r_param_double m_intern_nonLinearScaleFactor;
+
     unsigned int m_width;
     unsigned int m_height;
 
@@ -135,14 +141,13 @@ private:
 
     unsigned int m_borderXAbsLeftDst;
     unsigned int m_borderXAbsRightDst;
-    bool m_initialized;
 
     TransformationElem* m_transformationCalculations = NULL;
 
     void updateScalingFactors()
     {
-        // std::cout << "New Settings: scaleCenter="<<m_scaleCenter<<", linearScaleArea="<<m_linearScaleArea<<", linearScaleFactor="<<m_linearScaleFactor<<", nonLinearScaleFactor="<<m_nonLinearScaleFactor<<std::endl;
 
+        // limit input parameters to ranges [0,1]
         if (m_scaleCenter <= 0)
         { m_scaleCenter = 0; }
         else if (m_scaleCenter >= 1)
@@ -155,13 +160,13 @@ private:
 
         if (m_linearScaleFactor <= 0)
         { m_linearScaleFactor = 0; }
-        else if (m_linearScaleFactor >= 2)
-        { m_linearScaleFactor = 2; }
+        else if (m_linearScaleFactor >= 1)
+        { m_linearScaleFactor = 1; }
 
-        if (m_nonLinearScaleFactor <= -0.2)
-        { m_nonLinearScaleFactor = -0.2; }
-        else if (m_nonLinearScaleFactor >= 0.2)
-        { m_nonLinearScaleFactor = 0.2; }
+        if (m_nonLinearScaleFactor <= 0)
+        { m_nonLinearScaleFactor = 0; }
+        else if (m_nonLinearScaleFactor >= 1)
+        { m_nonLinearScaleFactor = 1; }
 
         // update changed parameters
         m_prev_scaleCenter = m_scaleCenter;
@@ -169,12 +174,18 @@ private:
         m_prev_linearScaleFactor = m_linearScaleFactor;
         m_prev_nonLinearScaleFactor = m_nonLinearScaleFactor;
 
-        // calculate borders based on parameters
-        m_borderXAbsLeftSrc = int(m_scaleCenter * m_width - m_linearScaleArea / 2 * m_width);
-        m_borderXAbsLeftDst = int(m_scaleCenter * m_width - m_linearScaleArea / 2 * m_width * m_linearScaleFactor);
+        // transform to internal parameters
+        m_intern_scaleCenter = m_scaleCenter;
+        m_intern_linearScaleArea = m_linearScaleArea;
+        m_intern_linearScaleFactor = m_linearScaleFactor;
+        m_intern_nonLinearScaleFactor = m_nonLinearScaleFactor*0.4-0.2;
 
-        m_borderXAbsRightSrc = int(m_scaleCenter * m_width + m_linearScaleArea / 2 * m_width);
-        m_borderXAbsRightDst = int(m_scaleCenter * m_width + m_linearScaleArea / 2 * m_width * m_linearScaleFactor);
+        // calculate borders based on parameters
+        m_borderXAbsLeftSrc = int(m_intern_scaleCenter * m_width - m_intern_linearScaleArea / 2 * m_width);
+        m_borderXAbsLeftDst = int(m_intern_scaleCenter * m_width - m_intern_linearScaleArea / 2 * m_width * m_intern_linearScaleFactor);
+
+        m_borderXAbsRightSrc = int(m_intern_scaleCenter * m_width + m_intern_linearScaleArea / 2 * m_width);
+        m_borderXAbsRightDst = int(m_intern_scaleCenter * m_width + m_intern_linearScaleArea / 2 * m_width * m_intern_linearScaleFactor);
 
         // validate if resulting borders are still within the valid range for later calculation [1,m_width-1]
         if (m_borderXAbsLeftSrc <= 1)
@@ -221,7 +232,7 @@ private:
 
             // y=SIN(x*pi-pi)*a+x
             double linearRatio = (double)(colIdx-offsetDstX)/lengthDstSection;
-            double ratio = sin(linearRatio*PI-PI)*m_nonLinearScaleFactor+linearRatio;
+            double ratio = sin(linearRatio*PI-PI)*m_intern_nonLinearScaleFactor+linearRatio;
 
             if (colIdx > m_borderXAbsLeftDst)
             {
@@ -243,7 +254,7 @@ private:
 
                 // y=SIN(x*pi)*a+x
                 double linearRatio = (double)(colIdx-offsetDstX)/lengthDstSection;
-                ratio = sin(linearRatio*PI)*m_nonLinearScaleFactor+linearRatio;
+                ratio = sin(linearRatio*PI)*m_intern_nonLinearScaleFactor+linearRatio;
             }
 
             relativeSrcXPos = ratio * lengthSrcSection;
@@ -278,7 +289,7 @@ private:
 };
 
 frei0r::construct<ElasticScale> plugin("Elastic scale filter",
-                "This is a frei0r filter which allows to scale 4:3 footage to 16:9 footage non-linearly.",
+                "This is a frei0r filter which allows to scale video footage non-linearly.",
                 "Matthias Schnoell",
                 0,2,
                 F0R_COLOR_MODEL_RGBA8888);
