@@ -38,7 +38,6 @@ typedef struct {
     unsigned int lowerXPos;
     double lowerWeight;
     double higherWeight;
-
 } TransformationElem;
 
 
@@ -47,14 +46,12 @@ class ElasticScale : public frei0r::filter
 
 public:
 
-    f0r_param_double m_scaleCenter;
-    f0r_param_double m_linearScaleArea;
-    f0r_param_double m_linearScaleFactor;
-    f0r_param_double m_nonLinearScaleFactor;
-
-    ElasticScale(unsigned int width, unsigned int height) : m_width(width), m_height(height)
+    ElasticScale(unsigned int width, unsigned int height)
 
     {
+        this->width = width;
+        this->height = height;
+
         register_param(m_scaleCenter,"Center","Horizontal center position of the linear area");
         register_param(m_linearScaleArea,"Linear Width","Width of the linear area");
         register_param(m_linearScaleFactor,"Linear Scale Factor","Amount how much the linear area is scaled");
@@ -80,26 +77,25 @@ public:
 	                    uint32_t* out,
                         const uint32_t* in)
     {
+
         if (m_prev_scaleCenter != m_scaleCenter || m_prev_linearScaleArea != m_linearScaleArea || m_prev_linearScaleFactor != m_linearScaleFactor || m_prev_nonLinearScaleFactor != m_nonLinearScaleFactor)
         {
             updateScalingFactors();
             calcTransformationFactors();
         }
 
-        std::fill(&out[0], &out[(int) (width*height)], 0);
-
-        for (int colIdx=0; colIdx<m_width; colIdx++)
+        for (unsigned int colIdx = 0; colIdx < width; colIdx++)
         {
 
             double lowerWeight = m_transformationCalculations[colIdx].lowerWeight;
             double higherWeight = m_transformationCalculations[colIdx].higherWeight;
 
-            for (int rowIdx = 0; rowIdx < m_height; rowIdx++)
+            for (unsigned int rowIdx = 0; rowIdx < height; rowIdx++)
             {
                 uint32_t newValue = 0;
-                unsigned int lowerXPos = rowIdx*m_width+m_transformationCalculations[colIdx].lowerXPos;
-                unsigned int higherXPos = rowIdx*m_width+m_transformationCalculations[colIdx].higherXPos;
-                unsigned int curPosDst = rowIdx*m_width+colIdx;
+                unsigned int lowerXPos = rowIdx * width + m_transformationCalculations[colIdx].lowerXPos;
+                unsigned int higherXPos = rowIdx * width + m_transformationCalculations[colIdx].higherXPos;
+                unsigned int curPosDst = rowIdx * width + colIdx;
 
                 if (higherXPos == lowerXPos) {
                     newValue = in[higherXPos];
@@ -122,19 +118,24 @@ public:
     }
 
 private:
-    
+
+    // input params    
+    f0r_param_double m_scaleCenter;
+    f0r_param_double m_linearScaleArea;
+    f0r_param_double m_linearScaleFactor;
+    f0r_param_double m_nonLinearScaleFactor;
+
+    // remember the input params to detect any changes during runtime
     f0r_param_double m_prev_scaleCenter;
     f0r_param_double m_prev_linearScaleArea;
     f0r_param_double m_prev_linearScaleFactor;
     f0r_param_double m_prev_nonLinearScaleFactor;
 
+    // intern params for mapping the input parameters
     f0r_param_double m_intern_scaleCenter;
     f0r_param_double m_intern_linearScaleArea;
     f0r_param_double m_intern_linearScaleFactor;
     f0r_param_double m_intern_nonLinearScaleFactor;
-
-    unsigned int m_width;
-    unsigned int m_height;
 
     unsigned int m_borderXAbsLeftSrc;
     unsigned int m_borderXAbsRightSrc;
@@ -146,8 +147,7 @@ private:
 
     void updateScalingFactors()
     {
-
-        // limit input parameters to ranges [0,1]
+        // limit all input parameters to ranges [0,1]
         if (m_scaleCenter <= 0)
         { m_scaleCenter = 0; }
         else if (m_scaleCenter >= 1)
@@ -174,51 +174,57 @@ private:
         m_prev_linearScaleFactor = m_linearScaleFactor;
         m_prev_nonLinearScaleFactor = m_nonLinearScaleFactor;
 
-        // transform to internal parameters
+        // map to internal parameters
         m_intern_scaleCenter = m_scaleCenter;
         m_intern_linearScaleArea = m_linearScaleArea;
         m_intern_linearScaleFactor = m_linearScaleFactor;
         m_intern_nonLinearScaleFactor = m_nonLinearScaleFactor*0.4-0.2;
 
         // calculate borders based on parameters
-        m_borderXAbsLeftSrc = int(m_intern_scaleCenter * m_width - m_intern_linearScaleArea / 2 * m_width);
-        m_borderXAbsLeftDst = int(m_intern_scaleCenter * m_width - m_intern_linearScaleArea / 2 * m_width * m_intern_linearScaleFactor);
+        // use 'int' instead of 'unsigned int' as possible results can be negative
+        int tmp_borderXAbsLeftSrc = (int)(m_intern_scaleCenter * width - m_intern_linearScaleArea / 2 * width);
+        int tmp_borderXAbsLeftDst = (int)(m_intern_scaleCenter * width - m_intern_linearScaleArea / 2 * width * m_intern_linearScaleFactor);
 
-        m_borderXAbsRightSrc = int(m_intern_scaleCenter * m_width + m_intern_linearScaleArea / 2 * m_width);
-        m_borderXAbsRightDst = int(m_intern_scaleCenter * m_width + m_intern_linearScaleArea / 2 * m_width * m_intern_linearScaleFactor);
+        int tmp_borderXAbsRightSrc = (int)(m_intern_scaleCenter * width + m_intern_linearScaleArea / 2 * width);
+        int tmp_borderXAbsRightDst = (int)(m_intern_scaleCenter * width + m_intern_linearScaleArea / 2 * width * m_intern_linearScaleFactor);
 
-        // validate if resulting borders are still within the valid range for later calculation [1,m_width-1]
-        if (m_borderXAbsLeftSrc <= 1)
+        // validate if resulting borders are still within the valid range for later calculations [1,width-1]
+        // negative results are limited
+        if (tmp_borderXAbsLeftSrc <= 1)
         { m_borderXAbsLeftSrc = 1; }
-        else if (m_borderXAbsLeftSrc >= m_width-1)
-        { m_borderXAbsLeftSrc = m_width-1; }
+        else if (tmp_borderXAbsLeftSrc >= (int)width-1)
+        { m_borderXAbsLeftSrc = width-1; }
+        else { m_borderXAbsLeftSrc = tmp_borderXAbsLeftSrc; }
 
-        if (m_borderXAbsRightSrc <= 1)
+        if (tmp_borderXAbsRightSrc <= 1)
         { m_borderXAbsRightSrc = 1; }
-        else if (m_borderXAbsRightSrc >= m_width-1)
-        { m_borderXAbsRightSrc = m_width-1; }
+        else if (tmp_borderXAbsRightSrc >= (int)width-1)
+        { m_borderXAbsRightSrc = width-1; }
+        else{ m_borderXAbsRightSrc = tmp_borderXAbsRightSrc; }
 
-        if (m_borderXAbsLeftDst <= 1)
+        if (tmp_borderXAbsLeftDst <= 1)
         { m_borderXAbsLeftDst = 1; }
-        else if (m_borderXAbsLeftDst >= m_width-1)
-        { m_borderXAbsLeftDst = m_width-1; }
+        else if (tmp_borderXAbsLeftDst >= (int)width-1)
+        { m_borderXAbsLeftDst = width-1; }
+        else { m_borderXAbsLeftDst = tmp_borderXAbsLeftDst; }
 
-        if (m_borderXAbsRightDst <= 1)
+        if (tmp_borderXAbsRightDst <= 1)
         { m_borderXAbsRightDst = 1; }
-        else if (m_borderXAbsRightDst >= m_width-1)
-        { m_borderXAbsRightDst = m_width-1; }
-
+        else if (tmp_borderXAbsRightDst >= (int)width-1)
+        { m_borderXAbsRightDst = width-1; }
+        else { m_borderXAbsRightDst = tmp_borderXAbsRightDst; }
         
     }
 
     void calcTransformationFactors()
     {
+
         if (m_transformationCalculations == NULL)
         {
-            m_transformationCalculations = new TransformationElem[m_width];
+            m_transformationCalculations = new TransformationElem[width];
         }
 
-        for (int colIdx=0; colIdx<m_width; colIdx++)
+        for (unsigned int colIdx = 0; colIdx < width; colIdx++)
         {
             double relativeSrcXPos = 0;
             unsigned int higherXPos, lowerXPos;
@@ -231,8 +237,8 @@ private:
             unsigned int lengthDstSection = m_borderXAbsLeftDst - offsetDstX - 1;
 
             // y=SIN(x*pi-pi)*a+x
-            double linearRatio = (double)(colIdx-offsetDstX)/lengthDstSection;
-            double ratio = sin(linearRatio*PI-PI)*m_intern_nonLinearScaleFactor+linearRatio;
+            double linearRatio = (double)(colIdx - offsetDstX) / lengthDstSection;
+            double ratio = sin(linearRatio * PI - PI) * m_intern_nonLinearScaleFactor + linearRatio;
 
             if (colIdx > m_borderXAbsLeftDst)
             {
@@ -241,26 +247,26 @@ private:
                 lengthSrcSection = m_borderXAbsRightSrc - offsetSrcX - 1;
                 lengthDstSection = m_borderXAbsRightDst - offsetDstX - 1;
                 // linear section
-                double linearRatio = (double)(colIdx-offsetDstX)/lengthDstSection;
-                ratio = ((double)(colIdx-offsetDstX)/lengthDstSection);
+                double linearRatio = (double)(colIdx - offsetDstX) / lengthDstSection;
+                ratio = ((double)(colIdx - offsetDstX) / lengthDstSection);
             }
                 
             if (colIdx > m_borderXAbsRightDst)
             {
                 offsetSrcX = m_borderXAbsRightSrc;
                 offsetDstX = m_borderXAbsRightDst;
-                lengthSrcSection = m_width - offsetSrcX - 1;
-                lengthDstSection = m_width - offsetDstX - 1;
+                lengthSrcSection = width - offsetSrcX - 1;
+                lengthDstSection = width - offsetDstX - 1;
 
                 // y=SIN(x*pi)*a+x
-                double linearRatio = (double)(colIdx-offsetDstX)/lengthDstSection;
-                ratio = sin(linearRatio*PI)*m_intern_nonLinearScaleFactor+linearRatio;
+                double linearRatio = (double)(colIdx-offsetDstX) / lengthDstSection;
+                ratio = sin(linearRatio * PI) * m_intern_nonLinearScaleFactor + linearRatio;
             }
 
             relativeSrcXPos = ratio * lengthSrcSection;
             
-            lowerXPos = (int)floor(relativeSrcXPos);
-            higherXPos = (int)ceil(relativeSrcXPos);
+            lowerXPos = (unsigned int)floor(relativeSrcXPos);
+            higherXPos = (unsigned int)ceil(relativeSrcXPos);
             if (higherXPos >= lengthSrcSection)
             {
                 higherXPos = lengthSrcSection;
@@ -284,7 +290,6 @@ private:
             m_transformationCalculations[colIdx].lowerWeight = lowerWeight;
         }
     }
-
 
 };
 
