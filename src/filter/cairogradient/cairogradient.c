@@ -65,7 +65,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
   info->color_model = F0R_COLOR_MODEL_RGBA8888;
   info->frei0r_version = FREI0R_MAJOR_VERSION;
   info->major_version = 0; 
-  info->minor_version = 9; 
+  info->minor_version = 10;
   info->num_params = 11; 
   info->explanation = "Draws a gradient on top of image. Filter is given gradient start and end points, colors and opacities.";
 }
@@ -165,6 +165,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
   cairo_gradient_instance_t* inst = (cairo_gradient_instance_t*)instance;
+  free(inst->blend_mode);
+  free(inst->pattern);
   free(instance);
 }
 
@@ -295,18 +297,17 @@ void draw_gradient(cairo_gradient_instance_t* inst, unsigned char* dst, const un
                                         ey * inst->height);
   }
 
-  freior_cairo_set_color_stop_rgba_LITLLE_ENDIAN (pat,
+  freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN (pat,
                                                   1.0,
-                                                  inst->start_color.b,
-                                                  inst->start_color.g,
                                                   inst->start_color.r,
+                                                  inst->start_color.g,
+                                                  inst->start_color.b,
                                                   inst->start_opacity);
-
-  freior_cairo_set_color_stop_rgba_LITLLE_ENDIAN (pat,
+  freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN (pat,
                                                   inst->offset,                                    
-                                                  inst->end_color.b,
-                                                  inst->end_color.g,
                                                   inst->end_color.r,
+                                                  inst->end_color.g,
+                                                  inst->end_color.b,
                                                   inst->end_opacity);
 
 
