@@ -31,7 +31,7 @@ public:
     // remove old frames
     for (std::list< std::pair< double, unsigned int* > >::iterator i=buffer.begin(); i != buffer.end(); ++i)
       {
-	if (i->first < (time - delay))
+	if (i->first < (time - delay) || i->first >= time)
 	  {
 	    // remove me
 	    if (reusable != 0)
