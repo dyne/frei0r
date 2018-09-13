@@ -175,7 +175,7 @@ void frei0r_cairo_set_rgb_LITTLE_ENDIAN(cairo_t* cr, double red, double green, d
 }
 
 /**
-* freior_cairo_set_color_stop_rgba_LITLLE_ENDIAN(
+* freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN(
 * @pat: Cairo pattern
 * @offset: offset of color position in pattern space, 0 - 1
 * @red: red component, 0 - 1
@@ -187,7 +187,7 @@ void frei0r_cairo_set_rgb_LITTLE_ENDIAN(cairo_t* cr, double red, double green, d
 * Switches red and blue channels to get correct color on little endian machines. 
 * This method only works correctly on little endian machines.
 */
-void freior_cairo_set_color_stop_rgba_LITLLE_ENDIAN(cairo_pattern_t *pat, double offset, 
+void freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN(cairo_pattern_t *pat, double offset, 
                                                     double red, double green, double blue, double alpha)
 {                               
   cairo_pattern_add_color_stop_rgba (pat, offset, blue, green, red, alpha);
