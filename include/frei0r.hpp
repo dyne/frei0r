@@ -60,7 +60,7 @@ namespace frei0r
       s_params.push_back(param_info(name,desc,F0R_PARAM_COLOR));
     }
     
-    void register_param(f0r_param_double& p_loc,
+    void register_param(double& p_loc,
 			const std::string& name,
 			const std::string& desc)
     {
