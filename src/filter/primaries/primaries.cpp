@@ -56,7 +56,7 @@ public:
 			factorTot = 3;
 		}
 		
-		for (int i = 0; i < size; i++) {
+		for (unsigned int i = 0; i < size; i++) {
 			px_t pi;
 			pi.u = in[i];
 			

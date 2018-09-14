@@ -87,7 +87,7 @@ public:
 
         // Darken the pixels by multiplying with the vignette's factor
         float *vignette = m_vignette;
-        for (int i = 0; i < size; i++) {
+        for (unsigned int i = 0; i < size; i++) {
             *dest++ = (char) (*vignette * *pixel++);
             *dest++ = (char) (*vignette * *pixel++);
             *dest++ = (char) (*vignette * *pixel++);
