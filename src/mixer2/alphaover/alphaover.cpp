@@ -38,7 +38,7 @@ public:
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
     const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
     
-    for (int i=0; i<size; ++i)
+    for (unsigned int i=0; i<size; ++i)
     {
       uint32_t tmp;
       uint8_t alpha_src1 = src1[3];
