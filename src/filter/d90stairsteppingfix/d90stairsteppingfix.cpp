@@ -164,7 +164,7 @@ public:
             
             float scaleFactor = (float) newHeight/height;
 //          printf("scale factor: %f\n", scaleFactor);
-            for (int i = 0; i < height; i++) {
+            for (unsigned int i = 0; i < height; i++) {
                 downScaling[i] = (float) (((2*i+1)*scaleFactor)-1)/2;
 //              printf("scaled: %f at %d\n", downScaling[i], i);
             }
@@ -176,7 +176,7 @@ public:
              * calculated scaling numbers.
              */
             float offset;
-            for (int i = 0; i < height; i++) {
+            for (unsigned int i = 0; i < height; i++) {
                 
                 index = floor(downScaling[i]);
                 offset = downScaling[i] - index;
@@ -208,7 +208,7 @@ public:
             unsigned char *cvA, *cvB, *cvOut;
             
             
-            for (int line = 0; line < height; line++) {
+            for (unsigned int line = 0; line < height; line++) {
                 index = floor(m_mesh[line]);
                 factor = (float) m_mesh[line] - index;
                 
@@ -216,7 +216,7 @@ public:
                 cvB = (unsigned char*) &in[width*(index+1)];
                 cvOut = (unsigned char*) &out[width*line];
                     
-                for (int pixel = 0; pixel < width*4; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*4; pixel++) {
                     // Use linear interpolation on the colours
                     
                     // Use pointer arithmetics. Colour values are stored 

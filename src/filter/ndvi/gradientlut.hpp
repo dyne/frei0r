@@ -61,7 +61,7 @@ void GradientLut::fillRange( double startPos, const GradientLut::Color& startCol
 
     if(span < 1) span = 1;
 
-    for(int i = 0; i <= span; i++) {
+    for(unsigned int i = 0; i <= span; i++) {
         Color color;
         double ratio = (double)i / (double)span;
 

@@ -129,7 +129,7 @@ void Ndvi::update(double time,
     initLut();
 
     if (paramIndex == "vi") {
-        for (int i = 0; i < size; i++) {
+        for (unsigned int i = 0; i < size; i++) {
             double vis =  getComponent(inP, visChan, visOffset, visScale);
             double nir =  getComponent(inP, nirChan, nirOffset, nirScale);
             double vi = (nir - vis) / 255.0;
@@ -138,7 +138,7 @@ void Ndvi::update(double time,
             outP += 4;
         }
     } else { // ndvi
-        for (int i = 0; i < size; i++) {
+        for (unsigned int i = 0; i < size; i++) {
             double vis =  getComponent(inP, visChan, visOffset, visScale);
             double nir =  getComponent(inP, nirChan, nirOffset, nirScale);
             double ndvi = (nir - vis) / (nir + vis);
