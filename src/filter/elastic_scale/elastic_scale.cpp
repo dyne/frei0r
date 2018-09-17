@@ -84,23 +84,29 @@ public:
             calcTransformationFactors();
         }
 
+        // pad the rowWidth to be a multiple of 8
+        unsigned int paddedRowWidth = width;
+        if (paddedRowWidth % 8 != 0)
+        {
+            paddedRowWidth = (unsigned int)(ceil((double)width/8)*8);
+        }
+
         for (unsigned int colIdx = 0; colIdx < width; colIdx++)
         {
-
             double lowerWeight = m_transformationCalculations[colIdx].lowerWeight;
             double higherWeight = m_transformationCalculations[colIdx].higherWeight;
 
             for (unsigned int rowIdx = 0; rowIdx < height; rowIdx++)
             {
                 uint32_t newValue = 0;
-                unsigned int lowerXPos = rowIdx * width + m_transformationCalculations[colIdx].lowerXPos;
-                unsigned int higherXPos = rowIdx * width + m_transformationCalculations[colIdx].higherXPos;
-                unsigned int curPosDst = rowIdx * width + colIdx;
+                unsigned int lowerXPos = paddedRowWidth * rowIdx + m_transformationCalculations[colIdx].lowerXPos;
+                unsigned int higherXPos = paddedRowWidth * rowIdx + m_transformationCalculations[colIdx].higherXPos;
+                unsigned int curPosDst = paddedRowWidth * rowIdx + colIdx;
 
                 if (higherXPos == lowerXPos) {
                     newValue = in[higherXPos];
                 } else {
-                    for (int i=3; i>=0; i--)
+                    for (int i=0; i<4; i++)
                     {
                         uint16_t cFold = uint8_t(in[lowerXPos] >> 8*i);
                         uint16_t cCold = uint8_t(in[higherXPos] >> 8*i);
@@ -120,22 +126,22 @@ public:
 private:
 
     // input params    
-    f0r_param_double m_scaleCenter;
-    f0r_param_double m_linearScaleArea;
-    f0r_param_double m_linearScaleFactor;
-    f0r_param_double m_nonLinearScaleFactor;
+    double m_linearScaleArea;
+    double m_scaleCenter;
+    double m_linearScaleFactor;
+    double m_nonLinearScaleFactor;
 
     // remember the input params to detect any changes during runtime
-    f0r_param_double m_prev_scaleCenter;
-    f0r_param_double m_prev_linearScaleArea;
-    f0r_param_double m_prev_linearScaleFactor;
-    f0r_param_double m_prev_nonLinearScaleFactor;
+    double m_prev_scaleCenter;
+    double m_prev_linearScaleArea;
+    double m_prev_linearScaleFactor;
+    double m_prev_nonLinearScaleFactor;
 
     // intern params for mapping the input parameters
-    f0r_param_double m_intern_scaleCenter;
-    f0r_param_double m_intern_linearScaleArea;
-    f0r_param_double m_intern_linearScaleFactor;
-    f0r_param_double m_intern_nonLinearScaleFactor;
+    double m_intern_scaleCenter;
+    double m_intern_linearScaleArea;
+    double m_intern_linearScaleFactor;
+    double m_intern_nonLinearScaleFactor;
 
     unsigned int m_borderXAbsLeftSrc;
     unsigned int m_borderXAbsRightSrc;
@@ -182,37 +188,33 @@ private:
 
         // calculate borders based on parameters
         // use 'int' instead of 'unsigned int' as possible results can be negative
-        int tmp_borderXAbsLeftSrc = (int)(m_intern_scaleCenter * width - m_intern_linearScaleArea / 2 * width);
-        int tmp_borderXAbsLeftDst = (int)(m_intern_scaleCenter * width - m_intern_linearScaleArea / 2 * width * m_intern_linearScaleFactor);
+        m_borderXAbsLeftSrc = (int)(m_intern_scaleCenter * width - m_intern_linearScaleArea / 2 * width);
+        m_borderXAbsLeftDst = (int)(m_intern_scaleCenter * width - m_intern_linearScaleArea / 2 * width * m_intern_linearScaleFactor);
 
-        int tmp_borderXAbsRightSrc = (int)(m_intern_scaleCenter * width + m_intern_linearScaleArea / 2 * width);
-        int tmp_borderXAbsRightDst = (int)(m_intern_scaleCenter * width + m_intern_linearScaleArea / 2 * width * m_intern_linearScaleFactor);
+        m_borderXAbsRightSrc = (int)(m_intern_scaleCenter * width + m_intern_linearScaleArea / 2 * width);
+        m_borderXAbsRightDst = (int)(m_intern_scaleCenter * width + m_intern_linearScaleArea / 2 * width * m_intern_linearScaleFactor);
 
         // validate if resulting borders are still within the valid range for later calculations [1,width-1]
         // negative results are limited
-        if (tmp_borderXAbsLeftSrc <= 1)
+        if ((int)m_borderXAbsLeftSrc <= 1)
         { m_borderXAbsLeftSrc = 1; }
-        else if (tmp_borderXAbsLeftSrc >= (int)width-1)
+        else if ((int)m_borderXAbsLeftSrc >= (int)width-1)
         { m_borderXAbsLeftSrc = width-1; }
-        else { m_borderXAbsLeftSrc = tmp_borderXAbsLeftSrc; }
 
-        if (tmp_borderXAbsRightSrc <= 1)
+        if ((int)m_borderXAbsRightSrc <= 1)
         { m_borderXAbsRightSrc = 1; }
-        else if (tmp_borderXAbsRightSrc >= (int)width-1)
+        else if ((int)m_borderXAbsRightSrc >= (int)width-1)
         { m_borderXAbsRightSrc = width-1; }
-        else{ m_borderXAbsRightSrc = tmp_borderXAbsRightSrc; }
 
-        if (tmp_borderXAbsLeftDst <= 1)
+        if ((int)m_borderXAbsLeftDst <= 1)
         { m_borderXAbsLeftDst = 1; }
-        else if (tmp_borderXAbsLeftDst >= (int)width-1)
+        else if ((int)m_borderXAbsLeftDst >= (int)width-1)
         { m_borderXAbsLeftDst = width-1; }
-        else { m_borderXAbsLeftDst = tmp_borderXAbsLeftDst; }
 
-        if (tmp_borderXAbsRightDst <= 1)
+        if ((int)m_borderXAbsRightDst <= 1)
         { m_borderXAbsRightDst = 1; }
-        else if (tmp_borderXAbsRightDst >= (int)width-1)
+        else if ((int)m_borderXAbsRightDst >= (int)width-1)
         { m_borderXAbsRightDst = width-1; }
-        else { m_borderXAbsRightDst = tmp_borderXAbsRightDst; }
         
     }
 
@@ -227,7 +229,7 @@ private:
         for (unsigned int colIdx = 0; colIdx < width; colIdx++)
         {
             double relativeSrcXPos = 0;
-            unsigned int higherXPos, lowerXPos;
+            unsigned int higherXPos = 0, lowerXPos = 0;
             double lowerWeight = 0;
             double higherWeight = 0;
 
@@ -263,6 +265,9 @@ private:
                 ratio = sin(linearRatio * PI) * m_intern_nonLinearScaleFactor + linearRatio;
             }
 
+            // limit ratio to 0
+            ratio = ratio <= 0 ? 0 : ratio;
+
             relativeSrcXPos = ratio * lengthSrcSection;
             
             lowerXPos = (unsigned int)floor(relativeSrcXPos);
@@ -288,6 +293,7 @@ private:
             m_transformationCalculations[colIdx].lowerXPos = lowerXPos + offsetSrcX;
             m_transformationCalculations[colIdx].higherWeight = higherWeight;
             m_transformationCalculations[colIdx].lowerWeight = lowerWeight;
+
         }
     }
 
