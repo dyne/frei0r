@@ -240,7 +240,7 @@ public:
                 m_longMeanImage = std::vector<float>(width*height*3, 0);
             } else {
                 m_longMeanImage = std::vector<float>(width*height*3);
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     m_longMeanImage[3*pixel+0] = GETR(in[pixel]);
                     m_longMeanImage[3*pixel+1] = GETG(in[pixel]);
                     m_longMeanImage[3*pixel+2] = GETB(in[pixel]);
@@ -251,7 +251,7 @@ public:
             // Calculate the mean image to estimate the background. If alpha is set > 0, bright light sources
             // moving into the image and standing still will eventually be treated as background.
             if (m_pLongAlpha > 0) {
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     m_longMeanImage[3*pixel+0] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+0] + m_pLongAlpha * GETR(in[pixel]);
                     m_longMeanImage[3*pixel+1] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+1] + m_pLongAlpha * GETG(in[pixel]);
                     m_longMeanImage[3*pixel+2] = (1-m_pLongAlpha) * m_longMeanImage[3*pixel+2] + m_pLongAlpha * GETB(in[pixel]);
@@ -279,13 +279,13 @@ public:
 
                 case Dim_Mult:
 #ifdef LG_ADV
-                    for (int i = 0; i < m_rgbLightMask.size(); i++) {
+                    for (size_t i = 0; i < m_rgbLightMask.size(); i++) {
                         m_rgbLightMask[i].r *= factor;
                         m_rgbLightMask[i].g *= factor;
                         m_rgbLightMask[i].b *= factor;
                     }
 #else
-                    for (int i = 0; i < width*height; i++) {
+                    for (unsigned int i = 0; i < width*height; i++) {
                         m_alphaMap[4*i + 0] *= factor;
                         m_alphaMap[4*i + 1] *= factor;
                         m_alphaMap[4*i + 2] *= factor;
@@ -297,7 +297,7 @@ public:
 
                 case Dim_Sin:
 #ifdef LG_ADV
-                    for (int i = 0; i < m_rgbLightMask.size(); i++) {
+                    for (size_t i = 0; i < m_rgbLightMask.size(); i++) {
                         // Red
                         if (m_rgbLightMask[i].r < 1) {
                             m_rgbLightMask[i].r *= pow(sin(m_rgbLightMask[i].r * M_PI/2), m_pDim) - .01;
@@ -359,8 +359,8 @@ public:
 
         int r, g, b;
         int maxDiff, temp, sum;
-        int min;
-        int max;
+        unsigned int min;
+        unsigned int max;
         float f, y;
         uint32_t color;
         float fr, fg, fb, sr, sg, sb, fy, fsat;
@@ -375,7 +375,7 @@ public:
              Lots of testing modes here!
              */
             case Graffiti_max:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
 
                     if (
                             (GETR(out[pixel]) == 0xFF
@@ -390,7 +390,7 @@ public:
                 }
                 break;
             case Graffiti_max_sum:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
 
                     if (
                             (GETR(out[pixel]) == 0xFF
@@ -411,7 +411,7 @@ public:
                 break;
 
             case Graffiti_Y:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     if (
                                .299*GETR(out[pixel])/255.0
                              + .587 * GETG(out[pixel])/255.0
@@ -427,7 +427,7 @@ public:
                 break;
 
             case Graffiti_Max_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     if (GETR(out[pixel]) == 0xFF || GETG(out[pixel]) == 0xFF || GETB(out[pixel]) == 0xFF) {
                         out[pixel] = 0xFFFFFFFF;
                     } else {
@@ -436,14 +436,14 @@ public:
                 }
                 break;
             case Graffiti_Y_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     temp = .299*GETR(out[pixel]) + .587 * GETG(out[pixel]) + .114 * GETB(out[pixel]);
                     temp = CLAMP(temp);
                     out[pixel] = RGBA(temp, temp, temp, 0xFF);
                 }
                 break;
             case Graffiti_S_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     min = GETR(out[pixel]);
                     max = GETR(out[pixel]);
                     if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
@@ -459,7 +459,7 @@ public:
                 }
                 break;
             case Graffiti_STresh_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     min = GETR(out[pixel]);
                     max = GETR(out[pixel]);
                     if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
@@ -475,7 +475,7 @@ public:
                 }
                 break;
             case Graffiti_SDiff_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     min = GETR(out[pixel]);
                     max = GETR(out[pixel]);
                     if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
@@ -507,7 +507,7 @@ public:
                 }
                 break;
             case Graffiti_SDiffTresh_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     min = GETR(out[pixel]);
                     max = GETR(out[pixel]);
                     if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
@@ -543,7 +543,7 @@ public:
                 }
                 break;
             case Graffiti_SSqrt_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     min = GETR(out[pixel]);
                     max = GETR(out[pixel]);
                     if (GETG(out[pixel]) < min) min = GETG(out[pixel]);
@@ -561,7 +561,7 @@ public:
             case Graffiti_LongAvg_Stat:
                 maxDiff = 0;
                 temp = 0;
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
                     r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0])/2;
                     r = CLAMP(r);
                     g = 0x7f + (GETG(out[pixel]) - m_longMeanImage[3*pixel+1])/2;
@@ -573,7 +573,7 @@ public:
                 }
                 break;
             case Graffiti_LongAvg:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
 
                     r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
                     r = CLAMP(r);
@@ -620,7 +620,7 @@ public:
                 }
                 break;
             case Graffiti_LongAvgAlpha_Stat:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
 
                     r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
                     r = CLAMP(r);
@@ -664,7 +664,7 @@ public:
                 }
                 break;
             case Graffiti_LongAvgAlpha:
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
 
                     r = 0x7f + (GETR(out[pixel]) - m_longMeanImage[3*pixel+0]);
                     r = CLAMP(r);
@@ -725,7 +725,7 @@ public:
                     Maybe: Logarithmic scale? → Overexposure becomes harder
                     log(alpha/factor + 1) or sqrt(alpha/factor)
                   */
-                for (int pixel = 0; pixel < width*height; pixel++) {
+                for (unsigned int pixel = 0; pixel < width*height; pixel++) {
 
                     /*
                      Light detection
