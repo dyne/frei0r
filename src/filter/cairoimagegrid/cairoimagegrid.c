@@ -124,10 +124,11 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 
 void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsigned char* src)
 {
-  int x, y;
-  int w = inst->width;
-  int h = inst->height;
-  int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, w);
+  unsigned int x, y;
+  unsigned int w = inst->width;
+  unsigned int h = inst->height;
+  unsigned int wpad = (w % 8) ? w - (w % 8) + 8 : w;
+  unsigned int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, wpad);
 
   cairo_surface_t* dest_image = cairo_image_surface_create_for_data ((unsigned char*)dst,
                                                                        CAIRO_FORMAT_ARGB32,
@@ -146,8 +147,8 @@ void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsig
 
   double rows = 1 + (MAX_ROWS - 1) * inst->rows;
   double columns = 1 + (MAX_ROWS - 1) * inst->columns;
-  int pw = (int)(w/columns);
-  int ph = (int)(h/rows);
+  unsigned int pw = (int)(w / columns);
+  unsigned int ph = (int)(h / rows);
 
   cairo_matrix_t   matrix;
   cairo_matrix_init_scale (&matrix, columns, rows);
@@ -162,7 +163,7 @@ void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsig
 
   for (y = 0; y < h; y++) {
     for (x = 0; x < w; x++) {
-	dst32[y*w+x] = dst32[(y % ph) * w + (x % pw)];
+	dst32[y * wpad + x] = dst32[(y % ph) * wpad + (x % pw)];
     }
   }
 
