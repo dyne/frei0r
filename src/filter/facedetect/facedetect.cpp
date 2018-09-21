@@ -25,8 +25,19 @@
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>
-#include <opencv2/objdetect.hpp>
-#include <opencv2/imgproc.hpp>
+
+#define CV_VERSION_NUM (CV_MAJOR_VERSION * 10000 \
+                      + CV_MINOR_VERSION * 100 \
+                      + CV_VERSION_REVISION)
+
+#if CV_VERSION_NUM > 30000
+  #include <opencv2/objdetect.hpp>
+  #include <opencv2/imgproc.hpp>
+#else
+  #include <opencv2/objdetect/objdetect.hpp>
+  #include <opencv2/imgproc/imgproc.hpp>
+#endif
+
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 
