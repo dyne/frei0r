@@ -99,7 +99,7 @@ Make sure to get in touch with our mailinglist if you like to contribute.
 
 Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms, possibly in even more environments like embedded devices.
 
-For details see the [INSTALL](/INSTALL) file.
+For details see the [INSTALL](/INSTALL.md) file.
 
 ### GNU / Linux
 
