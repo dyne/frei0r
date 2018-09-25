@@ -153,38 +153,41 @@ private:
 
     void updateScalingFactors()
     {
-        // limit all input parameters to ranges [0,1]
-        if (m_scaleCenter <= 0)
-        { m_scaleCenter = 0; }
-        else if (m_scaleCenter >= 1)
-        { m_scaleCenter = 1; }
-
-        if (m_linearScaleArea <= 0)
-        { m_linearScaleArea = 0; }
-        else if (m_linearScaleArea >= 1)
-        { m_linearScaleArea = 1; }
-
-        if (m_linearScaleFactor <= 0)
-        { m_linearScaleFactor = 0; }
-        else if (m_linearScaleFactor >= 1)
-        { m_linearScaleFactor = 1; }
-
-        if (m_nonLinearScaleFactor <= 0)
-        { m_nonLinearScaleFactor = 0; }
-        else if (m_nonLinearScaleFactor >= 1)
-        { m_nonLinearScaleFactor = 1; }
-
         // update changed parameters
         m_prev_scaleCenter = m_scaleCenter;
         m_prev_linearScaleArea = m_linearScaleArea;
         m_prev_linearScaleFactor = m_linearScaleFactor;
         m_prev_nonLinearScaleFactor = m_nonLinearScaleFactor;
 
-        // map to internal parameters
+        // write to internal parameters
         m_intern_scaleCenter = m_scaleCenter;
         m_intern_linearScaleArea = m_linearScaleArea;
         m_intern_linearScaleFactor = m_linearScaleFactor;
-        m_intern_nonLinearScaleFactor = m_nonLinearScaleFactor*0.4-0.2;
+        m_intern_nonLinearScaleFactor = m_nonLinearScaleFactor;
+
+        // limit internal parameters to ranges [0,1]
+        if (m_intern_scaleCenter <= 0)
+        { m_intern_scaleCenter = 0; }
+        else if (m_intern_scaleCenter >= 1)
+        { m_intern_scaleCenter = 1; }
+
+        if (m_intern_linearScaleArea <= 0)
+        { m_intern_linearScaleArea = 0; }
+        else if (m_intern_linearScaleArea >= 1)
+        { m_intern_linearScaleArea = 1; }
+
+        if (m_intern_linearScaleFactor <= 0)
+        { m_intern_linearScaleFactor = 0; }
+        else if (m_intern_linearScaleFactor >= 1)
+        { m_intern_linearScaleFactor = 1; }
+
+        if (m_intern_nonLinearScaleFactor <= 0)
+        { m_intern_nonLinearScaleFactor = 0; }
+        else if (m_intern_nonLinearScaleFactor >= 1)
+        { m_intern_nonLinearScaleFactor = 1; }
+
+        // adjust internal parameters where necessary
+        m_intern_nonLinearScaleFactor = m_intern_nonLinearScaleFactor*0.4-0.2;
 
         // calculate borders based on parameters
         // use 'int' instead of 'unsigned int' as possible results can be negative
