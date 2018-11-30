@@ -180,14 +180,14 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   assert(instance);
   cairo_blend_instance_t* inst = (cairo_blend_instance_t*) instance;
 
-  unsigned char* src = (unsigned char*)inframe1;
-  unsigned char* dst = (unsigned char*)inframe2;
+  unsigned char* dst = (unsigned char*)inframe1;
+  unsigned char* src = (unsigned char*)inframe2;
   unsigned char* out = (unsigned char*)outframe;
   int pixels = inst->width * inst->height;
 
-  frei0r_cairo_premultiply_rgba (src, pixels, 0xff);
-  frei0r_cairo_premultiply_rgba (dst, pixels, -1);
-  draw_composite (inst, out, src, dst, time);
+  frei0r_cairo_premultiply_rgba (dst, pixels, 0xff);
+  frei0r_cairo_premultiply_rgba (src, pixels, -1);
+  draw_composite (inst, out, dst, src, time);
   frei0r_cairo_unpremultiply_rgba (out, pixels);
 }
 
