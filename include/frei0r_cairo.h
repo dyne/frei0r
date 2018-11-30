@@ -256,11 +256,11 @@ void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
   int i = pixels + 1;
   while ( --i ) {
     register unsigned char a = rgba[3];
-	if (a > 0 && a < 0xff) {
+    if (a > 0 && a < 0xff) {
       rgba[0] = MIN(( rgba[0] << 8 ) / a, 255);
       rgba[1] = MIN(( rgba[1] << 8 ) / a, 255);
       rgba[2] = MIN(( rgba[2] << 8 ) / a, 255);
-	}
+    }
     rgba += 4;
   }
 }
