@@ -259,7 +259,7 @@ void f0r_update(f0r_instance_t instance, double time,
   int maxX = inst->splitPreview && !inst->srcPosition?inst->width/2:inst->width;  
 
   for(int j = 0; j < inst->width; j++) {
-	int copyPixel = inst->splitPreview && (inst->srcPosition && j < inst->width / 2 || !inst->srcPosition && j >= inst->width / 2);
+	int copyPixel = inst->splitPreview && ((inst->srcPosition && j < inst->width / 2) || (!inst->srcPosition && j >= inst->width / 2));
 	for(int i = 0; i < inst->height; i++) {
 	  int offset = (i * inst->width + j) * 4;
 	  if (copyPixel) {
