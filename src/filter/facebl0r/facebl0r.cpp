@@ -15,20 +15,12 @@
  */
 
 
-#include <opencv2/core/version.hpp>
-#define CV_VERSION_NUM (CV_MAJOR_VERSION * 10000 \
-                      + CV_MINOR_VERSION * 100 \
-                      + CV_VERSION_REVISION)
-#include <stdio.h>
 #include <stdlib.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#if CV_VERSION_NUM > 30401
-#include <opencv2/imgproc.hpp>
-#endif
-
-#include <frei0r.hpp>
-#include <frei0r_math.h>
+#include <stdio.h>
+#include <string.h>
+#include <opencv2/opencv.hpp>
+#include "frei0r.hpp"
+#include "frei0r_math.h"
 
 typedef struct {
   IplImage* hsv;     //input image converted to HSV
