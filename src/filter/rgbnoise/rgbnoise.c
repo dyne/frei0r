@@ -2,7 +2,7 @@
  * This file is a modified port of RGB Noise plug-in from Gimp.
  * It contains code from plug-ins/common/noise-rgb.c, see that for copyrights.
  *
- * softglow.c
+ * rgbnoise.c
  * Copyright 2012 Janne Liljeblad 
  *
  * This file is a Frei0r plugin.
@@ -202,8 +202,8 @@ void rgb_noise(f0r_instance_t instance, double time,
     *dst++ = addNoise(sample, noise);
     sample = *src++;
     *dst++ = addNoise(sample, noise);
-    *src++;
-    *dst++;
+    src++;
+    dst++;
   }
 }
 
