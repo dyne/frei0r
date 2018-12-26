@@ -37,9 +37,9 @@ void green_limited_by_blue(unsigned int len, const uint32_t* inframe, uint32_t* 
   {
     *dst++ = *src++;
     g = *src++;
-    *dst++;
+    dst++;
     b = *src++;
-    *dst++;
+    dst++;
     *dst++ = *src++;
 
     if( g > b )
@@ -68,9 +68,9 @@ void blue_limited_by_green(unsigned int len, const uint32_t* inframe, uint32_t* 
   {
     *dst++ = *src++;
     g = *src++;
-    *dst++;
+    dst++;
     b = *src++;
-    *dst++;
+    dst++;
     *dst++ = *src++;
 
     if( b > g )
