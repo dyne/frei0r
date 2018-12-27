@@ -309,8 +309,6 @@ void f0r_update(f0r_instance_t instance, double time,
 	int posInMax = inst->inputMax * thirdX;
 	int posOutMin = inst->outputMin * thirdX;
 	int posOutMax = inst->outputMax * thirdX;
-	double b = -7.0/12;
-	double a = .5 - b;
 	int posGamma = posInMin + (posInMax - posInMin) * pow(inst->gamma, .5) *.5;
 	int color[3];
 	color[0] = CHANNEL_RED == inst->channel || CHANNEL_LUMA == inst->channel?255:0;

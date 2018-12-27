@@ -88,7 +88,7 @@ void color_halftone(f0r_instance_t instance, double time,
 
   const uint32_t* inPixels = (const uint32_t*)inframe;
   uint32_t* dst = outframe;
-  int x, y, ix, channel, v, nr, shift, mask, i, nx,  argb, ny;
+  int x, y, channel, v, nr, shift, mask, i, nx,  argb, ny;
 
   double angle, sin_val, cos_val, tx, ty , ttx, tty, ntx, nty, l, dx , dy , dx2 , dy2 , R , f, f2;
 

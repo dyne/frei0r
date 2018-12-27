@@ -641,9 +641,7 @@ free(instance);
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_index)
 {
 inst *p;
-double tmpf;
 int tmpi,chg;
-float l;
 
 p=(inst*)instance;
 
@@ -700,8 +698,6 @@ if (chg==0) return;
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 inst *p;
-double tmpf;
-int tmpi;
 
 p=(inst*)instance;
 
@@ -738,9 +734,6 @@ switch(param_index)
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 inst *in;
-float l;
-unsigned char lc;
-int i;
 
 assert(instance);
 in=(inst*)instance;
