@@ -466,8 +466,6 @@ switch(p->act)
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 inst *p;
-double tmpf;
-int tmpi;
 
 p=(inst*)instance;
 

@@ -361,8 +361,7 @@ public:
         int maxDiff, temp, sum;
         unsigned int min;
         unsigned int max;
-        float f, y;
-        uint32_t color;
+        float f;
         float fr, fg, fb, sr, sg, sb, fy, fsat;
 
 #ifdef LG_DEBUG

@@ -88,7 +88,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 
 void f0r_destruct(f0r_instance_t instance)
 {
-  cairo_imagegrid_instance_t* inst = (cairo_imagegrid_instance_t*)instance;
   free(instance);
 }
 
