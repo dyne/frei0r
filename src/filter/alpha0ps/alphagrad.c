@@ -256,8 +256,6 @@ fill_grad(p);
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 inst *p;
-double tmpf;
-int tmpi;
 
 p=(inst*)instance;
 
@@ -289,9 +287,7 @@ switch(param_index)
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 inst *in;
-int i,j;
-float a,d,st,ct;
-float po,wd;
+int i;
 uint32_t t;
 
 assert(instance);

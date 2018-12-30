@@ -640,8 +640,6 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 	param *p;
-	int size;
-	int i,j;
 
 	p=(param*)instance;
 
