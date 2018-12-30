@@ -226,11 +226,9 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   assert(instance);
   three_point_balance_instance_t* inst = (three_point_balance_instance_t*)instance;
-  unsigned int len = inst->width * inst->height;
   
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
-  int b, g, r;
 
   int mapRed[256];
   int mapGreen[256];
@@ -255,8 +253,6 @@ void f0r_update(f0r_instance_t instance, double time,
   free(redCoeffs);
   free(greenCoeffs);
   free(blueCoeffs);
-  int minX = inst->splitPreview && inst->srcPosition?inst->width/2:0;
-  int maxX = inst->splitPreview && !inst->srcPosition?inst->width/2:inst->width;  
 
   for(int j = 0; j < inst->width; j++) {
 	int copyPixel = inst->splitPreview && ((inst->srcPosition && j < inst->width / 2) || (!inst->srcPosition && j >= inst->width / 2));

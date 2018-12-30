@@ -949,7 +949,6 @@ void f0r_update(f0r_instance_t instance, double time,
 	free(points);
 	//drawing curve on the graph
 	float halfLineWidth = lineWidth * .5;
-	float coeff = 255. / scale;
 	float prevY = 0;
 	for(int j = 0; j < scale; j++) {
 	  float y = inst->curveMap[j];

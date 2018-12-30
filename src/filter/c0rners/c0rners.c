@@ -428,7 +428,7 @@ void make_alphamap(unsigned char *amap, tocka2 vog[], int wo, int ho, float *map
 //-------------------------------------------------------
 void apply_alphamap(uint32_t* frame, int w, int h, unsigned char *amap, int operation)
 {
-	int i,j, length;
+	int i, length;
 	uint32_t t;
         length = w * h;
 

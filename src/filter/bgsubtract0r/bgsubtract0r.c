@@ -126,7 +126,6 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 {
   assert(instance);
   bgsubtract0r_instance_t* inst = (bgsubtract0r_instance_t*)instance;
-  f0r_param_color_t *c;
 
   switch(param_index)
   {
@@ -148,7 +147,6 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 {
   assert(instance);
   bgsubtract0r_instance_t* inst = (bgsubtract0r_instance_t*)instance;
-  f0r_param_color_t *c;
 
   switch(param_index)
   {
