@@ -5,7 +5,7 @@ if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-include_directories (${OpenCV_INCLUDE_DIR})
+include_directories (${OpenCV_INCLUDE_DIRS})
 link_directories (${OpenCV_LIBRARY_DIRS})
 LINK_LIBRARIES(${OpenCV_LIBS} ${OpenCV_LIBRARIES})
 
