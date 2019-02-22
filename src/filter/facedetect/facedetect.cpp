@@ -56,7 +56,9 @@ private:
     bool   antialias;
     double alpha;
     f0r_param_color  color[5];
-	
+
+    std::string old_classifier;
+
 public:
     FaceDetect(int width, int height)
         : count(0)
@@ -115,9 +117,10 @@ public:
     {
         if (cascade.empty()) {
             cv::setNumThreads(cvRound(threads * 100));
-            if (classifier.length() > 0) {
+            if (classifier.length() > 0 && classifier != old_classifier) {
                 if (!cascade.load(classifier.c_str()))
                     fprintf(stderr, "ERROR: Could not load classifier cascade %s\n", classifier.c_str());
+		old_classifier = classifier;
             }
             else {
                 memcpy(out, in, size * 4);
