@@ -40,7 +40,7 @@ public:
     
     for (unsigned int i=0; i<size; ++i)
     {
-      uint32_t tmp;
+      uint32_t tmp1, tmp2;
       uint8_t alpha_src1 = src1[3];
       uint8_t alpha_src2 = src2[3];
       uint8_t alpha_dst;
@@ -48,7 +48,7 @@ public:
       uint8_t w2 = 0xff ^ alpha_src1; // w2 = 255 - alpha_1
 
       // compute destination alpha
-      alpha_dst = dst[3] = INT_MULT(alpha_src1, w1, tmp) + INT_MULT(alpha_src2, w2, tmp);
+      alpha_dst = dst[3] = INT_MULT(alpha_src1, w1, tmp1) + INT_MULT(alpha_src2, w2, tmp2);
 
        // compute destination values
       if (alpha_dst == 0)
@@ -56,7 +56,7 @@ public:
           dst[b] = 0;
       else
         for (int b=0; b<3; ++b)
-          dst[b] = CLAMP0255( (uint32_t)( (uint32_t) (INT_MULT(src1[b], alpha_src1, tmp) * w1 + INT_MULT(src2[b], alpha_src2, tmp) * w2) / alpha_dst) );
+          dst[b] = CLAMP0255( (uint32_t)( (uint32_t) (INT_MULT(src1[b], alpha_src1, tmp1) * w1 + INT_MULT(src2[b], alpha_src2, tmp2) * w2) / alpha_dst) );
       
       src1 += 4;
       src2 += 4;
