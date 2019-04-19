@@ -79,7 +79,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* rgbsplit0rInfo)
     rgbsplit0rInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
     rgbsplit0rInfo->frei0r_version = FREI0R_MAJOR_VERSION;
     rgbsplit0rInfo->major_version = 1;
-    rgbsplit0rInfo->minor_version = 0;
+    rgbsplit0rInfo->minor_version = 1;
     rgbsplit0rInfo->num_params =  2;
     rgbsplit0rInfo->explanation = "RGB splitting and shifting";
 }
