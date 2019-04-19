@@ -60,6 +60,7 @@ inline static void rgbsplit0r_extract_color(uint32_t *pixelIn, uint32_t *pixelOu
             pxOut[0] = 0;
             break;
     }
+    pxOut[3] = pxIn[3];
 }
 
 int f0r_init()
@@ -217,7 +218,6 @@ void f0r_update(f0r_instance_t instance, double time,
             rgbsplit0r_extract_color((uint32_t *)(src + x + (y*inst->width)),
                     &pxG, 1);
 
-            // No need to save alpha because it will distort the resulting image
             *(dst + x + (y*inst->width)) = (pxG | pxB | pxR);
         }
 }
