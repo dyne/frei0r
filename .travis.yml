@@ -14,5 +14,5 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull dyne/devuan:beowulf && docker build -t freior/pugins .; fi
 
 script:
-- cmake . && make
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git clean -fd && ./autogen.sh && ./configure && make ; fi
+- cmake . && make all install
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git clean -fd && ./autogen.sh && ./configure && make all install ; fi
