@@ -15,4 +15,4 @@ before_install:
 
 script:
 - cmake . && make -j && sudo make install
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker run dyne:frei0r-plugins /bin/sh -c "git clean -fd && ./autogen.sh && ./configure && make -j && make install" ; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker run dyne/frei0r-plugins /bin/sh -c "git clean -fd && ./autogen.sh && ./configure && make -j && make install" ; fi
