@@ -11,8 +11,8 @@ services:
   - docker
 
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull dyne/devuan:beowulf && docker build -t freior/pugins .; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull dyne/devuan:beowulf && docker build -t dyne/frei0r-plugins .; fi
 
 script:
 - cmake . && make -j && sudo make install
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git clean -fd && ./autogen.sh && ./configure && make -j && sudo make install ; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker run dyne:frei0r-plugins /bin/sh -c "git clean -fd && ./autogen.sh && ./configure && make -j && make install" ; fi
