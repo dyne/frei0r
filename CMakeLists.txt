@@ -44,9 +44,10 @@ add_subdirectory (doc)
 add_subdirectory (src)
 
 # Generate frei0r.pc and install it.
+include(GNUInstallDirs)
 set (prefix "${CMAKE_INSTALL_PREFIX}")
 set (exec_prefix "${CMAKE_INSTALL_PREFIX}")
 set (libdir "${CMAKE_INSTALL_PREFIX}/lib")
 set (includedir "${CMAKE_INSTALL_PREFIX}/include")
 configure_file ("frei0r.pc.in" "frei0r.pc" @ONLY)
-install (FILES "${CMAKE_CURRENT_BINARY_DIR}/frei0r.pc" DESTINATION lib/pkgconfig)
+install (FILES "${CMAKE_CURRENT_BINARY_DIR}/frei0r.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
