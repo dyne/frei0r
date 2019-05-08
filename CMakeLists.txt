@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
+include(GNUInstallDirs)
 
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -44,7 +45,6 @@ add_subdirectory (doc)
 add_subdirectory (src)
 
 # Generate frei0r.pc and install it.
-include(GNUInstallDirs)
 set (prefix "${CMAKE_INSTALL_PREFIX}")
 set (exec_prefix "${CMAKE_INSTALL_PREFIX}")
 set (libdir "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
