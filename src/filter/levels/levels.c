@@ -1,4 +1,5 @@
-/* levels.c
+/*  -*- mode: c; c-basic-offset: 2; indent-tabs-mode: nil; -*-
+ * levels.c
  * Copyright (C) 2009 Maksim Golovkin (m4ks1k@gmail.com)
  * This file is a Frei0r plugin.
  *
@@ -24,15 +25,36 @@
 
 #include "frei0r.h"
 #include "frei0r_math.h"
-#define CHANNEL_RED 0
-#define CHANNEL_GREEN 1
-#define CHANNEL_BLUE 2
-#define CHANNEL_LUMA 3
 
-#define POS_TOP_LEFT 0
-#define POS_TOP_RIGHT 1
-#define POS_BOTTOM_LEFT 2
-#define POS_BOTTOM_RIGHT 3
+enum ChannelChoice
+{
+  CHANNEL_RED,
+  CHANNEL_GREEN,
+  CHANNEL_BLUE,
+  CHANNEL_LUMA,
+};
+
+enum HistogramPosChoice
+{
+  POS_TOP_LEFT,
+  POS_TOP_RIGHT,
+  POS_BOTTOM_LEFT,
+  POS_BOTTOM_RIGHT,
+};
+
+enum ParamIndex
+{
+  PARAM_CHANNEL,
+  PARAM_INPUT_MIN,
+  PARAM_INPUT_MAX,
+  PARAM_GAMMA,
+  PARAM_OUTPUT_MIN,
+  PARAM_OUTPUT_MAX,
+  PARAM_SHOW_HISTOGRAM,
+  PARAM_HISTOGRAM_POS,
+
+  PARAMETER_COUNT  // last one.
+};
 
 typedef struct levels_instance
 {
@@ -43,9 +65,9 @@ typedef struct levels_instance
   double outputMin; // 0 - 1
   double outputMax; // 0 - 1
   double gamma;
-  double channel;
-  double showHistogram;
-  double histogramPosition;
+  enum ChannelChoice channel;
+  char showHistogram;
+  enum HistogramPosChoice histogramPosition;
 } levels_instance_t;
 
 int f0r_init()
@@ -63,9 +85,9 @@ void f0r_get_plugin_info(f0r_plugin_info_t* levels_instance_t)
   levels_instance_t->plugin_type = F0R_PLUGIN_TYPE_FILTER;
   levels_instance_t->color_model = F0R_COLOR_MODEL_RGBA8888;
   levels_instance_t->frei0r_version = FREI0R_MAJOR_VERSION;
-  levels_instance_t->major_version = 0; 
-  levels_instance_t->minor_version = 3; 
-  levels_instance_t->num_params = 8; 
+  levels_instance_t->major_version = 0;
+  levels_instance_t->minor_version = 3;
+  levels_instance_t->num_params = PARAMETER_COUNT;
   levels_instance_t->explanation = "Adjust luminance or color channel intensity";
 }
 
@@ -73,45 +95,46 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
   switch(param_index)
   {
-  case 0:
+  case PARAM_CHANNEL:
     info->name = "Channel";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Channel to adjust levels";
+    info->explanation = "Channel to adjust levels. "
+      "0%=R, 10%=G, 20%=B, 30%=Luma";
     break;
-  case 1:
+  case PARAM_INPUT_MIN:
     info->name = "Input black level";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Input black level";
     break;
-  case 2:
+  case PARAM_INPUT_MAX:
     info->name = "Input white level";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Input white level";
     break;
-  case 3:
+  case PARAM_GAMMA:
     info->name = "Gamma";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Gamma";
     break;
-  case 4:
+  case PARAM_OUTPUT_MIN:
     info->name = "Black output";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "Black output";
     break;
-  case 5:
+  case PARAM_OUTPUT_MAX:
     info->name = "White output";
     info->type = F0R_PARAM_DOUBLE;
     info->explanation = "White output";
-	break;
-  case 6:
+    break;
+  case PARAM_SHOW_HISTOGRAM:
     info->name = "Show histogram";
     info->type = F0R_PARAM_BOOL;
     info->explanation = "Show histogram";
-	break;
-  case 7:
+    break;
+  case PARAM_HISTOGRAM_POS:
     info->name = "Histogram position";
     info->type = F0R_PARAM_DOUBLE;
-    info->explanation = "Histogram position";
+    info->explanation = "Histogram position. 0%=TL, 10%=TR, 20%=BL, 30%=BR";
     break;
   }
 }
@@ -125,9 +148,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->outputMin = 0;
   inst->outputMax = 1;
   inst->gamma = 1;
-  inst->channel = 0;
+  inst->channel = CHANNEL_RED;
   inst->showHistogram = 1;
-  inst->histogramPosition = 3;
+  inst->histogramPosition = POS_BOTTOM_RIGHT;
   return (f0r_instance_t)inst;
 }
 
@@ -136,7 +159,15 @@ void f0r_destruct(f0r_instance_t instance)
   free(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
+static int ClampIntToRange(double input, int min_allowed, int max_allowed)
+{
+  int result = floor(input);
+  if (result < min_allowed) result = min_allowed;
+  if (result > max_allowed) result = max_allowed;
+  return result;
+}
+
+void f0r_set_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
   assert(instance);
@@ -144,30 +175,34 @@ void f0r_set_param_value(f0r_instance_t instance,
 
   switch(param_index)
   {
-	case 0:
-	  inst->channel = floor(*((f0r_param_double *)param) * 10);
-	  break;
-	case 1:
-	  inst->inputMin =  *((f0r_param_double *)param);
-	  break;
-	case 2:
-	  inst->inputMax =  *((f0r_param_double *)param);
-	  break;
-	case 3:
-	  inst->gamma = *((f0r_param_double *)param) * 4;
-	  break;
-	case 4:
-	  inst->outputMin = *((f0r_param_double *)param);
-	  break;
-	case 5:
-	  inst->outputMax = *((f0r_param_double *)param);
-	  break;
-	case 6:
-	  inst->showHistogram = *((f0r_param_bool *)param);
-	  break;
-	case 7:
-	  inst->histogramPosition = floor(*((f0r_param_double *)param) * 10);
-	  break;
+  case PARAM_CHANNEL:
+    inst->channel = (enum ChannelChoice)
+      ClampIntToRange(*((f0r_param_double *)param) * 10,
+                      CHANNEL_RED, CHANNEL_LUMA);
+    break;
+  case PARAM_INPUT_MIN:
+    inst->inputMin =  *((f0r_param_double *)param);
+    break;
+  case PARAM_INPUT_MAX:
+    inst->inputMax =  *((f0r_param_double *)param);
+    break;
+  case PARAM_GAMMA:
+    inst->gamma = *((f0r_param_double *)param) * 4;
+    break;
+  case PARAM_OUTPUT_MIN:
+    inst->outputMin = *((f0r_param_double *)param);
+    break;
+  case PARAM_OUTPUT_MAX:
+    inst->outputMax = *((f0r_param_double *)param);
+    break;
+  case PARAM_SHOW_HISTOGRAM:
+    inst->showHistogram = *((f0r_param_bool *)param);
+    break;
+  case PARAM_HISTOGRAM_POS:
+    inst->histogramPosition = (enum HistogramPosChoice)
+      ClampIntToRange(*((f0r_param_double *)param) * 10,
+                      POS_TOP_LEFT, POS_BOTTOM_RIGHT);
+    break;
   }
 }
 
@@ -176,33 +211,33 @@ void f0r_get_param_value(f0r_instance_t instance,
 {
   assert(instance);
   levels_instance_t* inst = (levels_instance_t*)instance;
-  
+
   switch(param_index)
   {
-  case 0:
-	*((f0r_param_double *)param) = inst->channel / 10.;
-	break;
-  case 1:
-	*((f0r_param_double *)param) = inst->inputMin;
-	break;
-  case 2:
-	*((f0r_param_double *)param) = inst->inputMax;
-	break;
-  case 3:
-	*((f0r_param_double *)param) = inst->gamma / 4;
-	break;
-  case 4:
-	*((f0r_param_double *)param) = inst->outputMin;
-	break;
-  case 5:
-	*((f0r_param_double *)param) = inst->outputMax;
-	break;
-  case 6:
-	*((f0r_param_bool *)param) = inst->showHistogram;
-	break;
-  case 7:
-	*((f0r_param_double *)param) = inst->histogramPosition / 10.;
-	break;
+  case PARAM_CHANNEL:
+    *((f0r_param_double *)param) = inst->channel / 10.;
+    break;
+  case PARAM_INPUT_MIN:
+    *((f0r_param_double *)param) = inst->inputMin;
+    break;
+  case PARAM_INPUT_MAX:
+    *((f0r_param_double *)param) = inst->inputMax;
+    break;
+  case PARAM_GAMMA:
+    *((f0r_param_double *)param) = inst->gamma / 4;
+    break;
+  case PARAM_OUTPUT_MIN:
+    *((f0r_param_double *)param) = inst->outputMin;
+    break;
+  case PARAM_OUTPUT_MAX:
+    *((f0r_param_double *)param) = inst->outputMax;
+    break;
+  case PARAM_SHOW_HISTOGRAM:
+    *((f0r_param_bool *)param) = inst->showHistogram;
+    break;
+  case PARAM_HISTOGRAM_POS:
+    *((f0r_param_double *)param) = inst->histogramPosition / 10.;
+    break;
   }
 }
 
@@ -213,7 +248,7 @@ void f0r_update(f0r_instance_t instance, double time,
   levels_instance_t* inst = (levels_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
   unsigned int maxHisto = 0;
-  
+
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
   int r, g, b;
@@ -229,14 +264,14 @@ void f0r_update(f0r_instance_t instance, double time,
 	double v = i / 255. - inst->inputMin;
 	if (v < 0.0) {
 		v = 0.0;
-	}           
+	}
 	double w = pow(v / inScale, exp) * outScale + inst->outputMin;
 	map[i] = CLAMP0255(lrintf(w * 255.0));
   }
 
   if (inst->showHistogram)
 	for(int i = 0; i < 256; i++)
-	  levels[i] = 0;  
+	  levels[i] = 0;
 
   while (len--)
   {
@@ -245,7 +280,7 @@ void f0r_update(f0r_instance_t instance, double time,
 	b = *src++;
 
 	if (inst->showHistogram) {
-	  int intensity = 
+	  int intensity =
 	    inst->channel == CHANNEL_RED?r:
 	    inst->channel == CHANNEL_GREEN?g:
 	    inst->channel == CHANNEL_BLUE?b:
@@ -255,8 +290,8 @@ void f0r_update(f0r_instance_t instance, double time,
 	  if (levels[index] > maxHisto)
 		maxHisto = levels[index];
 	}
-	
-	switch ((int)inst->channel) {
+
+	switch (inst->channel) {
 	case CHANNEL_RED:
 	  *dst++ = map[r];
 	  *dst++ = g;
@@ -319,8 +354,8 @@ void f0r_update(f0r_instance_t instance, double time,
 	midColor[1] = color[1]>>1;
 	midColor[2] = color[2]>>1;
 	for(int y = histoHeight; y < thirdY - barHeight * 2; y++) {
-	  int offsettedY = (y + yOffset) * inst->width; 
-	  int offsettedYlower = (y + yOffset + barHeight * 2) * inst->width; 
+	  int offsettedY = (y + yOffset) * inst->width;
+	  int offsettedYlower = (y + yOffset + barHeight * 2) * inst->width;
 	  for(int x = 0; x < thirdX; x++) {
 		int offset = (offsettedY + x + xOffset) * 4;
 		dst[offset] = 127 + dst[offset]/2;
@@ -332,7 +367,7 @@ void f0r_update(f0r_instance_t instance, double time,
 		dst[offset + 2] = 127 + dst[offset + 2]/2;
 	  }
 	  int delta = (y - histoHeight)/2;
-	  
+
 	  for(int x = -delta; x < delta; x++) {
 		int xInMin = x + posInMin;
 		int xInMax = x + posInMax;
