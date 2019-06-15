@@ -86,7 +86,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* levels_instance_t)
   levels_instance_t->color_model = F0R_COLOR_MODEL_RGBA8888;
   levels_instance_t->frei0r_version = FREI0R_MAJOR_VERSION;
   levels_instance_t->major_version = 0;
-  levels_instance_t->minor_version = 3;
+  levels_instance_t->minor_version = 4;
   levels_instance_t->num_params = PARAMETER_COUNT;
   levels_instance_t->explanation = "Adjust luminance or color channel intensity";
 }
@@ -148,7 +148,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->outputMin = 0;
   inst->outputMax = 1;
   inst->gamma = 1;
-  inst->channel = CHANNEL_RED;
+  inst->channel = CHANNEL_LUMA;
   inst->showHistogram = 1;
   inst->histogramPosition = POS_BOTTOM_RIGHT;
   return (f0r_instance_t)inst;
@@ -157,14 +157,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
   free(instance);
-}
-
-static int ClampIntToRange(double input, int min_allowed, int max_allowed)
-{
-  int result = floor(input);
-  if (result < min_allowed) result = min_allowed;
-  if (result > max_allowed) result = max_allowed;
-  return result;
 }
 
 void f0r_set_param_value(f0r_instance_t instance,
@@ -177,8 +169,8 @@ void f0r_set_param_value(f0r_instance_t instance,
   {
   case PARAM_CHANNEL:
     inst->channel = (enum ChannelChoice)
-      ClampIntToRange(*((f0r_param_double *)param) * 10,
-                      CHANNEL_RED, CHANNEL_LUMA);
+      CLAMP(floor(*((f0r_param_double *)param) * 10),
+            CHANNEL_RED, CHANNEL_LUMA);
     break;
   case PARAM_INPUT_MIN:
     inst->inputMin =  *((f0r_param_double *)param);
@@ -200,8 +192,8 @@ void f0r_set_param_value(f0r_instance_t instance,
     break;
   case PARAM_HISTOGRAM_POS:
     inst->histogramPosition = (enum HistogramPosChoice)
-      ClampIntToRange(*((f0r_param_double *)param) * 10,
-                      POS_TOP_LEFT, POS_BOTTOM_RIGHT);
+      CLAMP(floor(*((f0r_param_double *)param) * 10),
+            POS_TOP_LEFT, POS_BOTTOM_RIGHT);
     break;
   }
 }
