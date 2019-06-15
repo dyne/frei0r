@@ -44,8 +44,8 @@ unsigned char CLAMP0255(int32_t a)
 #endif
 
 #ifndef CLAMP
-//! Clamp x at lower = low and upper = up.
-#define CLAMP(x,low,up) ( (x) < (low) ? (low) : ( (x) > (up) ? (up) : (x) ) )
+//! Clamp x at min and max
+#define CLAMP(x,min,max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #endif
 
 #ifndef ROUND
