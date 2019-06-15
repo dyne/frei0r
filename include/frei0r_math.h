@@ -2,7 +2,7 @@
 #define INCLUDED_FREI0R_MATH_H
 
 /*
-  
+
   Code stripped from The Gimp:
   INT_MULT(a,b,t)
   INT_MULT3(a,b,c,t)
@@ -10,7 +10,7 @@
   CLAMP
   ROUND
   MAX255
-  
+
   Code stripped from Drone:
   CLAMP0255
   SQR
@@ -44,8 +44,8 @@ unsigned char CLAMP0255(int32_t a)
 #endif
 
 #ifndef CLAMP
-//! Clamp x at lower = l and upper = u.
-#define CLAMP(x,l,u) ( x < l ? l : ( x > u ? u : x ) )
+//! Clamp x at lower = low and upper = up.
+#define CLAMP(x,low,up) ( (x) < (low) ? (low) : ( (x) > (up) ? (up) : (x) ) )
 #endif
 
 #ifndef ROUND
