@@ -35,6 +35,7 @@ Copyright (C) 2011  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <math.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <string.h>
 
 double PI=3.14159265358979;
 
@@ -361,6 +362,10 @@ in=(inst*)instance;
       break;
     case 2:
       fibe3_8(inframe, outframe, in->img, in->w, in->h, in->a1, in->a2, in->a3, in->ec);
+      // The bottom 3 lines were not updated, and outframe may be initialized with garbage.
+      // Copy the 4th line from the bottom to the bottom 3 lines.
+      for (i = 0; i < 3; i++)
+          memcpy(&outframe[in->w * (in->h - 3 + i)], &outframe[in->w * (in->h - 4)], in->w * 4);
       break;
     }
   //copy alpha
