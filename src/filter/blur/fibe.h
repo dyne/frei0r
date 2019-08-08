@@ -68,7 +68,8 @@ and therefore time consuming "walks" through memory.
 #define EDGEAVG 8
 
 #include <sys/types.h>
-
+#include <string.h>
+#include "frei0r_math.h"
 
 //---------------------------------------------------------
 //koeficienti za biquad lowpass  iz f in q
@@ -858,15 +859,13 @@ void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[], int w
 //cez rob in in gre potem nazaj
 void fibe3_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[], int w, int h, float a1, float a2, float a3, int ec)
 {
-    float cr,cg,cb,g,g4,avg;
+    float cr,cg,cb,g,g4;
     int i,j;
-    float_rgba lb[4096];
-    int cez;
+    const float avg = EDGEAVG; // how many samples for average at edge comp
+    const int cez = 256; // how many samples go right
+    float_rgba *lb = malloc((MAX(w, h) + cez) * sizeof(*lb));
 
     g=1.0/(1.0+a1+a2+a3); g4=1.0/g/g/g/g;
-
-    avg=EDGEAVG;	//koliko vzorcev za povprecje pri edge comp
-    cez=256;	//koliko vzorcev gre cez na desni
 
     for (j=0;j<h;j++)	//po vrsticah
     {
@@ -1049,6 +1048,5 @@ void fibe3_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[], int w,
         }
     }	//po stolpcih
 
+    free(lb);
 }
-
-
