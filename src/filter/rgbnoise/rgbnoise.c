@@ -202,8 +202,7 @@ void rgb_noise(f0r_instance_t instance, double time,
     *dst++ = addNoise(sample, noise);
     sample = *src++;
     *dst++ = addNoise(sample, noise);
-    src++;
-    dst++;
+    *dst++ = *src++;
   }
 }
 
