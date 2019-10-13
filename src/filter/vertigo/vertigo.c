@@ -66,7 +66,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* vertigoInfo)
   vertigoInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
   vertigoInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   vertigoInfo->major_version = 1;
-  vertigoInfo->minor_version = 1;
+  vertigoInfo->minor_version = 2;
   vertigoInfo->num_params =  2;
   vertigoInfo->explanation = "alpha blending with zoomed and rotated images";
 }
@@ -184,6 +184,7 @@ void f0r_update(f0r_instance_t instance, double time,
   const uint32_t* src = inframe;
   uint32_t *p;
   uint32_t v;
+  uint32_t alpha;
   int ox, oy;
   int i;
 
@@ -240,8 +241,9 @@ void f0r_update(f0r_instance_t instance, double time,
       if(i<0) i = 0;
       if(i>=inst->pixels) i = inst->pixels;
       v = inst->current_buffer[i] & 0xfcfcff;
+      alpha = *src & 0xff000000;
       v = (v * 3) + ((*src++) & 0xfcfcff);
-      *dst++ = (v>>2);
+      *dst++ = (v>>2) | alpha;
       *p++ = (v>>2);
       ox += inst->dx;
       oy += inst->dy;
