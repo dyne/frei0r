@@ -48,7 +48,7 @@ private:
 
 
 frei0r::construct<scanline0r> plugin("scanline0r",
-				     "interlaced blak lines",
+				     "interlaced dark lines",
 				     "Martin Bayer",
-				     0,2);
+				     0,3);
 
