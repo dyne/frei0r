@@ -234,7 +234,9 @@ void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
   int i = pixels + 1;
   while ( --i ) {
     register unsigned char a = rgba[3];
-    if (a < 0xff) {
+    if (a == 0) {
+      *((uint32_t *)rgba) = 0;
+    } else if (a < 0xff) {
       rgba[0] = ( rgba[0] * a ) >> 8;
       rgba[1] = ( rgba[1] * a ) >> 8;
       rgba[2] = ( rgba[2] * a ) >> 8;
