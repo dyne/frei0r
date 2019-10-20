@@ -103,9 +103,8 @@ static inline float dist_box_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax=fabsf(hue-chue);
-	//if (ax>PI) ax=ax-PI;
-	if (ax>0.5) ax=ax-0.5;
+	// wrap hue term -0.5 .. 0.5
+	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
 	az=fabsf(z-cz)*dz;
@@ -120,9 +119,7 @@ static inline float dist_eli_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax=(hue-chue);
-	//if (ax>PI) ax=ax-PI;
-	if (ax>0.5) ax=ax-0.5;
+	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
 	ax=ax*dhue;
 	ay=(y-cy)*dy;
 	az=(z-cz)*dz;
@@ -134,9 +131,7 @@ static inline float dist_oct_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax=fabsf(hue-chue);
-	//if (ax>PI) ax=ax-PI;
-	if (ax>0.5) ax=ax-0.5;
+	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
 	az=fabsf(z-cz)*dz;
