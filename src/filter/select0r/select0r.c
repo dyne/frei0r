@@ -103,9 +103,8 @@ static inline float dist_box_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax=fabsf(hue-chue);
-	//if (ax>PI) ax=ax-PI;
-	if (ax>0.5) ax=ax-0.5;
+	// wrap hue term -0.5 .. 0.5
+	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
 	az=fabsf(z-cz)*dz;
@@ -120,9 +119,7 @@ static inline float dist_eli_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax=(hue-chue);
-	//if (ax>PI) ax=ax-PI;
-	if (ax>0.5) ax=ax-0.5;
+	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
 	ax=ax*dhue;
 	ay=(y-cy)*dy;
 	az=(z-cz)*dz;
@@ -134,9 +131,7 @@ static inline float dist_oct_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax=fabsf(hue-chue);
-	//if (ax>PI) ax=ax-PI;
-	if (ax>0.5) ax=ax-0.5;
+	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
 	az=fabsf(z-cz)*dz;
@@ -711,7 +706,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=5;
+	info->minor_version=6;
 	info->num_params=10;
 	info->explanation="Color based alpha selection";
 }
