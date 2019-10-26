@@ -18,7 +18,7 @@
 
 /* Clamps a int32-range int between 0 and 255 inclusive. */
 #ifndef CLAMP0255
-unsigned char CLAMP0255(int32_t a)
+static inline unsigned char CLAMP0255(int32_t a)
 {
   return (unsigned char)
     ( (((-a) >> 31) & a)  // 0 if the number was negative
