@@ -351,7 +351,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 
     if (in->am==0.0)	//zero blur, just copy and return
     {
-        for (i=0;i<in->w*in->h;i++) outframe[i]=inframe[i];
+        memcpy(outframe, inframe, in->w * in->h * sizeof(uint32_t));
         return;
     }
     //do the blur
