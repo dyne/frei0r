@@ -267,7 +267,10 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
     {
     case 0:
         //		tmpf=map_value_forward(*((double*)parm), 0.5, 100.0);
-        tmpf=map_value_forward_log(*((double*)parm), 0.5, 100.0);
+        if (*((double*)parm) == 0.0)
+            tmpf = 0.0;
+        else
+            tmpf=map_value_forward_log(*((double*)parm), 0.5, 100.0);
         if (tmpf!=p->am) chg=1;
         p->am=tmpf;
         break;
