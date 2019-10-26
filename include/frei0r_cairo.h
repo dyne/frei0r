@@ -266,3 +266,36 @@ void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
     rgba += 4;
   }
 }
+
+/**
+ * Convert frei0r RGBA to pre-multiplied alpha as needed by Cairo.
+ *
+ * \param rgba the image buffer with format F0R_COLOR_MODEL_RGBA8888
+ * \param pixels the size of the image buffer in number of pixels
+ * \param alpha if >= 0, the alpha channel will be set to this value
+ * \see frei0r_cairo_premultiply_rgba
+ *
+ * This is the same as frei0r_cairo_premultiply_rgba but it writes the
+ * output to a different buffer.
+ */
+void frei0r_cairo_premultiply_rgba2 (unsigned char *in, unsigned char *out,
+                                     int pixels, int alpha)
+{
+  int i = pixels + 1;
+  while ( --i ) {
+    register unsigned char a = in[3];
+    if (a == 0) {
+      *((uint32_t *)out) = 0;
+    } else if (a == 0xff) {
+      memcpy(out, in, 4);
+    } else {
+      out[0] = ( in[0] * a ) >> 8;
+      out[1] = ( in[1] * a ) >> 8;
+      out[2] = ( in[2] * a ) >> 8;
+    }
+    if (alpha >= 0)
+        out[3] = alpha;
+    in += 4;
+    out += 4;
+  }
+}

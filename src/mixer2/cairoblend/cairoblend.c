@@ -129,7 +129,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
   }
 }
 
-void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned char* dst, unsigned char* src, double time)
+void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned char* src, double time)
 {
   int w = inst->width;
   int h = inst->height;
@@ -142,20 +142,11 @@ void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned c
                                                                     stride);
   cairo_t* cr = cairo_create (out_image);
 
-  cairo_surface_t* dst_image = cairo_image_surface_create_for_data (dst,
-                                                                     CAIRO_FORMAT_ARGB32,
-                                                                     w,
-                                                                     h,
-                                                                     stride);
   cairo_surface_t* src_image = cairo_image_surface_create_for_data ((unsigned char*)src,
                                                                      CAIRO_FORMAT_ARGB32,
                                                                      w,
                                                                      h,
                                                                      stride);
-
-  // Draw bg on surface
-  cairo_set_source_surface (cr, dst_image, 0, 0);
-  cairo_paint (cr);
 
   // Set source, blen mode and draw with current opacity
   frei0r_cairo_set_operator(cr, inst->blend_mode);
@@ -164,7 +155,6 @@ void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned c
 
   cairo_surface_destroy (out_image);
   cairo_surface_destroy (src_image);
-  cairo_surface_destroy (dst_image);
   cairo_destroy (cr);
 }
 
@@ -185,9 +175,9 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   unsigned char* out = (unsigned char*)outframe;
   int pixels = inst->width * inst->height;
 
-  frei0r_cairo_premultiply_rgba (dst, pixels, 0xff);
+  frei0r_cairo_premultiply_rgba2 (dst, out, pixels, 0xff);
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
-  draw_composite (inst, out, dst, src, time);
+  draw_composite (inst, out, src, time);
   frei0r_cairo_unpremultiply_rgba (out, pixels);
 }
 
