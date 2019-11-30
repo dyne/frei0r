@@ -64,8 +64,8 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
   info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
   info->color_model = F0R_COLOR_MODEL_RGBA8888;
   info->frei0r_version = FREI0R_MAJOR_VERSION;
-  info->major_version = 0; 
-  info->minor_version = 10;
+  info->major_version = 1; 
+  info->minor_version = 0;
   info->num_params = 11; 
   info->explanation = "Draws a gradient on top of image. Filter is given gradient start and end points, colors and opacities.";
 }
@@ -330,8 +330,11 @@ void f0r_update(f0r_instance_t instance, double time,
   cairo_gradient_instance_t* inst = (cairo_gradient_instance_t*)instance;
 
   unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
+  unsigned char* src = (unsigned char*)inframe;
+  int pixels = inst->width * inst->height;
 
+  frei0r_cairo_premultiply_rgba (src, pixels, -1);
   draw_gradient(inst, dst, src, time);
+  frei0r_cairo_unpremultiply_rgba (dst, pixels);
 }
 
