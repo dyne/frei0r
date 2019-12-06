@@ -12,7 +12,7 @@
 
 Updated info on https://frei0r.dyne.org
 
-[![software by Dyne.org](https://www.dyne.org/wp-content/uploads/2015/12/software_by_dyne.png)](http://www.dyne.org)
+[![software by Dyne.org](https://files.dyne.org/software_by_dyne.png)](http://www.dyne.org)
 
 [![Build Status](https://travis-ci.org/dyne/frei0r.svg?branch=master)](https://travis-ci.org/dyne/frei0r)
 
@@ -184,7 +184,7 @@ A simple skeleton for a frei0r video filter looks like this:
 
 You can get in touch with our developer community, send your new effects and share your intentions with us.
 
-We have a free mailinglist open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](http://lists.dyne.org/lurker/list/frei0r.en.html) of the discussions there that are also searchable and indexed online.
+We have a free mailinglist open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](https://lists.dyne.org/lurker/list/frei0r.en.html) of the discussions there that are also searchable and indexed online.
 
 For bug reporting the mailinglist is preferred, but is also possible to use an [issue tracker](https://github.com/dyne/frei0r/issues).
 
