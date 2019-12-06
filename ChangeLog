@@ -1,5 +1,20 @@
 *** See also the Changes @section in include/frei0r.h or git log
 
+1.7   - 6 December 2019
+
+	This release includes three new filters, code cleanups and several
+	bugfixes improving stability of existing plugins.
+	New filters (3): normaliz0r, elastic_scale, premultiply.
+	Updated (47): alpha0ps, baltan, bgsubtractor, bluescreen0r, blur,
+	c0rners, cairogradient, cairoimagegrid, cartoon, cluster,
+	coloradj, colorhalftone, curves, d90stairsteppingfix, defish0r,
+	delay0r, edgeglow, emboss, facebl0r, facedetect, levels,
+	lightgraffiti, measure, ndvi, nervous, nosync0r, primaries,
+	rgbnoice, rgbsplit0r, scanline0r, select0r, sopsat, spillsupress,
+	three_point_balance, timeout, tutorial, vertigo, vignette, water,
+	alphaatop, alphain, alphaout, alphaover, alphaxor,
+	cairoaffineblend, cairoblend, xfade0r
+
 1.6.1 - 25 May 2017
 
 	Minor fixes to the build system. Version correctly updated.
