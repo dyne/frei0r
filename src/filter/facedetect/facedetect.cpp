@@ -21,6 +21,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <opencv2/opencv.hpp>
+#if CV_MAJOR_VERSION >= 4
+# include <opencv2/imgproc/imgproc_c.h>
+#endif
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 
