@@ -156,11 +156,11 @@ endif
 if HAVE_OPENCV
 plugin_LTLIBRARIES += facebl0r.la
 facebl0r_la_SOURCES = filter/facebl0r/facebl0r.cpp
-facebl0r_la_CFLAGS = $(OPENCV_CFLAGS) $(AM_CFLAGS) $(CFLAGS)
+facebl0r_la_CXXFLAGS = $(OPENCV_CFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 facebl0r_la_LIBADD = $(OPENCV_LIBS)
 plugin_LTLIBRARIES += facedetect.la
 facedetect_la_SOURCES = filter/facedetect/facedetect.cpp
-facedetect_la_CFLAGS = $(OPENCV_CFLAGS) $(AM_CFLAGS) $(CFLAGS)
+facedetect_la_CXXFLAGS = $(OPENCV_CFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 facedetect_la_LIBADD = $(OPENCV_LIBS)
 endif
 
@@ -185,7 +185,7 @@ cairoblend_la_SOURCES = mixer2/cairoblend/cairoblend.c
 cairoblend_la_CFLAGS = $(CAIRO_CFLAGS) $(AM_CFLAGS) $(CFLAGS)
 cairoblend_la_LIBADD = $(CAIRO_LIBS)
 
-ndvi_la_CPPFLAGS = $(CAIRO_CFLAGS) $(CPPFLAGS) -DHAVE_CAIRO
+ndvi_la_CXXFLAGS = $(CAIRO_CFLAGS) $(CXXFLAGS) -DHAVE_CAIRO
 ndvi_la_LIBADD = $(CAIRO_LIBS)
 endif
 
@@ -331,6 +331,7 @@ xfade0r_la_SOURCES = mixer2/xfade0r/xfade0r.cpp
 
 AM_CPPFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
 AM_CFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
+AM_CXXFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
 AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
 AM_LIBTOOLFLAGS = --tag=disable-static
 
