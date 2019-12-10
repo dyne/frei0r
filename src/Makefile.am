@@ -139,54 +139,54 @@ plugin_LTLIBRARIES = \
 if HAVE_GAVL
 plugin_LTLIBRARIES += scale0tilt.la
 scale0tilt_la_SOURCES = filter/scale0tilt/scale0tilt.c
-scale0tilt_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
-scale0tilt_la_LIBADD = @GAVL_LIBS@
+scale0tilt_la_CFLAGS = $(GAVL_CFLAGS) $(CFLAGS)
+scale0tilt_la_LIBADD = $(GAVL_LIBS)
 
 plugin_LTLIBRARIES += vectorscope.la
 vectorscope_la_SOURCES = filter/vectorscope/vectorscope.c filter/vectorscope/vectorscope_image.h
-vectorscope_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
-vectorscope_la_LIBADD = @GAVL_LIBS@
+vectorscope_la_CFLAGS = $(GAVL_CFLAGS) $(CFLAGS)
+vectorscope_la_LIBADD = $(GAVL_LIBS)
 
 plugin_LTLIBRARIES += rgbparade.la
 rgbparade_la_SOURCES = filter/rgbparade/rgbparade.c filter/rgbparade/rgbparade_image.h
-rgbparade_la_CFLAGS = @GAVL_CFLAGS@ @CFLAGS@
-rgbparade_la_LIBADD = @GAVL_LIBS@
+rgbparade_la_CFLAGS = $(GAVL_CFLAGS) $(CFLAGS)
+rgbparade_la_LIBADD = $(GAVL_LIBS)
 endif
 
 if HAVE_OPENCV
 plugin_LTLIBRARIES += facebl0r.la
 facebl0r_la_SOURCES = filter/facebl0r/facebl0r.cpp
-facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
-facebl0r_la_LIBADD = @OPENCV_LIBS@
+facebl0r_la_CFLAGS = $(OPENCV_CFLAGS) $(CFLAGS)
+facebl0r_la_LIBADD = $(OPENCV_LIBS)
 plugin_LTLIBRARIES += facedetect.la
 facedetect_la_SOURCES = filter/facedetect/facedetect.cpp
-facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
-facedetect_la_LIBADD = @OPENCV_LIBS@
+facedetect_la_CFLAGS = $(OPENCV_CFLAGS) $(CFLAGS)
+facedetect_la_LIBADD = $(OPENCV_LIBS)
 endif
 
 if HAVE_CAIRO
 plugin_LTLIBRARIES += cairogradient.la
 cairogradient_la_SOURCES = filter/cairogradient/cairogradient.c
-cairogradient_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
-cairogradient_la_LIBADD = @CAIRO_LIBS@
+cairogradient_la_CFLAGS = $(CAIRO_CFLAGS) $(CFLAGS)
+cairogradient_la_LIBADD = $(CAIRO_LIBS)
 
 plugin_LTLIBRARIES += cairoimagegrid.la
 cairoimagegrid_la_SOURCES = filter/cairoimagegrid/cairoimagegrid.c
-cairoimagegrid_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
-cairoimagegrid_la_LIBADD = @CAIRO_LIBS@
+cairoimagegrid_la_CFLAGS = $(CAIRO_CFLAGS) $(CFLAGS)
+cairoimagegrid_la_LIBADD = $(CAIRO_LIBS)
 
 plugin_LTLIBRARIES += cairoaffineblend.la
 cairoaffineblend_la_SOURCES = mixer2/cairoaffineblend/cairoaffineblend.c
-cairoaffineblend_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
-cairoaffineblend_la_LIBADD = @CAIRO_LIBS@
+cairoaffineblend_la_CFLAGS = $(CAIRO_CFLAGS) $(CFLAGS)
+cairoaffineblend_la_LIBADD = $(CAIRO_LIBS)
 
 plugin_LTLIBRARIES += cairoblend.la
 cairoblend_la_SOURCES = mixer2/cairoblend/cairoblend.c
-cairoblend_la_CFLAGS = @CAIRO_CFLAGS@ @CFLAGS@
-cairoblend_la_LIBADD = @CAIRO_LIBS@
+cairoblend_la_CFLAGS = $(CAIRO_CFLAGS) $(CFLAGS)
+cairoblend_la_LIBADD = $(CAIRO_LIBS)
 
-ndvi_la_CPPFLAGS = @CAIRO_CFLAGS@ @CPPFLAGS@ -DHAVE_CAIRO
-ndvi_la_LIBADD = @CAIRO_LIBS@
+ndvi_la_CPPFLAGS = $(CAIRO_CFLAGS) $(CPPFLAGS) -DHAVE_CAIRO
+ndvi_la_LIBADD = $(CAIRO_LIBS)
 endif
 
 #
