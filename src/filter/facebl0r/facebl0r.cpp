@@ -18,7 +18,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/objdetect.hpp>
+#include <opencv2/video/tracking.hpp>
 #include "frei0r.hpp"
 #include "frei0r_math.h"
 
@@ -30,7 +34,7 @@ typedef struct {
 
   CvHistogram* hist; //histogram of hue in original face image
 
-  CvRect prev_rect;  //location of face in previous frame
+  cv::Rect prev_rect;  //location of face in previous frame
   CvBox2D curr_box;  //current face location estimate
 } TrackedObj;
 
@@ -53,7 +57,7 @@ private:
     void update_hue_image (const IplImage* image, TrackedObj* imgs);
     
 //trackface
-    CvRect* detect_face (IplImage*, CvHaarClassifierCascade*, CvMemStorage*);
+    CvRect* detect_face (IplImage*, cv::CascadeClassifier&, CvMemStorage*);
     
 
     TrackedObj* tracked_obj;
@@ -63,7 +67,7 @@ private:
 //used by capture_video_frame, so we don't have to keep creating.
     IplImage* image;
 
-    CvHaarClassifierCascade* cascade;
+    cv::CascadeClassifier cascade;
     CvMemStorage* storage;
 
     // plugin parameters
@@ -96,7 +100,7 @@ FaceBl0r::FaceBl0r(int wdt, int hgt) {
   tracked_obj = 0;
   face_found = 0;
   
-  cascade = 0;
+  //cascade = 0;
   storage = 0;
   
   classifier = "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml";
@@ -124,7 +128,7 @@ FaceBl0r::~FaceBl0r() {
     if(tracked_obj)
         destroy_tracked_object(tracked_obj);
 
-    if(cascade) cvReleaseHaarClassifierCascade(&cascade);
+    //if(cascade) cvReleaseHaarClassifierCascade(&cascade);
     if(storage) cvReleaseMemStorage(&storage);
     
 }
@@ -133,7 +137,7 @@ void FaceBl0r::update(double time,
                       uint32_t* out,
                           const uint32_t* in) {
 
-  if (!cascade) {
+  if (cascade.empty()) {
       cvSetNumThreads(cvRound(threads * 100));
       if (classifier.length() > 0) {
 	if (classifier == old_classifier) {
@@ -142,8 +146,7 @@ void FaceBl0r::update(double time,
 	  return;
 	} else old_classifier = classifier;
 
-	cascade = (CvHaarClassifierCascade*) cvLoad(classifier.c_str(), 0, 0, 0 );
-	if (!cascade) {
+	if (!cascade.load(classifier.c_str())) {
 	  fprintf(stderr, "ERROR in filter facebl0r, classifier cascade not found:\n");
 	  fprintf(stderr, " %s\n", classifier.c_str());
 	  memcpy(out, in, size * 4);
@@ -234,30 +237,33 @@ void FaceBl0r::update(double time,
 
 /* Given an image and a classider, detect and return region. */
 CvRect* FaceBl0r::detect_face (IplImage* image,
-                               CvHaarClassifierCascade* cascade,
+                               cv::CascadeClassifier &cascade,
                                CvMemStorage* storage) {
     
   CvRect* rect = 0;
+  std::vector<cv::Rect> faces;
+  cv::Mat gray_mat;
   
-  if (cascade && storage) {
+  if (!cascade.empty() && storage) {
      //use an equalized gray image for better recognition
      IplImage* gray = cvCreateImage(cvSize(image->width, image->height), 8, 1);
      cvCvtColor(image, gray, CV_BGR2GRAY);
      cvEqualizeHist(gray, gray);
      cvClearMemStorage(storage);
+     gray_mat = cv::cvarrToMat(&gray);
 
       //get a sequence of faces in image
       int min = cvRound(smallest * 1000);
-      CvSeq *faces = cvHaarDetectObjects(gray, cascade, storage,
+      cascade.detectMultiScale(gray_mat, faces,
          search_scale * 10.0,
          cvRound(neighbors * 100),
-         CV_HAAR_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
-         CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
-         cvSize(min, min));
+         cv::CASCADE_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
+         cv::CASCADE_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
+         cvSize(min,min));
     
       //if one or more faces are detected, return the first one
-      if(faces && faces->total)
-        rect = (CvRect*) cvGetSeqElem(faces, 0);
+      if(faces.size() > 0)
+        rect = (CvRect*) &faces.front();
 
       cvReleaseImage(&gray);
   }
@@ -321,7 +327,7 @@ void FaceBl0r::destroy_tracked_object (TrackedObj* obj) {
 
 /* Given an image and tracked object, return box position. */
 CvBox2D FaceBl0r::camshift_track_face (IplImage* image, TrackedObj* obj) {
-  CvConnectedComp components;
+  //CvConnectedComp components;
 
   //create a new hue image
   update_hue_image(image, obj);
@@ -330,16 +336,18 @@ CvBox2D FaceBl0r::camshift_track_face (IplImage* image, TrackedObj* obj) {
   cvCalcBackProject(&obj->hue, obj->prob, obj->hist);
   cvAnd(obj->prob, obj->mask, obj->prob, 0);
 
+  cv::Mat obj_prob_mat = cv::cvarrToMat(&obj->prob);
+
   //use CamShift to find the center of the new face probability
-  cvCamShift(obj->prob, obj->prev_rect,
-             cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
-             &components, &obj->curr_box);
+  cv::RotatedRect rot_rect = cv::CamShift(obj_prob_mat, obj->prev_rect,
+             cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1));
+  //           &components, &obj->curr_box);
 
   //update face location and angle
-  obj->prev_rect = components.rect;
-  obj->curr_box.angle = -obj->curr_box.angle;
+  //obj->prev_rect = components.rect;
+  //obj->curr_box.angle = -obj->curr_box.angle;
 
-  return obj->curr_box;
+  return rot_rect;
 }
 
 void FaceBl0r::update_hue_image (const IplImage* image, TrackedObj* obj) {
