@@ -29,8 +29,8 @@
   with a cos⁴ curve. Additionally the x:y aspect ratio of the vignette can be
   changed (note that normal cameras with a round aperture always have an aspect ratio
   of 1:1, but for cinematic effects the aspect ratio is often adjusted to match
-  the frame's aspect ratio). The ClearCenter value allows to shift the vignetting away
-  from the center, preserving it from changes.
+  the frame's aspect ratio). The ClearCenter value allows one to shift the
+  vignetting away from the center, preserving it from changes.
 
   */
 class Vignette : public frei0r::filter
