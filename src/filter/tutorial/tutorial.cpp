@@ -123,7 +123,8 @@ public:
         // can be pre-computed; when applying the filter, only thing left to do is reading the value
         // in the lookup table.
 
-        // This parameter allows to do simple benchmarking: Rendering a video with uint8_t pointers and with uint32_t pointers.
+        // This parameter allows one to do simple benchmarking: Rendering a
+        // video with uint8_t pointers and with uint32_t pointers.
         // (Don't forget to substract the rendering time without this effect applied to avoid counting
         // encoding and decoding as well!)
         if (m_pointerMethod == 0) {

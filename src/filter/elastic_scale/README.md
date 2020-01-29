@@ -1,6 +1,6 @@
 # Elastic Scale
 
-Elastic scale allows to apply non linear scale to video footage.
+Elastic scale allows one to apply non linear scale to video footage.
 
 Written by Matthias Schnöll,  Aug 2018  and released under GNU GPL
 
