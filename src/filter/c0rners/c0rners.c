@@ -974,6 +974,8 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 	}
 }
 
+#define EPSILON 1e-5f
+#define EQUIVALENT_FLOATS(x, y) (fabsf((x) - (y)) < EPSILON)
 
 //-------------------------------------------------
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
@@ -983,6 +985,22 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 
 	p=(inst*)instance;
 
+    if (EQUIVALENT_FLOATS(p->x1, 0.333333f) &&
+        EQUIVALENT_FLOATS(p->y1, 0.333333f) &&
+        EQUIVALENT_FLOATS(p->x2, 0.666666f) &&
+        EQUIVALENT_FLOATS(p->y2, 0.333333f) &&
+        EQUIVALENT_FLOATS(p->x3, 0.666666f) &&
+        EQUIVALENT_FLOATS(p->y3, 0.666666f) &&
+        EQUIVALENT_FLOATS(p->x4, 0.333333f) &&
+        EQUIVALENT_FLOATS(p->y4, 0.666666f) &&
+        (!p->stretchON || (
+            EQUIVALENT_FLOATS(p->stretchx, 0.5f) &&
+            EQUIVALENT_FLOATS(p->stretchy, 0.5f))))
+    {
+        memcpy(outframe, inframe, p->w * p->h * 4);
+        return;
+    }
+            
 	if (p->mapIsDirty) {
 		tocka2 vog[4];
 		int nots[4];
