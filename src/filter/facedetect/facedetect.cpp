@@ -148,13 +148,13 @@ public:
             count = 1;   // reset the recheck counter
             if (objects.size() > 0) // reset the list of objects
                 objects.clear();
-            double elapsed = (double) cvGetTickCount();
+            double elapsed = (double) cv::getTickCount();
 
             objects = detect();
 
             // use detection time to throttle frequency of re-detect vs. redraw (automatic recheck)
-            elapsed = cvGetTickCount() - elapsed;
-            elapsed = elapsed / ((double) cvGetTickFrequency() * 1000.0);
+            elapsed = cv::getTickCount() - elapsed;
+            elapsed = elapsed / ((double) cv::getTickFrequency() * 1000.0);
 
             // Automatic recheck uses an undocumented negative parameter value,
             // which is not compliant, but technically feasible.
@@ -188,7 +188,7 @@ private:
         }
 
         // use an equalized grayscale to improve detection
-        cv::cvtColor(image_roi, gray, CV_BGR2GRAY);
+        cv::cvtColor(image_roi, gray, cv::COLOR_BGR2GRAY);
 
         // use a smaller image to improve performance
         cv::resize(gray, small, cv::Size(cvRound(gray.cols * scale), cvRound(gray.rows * scale)));
@@ -249,8 +249,8 @@ private:
         {
             cv::Rect* r = (cv::Rect*) &objects[i];
             cv::Point center;
-            int thickness = stroke <= 0? CV_FILLED : cvRound(stroke * 100);
-            int linetype = antialias? CV_AA : 8;
+            int thickness = stroke <= 0? cv::FILLED : cvRound(stroke * 100);
+            int linetype = antialias? cv::LINE_AA : 8;
             
             center.x = cvRound((r->x + r->width * 0.5) / scale);
             center.y = cvRound((r->y + r->height * 0.5) / scale);
