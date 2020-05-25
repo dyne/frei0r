@@ -209,7 +209,7 @@ std::vector<cv::Rect> FaceBl0r::detect_face()
 
      //use an equalized gray image for better recognition
      cv::Mat gray;
-     cv::cvtColor(image, gray, CV_BGR2GRAY);
+     cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
      cv::equalizeHist(gray, gray);
 
       //get a sequence of faces in image
@@ -218,8 +218,8 @@ std::vector<cv::Rect> FaceBl0r::detect_face()
       cascade.detectMultiScale(gray, faces,
          search_scale * 10.0,
          cvRound(neighbors * 100),
-         CV_HAAR_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
-         CV_HAAR_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
+         cv::CASCADE_FIND_BIGGEST_OBJECT|//since we track only the first, get the biggest
+         cv::CASCADE_DO_CANNY_PRUNING,  //skip regions unlikely to contain a face
          cv::Size(min, min));
 
     return faces;
@@ -259,7 +259,7 @@ void TrackedObj::update_hue_image (const cv::Mat& image) {
   int vmin = 65, vmax = 256, smin = 55;
 
   //convert to HSV color model
-  cv::cvtColor(image, hsv, CV_BGR2HSV);
+  cv::cvtColor(image, hsv, cv::COLOR_BGR2HSV);
 
   //mask out-of-range values
   cv::inRange(hsv,                           //source
