@@ -292,7 +292,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
   info->major_version = frei0r::s_version.first; 
   info->minor_version = frei0r::s_version.second; 
   info->explanation = frei0r::s_explanation.c_str();
-  info->num_params =  frei0r::s_params.size(); 
+  info->num_params =  static_cast<int>(frei0r::s_params.size()); 
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
