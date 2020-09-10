@@ -126,7 +126,7 @@ public:
     firsttime = true;
     m_skip_count = 0;
 
-    register_param(factor, "Fade Factor", "Disappearance rate of the echo: from 0 to 127"); // 0 No fade, 1 No Trace
+    register_param(factor, "Fade Factor", "Disappearance rate of the echo"); // 0 No fade, 1 No Trace
     register_param(bright, "Direction", "Darker or Brighter echo"); // Add or Substract data
     register_param(flag_r, "Keep RED", "Influence on Red canal"); // 0 Fade canal, 1 Keep canal data
     register_param(flag_g, "Keep GREEN", "Influence on Green canal"); // 0 Fade canal, 1 Keep canal data
