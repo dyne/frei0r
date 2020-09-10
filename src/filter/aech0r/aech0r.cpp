@@ -114,13 +114,15 @@ public:
 
   aech0r(unsigned int width, unsigned int height) {
 
-    factor = 13;
-    strobe_period = 0;
-    bright = false;
+    factor = 0.15; // Quasi full echo has default
+    bright = false; // Dark mode has default
     
-    flag_r = false;
+    flag_r = false; // No RGB flag has default
     flag_g = false;
     flag_b = false;
+
+    strobe_period = 0; // No strobe has default
+
     //~ fade_rgb = ?  //Fade by color layers
 
     firsttime = true;
