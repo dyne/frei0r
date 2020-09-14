@@ -133,7 +133,7 @@ public:
     register_param(flag_r, "Keep RED", "Influence on Red channel"); // 0 Fade canal, 1 Keep canal data
     register_param(flag_g, "Keep GREEN", "Influence on Green channel"); // 0 Fade canal, 1 Keep canal data
     register_param(flag_b, "Keep BLUE", "Influence on Blue channel"); // 0 Fade canal, 1 Keep canal data
-    register_param(strobe_period, "Stobe period", "Rate of the stroboscope: from 0 to 8 frames");
+    register_param(strobe_period, "Strobe period", "Rate of the stroboscope: from 0 to 8 frames");
 
     //~ register_param(fade_rgb, "Plans fade", "RGB");  //Fade by color layers
     //~ register_param(factor_r, "Fade R", "influence"); // 0 No fade, 1 No Trace
