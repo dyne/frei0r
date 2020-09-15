@@ -227,13 +227,13 @@
  * f0r_init() is called once when the plugin is loaded by the application.
  * \see f0r_deinit
  */
-int f0r_init();
+int f0r_init(void);
 
 /**
  * f0r_deinit is called once when the plugin is unloaded by the application.
  * \see f0r_init
  */
-void f0r_deinit();
+void f0r_deinit(void);
 
 //---------------------------------------------------------------------------
 
