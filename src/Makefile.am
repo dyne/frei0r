@@ -12,6 +12,7 @@ plugin_LTLIBRARIES = \
 	3dflippo.la \
 	addition.la \
 	addition_alpha.la \
+	aech0r.la \
 	alpha0ps.la \
 	alphaatop.la \
 	alphagrad.la \
@@ -196,6 +197,7 @@ endif
 alpha0ps_la_SOURCES = filter/alpha0ps/alpha0ps.c filter/alpha0ps/fibe_f.h
 alphagrad_la_SOURCES = filter/alpha0ps/alphagrad.c
 alphaspot_la_SOURCES = filter/alpha0ps/alphaspot.c
+aech0r_la_SOURCES = filter/aech0r/aech0r.cpp
 B_la_SOURCES = filter/RGB/B.c
 balanc0r_la_SOURCES = filter/balanc0r/balanc0r.c
 baltan_la_SOURCES = filter/baltan/baltan.cpp
