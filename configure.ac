@@ -94,12 +94,19 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor memset pow sqrt])
 
 HAVE_OPENCV=false
-PKG_CHECK_MODULES(OPENCV, opencv >= 1.0.0, [HAVE_OPENCV=true], [true])
+PKG_CHECK_MODULES([OPENCV], [opencv4 >= 4.0.0],
+   [AC_DEFINE([HAVE_OPENCV], true, [compiled including OpenCV >= 4])],
+   [PKG_CHECK_MODULES([OPENCV], [opencv > 1.0.0],
+       [AC_DEFINE([HAVE_OPENCV], true, [compiled including OpenCV < 4])
+    ])
+])
 AM_CONDITIONAL([HAVE_OPENCV], [test x$HAVE_OPENCV = xtrue])
-if test x$HAVE_OPENCV = xtrue; then
-#    OPENCV_CFLAGS="$OPENCV_CFLAGS -DOPENCV_PREFIX=`pkg-config opencv --variable=prefix`"
-    AC_DEFINE(HAVE_OPENCV,1,[compiled including opencv])
+if test ! "x$OPENCV_LIBS" = "x"; then
+    HAVE_OPENCV=true
     AC_DEFINE(OPENCV_DATA_DIR,[${prefix}/share/opencv],opencv data prefix)
+    OPENCV_DATA_DIR=${prefix}/share/opencv
+    AC_SUBST([OPENCV_CFLAGS])
+    AC_SUBST([OPENCV_LIBS])
 fi
 AC_SUBST(HAVE_OPENCV)
 
