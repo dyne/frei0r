@@ -157,13 +157,13 @@ endif
 if HAVE_OPENCV
 plugin_LTLIBRARIES += facebl0r.la
 facebl0r_la_SOURCES = filter/facebl0r/facebl0r.cpp
-facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
-facebl0r_la_CXXFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
+facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
+facebl0r_la_CXXFLAGS = @OPENCV_CFLAGS@ @CXXFLAGS@
 facebl0r_la_LIBADD = @OPENCV_LIBS@
 plugin_LTLIBRARIES += facedetect.la
 facedetect_la_SOURCES = filter/facedetect/facedetect.cpp
 facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
-facedetect_la_CXXFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
+facedetect_la_CXXFLAGS = @OPENCV_CFLAGS@ @CXXFLAGS@
 facedetect_la_LIBADD = @OPENCV_LIBS@
 endif
 
@@ -335,23 +335,30 @@ xfade0r_la_SOURCES = mixer2/xfade0r/xfade0r.cpp
 
 AM_CPPFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
 AM_CFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
-AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
+AM_CXXFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
 AM_LIBTOOLFLAGS = --tag=disable-static
 
 plugindir = @libdir@/frei0r-1
 
+if HAVE_MINGW
+SO_EXT = .dll
+AM_LDFLAGS = -module -avoid-version -export-dynamic -no-undefined
+else
+SO_EXT = .so
+AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
+endif
 
 install-pluginLTLIBRARIES: $(plugin_LTLIBRARIES)
 	mkdir -p $(DESTDIR)/$(plugindir)
 	list='$(plugin_LTLIBRARIES)'; \
 	for file in $$list; do \
-	  sofile=`basename $$file .la`.so; \
+	  sofile=`basename $$file .la`$(SO_EXT); \
 	  $(INSTALL_PROGRAM) .libs/$$sofile $(DESTDIR)/$(plugindir); \
 	done
 
 uninstall-pluginLTLIBRARIES:
 	list='$(plugin_LTLIBRARIES)'; \
 	for file in $$list; do \
-	  sofile=`basename $$file .la`.so; \
+	  sofile=`basename $$file .la`$(SO_EXT); \
 	  rm -f $(DESTDIR)/$(plugindir)/$$sofile; \
 	done
