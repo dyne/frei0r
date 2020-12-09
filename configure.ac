@@ -11,7 +11,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_C99
-LT_INIT([disable-static])
+LT_INIT([disable-static win32-dll])
 
 
 AC_CONFIG_HEADERS([include/config.h])
@@ -37,6 +37,10 @@ case $host_os in
     *darwin*)
         AC_MSG_RESULT([Darwin/OSX])
         have_darwin=yes
+	;;
+    *mingw*)
+        AC_MSG_RESULT([MinGW-w64])
+        have_mingw=yes
 	;;
     *)
         AC_MSG_RESULT([ $host_os ? ... let us try])
@@ -79,6 +83,8 @@ if test x$have_cpuflags = xyes; then
         fi
   fi
 fi
+
+AM_CONDITIONAL([HAVE_MINGW], [test x$have_mingw = xyes])
 
 # Checks for header files.
 AC_HEADER_STDC
