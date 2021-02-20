@@ -2,7 +2,6 @@ set (SOURCES sharpness.c)
 set (TARGET sharpness)
 
 if (MSVC)
-  set_source_files_properties (sharpness.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
