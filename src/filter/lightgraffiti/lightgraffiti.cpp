@@ -64,9 +64,15 @@
   [3] http://kdenlive.org/users/granjow/writing-light-graffiti-effect
 
   */
+
+#if defined(_MSC_VER)
+#define _USE_MATH_DEFINES
+#endif /* _MSC_VER */
+#include <cmath>
+
 #include "frei0r.hpp"
 
-#include <cmath>
+
 #include <cstdio>
 #include <climits>
 #include <algorithm>

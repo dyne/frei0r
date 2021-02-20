@@ -24,6 +24,10 @@
  *
  */
 
+#if defined(_MSC_VER)
+#define _USE_MATH_DEFINES
+#endif /* _MSC_VER */
+#include <cmath>
 
 #include "frei0r.hpp"
 
@@ -31,10 +35,6 @@
 #include <string.h>
 
 #include <algorithm>
-#if defined(_MSC_VER)
-#define _USE_MATH_DEFINES
-#endif /* _MSC_VER */
-#include <cmath>
 
 #include <time.h>
 #include <inttypes.h>

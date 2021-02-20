@@ -2,7 +2,6 @@ set (SOURCES perspective.c)
 set (TARGET perspective)
 
 if (MSVC)
-  set_source_files_properties (perspective.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

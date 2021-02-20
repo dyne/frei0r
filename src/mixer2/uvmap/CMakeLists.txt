@@ -2,7 +2,6 @@ set (SOURCES uvmap.c)
 set (TARGET uvmap)
 
 if (MSVC)
-  set_source_files_properties (uvmap.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_1_1_DEF})
 endif (MSVC)
 

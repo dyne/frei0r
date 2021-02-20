@@ -33,3 +33,7 @@ TAGS
 ylwrap
 frei0r.pc
 doc/html
+/build/
+/out/
+/.vs/
+CMakeSettings.json

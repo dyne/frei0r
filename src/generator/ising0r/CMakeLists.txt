@@ -2,7 +2,6 @@ set (SOURCES ising0r.c)
 set (TARGET ising0r)
 
 if (MSVC)
-  set_source_files_properties (ising0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

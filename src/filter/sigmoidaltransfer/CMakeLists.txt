@@ -2,7 +2,6 @@ set (SOURCES sigmoidaltransfer.c)
 set (TARGET sigmoidaltransfer)
 
 if (MSVC)
-  set_source_files_properties (sigmoidaltransfer.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

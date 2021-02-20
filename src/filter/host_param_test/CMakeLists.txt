@@ -2,7 +2,6 @@ set (SOURCES host_param_test.c)
 set (TARGET host_param_test)
 
 if (MSVC)
-  set_source_files_properties (host_param_test.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

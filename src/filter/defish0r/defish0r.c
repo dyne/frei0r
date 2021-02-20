@@ -137,10 +137,6 @@ float defish(int n, float r, float f, float mr)
 	return rr;
 }
 
-#if defined(_MSC_VER)
-#define hypotf _hypotf
-#endif
-
 //----------------------------------------------------------------
 //nafila array map s polozaji pikslov
 //locena funkcija, da jo poklicem samo enkrat na zacetku,

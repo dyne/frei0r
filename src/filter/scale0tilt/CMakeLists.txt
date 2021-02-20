@@ -2,7 +2,6 @@ set (SOURCES scale0tilt.c)
 set (TARGET scale0tilt)
 
 if (MSVC)
-  set_source_files_properties (scale0tilt.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

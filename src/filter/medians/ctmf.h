@@ -36,17 +36,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* Type declarations */
-#ifdef _MSC_VER
-#include <basetsd.h>
-typedef UINT8 uint8_t;
-typedef UINT16 uint16_t;
-typedef UINT32 uint32_t;
-#pragma warning( disable: 4799 )
-#else
 #include <stdint.h>
-#endif
 
 /* Intrinsic declarations */
 #if defined(__SSE2__) || defined(__MMX__)

@@ -2,7 +2,6 @@ set (SOURCES composition.c)
 set (TARGET composition)
 
 if (MSVC)
-  set_source_files_properties (composition.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_1_1_DEF})
 endif (MSVC)
 

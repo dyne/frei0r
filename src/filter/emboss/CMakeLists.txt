@@ -2,7 +2,6 @@ set (SOURCES emboss.c)
 set (TARGET emboss)
 
 if (MSVC)
-  set_source_files_properties (emboss.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

@@ -2,7 +2,6 @@ set (SOURCES vectorscope.c vectorscope_image.h)
 set (TARGET vectorscope)
 
 if (MSVC)
-  set_source_files_properties (vectorscope.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

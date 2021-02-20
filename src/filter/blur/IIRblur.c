@@ -80,11 +80,12 @@ float AitNev3(int t, float xt[], float yt[], float x)
 {
     float p[10];
     int i,j,m;
+    float zero = 0.0f; // MSVC doesn't allow division through a zero literal, but allows it through non-const variable set to zero
 
     if ((x<xt[0])||(x>xt[t-1]))
     {
         //	printf("\n\n x=%f je izven mej tabele!",x);
-        return 1.0/0.0;
+        return 1.0/zero;
     }
 
     //poisce, katere tocke bo uporabil

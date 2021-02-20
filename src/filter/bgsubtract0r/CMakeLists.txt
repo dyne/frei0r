@@ -2,7 +2,6 @@ set (SOURCES bgsubtract0r.c)
 set (TARGET bgsubtract0r)
 
 if (MSVC)
-  set_source_files_properties (bgsubtract0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

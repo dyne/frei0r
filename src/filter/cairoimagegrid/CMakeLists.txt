@@ -5,7 +5,6 @@ include_directories(${Cairo_INCLUDE_DIR})
 set(LIBS ${LIBS} ${Cairo_LIBRARY})
 
 if (MSVC)
-  set_source_files_properties (cairoimagegrid.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
