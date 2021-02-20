@@ -107,11 +107,6 @@ void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *
 //**************************************
 //HERE BEGIN THE INTERPOLATION FUNCTIONS
 
-#if defined(_MSC_VER)
-__inline const float roundf(float x){
-  return (int)floor(x+0.5);
-}
-#endif /* _MSC_VER */
 
 //------------------------------------------------------
 //za debugging - z izpisovanjem

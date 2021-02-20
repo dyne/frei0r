@@ -2,7 +2,6 @@ set (SOURCES mask0mate.c)
 set (TARGET mask0mate)
 
 if (MSVC)
-  set_source_files_properties (mask0mate.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

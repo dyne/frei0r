@@ -2,7 +2,6 @@ set (SOURCES letterb0xed.c)
 set (TARGET letterb0xed)
 
 if (MSVC)
-  set_source_files_properties (letterb0xed.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

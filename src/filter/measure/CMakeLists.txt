@@ -2,7 +2,6 @@ set (B_SOURCES pr0be.c measure.h font2.h)
 set (F_SOURCES pr0file.c measure.h font2.h)
 
 if (MSVC)
-  set_source_files_properties (pr0be.c pr0file.c PROPERTIES LANGUAGE CXX)
   set (B_SOURCES ${B_SOURCES} ${FREI0R_DEF})
   set (F_SOURCES ${F_SOURCES} ${FREI0R_DEF})
 endif (MSVC)

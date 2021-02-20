@@ -7,7 +7,6 @@ set (SOURCES three_point_balance.c)
 set (TARGET three_point_balance)
 
 if (MSVC)
-  set_source_files_properties (three_point_balance.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

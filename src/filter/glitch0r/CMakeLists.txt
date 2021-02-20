@@ -2,7 +2,6 @@ set (SOURCES glitch0r.c)
 set (TARGET glitch0r)
 
 if (MSVC)
-  set_source_files_properties (glitch0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
