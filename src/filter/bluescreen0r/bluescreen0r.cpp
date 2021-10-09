@@ -34,6 +34,7 @@ class bluescreen0r : public frei0r::filter
 private:
 	double dist;
 	f0r_param_color color;
+	bool invert;
 	uint32_t r256,g256,b256;
 	
 	// returns the distance to 'color', but does not normalize
@@ -57,9 +58,12 @@ public:
 		color.r = 0;
 		color.g = 0.94;
 		color.b = 0;
-		
+
+		invert = false;
+
 		register_param(color,  "Color",    "The color to make transparent (B G R)");
-		register_param(dist, "Distance", "Distance to Color (127 is good)");
+		register_param(dist,   "Distance", "Distance to Color (127 is good)");
+		register_param(invert, "Invert",   "Whether to produce the inverse of the effect on the alpha channel");
 	}
 
 	virtual void update(double time,
@@ -86,6 +90,7 @@ public:
 					a = 256*(d-distInt2)/distInt2;
 				}
 			}
+			if (invert) a = 255 - a;
 			*outpixel |= (a<<24);
 			
 			++outpixel;
@@ -95,5 +100,5 @@ public:
 };
 
 
-frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,3,F0R_COLOR_MODEL_RGBA8888);
+frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,4,F0R_COLOR_MODEL_RGBA8888);
 
