@@ -148,6 +148,13 @@ void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsig
   int pw = (int)(w/columns);
   int ph = (int)(h/rows);
 
+  if (w % pw != 0 || h % ph != 0) {
+    // Destination will have gaps - prefill with black.
+    cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+    cairo_rectangle (cr, 0, 0, w, h);
+    cairo_fill (cr);
+  }
+
   cairo_matrix_t   matrix;
   cairo_matrix_init_scale (&matrix, columns, rows);
   cairo_pattern_set_matrix (pattern, &matrix);
