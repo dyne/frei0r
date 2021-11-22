@@ -175,7 +175,7 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   unsigned char* out = (unsigned char*)outframe;
   int pixels = inst->width * inst->height;
 
-  frei0r_cairo_premultiply_rgba2 (dst, out, pixels, 0xff);
+  frei0r_cairo_premultiply_rgba2 (dst, out, pixels, -1);
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
   draw_composite (inst, out, src, time);
   frei0r_cairo_unpremultiply_rgba (out, pixels);
