@@ -1,4 +1,5 @@
 #include "frei0r.h"
+#include "frei0r_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -82,11 +83,11 @@ void f0r_set_param_value(f0r_instance_t instance,
     {
     case 0:
       // scale to [1..width]
-      inst->block_size_x =  1 + ( *((double*)param) * (inst->width/2)) ;
+      inst->block_size_x =  MAX(1 + ( *((double*)param) * (inst->width/2)), 1);
       break;
     case 1:
       // scale to [1..height]
-      inst->block_size_y =  1 + ( *((double*)param) * (inst->height/2)) ;
+      inst->block_size_y =  MAX(1 + ( *((double*)param) * (inst->height/2)), 1);
       break;
     }  
 }
