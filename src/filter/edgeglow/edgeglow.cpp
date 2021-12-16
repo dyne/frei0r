@@ -157,17 +157,17 @@ public:
 	  
 	  if (tr<1./6.) g[0]=CLAMP0255(p+((q-p)*6.*tr));
 	  else if (tr<0.5) g[0]=CLAMP0255((int32_t)q);
-	  else if (tr<1./6.) g[0]=CLAMP0255(p+((q-p)*6.*(2./3.-tr)));
+	  else if (tr<2./3.) g[0]=CLAMP0255(p+((q-p)*6.*(2./3.-tr)));
 	  else g[0]=CLAMP0255((int32_t)p);
 	  
 	  if (tg<1./6.) g[1]=CLAMP0255(p+((q-p)*6.*tg));
 	  else if (tg<0.5) g[1]=CLAMP0255((int32_t)q);
-	  else if (tg<1./6.) g[1]=CLAMP0255(p+((q-p)*6.*(2./3.-tg)));
+	  else if (tg<2./3.) g[1]=CLAMP0255(p+((q-p)*6.*(2./3.-tg)));
 	  else g[1]=CLAMP0255((int32_t)p);
 	  
 	  if (tb<1./6.) g[2]=CLAMP0255(p+((q-p)*6.*tb));
 	  else if (tb<0.5) g[2]=CLAMP0255((int32_t)q);
-	  else if (tb<1./6.) g[2]=CLAMP0255(p+((q-p)*6.*(2./3.-tb)));
+	  else if (tb<2./3.) g[2]=CLAMP0255(p+((q-p)*6.*(2./3.-tb)));
 	  else g[2]=CLAMP0255((int32_t)p);
 	}
 	else {
@@ -184,6 +184,6 @@ public:
 frei0r::construct<edgeglow> plugin("Edgeglow",
                                 "Edgeglow filter",
                                 "Salsaman",
-                                0,2,
+                                0,3,
                                 F0R_COLOR_MODEL_RGBA8888);
 
