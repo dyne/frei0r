@@ -292,6 +292,8 @@ void frei0r_cairo_premultiply_rgba2 (unsigned char *in, unsigned char *out,
       out[0] = ( in[0] * a ) >> 8;
       out[1] = ( in[1] * a ) >> 8;
       out[2] = ( in[2] * a ) >> 8;
+      if (alpha < 0)
+        out[3] = a;
     }
     if (alpha >= 0)
         out[3] = alpha;
