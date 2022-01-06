@@ -25,6 +25,7 @@
 #include <time.h>
 
 #include "frei0r.h"
+#include "frei0r_math.h"
 
 /* cheap & fast randomizer (by Fukuchi Kentarou) */
 static uint32_t randval;
@@ -178,8 +179,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
     glitch0r_instance_t* inst = (glitch0r_instance_t*)calloc(1, sizeof(*inst));
     inst->width = width; inst->height = height;
-    inst->maxBlockSize = (unsigned int)(inst->height / 2);
-    inst->maxBlockShift = (unsigned int)(inst->width / 2);
+    inst->maxBlockSize = (unsigned int)MAX(1, inst->height / 2);
+    inst->maxBlockShift = (unsigned int)MAX(1, inst->width / 2);
     inst->colorGlitchIntensity = 3;
     inst->doColorDistortion = 1;
 
@@ -220,7 +221,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 
             // zero size is a bad idea
             if (inst->maxBlockSize == 0)
-                inst->maxBlockSize = (unsigned int)(inst->height / 2);
+                inst->maxBlockSize = (unsigned int)MAX(1, inst->height / 2);
             break;
         }
 
@@ -233,7 +234,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 
             // zero shift is a bad idea
             if (inst->maxBlockShift == 0)
-                inst->maxBlockShift = (unsigned int)(inst->width / 2);
+                inst->maxBlockShift = (unsigned int)MAX(1, inst->width / 2);
             break;
         }
 
@@ -275,13 +276,13 @@ void f0r_get_param_value(f0r_instance_t instance,
         case 1 : // block height
         {
             // convert plugin's param to frei0r range
-            *((double*)param) = (inst->maxBlockSize - 1.0) / (inst->height - 1.0);
+            *((double*)param) = (inst->maxBlockSize - 1.0) / MAX(1, inst->height - 1.0);
             break;
         }
 
         case 2 : // block shift intensity
         {
-            *((double*)param) = (inst->maxBlockShift - 1.0) / (inst->width - 1.0);
+            *((double*)param) = (inst->maxBlockShift - 1.0) / MAX(1, inst->width - 1.0);
             break;
         }
 
