@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59c)
-AC_INIT(frei0r-plugins, [1.6.1], [frei0r-devel@dyne.org])
+AC_INIT(frei0r-plugins, [1.8], [frei0r-devel@dyne.org])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
