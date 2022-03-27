@@ -4,7 +4,7 @@ include(GNUInstallDirs)
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 project (frei0r)
-set (VERSION 1.6.1)
+set (VERSION 1.8)
 
 option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
 if (NOT WITHOUT_OPENCV)
