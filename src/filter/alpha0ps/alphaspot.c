@@ -57,11 +57,11 @@ void gen_rec_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
     int i,j;
     float d1,d2,d,db,st,ct,g,is1,is2;
 
-    if ((siz1 == 0.0) || (siz2 == 0.0)) return;
+    if ((siz1 == 0.0f) || (siz2 == 0.0f)) return;
     st = sinf(tilt);
     ct = cosf(tilt);
-    is1 = 1.0/siz1;
-    is2 = 1.0/siz2;
+    is1 = 1.0f/siz1;
+    is2 = 1.0f/siz2;
 
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++) {
@@ -70,18 +70,18 @@ void gen_rec_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
             d1 = fabsf(d1)*is1;
             d2 = fabsf(d2)*is2;
             d = (d1<d2)?d2:d1;
-            d1 = 1.0-(1.0-d1)*is2/is1;
+            d1 = 1.0f - (1.0f - d1)*is2/is1;
             db = (d1<d2)?d2:d1;
-            if (fabsf(d) > 1.0) {
+            if (fabsf(d) > 1.0f) {
                 g = min;
             } else {
-                if (db <= 1.004-wb) {
+                if (db <= 1.004f - wb) {
                     g = max;
                 } else {
-                    g = min + (1.0-wb-db)/wb*(max-min);
+                    g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0;
+            g = g*255.0f;
             sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
         }
     }
@@ -94,11 +94,11 @@ void gen_eli_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
     int i,j;
     float d1,d2,d,db,st,ct,is1,is2,g,wbb;
 
-    if ((siz1 == 0.0) || (siz2 == 0.0)) return;
+    if ((siz1 == 0.0f) || (siz2 == 0.0f)) return;
     st = sinf(tilt);
     ct = cosf(tilt);
-    is1 = 1.0/siz1;
-    is2 = 1.0/siz2;
+    is1 = 1.0f/siz1;
+    is2 = 1.0f/siz2;
     wbb = wb;
 
     for (i = 0; i < h; i++) {
@@ -109,16 +109,16 @@ void gen_eli_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
 
             db = d;	//neenakomeren rob!!!
 
-            if (d > 1.0) {
+            if (d > 1.0f) {
                 g = min;
             } else {
-                if (db <= 1.004-wb) {
+                if (db <= 1.004f - wb) {
                     g = max;
                 } else {
-                    g = min + (1.0-wb-db)/wb*(max-min);
+                    g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0;
+            g = g*255.0f;
             sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
         }
     }
@@ -131,13 +131,13 @@ void gen_tri_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
     int i,j;
     float d1,d2,d3,d4,d,st,ct,is1,is2,k5,lim,db,g;
 
-    if ((siz1 == 0.0) || (siz2 == 0.0)) return;
+    if ((siz1 == 0.0f) || (siz2 == 0.0f)) return;
     st =sinf(tilt);
     ct = cosf(tilt);
-    is1 = 1.0/siz1;
-    is2 = 1.0/siz2;
-    k5 = 1.0/sqrtf(5.0);
-    lim = 0.82;
+    is1 = 1.0f/siz1;
+    is2 = 1.0f/siz2;
+    k5 = 1.0f/sqrtf(5.0f);
+    lim = 0.82f;
 
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++) {
@@ -145,8 +145,8 @@ void gen_tri_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
             d2 = (i-pozy)*ct-(j-pozx)*st;
             d1 = d1*is1;
             d2 = d2*is2;
-            d3 = (2.0*d1+d2+1.0)*k5;
-            d4 = (2.0*d1-d2-1.0)*k5;
+            d3 = (2.0f * d1+d2 + 1.0f)*k5;
+            d4 = (2.0f* d1-d2 - 1.0f)*k5;
             d2 = fabsf(d2);
             d3 = fabsf(d3);
             d4 = fabsf(d4);
@@ -158,13 +158,13 @@ void gen_tri_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
             if (fabsf(d) > lim) {
                 g = min;
             } else {
-                if (db <= 1.004*lim-wb) {
+                if (db <= 1.004f * lim-wb) {
                     g = max;
                 } else {
                     g = min + (lim-wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0;
+            g = g*255.0f;
             sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
         }
     }
@@ -177,11 +177,11 @@ void gen_dia_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
     int i,j;
     float d1,d2,d,db,st,ct,is1,is2,g;
 
-    if ((siz1 == 0.0) || (siz2 == 0.0)) return;
+    if ((siz1 == 0.0f) || (siz2 == 0.0f)) return;
     st = sinf(tilt);
     ct = cosf(tilt);
-    is1 = 1.0/siz1;
-    is2 = 1.0/siz2;
+    is1 = 1.0f/siz1;
+    is2 = 1.0f/siz2;
 
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++) {
@@ -189,16 +189,16 @@ void gen_dia_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
             d2 = (i-pozy)*ct-(j-pozx)*st;
             d = fabsf(d1*is1)+fabsf(d2*is2);
             db = d;
-            if (fabsf(d) > 1.0) {
+            if (fabsf(d) > 1.0f) {
                 g = min;
             } else {
-                if (db <= 1.004-wb) {
+                if (db <= 1.004f - wb) {
                     g = max;
                 } else {
-                    g = min + (1.0-wb-db)/wb*(max-min);
+                    g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0;
+            g = g*255.0f;
             sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
         }
     }
@@ -336,14 +336,14 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     in->h = height;
 
     in->shp = 0;
-    in->pozx = 0.5;
-    in->pozy = 0.5;
-    in->sizx = 0.1;
-    in->sizy = 0.1;
-    in->wdt = 0.2;
-    in->tilt = 0.0;
-    in->min = 0.0;
-    in->max = 1.0;
+    in->pozx = 0.5f;
+    in->pozy = 0.5f;
+    in->sizx = 0.1f;
+    in->sizy = 0.1f;
+    in->wdt = 0.2f;
+    in->tilt = 0.0f;
+    in->min = 0.0f;
+    in->max = 1.0f;
     in->op = 0;
 
     in->gr8 = (uint32_t*) calloc(in->w*in->h, sizeof(uint32_t));
@@ -376,7 +376,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
     chg = 0;
     switch (param_index) {
     case 0:
-        tmpi = map_value_forward(*((double*)parm), 0.0, 3.9999);
+        tmpi = map_value_forward(*((double*)parm), 0.0f, 3.9999f);
         if (p->shp != tmpi) chg=1;
         p->shp = tmpi;
         break;
@@ -401,7 +401,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
         p->sizy = tmpf;
         break;
     case 5:
-        tmpf = map_value_forward(*((double*)parm), -3.15, 3.15);
+        tmpf = map_value_forward(*((double*)parm), -3.15f, 3.15f);
         if (tmpf != p->tilt) chg = 1;
         p->tilt = tmpf;
         break;
@@ -421,7 +421,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
         p->max = tmpf;
         break;
     case 9:
-        tmpi = map_value_forward(*((double*)parm), 0.0, 4.9999);
+        tmpi = map_value_forward(*((double*)parm), 0.0f, 4.9999f);
         if (p->op != tmpi) chg = 1;
         p->op = tmpi;
         break;
@@ -442,7 +442,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 
     switch(param_index) {
     case 0:
-        *((double*)param) = map_value_backward(p->shp, 0.0, 3.9999);
+        *((double*)param) = map_value_backward(p->shp, 0.0f, 3.9999f);
         break;
     case 1:
         *((double*)param) = p->pozx;
@@ -457,7 +457,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         *((double*)param) = p->sizy;
         break;
     case 5:
-        *((double*)param) = map_value_backward(p->tilt, -3.15, 3.15);
+        *((double*)param) = map_value_backward(p->tilt, -3.15f, 3.15f);
         break;
     case 6:
         *((double*)param) = p->wdt;
@@ -469,7 +469,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         *((double*)param) = p->max;
         break;
     case 9:
-        *((double*)param) = map_value_backward(p->op, 0.0, 4.9999);
+        *((double*)param) = map_value_backward(p->op, 0.0f, 4.9999f);
         break;
     }
 }
