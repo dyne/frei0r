@@ -92,14 +92,13 @@ void gen_rec_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
 void gen_eli_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
-    float d1,d2,d,db,st,ct,is1,is2,g,wbb;
+    float d1,d2,d,db,st,ct,is1,is2,g;
 
     if ((siz1 == 0.0f) || (siz2 == 0.0f)) return;
     st = sinf(tilt);
     ct = cosf(tilt);
     is1 = 1.0f/siz1;
     is2 = 1.0f/siz2;
-    wbb = wb;
 
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++) {
