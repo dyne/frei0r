@@ -29,6 +29,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 //#include <stdio.h>
 #include <frei0r.h>
+#include <frei0r_math.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
@@ -45,14 +46,14 @@ typedef struct
     float pozx,pozy,sizx,sizy,wdt,tilt,min,max;
     int shp,op;
 
-    uint32_t *gr8;
+    uint8_t *gr8;
 
 } inst;
 
 
 //----------------------------------------------------------
 //general (rotated) rectangle with soft border
-void gen_rec_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d,db,st,ct,g,is1,is2;
@@ -81,15 +82,14 @@ void gen_rec_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
                     g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0f;
-            sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
+            sl[i*w+j] = g * 255.0f;
         }
     }
 }
 
 //----------------------------------------------------------
 //general (rotated) ellipse with soft border
-void gen_eli_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d,db,st,ct,is1,is2,g;
@@ -117,15 +117,14 @@ void gen_eli_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
                     g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0f;
-            sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
+            sl[i*w+j] = g * 255.0f;
         }
     }
 }
 
 //----------------------------------------------------------
 //general (rotated) triangle with soft border
-void gen_tri_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d3,d4,d,st,ct,is1,is2,k5,lim,db,g;
@@ -163,15 +162,14 @@ void gen_tri_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
                     g = min + (lim-wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0f;
-            sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
+            sl[i*w+j] = g * 255.0f;
         }
     }
 }
 
 //----------------------------------------------------------
 //general (rotated) diamond shape with soft border
-void gen_dia_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d,db,st,ct,is1,is2,g;
@@ -197,8 +195,7 @@ void gen_dia_s(uint32_t* sl, int w, int h, float siz1, float siz2, float tilt, f
                     g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            g = g*255.0f;
-            sl[i*w+j] = (((uint32_t)g)<<24)&0xFF000000;
+            sl[i*w+j] = g * 255.0f;
         }
     }
 }
@@ -263,7 +260,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
     info->color_model = F0R_COLOR_MODEL_RGBA8888;
     info->frei0r_version = FREI0R_MAJOR_VERSION;
     info->major_version = 0;
-    info->minor_version = 1;
+    info->minor_version = 2;
     info->num_params = 10;
     info->explanation = "Draws simple shapes into the alpha channel";
 }
@@ -345,7 +342,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     in->max = 1.0f;
     in->op = 0;
 
-    in->gr8 = (uint32_t*) calloc(in->w*in->h, sizeof(uint32_t));
+    in->gr8 = calloc(in->w*in->h, sizeof(*in->gr8));
 
     draw(in);
 
@@ -478,40 +475,36 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 {
     inst *in;
     int i;
-    uint32_t t;
+    uint8_t *inp = (uint8_t*) inframe;
+    uint8_t *outp = (uint8_t*) outframe;
 
     assert(instance);
-    in=(inst*)instance;
+    in = (inst*)instance;
 
     switch (in->op) {
     case 0:		//write on clear
         for (i = 0; i < in->h*in->w; i++) {
-            outframe[i] = (inframe[i]&0x00FFFFFF) | in->gr8[i];
+            outp[4*i+3] = in->gr8[i];
         }
         break;
     case 1:		//max
         for (i = 0; i < in->h*in->w; i++) {
-            t = ((inframe[i]&0xFF000000) > in->gr8[i]) ? inframe[i]&0xFF000000 : in->gr8[i];
-            outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+            outp[4*i+3] = (inp[4*i+3] > in->gr8[i]) ? inp[4*i+3] : in->gr8[i];
         }
         break;
     case 2:		//min
         for (i = 0; i < in->h*in->w; i++) {
-            t = ((inframe[i]&0xFF000000) < in->gr8[i]) ? inframe[i]&0xFF000000 : in->gr8[i];
-            outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+            outp[4*i+3] = (inp[4*i+3] < in->gr8[i]) ? inp[4*i+3] : in->gr8[i];
         }
         break;
     case 3:		//add
         for (i = 0;i < in->h*in->w; i++) {
-            t = ((inframe[i]&0xFF000000)>>1)+(in->gr8[i]>>1);
-            t = (t > 0x7F800000) ? 0xFF000000 : t<<1;
-            outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+            outp[4*i+3] = MAX255(inp[4*i+3] + in->gr8[i]);
         }
         break;
     case 4:		//subtract
         for (i = 0; i < in->h*in->w; i++) {
-            t = ((inframe[i]&0xFF000000) > in->gr8[i]) ? (inframe[i]&0xFF000000) - in->gr8[i] : 0;
-            outframe[i] = (inframe[i]&0x00FFFFFF) | t;
+            outp[4*i+3] = (inp[4*i+3] > in->gr8[i]) ? inp[4*i+3] - in->gr8[i] : 0;
         }
         break;
     default:
