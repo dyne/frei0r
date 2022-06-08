@@ -33,7 +33,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
-
+#include <string.h>
 
 
 //----------------------------------------
@@ -480,6 +480,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 
     assert(instance);
     in = (inst*)instance;
+    memcpy(outframe, inframe, sizeof(*inframe) * in->w * in->h);
 
     switch (in->op) {
     case 0:		//write on clear
