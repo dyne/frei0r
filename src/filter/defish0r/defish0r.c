@@ -40,9 +40,9 @@ double PI=3.14159265358979;
 //add simplified 'Elestic Scale' to fix superview
 float stretchWidth(int width, int widthCentre, float currentXPos, float stretchFactor)
 {
-	double ratio, lowerWeight = 0, higherWeight = 0, linearRatio;
+	double ratio, lowerWeight = 0.0, higherWeight = 0.0, linearRatio;
 	unsigned int lengthSection;
-	float relativeXPos = 0;
+	float relativeXPos = 0.0f;
 
 	//midline?
 	if (currentXPos < (float)widthCentre)
@@ -57,7 +57,7 @@ float stretchWidth(int width, int widthCentre, float currentXPos, float stretchF
 		linearRatio = (double) ( currentXPos - widthCentre ) / lengthSection;
 		ratio = sin(linearRatio * PI) * stretchFactor + linearRatio;
 	}
-	ratio = ratio <= 0 ? 0 : ratio;
+	ratio = ratio <= 0.0 ? 0.0 : ratio;
 
 	relativeXPos = (float) ( ratio * lengthSection );
 
@@ -427,7 +427,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=3;
+	info->minor_version=4;
 	info->num_params=11;
 	info->explanation="Non rectilinear lens mappings";
 }
@@ -483,14 +483,14 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		info->explanation = "Straighten all edges of video frame";
 		break;
 	case 9:
-		info->name = "Dynamic Stretch";
+		info->name = "Non-Linear scale";
 		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Fix camera dynamic stretch";
+		info->explanation = "Fix camera scaling between 4:3 and 16:9";
 		break;
 	case 10:
 		info->name = "Y Scale";
 		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Scale Y to effect aspect ratio";
+		info->explanation = "Scale Y to affect aspect ratio";
 		break;
 	}
 
