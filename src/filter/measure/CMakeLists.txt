@@ -6,7 +6,7 @@ if (MSVC)
   set (F_SOURCES ${F_SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 
-link_libraries(m)
+# link_libraries(m)
 add_library (pr0be  MODULE  ${B_SOURCES})
 add_library (pr0file  MODULE  ${F_SOURCES})
 
