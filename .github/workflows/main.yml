@@ -78,8 +78,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16.x
-      - name: Install NPX
-        run: npm i npx
+      - name: Install semantic-release
+        run: |
+          npm i npx
+          npm i semantic-release/changelog
       - name: Tag release
         id: tag_release
         env:
