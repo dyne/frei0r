@@ -2,6 +2,7 @@
   "repositoryUrl": "git@github.com:dyne/frei0r.git",
   "dryRun": false,
   "plugins": [
+    "@semantic-release/changelog",
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator"
   ]
