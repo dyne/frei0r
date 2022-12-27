@@ -1,0 +1,4 @@
+{
+  "branches": ["master", "ci-build"],
+  "dryRun": false
+}
