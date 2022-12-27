@@ -94,7 +94,7 @@ jobs:
           awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
 
   cmake-build:
-    name: 🏗️ cmake build
+    name: 🏗️ cmake build linux amd64
     needs: [c-lint, semantic-release]
     if: "!contains(github.event.pull_request.labels.*.name, 'SKIP_MESON')"
     strategy:
@@ -104,11 +104,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Upload documentation artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: release-documentation
-          path: ./*
       - name: install compiler and dependencies
         run: |
           sudo apt-get update -qy
@@ -140,31 +135,33 @@ jobs:
   draft-binary-release:
     name: 📦 Pack release
     needs: [cmake-build, semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: download binary artifacts
         uses: actions/download-artifact@v3
         with:
           path: |
             frei0r-bin
-      # - name: show directory structure
-      #   run: tree -dL 3
+      - name: show directory structure
+        run: tree -dL 3
       - name: create compressed archives
         run: |
           cd frei0r-bin
           dst=frei0r-mixers_${{ needs.semantic-release.outputs.version }}_linux-amd64
           mkdir $dst && find release-mixers-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
-          d=release-documentation && cp $d/README.md $d/COPYING $d/ChangeLog $d/AUTHORS $dst
+          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
           tar cfz $dst.tar.gz $dst
           dst=frei0r-filters_${{ needs.semantic-release.outputs.version }}_linux-amd64
           mkdir $dst && find release-filters-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
-          d=release-documentation && cp $d/README.md $d/COPYING $d/ChangeLog $d/AUTHORS $dst
+          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
           tar cfz $dst.tar.gz $dst
           dst=frei0r-generators_${{ needs.semantic-release.outputs.version }}_linux-amd64
           mkdir $dst && find release-generators-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
-          d=release-documentation && cp $d/README.md $d/COPYING $d/ChangeLog $d/AUTHORS $dst
+          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
           tar cfz $dst.tar.gz $dst
           sha256sum *.tar.gz > SHA256SUMS.txt
