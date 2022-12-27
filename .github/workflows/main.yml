@@ -68,7 +68,7 @@ jobs:
   semantic-release:
     name: 🤖 Semantic release
     runs-on: ubuntu-latest
-#    if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
+    if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     outputs:
       release: ${{ steps.tag_release.outputs.release }}
       version: ${{ steps.tag_release.outputs.version }}
@@ -85,13 +85,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          npx semantic-release | tee semantic-release.log
           if [[ `git tag --points-at HEAD` == "" ]]; then
             echo "release=False" >> $GITHUB_OUTPUT
           else
             echo "release=True" >> $GITHUB_OUTPUT
+            awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
-          npx semantic-release | tee semantic-release.log
-          awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
 
   cmake-build:
     name: 🏗️ cmake build linux amd64
