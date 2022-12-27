@@ -77,8 +77,7 @@ public:
 
 
 frei0r::construct<burn> plugin("burn",
-                               "Perform an RGB[A] dodge operation between the pixel sources, using the generalised algorithm:\n"
-							   "D = saturation of 255 or depletion of 0, of ((255 - A) * 256) / (B + 1)",
+                               "Perform an RGB[A] dodge operation between the pixel sources, using the generalised algorithm: D = saturation of 255 or depletion of 0, of ((255 - A) * 256) / (B + 1)",
                                "Jean-Sebastien Senecal",
                                0,2,
                                F0R_COLOR_MODEL_RGBA8888);
