@@ -72,8 +72,7 @@ public:
 
 
 frei0r::construct<overlay> plugin("overlay",
-                                  "Perform an RGB[A] overlay operation between the pixel sources, using the generalised algorithm:\n"
-								  "D =  A * (B + (2 * B) * (255 - A))",
+                                  "Perform an RGB[A] overlay operation between the pixel sources, using the generalised algorithm: D =  A * (B + (2 * B) * (255 - A))",
                                   "Jean-Sebastien Senecal",
                                   0,2,
                                   F0R_COLOR_MODEL_RGBA8888);
