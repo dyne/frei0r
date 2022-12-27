@@ -1,4 +1,5 @@
 {
   "branches": ["master", "ci-build"],
+  "plugins": ["@semantic-release/commit-analyzer", "@semantic-release/release-notes-generator", "@semantic-release/github"],
   "dryRun": false
 }
