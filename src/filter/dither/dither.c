@@ -253,7 +253,7 @@ void f0r_update(f0r_instance_t instance, double time,
   // init look-ups
 	int rows, cols;
   rows = cols = (int)sqrt(matrixLength);
-  int map[levels];
+  int *map = (int *) malloc(levels * sizeof(int));
   int i,v;
 	for (i = 0; i < levels; i++)
   {
@@ -297,6 +297,8 @@ void f0r_update(f0r_instance_t instance, double time,
         *dst++ = *src++;//copy alpha
       }
   }
+
+  free(map);
 }
 
 
