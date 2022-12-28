@@ -30,6 +30,7 @@ jobs:
   c-lint:
     name: 🚨 C lint
     runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-lint')"
     steps:
       - uses: actions/checkout@v3
       - uses: reviewdog/action-cpplint@master
@@ -58,16 +59,44 @@ jobs:
             ,-whitespace/semicolon\
             ,-build/include_subdir\
             ,-build/include_order\
-            " # Optional
-        #    - name: Fail fast?!
-        #      if: steps.linter.outputs.checks-failed > 0
-        #      run: |
-        #        echo "😤 Some files failed the C linting checks!"
+            "
 
+  test-suite:
+    name: 🔬 test
+    needs: [c-lint]
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-test')"
+    strategy:
+      matrix:
+        compiler: [clang-14]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install dependencies
+        run: |
+          sudo apt-get update -qy
+          sudo apt-get install --no-install-recommends -y ${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev
+      - name: ${{ matrix.compiler }} initialize cmake build
+        run: |
+          mkdir -p build && cd build
+          cmake -G "Ninja" ../
+      - name: ${{ matrix.compiler }} run ninja build
+        run: |
+          cd build && ninja
+      - name: ${{ matrix.compiler }} analyze plugins
+        run: |
+          cd test && make
+      - name: ${{ matrix.compiler }} upload plugin analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-plugin-analysis
+          path: test/*.json
         
   semantic-release:
     name: 🤖 Semantic release
     runs-on: ubuntu-latest
+    needs: [test-suite]
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-release')"
     # if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     outputs:
       release: ${{ steps.tag_release.outputs.release }}
@@ -95,51 +124,38 @@ jobs:
             awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
 
-  cmake-build:
-    name: 🏗️ cmake build linux amd64
-    needs: [c-lint, semantic-release]
-    if: "!contains(github.event.pull_request.labels.*.name, 'SKIP_MESON')"
-    strategy:
-      matrix:
-        compiler: [clang-14]
-      fail-fast: false
-    runs-on: ubuntu-latest
+  msvc-build:
+    name: 💻 msvc build win64
+    runs-on: windows-latest
+    needs: [semantic-release, test-suite, c-lint]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v3
-      - name: install compiler and dependencies
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build using nmake
         run: |
-          sudo apt-get update -qy
-          sudo apt-get install --no-install-recommends -y ${{ matrix.compiler }} cmake ninja-build
-# libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev
-      - name: ${{ matrix.compiler }} initialize cmake build
-        run: |
-          mkdir -p build && cd build
-          cmake -G "Ninja" ../
-      - name: ${{ matrix.compiler }} make build
-        run: |
-          cd build && ninja
-      - name: Upload artifacts from clang build
+          mkdir build && cd build
+          cmake -G "NMake Makefiles" ../
+          nmake
+      - name: Upload win64 filters
         uses: actions/upload-artifact@v3
-        if: ${{ needs.semantic-release.outputs.release == 'True' }}
         with:
-          name: release-filters-linux-amd64
-          path: build/src/filter/**/*.so
-      - name: Upload artifacts from clang build
+          name: release-win64-filters
+          path: build/src/filter/**/*.dll
+      - name: Upload win64 mixers
         uses: actions/upload-artifact@v3
-        if: ${{ needs.semantic-release.outputs.release == 'True' }}
         with:
-          name: release-mixers-linux-amd64
-          path: build/src/mixer*/**/*.so
-      - name: Upload artifacts from clang build
+          name: release-win64-mixers
+          path: build/src/mixer*/**/*.dll
+      - name: Upload win64 generators
         uses: actions/upload-artifact@v3
-        if: ${{ needs.semantic-release.outputs.release == 'True' }}
         with:
-          name: release-generators-linux-amd64
-          path: build/src/generator/**/*.so
+          name: release-win64-generators
+          path: build/src/generator/**/*.dll
 
   draft-binary-release:
     name: 📦 Pack release
-    needs: [cmake-build, semantic-release]
+    needs: [msvc-build]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
@@ -149,35 +165,35 @@ jobs:
         with:
           path: |
             frei0r-bin
-      - name: show directory structure
-        run: tree -dL 3
       - name: create compressed archives
         run: |
           cd frei0r-bin
-          dst=frei0r-mixers_${{ needs.semantic-release.outputs.version }}_linux-amd64
-          mkdir $dst && find release-mixers-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
+          dst=frei0r-filters_${{ needs.semantic-release.outputs.version }}_win64
+          mkdir $dst && find release-win64-filters -type f -name '*.dll' -exec cp {} $dst \;
           cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
-          tar cfz $dst.tar.gz $dst
-          dst=frei0r-filters_${{ needs.semantic-release.outputs.version }}_linux-amd64
-          mkdir $dst && find release-filters-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
+          zip -r -9 $dst.zip $dst
+          dst=frei0r-mixers_${{ needs.semantic-release.outputs.version }}_win64
+          mkdir $dst && find release-win64-mixers -type f -name '*.dll' -exec cp {} $dst \;
           cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
-          tar cfz $dst.tar.gz $dst
-          dst=frei0r-generators_${{ needs.semantic-release.outputs.version }}_linux-amd64
-          mkdir $dst && find release-generators-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
+          zip -r -9 $dst.zip $dst
+          dst=frei0r-generators_${{ needs.semantic-release.outputs.version }}_win64
+          mkdir $dst && find release-win64-generators -type f -name '*.dll' -exec cp {} $dst \;
           cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
-          tar cfz $dst.tar.gz $dst
+          zip -r -9 $dst.zip $dst
           sha256sum *.tar.gz > SHA256SUMS.txt
-      - name: relase all archives
+      - name: show directory structure
+        run: tree -dL 3
+      - name: release all archives
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            frei0r-bin/*.tar.gz
+            frei0r-bin/*.zip
             frei0r-bin/SHA256SUMS.txt
           tag_name: ${{ needs.semantic-release.outputs.version }}
-          draft: false
+          draft: true
           prerelease: false
           fail_on_unmatched_files: true
           generate_release_notes: true
