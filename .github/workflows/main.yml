@@ -132,6 +132,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: choco install deps
+        uses: crazy-max/ghaction-chocolatey@v2
+        with:
+          args: install libopencv-dev
       - name: Build using nmake
         run: |
           mkdir build && cd build
