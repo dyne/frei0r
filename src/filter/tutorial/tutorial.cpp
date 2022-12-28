@@ -57,7 +57,7 @@ public:
         // http://stackoverflow.com/questions/381621/using-arrays-or-stdvectors-in-c-whats-the-performance-gap
         // Using std::numeric_limits just for fun here.
         lookupTable = std::vector<uint8_t>(std::numeric_limits<uint8_t>::max()+1, 0);
-        std::cout << lookupTable.size() << " elements in the lookup table." << std::endl;
+        // std::cerr << lookupTable.size() << " elements in the lookup table." << std::endl;
 
         // Calculate the entries in the lookup table. Applied on the R value in this example.
         // If the R value of an input pixel is r, then the output R value will be mapped to lookupTable[r].
