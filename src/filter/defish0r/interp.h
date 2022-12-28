@@ -107,7 +107,7 @@ void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *
 //**************************************
 //HERE BEGIN THE INTERPOLATION FUNCTIONS
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER < 1800
 __inline const float roundf(float x){
 	return (int)floor(x+0.5);
 }
@@ -162,14 +162,17 @@ int interpNN_b(unsigned char *sl, int w, int h, float x, float y, unsigned char 
 //	*v interpolirana vrednost
 int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, unsigned char *v)
 {
+	//int index = (int)(x+0.5f)*4+(int)(y+0.5f)*4*w; //fast rounding
+	int index = (int)roundf(x)*4+(int)roundf(y)*4*w; //call once
+
 #ifdef TEST_XY_LIMITS
 	if ((x<0)||(x>w)||(y<0)||(y>h)) return -1;
 #endif
 
-	v[0]=sl[(int)roundf(x)*4+(int)roundf(y)*4*w];
-	v[1]=sl[(int)roundf(x)*4+(int)roundf(y)*4*w+1];
-	v[2]=sl[(int)roundf(x)*4+(int)roundf(y)*4*w+2];
-	v[3]=sl[(int)roundf(x)*4+(int)roundf(y)*4*w+3];
+	v[0]=sl[index];
+	v[1]=sl[index+1];
+	v[2]=sl[index+2];
+	v[3]=sl[index+3];
 
 	return 0;
 }

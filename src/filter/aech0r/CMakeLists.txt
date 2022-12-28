@@ -1,5 +1,5 @@
-set (SOURCES sharpness.c)
-set (TARGET sharpness)
+set (SOURCES aech0r.cpp)
+set (TARGET aech0r)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})

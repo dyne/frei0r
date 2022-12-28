@@ -174,12 +174,6 @@ void f0r_get_param_value(f0r_instance_t instance,
 	}
 }
 
-#if defined(_MSC_VER)
-__inline const long lrint(double x){
-	return (long)(x+0.5);
-}
-#endif
-
 void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {

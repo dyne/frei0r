@@ -28,8 +28,8 @@
 #define PI 3.141592654
 
 /**
-This is a frei0r filter which allows to scale video footage non-linearly.
-In combination with a linear scale filter, it allows to scale 4:3 footage
+This is a frei0r filter which allows one to scale video footage non-linearly.
+In combination with a linear scale filter, it allows one to scale 4:3 footage
 to 16:9 and maintain the original aspect ratio in the center part of the image.
 */
 
@@ -303,7 +303,7 @@ private:
 };
 
 frei0r::construct<ElasticScale> plugin("Elastic scale filter",
-                "This is a frei0r filter which allows to scale video footage non-linearly.",
+                "This is a frei0r filter which allows one to scale video footage non-linearly.",
                 "Matthias Schnoell",
                 0,2,
                 F0R_COLOR_MODEL_RGBA8888);

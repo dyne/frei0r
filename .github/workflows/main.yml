@@ -1,0 +1,185 @@
+name: frei0r
+
+on:
+  push:
+    paths-ignore:
+      - 'doc/**'
+      - '*.md'
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+      - '*.md'
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+
+  # reuse:
+  #   name: 🚨 REUSE Compliance
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: fsfe/reuse-action@v1
+
+  c-lint:
+    name: 🚨 C lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-cpplint@master
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          targets: --recursive src
+          level: warning
+          flags: --linelength=120 # Optional
+          filter: "-readability/braces\
+            ,-readability/casting\
+            ,-readability/todo\
+            ,-whitespace/comma\
+            ,-whitespace/braces\
+            ,-whitespace/comments\
+            ,-whitespace/indent\
+            ,-whitespace/newline\
+            ,-whitespace/operators\
+            ,-whitespace/parens\
+            ,-whitespace/tab\
+            ,-whitespace/end_of_line\
+            ,-whitespace/line_length\
+            ,-whitespace/blank_line\
+            ,-whitespace/semicolon\
+            ,-build/include_subdir\
+            ,-build/include_order\
+            " # Optional
+        #    - name: Fail fast?!
+        #      if: steps.linter.outputs.checks-failed > 0
+        #      run: |
+        #        echo "😤 Some files failed the C linting checks!"
+
+        
+  semantic-release:
+    name: 🤖 Semantic release
+    runs-on: ubuntu-latest
+    # if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
+    outputs:
+      release: ${{ steps.tag_release.outputs.release }}
+      version: ${{ steps.tag_release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Install semantic-release
+        run: |
+          npm i npx
+          npm i semantic-release/changelog
+      - name: Tag release
+        id: tag_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release | tee semantic-release.log
+          if [[ `git tag --points-at HEAD` == "" ]]; then
+            echo "release=False" >> $GITHUB_OUTPUT
+          else
+            echo "release=True" >> $GITHUB_OUTPUT
+            awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
+          fi
+
+  cmake-build:
+    name: 🏗️ cmake build linux amd64
+    needs: [c-lint, semantic-release]
+    if: "!contains(github.event.pull_request.labels.*.name, 'SKIP_MESON')"
+    strategy:
+      matrix:
+        compiler: [clang-14]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install compiler and dependencies
+        run: |
+          sudo apt-get update -qy
+          sudo apt-get install --no-install-recommends -y ${{ matrix.compiler }} cmake ninja-build
+# libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev
+      - name: ${{ matrix.compiler }} initialize cmake build
+        run: |
+          mkdir -p build && cd build
+          cmake -G "Ninja" ../
+      - name: ${{ matrix.compiler }} make build
+        run: |
+          cd build && ninja
+      - name: Upload artifacts from clang build
+        uses: actions/upload-artifact@v3
+        if: ${{ needs.semantic-release.outputs.release == 'True' }}
+        with:
+          name: release-filters-linux-amd64
+          path: build/src/filter/**/*.so
+      - name: Upload artifacts from clang build
+        uses: actions/upload-artifact@v3
+        if: ${{ needs.semantic-release.outputs.release == 'True' }}
+        with:
+          name: release-mixers-linux-amd64
+          path: build/src/mixer*/**/*.so
+      - name: Upload artifacts from clang build
+        uses: actions/upload-artifact@v3
+        if: ${{ needs.semantic-release.outputs.release == 'True' }}
+        with:
+          name: release-generators-linux-amd64
+          path: build/src/generator/**/*.so
+
+  draft-binary-release:
+    name: 📦 Pack release
+    needs: [cmake-build, semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: download binary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: |
+            frei0r-bin
+      - name: show directory structure
+        run: tree -dL 3
+      - name: create compressed archives
+        run: |
+          cd frei0r-bin
+          dst=frei0r-mixers_${{ needs.semantic-release.outputs.version }}_linux-amd64
+          mkdir $dst && find release-mixers-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
+          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
+          tar cfz $dst.tar.gz $dst
+          dst=frei0r-filters_${{ needs.semantic-release.outputs.version }}_linux-amd64
+          mkdir $dst && find release-filters-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
+          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
+          tar cfz $dst.tar.gz $dst
+          dst=frei0r-generators_${{ needs.semantic-release.outputs.version }}_linux-amd64
+          mkdir $dst && find release-generators-linux-amd64 -type f -name '*.so' -exec cp {} $dst \;
+          cp ../README.md ../COPYING ../ChangeLog ../AUTHORS $dst
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION
+          tar cfz $dst.tar.gz $dst
+          sha256sum *.tar.gz > SHA256SUMS.txt
+      - name: relase all archives
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            frei0r-bin/*.tar.gz
+            frei0r-bin/SHA256SUMS.txt
+          tag_name: ${{ needs.semantic-release.outputs.version }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+

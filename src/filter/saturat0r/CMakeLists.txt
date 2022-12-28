@@ -2,7 +2,6 @@ set (SOURCES saturat0r.c)
 set (TARGET saturat0r)
 
 if (MSVC)
-  set_source_files_properties (saturat0r.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

@@ -64,9 +64,15 @@
   [3] http://kdenlive.org/users/granjow/writing-light-graffiti-effect
 
   */
+
+#if defined(_MSC_VER)
+#define _USE_MATH_DEFINES
+#endif /* _MSC_VER */
+#include <cmath>
+
 #include "frei0r.hpp"
 
-#include <cmath>
+
 #include <cstdio>
 #include <climits>
 #include <algorithm>
@@ -822,7 +828,7 @@ public:
                      Background weight
                      */
                     if (m_pBackgroundWeight > 0) {
-                        // Use part of the background mean. This allows to have only lights appearing in the video
+                        // Use part of the background mean. This allows one to have only lights appearing in the video
                         // if people or other objects walk into the video after the first frame (darker, therefore not in the light mask).
                         out[pixel] = RGBA((int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+0] + (1-m_pBackgroundWeight)*GETR(out[pixel])),
                                           (int) (m_pBackgroundWeight*m_longMeanImage[3*pixel+1] + (1-m_pBackgroundWeight)*GETG(out[pixel])),

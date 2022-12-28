@@ -1,4 +1,29 @@
 *** See also the Changes @section in include/frei0r.h or git log
+** See also the Release section on https://github.com/dyne/frei0r/releases
+* Usernames prefixed by '@' and issues prefixed by '#' refer to github/dyne/frei0r
+
+1.8   - 27 March 2021
+
+What's Changed:
+Consolidated opencv4 support by @kwizart in #101
+spelling fixes by @umlaeute in #98
+Fix build warning in 64 bit Windows by @gbendy in #107
+using the void keyword in function declaration by @mypopydev in #104
+Add FX aech0r . Aim to simulate an analog video echo. by @d-j-a-y in #73
+Fix build for opencv4 by @mingwandroid in #112
+Support MSYS2/mingw-w64 by @mingwandroid in #113
+Fill uninitialized gaps between grid images by @bmatherly in #118
+Avoid destructing alpha channel. by @andre-caldas in #119
+pixeliz0r: Limit the blocksize to a minimum of 1 pixel by @rrrapha in #120
+edgeglow: Fix hsl to rgb conversion by @rrrapha in #121
+
+New Contributors:
+@kwizart made their first contribution in #101
+@gbendy made their first contribution in #107
+@mypopydev made their first contribution in #104
+@mingwandroid made their first contribution in #112
+@bmatherly made their first contribution in #118
+@andre-caldas made their first contribution in #119	
 
 1.7   - 6 December 2019
 

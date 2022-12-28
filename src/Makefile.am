@@ -12,6 +12,7 @@ plugin_LTLIBRARIES = \
 	3dflippo.la \
 	addition.la \
 	addition_alpha.la \
+	aech0r.la \
 	alpha0ps.la \
 	alphaatop.la \
 	alphagrad.la \
@@ -156,11 +157,13 @@ endif
 if HAVE_OPENCV
 plugin_LTLIBRARIES += facebl0r.la
 facebl0r_la_SOURCES = filter/facebl0r/facebl0r.cpp
-facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@ 
+facebl0r_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
+facebl0r_la_CXXFLAGS = @OPENCV_CFLAGS@ @CXXFLAGS@
 facebl0r_la_LIBADD = @OPENCV_LIBS@
 plugin_LTLIBRARIES += facedetect.la
 facedetect_la_SOURCES = filter/facedetect/facedetect.cpp
 facedetect_la_CFLAGS = @OPENCV_CFLAGS@ @CFLAGS@
+facedetect_la_CXXFLAGS = @OPENCV_CFLAGS@ @CXXFLAGS@
 facedetect_la_LIBADD = @OPENCV_LIBS@
 endif
 
@@ -196,6 +199,7 @@ endif
 alpha0ps_la_SOURCES = filter/alpha0ps/alpha0ps.c filter/alpha0ps/fibe_f.h
 alphagrad_la_SOURCES = filter/alpha0ps/alphagrad.c
 alphaspot_la_SOURCES = filter/alpha0ps/alphaspot.c
+aech0r_la_SOURCES = filter/aech0r/aech0r.cpp
 B_la_SOURCES = filter/RGB/B.c
 balanc0r_la_SOURCES = filter/balanc0r/balanc0r.c
 baltan_la_SOURCES = filter/baltan/baltan.cpp
@@ -331,23 +335,30 @@ xfade0r_la_SOURCES = mixer2/xfade0r/xfade0r.cpp
 
 AM_CPPFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
 AM_CFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
-AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
+AM_CXXFLAGS = -I@top_srcdir@/include -Waddress -Wtype-limits -Wsign-compare
 AM_LIBTOOLFLAGS = --tag=disable-static
 
 plugindir = @libdir@/frei0r-1
 
+if HAVE_MINGW
+SO_EXT = .dll
+AM_LDFLAGS = -module -avoid-version -export-dynamic -no-undefined
+else
+SO_EXT = .so
+AM_LDFLAGS = -module -avoid-version -lm -export-dynamic
+endif
 
 install-pluginLTLIBRARIES: $(plugin_LTLIBRARIES)
 	mkdir -p $(DESTDIR)/$(plugindir)
 	list='$(plugin_LTLIBRARIES)'; \
 	for file in $$list; do \
-	  sofile=`basename $$file .la`.so; \
+	  sofile=`basename $$file .la`$(SO_EXT); \
 	  $(INSTALL_PROGRAM) .libs/$$sofile $(DESTDIR)/$(plugindir); \
 	done
 
 uninstall-pluginLTLIBRARIES:
 	list='$(plugin_LTLIBRARIES)'; \
 	for file in $$list; do \
-	  sofile=`basename $$file .la`.so; \
+	  sofile=`basename $$file .la`$(SO_EXT); \
 	  rm -f $(DESTDIR)/$(plugindir)/$$sofile; \
 	done

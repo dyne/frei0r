@@ -37,6 +37,39 @@
 
 double PI=3.14159265358979;
 
+//add simplified 'Elestic Scale' to fix superview
+float stretchWidth(int width, int widthCentre, float currentXPos, float stretchFactor)
+{
+	double ratio, lowerWeight = 0.0, higherWeight = 0.0, linearRatio;
+	unsigned int lengthSection;
+	float relativeXPos = 0.0f;
+
+	//midline?
+	if (currentXPos < (float)widthCentre)
+	{
+		lengthSection = widthCentre - 1;
+		linearRatio = (double) ( currentXPos ) / lengthSection;
+		ratio = sin(linearRatio * PI - PI) * stretchFactor + linearRatio;
+	}
+	else
+	{
+		lengthSection = width - widthCentre - 1;
+		linearRatio = (double) ( currentXPos - widthCentre ) / lengthSection;
+		ratio = sin(linearRatio * PI) * stretchFactor + linearRatio;
+	}
+	ratio = ratio <= 0.0 ? 0.0 : ratio;
+
+	relativeXPos = (float) ( ratio * lengthSection );
+
+	if (currentXPos < (float)widthCentre)
+		relativeXPos -= currentXPos;
+	else
+		relativeXPos -= ( currentXPos - widthCentre );
+
+	return relativeXPos;
+}
+
+
 //---------------------------------------------------------
 //	r = 0...1    izhod = 0...maxr
 //ta funkcija da popacenje v odvisnosti od r
@@ -48,7 +81,7 @@ float fish(int n, float r, float f)
 	switch (n)
 	{
 	case 0:		//equidistant
-		ff=f*2.0/PI;
+		ff=f*2.0f/(float)PI;
 		rr=tanf(r/ff);
 		break;
 	case 1:		//ortographic
@@ -59,15 +92,15 @@ float fish(int n, float r, float f)
 			rr=tanf(asinf(ff));
 		break;
 	case 2:		//equiarea
-		ff=r/2.0/f;
-		if (ff>1.0)
-			rr=-1.0;
+		ff=r/2.0f/f;
+		if (ff>1.0f)
+			rr=-1.0f;
 		else
-			rr=tanf(2.0*asinf(r/2.0/f));
+			rr=tanf(2.0f*asinf(r/2.0f/f));
 		break;
 	case 3:		//stereographic
-		ff=f*2.0/PI;
-		rr=tanf(2.0*atanf(r/2.0/ff));
+		ff=f*2.0f/(float)PI;
+		rr=tanf(2.0f*atanf(r/2.0f/ff));
 		break;
 	default:
 		//		printf("Neznana fishitvena funkcija %d\n",n);
@@ -86,16 +119,16 @@ float defish(int n, float r, float f, float mr)
 	switch (n)
 	{
 	case 0:		//equidistant
-		rr=f*2.0/PI*atanf(r*mr);
+		rr=f*2.0f/(float)PI*atanf(r*mr);
 		break;
 	case 1:		//ortographic
 		rr=f*sinf(atanf(r*mr));
 		break;
 	case 2:		//equiarea
-		rr=2.0*f*sinf(atanf(r*mr)/2.0);
+		rr=2.0f*f*sinf(atanf(r*mr)/2.0f);
 		break;
 	case 3:		//stereographic
-		rr=f*4.0/PI*tanf(atanf(r*mr)/2.0);
+		rr=f*4.0f/(float)PI*tanf(atanf(r*mr)/2.0f);
 		break;
 	default:
 		//		printf("Neznana fishitvena funkcija %d\n",n);
@@ -103,10 +136,6 @@ float defish(int n, float r, float f, float mr)
 	}
 	return rr;
 }
-
-#if defined(_MSC_VER)
-#define hypotf _hypotf
-#endif
 
 //----------------------------------------------------------------
 //nafila array map s polozaji pikslov
@@ -119,26 +148,28 @@ float defish(int n, float r, float f, float mr)
 //scal = scaling factor
 //pari, paro = pixel aspect ratio (input / output)
 //dx, dy   offset on input (for non-cosited chroma subsampling)
-void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map)
+void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
+	, float stretchFactor, float yScale)
 {
 	float rmax,maxr,r,kot,x,y,imax;
-	int i,j,ww,wi2,hi2,wo2,ho2;
+	int i, j, ww;
 	float ii,jj,sc;
+	int wiMid = wi/2;
+	int hiMid = hi/2;
 
-	rmax=hypotf(ho/2.0,wo/2.0*paro);
+	rmax=hypotf(ho/2.0f,wo/2.0f*paro);
 	maxr=fish(n,1.0,f);
-	imax=hypotf(hi/2.0,wi/2.0*pari);
+	imax=hypotf(hi/2.0f,wi/2.0f*pari);
 	sc=imax/maxr;
 
 	//printf("Fishmap: F=%5.2f  Rmax= %7.2f  Maxr=%6.2f  sc=%6.2f  scal=%6.2f\n",f,rmax,maxr,sc,scal);
 
-	wi2=wi/2; hi2=hi/2; wo2=wo/2; ho2=ho/2;
-	for (i=0;i<ho;i++)
+	for (i=0;i<hi;i++)
 	{
-		ii=i-ho2;
-		for (j=0;j<wo;j++)
+		ii=(float)(i-hiMid)*yScale; //add Y scale
+		for (j=0;j<wi;j++)
 		{
-			jj=(j-wo2)*paro;
+			jj=(j-wiMid)*paro;
 			r=hypotf(ii,jj);
 			kot=atan2f(ii,jj);
 			r=fish(n,r/rmax*scal,f)*sc;
@@ -150,10 +181,12 @@ void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float p
 			}
 			else
 			{
-				x=wi2+r*cosf(kot)/pari;
-				y=hi2+r*sinf(kot);
+				x=wiMid+r*cosf(kot)/pari;
+				y=hiMid+r*sinf(kot);
 				if ((x>0)&(x<(wi-1))&(y>0)&(y<(hi-1)))
 				{
+					if (stretchFactor != 0.0f)
+						x += stretchWidth(wo, wiMid, x, stretchFactor);	//add stretch
 					map[ww]=x+dx;
 					map[ww+1]=y+dy;
 				}
@@ -165,8 +198,8 @@ void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float p
 			}
 		}
 	}
-
 }
+
 
 //----------------------------------------------------------------
 //nafila array map s polozaji pikslov
@@ -179,30 +212,35 @@ void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float p
 //scal = scaling factor
 //pari,paro = pixel aspect ratio (input / output)
 //dx, dy   offset on input (for non-cosited chroma subsampling)
-void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map)
+//lbox = letterbox
+//stretch = dymanic stretch, convert between 4:3 and 16:9
+//yScale = -0.5.. 0.5 change aspect ratio on y acess only
+void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
+	, int lbox, float stretchFactor, float yScale)
 {
 	float rmax,maxr,r,kot,x,y,imax;
-	int i,j,ww,wi2,hi2,wo2,ho2;
+	int i,j,ww;
 	float ii,jj,sc;
+	int wiMid = wi/2;
+	int hiMid = hi/2;
 
-	rmax=hypotf(ho/2.0,wo/2.0*paro);
+	rmax=hypotf(ho/2.0f,wo/2.0f*paro);
 	maxr=fish(n,1.0,f);
-	imax=hypotf(hi/2.0,wi/2.0*pari);
+	imax=hypotf(hi/2.0f,wi/2.0f*pari);
 	sc=imax/maxr;
 
 	//printf("Defishmap: F=%f  rmax= %f  Maxr=%f   sc=%6.2f  scal=%6.2f\n",f,rmax,maxr,sc,scal);
 
-	wi2=wi/2; hi2=hi/2; wo2=wo/2; ho2=ho/2;
-	for (i=0;i<ho;i++)
+	for (i=0;i<hi;i++)
 	{
-		ii=i-ho2;
-		for (j=0;j<wo;j++)
+		ii = (float)(i-hiMid)*yScale; //add Y scale
+		for (j=0;j<wi;j++)
 		{
-			jj=(j-wo2)*paro;	//aspect....
+			jj=(j-wiMid)*paro; //aspect....
 			r=hypotf(ii,jj)/scal;
 			kot=atan2f(ii,jj);
-			ww=2*(wo*i+j);
-			r=defish(n,r/sc,f,1.0)*rmax;
+			ww=2*(wi*i+j);
+			r=defish(n,r/sc,f,1.0)*imax;
 			if (r<0.0)
 			{
 				map[ww]=-1;
@@ -210,10 +248,14 @@ void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float
 			}
 			else
 			{
-				x=wi2+r*cosf(kot)/pari;
-				y=hi2+r*sinf(kot);
-				if ((x>0)&(x<(wi-1))&(y>0)&(y<(hi-1)))
+				x=wiMid+r*cosf(kot)/pari;
+				y=hiMid+r*sinf(kot);
+
+				if ((x>0)&&(x<(wi-1))&&(y>0)&&(y<(hi-1)))
 				{
+					if (stretchFactor != 0.0f)
+						x += stretchWidth(wi, wiMid, x, stretchFactor);	//add stretch
+
 					map[ww]=x;
 					map[ww+1]=y;
 				}
@@ -221,6 +263,38 @@ void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float
 				{
 					map[ww]=-1;
 					map[ww+1]=-1;
+				}
+			}
+		}
+	}
+
+	//crop all 4 borders
+	if (lbox)
+	{	//top/bottom
+		for (i = 0; i < hi; i++)
+		{
+			ww = 2 * (wi*i + wiMid);
+			if (map[ww] <= 0)
+			{
+				for (j = 0; j < wi; j++)
+				{ //clear entire row
+					ww = 2 * (wi*i + j);
+					map[ww] = -1;
+					map[ww + 1] = -1;
+				}
+			}
+		}
+		//left/right
+		for (i = 0; i < wi; i++)
+		{
+			ww = 2 * (wi*hiMid +i);
+			if (map[ww] <= 0)
+			{
+				for (j = 0; j < hi; j++)
+				{ //clear entire column
+					ww = 2 * (wi*j + i);
+					map[ww] = -1;
+					map[ww + 1] = -1;
 				}
 			}
 		}
@@ -237,6 +311,8 @@ void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float
 //intp: 0..6	type of interpolator
 //aspt:	0..4	aspect type square, PAL, NTSC, HDV, manual
 //par:	pixel aspect ratio
+//lbox: 1=letterbox
+//stretch 0..1 stretch video to fix superview distorsion
 typedef struct
 {
 	int w;
@@ -251,6 +327,9 @@ typedef struct
 	float mpar;
 	float par;
 	float *map;
+	int lbox;
+	float stretch;
+	float yScale;
 	interpp interpol;
 } param;
 
@@ -297,7 +376,7 @@ void make_map(param p)
 		case 3:		//manual
 			dscal=p.mscale; break;
 		}
-		defishmap(p.w ,p.h ,p.w ,p.h, p.type, p.f, dscal, p.par, p.par, 0.0, 0.0,  p.map);
+		defishmap(p.w ,p.h ,p.w ,p.h, p.type, p.f, dscal, p.par, p.par, 0.0, 0.0,  p.map, p.lbox, p.stretch, p.yScale);
     }
 	else		//fish
     {
@@ -315,7 +394,7 @@ void make_map(param p)
 		case 3:		//manual
 			fscal=1.0/p.mscale; break;
 		}
-		fishmap(p.w, p.h, p.w ,p.h, p.type, p.f, fscal, p.par, p.par, 0.0, 0.0,  p.map);
+		fishmap(p.w, p.h, p.w ,p.h, p.type, p.f, fscal, p.par, p.par, 0.0, 0.0,  p.map, p.stretch, p.yScale);
     }
 
 }
@@ -344,8 +423,8 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->color_model=F0R_COLOR_MODEL_RGBA8888;
 	info->frei0r_version=FREI0R_MAJOR_VERSION;
 	info->major_version=0;
-	info->minor_version=3;
-	info->num_params=8;
+	info->minor_version=4;
+	info->num_params=11;
 	info->explanation="Non rectilinear lens mappings";
 }
 
@@ -394,6 +473,21 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		info->type = F0R_PARAM_DOUBLE;
 		info->explanation = "Manual Pixel Aspect ratio";
 		break;
+	case 8:
+		info->name = "Crop";
+		info->type = F0R_PARAM_BOOL;
+		info->explanation = "Straighten all edges of video frame";
+		break;
+	case 9:
+		info->name = "Non-Linear scale";
+		info->type = F0R_PARAM_DOUBLE;
+		info->explanation = "Fix camera scaling between 4:3 and 16:9";
+		break;
+	case 10:
+		info->name = "Y Scale";
+		info->type = F0R_PARAM_DOUBLE;
+		info->explanation = "Scale Y to affect aspect ratio";
+		break;
 	}
 
 }
@@ -417,6 +511,9 @@ f0r_instance_t  f0r_construct(unsigned int width, unsigned int height)
 	p->aspt=0;		//square pixels
 	p->par=1.0;		//square pixels
 	p->mpar=1.0;
+	p->lbox=0;			//letterbox
+	p->stretch = 0.0f;	//dynamic stretch
+	p->yScale = 1.0f;	//seperate Y stretch
 
 	p->map=(float*)calloc(1, sizeof(float)*(p->w*p->h*2+2));
 	p->interpol=set_intp(*p);
@@ -578,6 +675,21 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		if (p->mpar != tmpf) chg=1;
 		p->mpar=tmpf;
 		break;
+	case 8: //letterbox
+		tmpi=(int)map_value_forward(*((double*)parm), 0.0f, 1.0f);//BOOL!!
+		if (p->lbox != tmpi) chg=1;
+		p->lbox=tmpi;
+		break;
+	case 9: //stretch
+		tmpf=map_value_forward(*((double*)parm), -0.2f, 0.2f);
+		if (p->stretch != tmpf) chg=1;
+		p->stretch=tmpf;
+		break;
+	case 10: //Y scale
+		tmpf=map_value_forward(*((double*)parm), 1.5f, 0.5f);
+		if (p->yScale != tmpf) chg=1;
+		p->yScale=tmpf;
+		break;
 	}
 
 	if (chg!=0)
@@ -632,6 +744,15 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		break;
 	case 7:	//manual aspect
 		*((double*)parm)=map_value_backward_log(p->mpar, 0.5, 2.0);
+		break;
+	case 8:	//letterbox
+		*((double*)parm)=map_value_backward((float)p->lbox, 0.0f, 1.0f); //BOOL!!
+		break;
+	case 9:	//stretch/upscale fix
+		*((double*)parm)=map_value_backward_log(p->stretch, -0.2f, 0.2f);
+		break;
+	case 10:	//Y scale
+		*((double*)parm)=map_value_backward(p->yScale, 1.5f, 0.5f);
 		break;
 	}
 }

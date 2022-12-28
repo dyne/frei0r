@@ -1,3 +1,7 @@
+if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
+  return() # MSVC cl doesn't support Variable Length Arrays (VLA), but clang-cl does
+endif()
+
 # Set C99 flag for gcc
 if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_C_FLAGS "-std=c99")
@@ -7,7 +11,6 @@ set (SOURCES curves.c)
 set (TARGET curves)
 
 if (MSVC)
-  set_source_files_properties (curves.c PROPERTIES LANGUAGE CXX)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
 endif (MSVC)
 

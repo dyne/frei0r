@@ -1,10 +1,11 @@
-cmake_minimum_required (VERSION 2.8)
-include(GNUInstallDirs)
+cmake_minimum_required (VERSION 3.0)
 
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 project (frei0r)
-set (VERSION 1.6.1)
+set (VERSION 1.8)
+
+include(GNUInstallDirs)
 
 option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
 if (NOT WITHOUT_OPENCV)
@@ -20,10 +21,6 @@ if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
 endif ()
 
 include_directories (AFTER include)
-
-if (MSVC)
-  include_directories (include/msvc)
-endif (MSVC)
 
 if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
