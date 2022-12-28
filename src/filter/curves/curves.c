@@ -234,7 +234,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 5:
     info->name = "Bézier spline";
     info->type = F0R_PARAM_STRING;
-    info->explanation = "Use cubic Bézier spline. Has to be a sorted list of points in the format \"handle1x;handle1y#pointx;pointy#handle2x;handle2y\"(pointx = in, pointy = out). Points are separated by a \"|\".The values can have \"double\" precision. x, y for points should be in the range 0-1. x,y for handles might also be out of this range.";
+    info->explanation = "Use cubic Bézier spline. Has to be a sorted list of points in the format 'handle1x;handle1y#pointx;pointy#handle2x;handle2y'(pointx = in, pointy = out). Points are separated by a '|'.The values can have 'double' precision. x, y for points should be in the range 0-1. x,y for handles might also be out of this range.";
   default:
 	if (param_index > 5) {
 	  info->name = get_param_name(param_index - 6);
