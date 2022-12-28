@@ -68,7 +68,7 @@ jobs:
   semantic-release:
     name: 🤖 Semantic release
     runs-on: ubuntu-latest
-    if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
+    # if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     outputs:
       release: ${{ steps.tag_release.outputs.release }}
       version: ${{ steps.tag_release.outputs.version }}
@@ -120,16 +120,19 @@ jobs:
           cd build && ninja
       - name: Upload artifacts from clang build
         uses: actions/upload-artifact@v3
+        if: ${{ needs.semantic-release.outputs.release == 'True' }}
         with:
           name: release-filters-linux-amd64
           path: build/src/filter/**/*.so
       - name: Upload artifacts from clang build
         uses: actions/upload-artifact@v3
+        if: ${{ needs.semantic-release.outputs.release == 'True' }}
         with:
           name: release-mixers-linux-amd64
           path: build/src/mixer*/**/*.so
       - name: Upload artifacts from clang build
         uses: actions/upload-artifact@v3
+        if: ${{ needs.semantic-release.outputs.release == 'True' }}
         with:
           name: release-generators-linux-amd64
           path: build/src/generator/**/*.so
