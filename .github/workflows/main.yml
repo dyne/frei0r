@@ -95,6 +95,19 @@ jobs:
             awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
 
+  msvc-build:
+    name: 💻 msvc build win64
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build using nmake
+        run: |
+          mkdir build && cd build
+          cmake -G "NMake Makefiles" ../
+          nmake
+      - name: List contents
+        run: tree
+
   cmake-build:
     name: 🏗️ cmake build linux amd64
     needs: [c-lint, semantic-release]
