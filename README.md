@@ -1,54 +1,27 @@
-```
-   ___________              ._________
-   \_   _____/______   ____ |__\   _  \_______
-    |    __) \_  __ \_/ __ \|  /  /_\  \_  __ \
-    |     \   |  | \/\  ___/|  \  \_/   \  | \/
-    \___  /   |__|    \___  >__|\_____  /__|
-        \/                \/          \/
+[![Frei0r logo](https://github.com/dyne/frei0r/raw/gh_pages/pics/frei0r.png)](https://frei0r.dyne.org)
 
-```
-
-*Minimalistic plugin API for video effects, by the Piksel Developers Union*
-
-Updated info on https://frei0r.dyne.org
 
 [![software by Dyne.org](https://files.dyne.org/software_by_dyne.png)](http://www.dyne.org)
 
-[![Build Status](https://travis-ci.org/dyne/frei0r.svg?branch=master)](https://travis-ci.org/dyne/frei0r)
+[![frei0r](https://github.com/dyne/frei0r/actions/workflows/main.yml/badge.svg)](https://github.com/dyne/frei0r/actions/workflows/main.yml)
+
 
 # What frei0r is 
 
-Frei0r is a minimalistic plugin API for video effects.
+The frei0r project is a collection of free and open source video effects plugins that can be used with a variety of video editing and processing software.
 
-The main emphasis is on simplicity for an API that will round up the
-most common video effects into simple filters, sources and mixers that
-can be controlled by parameters.
+The frei0r project welcomes contributions by people who are passionate about video effects, its collection consists of more than 100 plugins made to work on any target platform (GNU/Linux, Apple/OSX and MS/Win) without the need for special video hardware. These plugins can be used to add a wide range of effects to video, such as color correction, blurring, and distortion.
 
-It's our hope that this way these simple effects can be shared between
-many applications, avoiding their reimplementation by different
-projects.
+The frei0r project is a great resource for anyone interested in algorithms for video transformation and effects, as it provides a wide range of open source formulas available for free and can be easily integrated into a variety of software. 
+
 
 ## What frei0r is not 
 
-Frei0r is not meant as a competing standard to more ambitious efforts
-that try to satisfy the needs of many different applications and more
-complex effects.
+Frei0r itself is just a C/C++ header and a collection of small programs using it to accept an input frame, change it in any possible way and returning an output frame.
 
-It is not meant as a generic API for all kinds of video applications,
-as it doesn't provides things like an extensive parameter mechanism or
-event handling.
+It is not meant as a generic API for all kinds of video applications, as it doesn't provides things like an extensive parameter mechanism or event handling.
 
-Eventually the frei0r API can be wrapped by higher level APIs
-expanding its functionalities
-(for instance as GStreamer, MLT, FFmpeg and others do).
-
-## Current status 
-
-Developers are sporadically contributing and we are happy if more
-people like to get involved, so let us know about your creations! Code
-and patches are well accepted, get in touch with us on the
-mailinglist (see the section Communication below).
-
+Eventually the frei0r API can be wrapped by higher level APIs expanding its functionalities, for instance GStreamer, MLT, FFmpeg and Pure Data do.
 
 ## History 
 
@@ -56,15 +29,11 @@ Frei0r has been around since 2004, born from yearly brainstormings
 held at the Piksel conference with the participation of various free
 and open source video software developers.
 
-It works on all hardware platforms without the need for any particular
-hardware acceleration (GNU/Linux, Apple/OSX and MS/Win) and consists
-of more than 100 plugins. Among the free and open source video
-application supporting frei0r are: KDEnLive, FFmpeg, MLT, PureData,
-Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, VeeJay, Flowblade, and
-Shotcut among the others.
+Among the free and open source video application supporting frei0r are: KDEnLive, FFmpeg, MLT, PureData, Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, VeeJay, Flowblade, and Shotcut among the others.
 
 Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 
+## Links
 
 [Piksel]: http://www.piksel.no
 [PureData]: http://www.artefacte.org/pd/
@@ -83,17 +52,11 @@ Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 
 # Downloads
 
-## Source code 
+Stable frei0r releases are built automatically and made available on
 
-Stable frei0r releases are packaged periodically and distributed on
-
- https://files.dyne.org/frei0r
+## https://github.com/dyne/frei0r/releases
 
 Frei0r sourcecode is released under the terms of the GNU General Public License and, eventually other compatible Free Software licenses.
-
-The latest source for frei0r plugins can be attained using git on https://github.com/dyne/frei0r
-
-Make sure to get in touch with our mailinglist if you like to contribute.
 
 ## Build dependencies 
 
@@ -101,29 +64,23 @@ Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms, possibly i
 
 For details see the [INSTALL](/INSTALL.md) file.
 
+### MS / Windows
+
+We distribute official builds of frei0r plugins as .dll for the Win64 platform from the releases page.
+
 ### GNU / Linux
 
 Binary packages are mantained on various distributions, but they may not be completely up to date with latest release.
 
+- [frei0r*](https://repology.org/project/frei0r/versions)
+- [frei0r-plugins*](https://repology.org/project/frei0r-plugins/versions)
+- [ocaml:frei0r*](https://repology.org/project/ocaml:frei0r/versions)
+
 ### Apple / OSX 
 
-MacPorts provides packages for OSX:
-[MacPorts]: http://www.macports.org
-          $ sudo port install frei0r-plugins
+A [frei0r Brew formula](https://formulae.brew.sh/formula/frei0r) is available.
 
-Pre-compiled binaries are also uploaded on our website.
-
-We encourage Apple/OSX application distributors to compile the plugins
-directly and to include frei0r within their bundle.
-
-
-
-### Microsoft / Windows
-
-Pre-compiled binaries are often provided by third-parties, but they may not to be up to date.
-
-We encourage MS/Win application distributors to compile the plugins directly and to include frei0r within their bundle.
-
+Official builds of frei0r plugins as .dlsym for the Apple/OSX platform will be soon included in the releases page.
 
 # Documentation 
 
@@ -179,14 +136,17 @@ A simple skeleton for a frei0r video filter looks like this:
                  "Who did it", 1, 0);
 ```
 
+## Join us 
 
-## Communication 
+To contribute your plugin please open a [pull request](https://github.com/dyne/frei0r/pulls).
 
-You can get in touch with our developer community, send your new effects and share your intentions with us.
+For bug reporting please use our [issue tracker](https://github.com/dyne/frei0r/issues).
 
-We have a free mailinglist open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](https://lists.dyne.org/lurker/list/frei0r.en.html) of the discussions there that are also searchable and indexed online.
+You can get in touch with some developers over various dyne.org chat channels, for instance
 
-For bug reporting the mailinglist is preferred, but is also possible to use an [issue tracker](https://github.com/dyne/frei0r/issues).
+### https://t.me/dyne_chat
+
+We als have an (old) mailinglist open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](https://lists.dyne.org/lurker/list/frei0r.en.html) of discussions, searchable and indexed online.
 
 ## Acknowledgments 
 
