@@ -608,7 +608,7 @@ void updateBsplineMap(f0r_instance_t instance)
     char **pointStr = calloc(1, sizeof(char *));
     int count = tokenise(inst->bspline, "|", &pointStr);
 
-    bspline_point points[count];
+    bspline_point *points = (bspline_point *) malloc(count * sizeof(bspline_point));
 
     for (int i = 0; i < count; ++i) {
         char **positionsStr = calloc(1, sizeof(char *));
@@ -666,7 +666,7 @@ void updateBsplineMap(f0r_instance_t instance)
             c = 1;
         }
         step = 1 / (double)c;
-        position curve[c];
+        position *curve = (position *) malloc(c * sizeof(position));
         while (t <= 1) {
             curve[pn++] = pointOnBezier(t, p);
             t += step;
@@ -697,7 +697,11 @@ void updateBsplineMap(f0r_instance_t instance)
             else
                 inst->bsplineMap[j] = CLAMP0255(ROUND(y * 255));
         }
+
+        free(curve);
     }
+
+    free(points);
 }
 
 /**
