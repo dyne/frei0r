@@ -69,6 +69,13 @@ For details see the [BUILD](/BUILD.md) file.
 
 We distribute official builds of frei0r plugins as .dll for the Win64 platform from the releases page.
 
+### BSD
+
+Ports of frei0r are included in all major BSD distros:
+- FreeBSD https://www.freshports.org/graphics/frei0r
+- OpenBSD https://openports.se/multimedia/frei0r-plugins
+- NetBSD https://pkgsrc.se/multimedia/frei0r
+
 ### GNU / Linux
 
 Binary packages are mantained on various distributions, but they may not be completely up to date with latest release.
