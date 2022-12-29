@@ -1,7 +1,3 @@
-if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
-  return() # MSVC cl doesn't support Variable Length Arrays (VLA), but clang-cl does
-endif()
-
 set (SOURCES d90stairsteppingfix.cpp)
 set (TARGET d90stairsteppingfix)
 
