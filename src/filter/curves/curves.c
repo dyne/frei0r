@@ -234,7 +234,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
   case 5:
     info->name = "Bézier spline";
     info->type = F0R_PARAM_STRING;
-    info->explanation = "Use cubic Bézier spline. Has to be a sorted list of points in the format \"handle1x;handle1y#pointx;pointy#handle2x;handle2y\"(pointx = in, pointy = out). Points are separated by a \"|\".The values can have \"double\" precision. x, y for points should be in the range 0-1. x,y for handles might also be out of this range.";
+    info->explanation = "Use cubic Bézier spline. Has to be a sorted list of points in the format 'handle1x;handle1y#pointx;pointy#handle2x;handle2y'(pointx = in, pointy = out). Points are separated by a '|'.The values can have 'double' precision. x, y for points should be in the range 0-1. x,y for handles might also be out of this range.";
   default:
 	if (param_index > 5) {
 	  info->name = get_param_name(param_index - 6);
@@ -608,7 +608,7 @@ void updateBsplineMap(f0r_instance_t instance)
     char **pointStr = calloc(1, sizeof(char *));
     int count = tokenise(inst->bspline, "|", &pointStr);
 
-    bspline_point points[count];
+    bspline_point *points = (bspline_point *) malloc(count * sizeof(bspline_point));
 
     for (int i = 0; i < count; ++i) {
         char **positionsStr = calloc(1, sizeof(char *));
@@ -666,7 +666,7 @@ void updateBsplineMap(f0r_instance_t instance)
             c = 1;
         }
         step = 1 / (double)c;
-        position curve[c];
+        position *curve = (position *) malloc(c * sizeof(position));
         while (t <= 1) {
             curve[pn++] = pointOnBezier(t, p);
             t += step;
@@ -697,7 +697,11 @@ void updateBsplineMap(f0r_instance_t instance)
             else
                 inst->bsplineMap[j] = CLAMP0255(ROUND(y * 255));
         }
+
+        free(curve);
     }
+
+    free(points);
 }
 
 /**
