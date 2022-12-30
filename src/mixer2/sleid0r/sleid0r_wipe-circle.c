@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <frei0r.h>
 
