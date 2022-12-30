@@ -35,19 +35,20 @@ Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 
 ## Links
 
-[Piksel]: http://www.piksel.no
-[PureData]: http://www.artefacte.org/pd/
-[Open  Movie  Editor]: http://openmovieeditor.sourceforge.net/
-[DVEdit]: http://www.freenet.org.nz/dvedit
-[Gephex]: http://www.gephex.org/
-[LiVES]: http://lives.sf.net
-[FreeJ]: http://freej.dyne.org
-[MøB]: http://mob.bek.no/
-[VeeJay]: http://veejayhq.net
-[MLT]: http://www.mltframework.org/
-[KDEnLive]: http://www.kdenlive.org/
-[Flowblade]: http://code.google.com/p/flowblade/
-[Shotcut]: https://www.shotcut.org/
+Some applications using frei0r, sorted in order of most recent activity
+
+- [MLT](http://www.mltframework.org/)
+- [KDEnLive](http://www.kdenlive.org/)
+- [Shotcut](https://www.shotcut.org/)
+- [PureData](http://www.artefacte.org/pd/)
+- [Open  Movie  Editor](http://openmovieeditor.sourceforge.net/)
+- [DVEdit](http://www.freenet.org.nz/dvedit)
+- [Gephex](http://www.gephex.org/)
+- [LiVES](http://lives.sf.net)
+- [FreeJ](http://freej.dyne.org)
+- [MøB](http://mob.bek.no/)
+- [VeeJay](http://veejayhq.net)
+- [Flowblade](http://code.google.com/p/flowblade/)
 
 
 # Downloads
@@ -62,11 +63,18 @@ Frei0r sourcecode is released under the terms of the GNU General Public License 
 
 Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms, possibly in even more environments like embedded devices.
 
-For details see the [INSTALL](/INSTALL.md) file.
+For details see the [BUILD](/BUILD.md) file.
 
 ### MS / Windows
 
 We distribute official builds of frei0r plugins as .dll for the Win64 platform from the releases page.
+
+### BSD
+
+Ports of frei0r are included in all major BSD distros:
+- FreeBSD https://www.freshports.org/graphics/frei0r
+- OpenBSD https://openports.se/multimedia/frei0r-plugins
+- NetBSD https://pkgsrc.se/multimedia/frei0r
 
 ### GNU / Linux
 
