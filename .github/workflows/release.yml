@@ -1,0 +1,180 @@
+name: 020-Release
+
+on:
+  workflow_run:
+    workflows:
+      - 010-Test
+    types: [completed]
+    branches:
+      - master
+      - release/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  semantic-release:
+    name: 🤖 Semantic release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-release')"
+    # if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
+    outputs:
+      release: ${{ steps.tag_release.outputs.release }}
+      version: ${{ steps.tag_release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Install semantic-release
+        run: |
+          npm i npx
+          npm i semantic-release/changelog
+      - name: Tag release
+        id: tag_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release | tee semantic-release.log
+          if [[ `git tag --points-at HEAD` == "" ]]; then
+            echo "release=False" >> $GITHUB_OUTPUT
+          else
+            echo "release=True" >> $GITHUB_OUTPUT
+            awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
+          fi
+
+  win-build:
+    name: 💻 win64 build
+    runs-on: windows-latest
+    needs: [semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: choco install deps
+        uses: crazy-max/ghaction-chocolatey@v2
+        with:
+          args: install libopencv-dev
+      - name: Build using nmake
+        run: |
+          mkdir build && cd build
+          cmake -G "NMake Makefiles" ../
+          nmake
+      - name: Upload win64 filter
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-win64-filter
+          path: build/src/filter/**/*.dll
+      - name: Upload win64 mixer2
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-win64-mixer2
+          path: build/src/mixer2/**/*.dll
+      - name: Upload win64 mixer3
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-win64-mixer3
+          path: build/src/mixer3/**/*.dll
+      - name: Upload win64 generator
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-win64-generator
+          path: build/src/generator/**/*.dll
+
+  osx-build:
+    name: 💻 osx build
+    runs-on: macos-latest
+    needs: [semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update Homebrew
+        run: |
+          brew update --preinstall
+      - name: Install Homebrew dependencies
+        run: |
+          env HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 \
+          brew install cmake ninja cairo
+      - name: Build using ninja
+        run: |
+          mkdir build && cd build
+          cmake -G "Ninja" ../
+          ninja
+      - name: Upload osx filter
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-filter
+          path: build/src/filter/**/*.so
+      - name: Upload osx mixer2
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-mixer2
+          path: build/src/mixer2/**/*.so
+      - name: Upload osx mixer3
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-mixer3
+          path: build/src/mixer3/**/*.so
+      - name: Upload osx generator
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-osx-generator
+          path: build/src/generator/**/*.so
+
+  draft-binary-release:
+    name: 📦 Pack release
+    needs: [semantic-release, win-build, osx-build]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: download binary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: |
+            frei0r-bin
+      - name: create compressed archives
+        run: |
+          dst=frei0r-${{ needs.semantic-release.outputs.version }}_win64
+          mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
+          find frei0r-bin/release-win64-filter    -type f -name '*.dll' -exec cp {} $dst/filter    \;
+          find frei0r-bin/release-win64-generator -type f -name '*.dll' -exec cp {} $dst/generator \;
+          find frei0r-bin/release-win64-mixer2    -type f -name '*.dll' -exec cp {} $dst/mixer2    \;
+          find frei0r-bin/release-win64-mixer3    -type f -name '*.dll' -exec cp {} $dst/mixer3    \;
+          cp README.md $dst/README.txt
+          cp COPYING   $dst/LICENSE.txt
+          cp ChangeLog $dst/ChangeLog.txt
+          cp AUTHORS   $dst/AUTHORS.txt
+          cp include/frei0r.h include/frei0r.hpp $dst/
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
+          zip -r -9 $dst.zip $dst
+
+          dst=frei0r-${{ needs.semantic-release.outputs.version }}_osx
+          mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
+          find frei0r-bin/release-osx-filter    -type f -name '*.so' -exec cp {} $dst/filter    \;
+          find frei0r-bin/release-osx-generator -type f -name '*.so' -exec cp {} $dst/generator \;
+          find frei0r-bin/release-osx-mixer2    -type f -name '*.so' -exec cp {} $dst/mixer2    \;
+          find frei0r-bin/release-osx-mixer3    -type f -name '*.so' -exec cp {} $dst/mixer3    \;
+          cp README.md $dst/README.txt
+          cp COPYING   $dst/LICENSE.txt
+          cp ChangeLog $dst/ChangeLog.txt
+          cp AUTHORS   $dst/AUTHORS.txt
+          cp include/frei0r.h include/frei0r.hpp $dst/
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
+          zip -r -9 $dst.zip $dst
+
+          sha256sum *.zip > SHA256SUMS.txt
+
+      - name: release all archives
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.zip
+            SHA256SUMS.txt
+          tag_name: ${{ needs.semantic-release.outputs.version }}
+          draft: true
+          prerelease: false
+          fail_on_unmatched_files: true
+          generate_release_notes: true
