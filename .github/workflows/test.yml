@@ -1,0 +1,97 @@
+name: 010-Test
+
+on:
+  push:
+    paths-ignore:
+      - 'doc/**'
+      - '*.md'
+    branches:
+      - master
+      - release/**
+
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+      - '*.md'
+    branches:
+      - master
+      - release/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+
+  # reuse:
+  #   name: 🚨 REUSE Compliance
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: fsfe/reuse-action@v1
+
+  c-lint:
+    name: 🚨 C lint
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-lint')"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-cpplint@master
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          targets: --recursive src
+          level: warning
+          flags: --linelength=120 # Optional
+          filter: "-readability/braces\
+            ,-readability/casting\
+            ,-readability/todo\
+            ,-whitespace/comma\
+            ,-whitespace/braces\
+            ,-whitespace/comments\
+            ,-whitespace/indent\
+            ,-whitespace/newline\
+            ,-whitespace/operators\
+            ,-whitespace/parens\
+            ,-whitespace/tab\
+            ,-whitespace/end_of_line\
+            ,-whitespace/line_length\
+            ,-whitespace/blank_line\
+            ,-whitespace/semicolon\
+            ,-build/include_subdir\
+            ,-build/include_order\
+            "
+
+  test-suite:
+    name: 🔬 test
+    needs: [c-lint]
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-test')"
+    strategy:
+      matrix:
+        compiler: [clang-14]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install dependencies
+        run: |
+          sudo apt-get update -qy
+          sudo apt-get install --no-install-recommends -y ${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev
+      - name: ${{ matrix.compiler }} initialize cmake build
+        run: |
+          mkdir -p build && cd build
+          cmake -G "Ninja" ../
+      - name: ${{ matrix.compiler }} run ninja build
+        run: |
+          cd build && ninja
+      - name: ${{ matrix.compiler }} analyze plugins
+        run: |
+          cd test && make
+      - name: ${{ matrix.compiler }} upload plugin analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-plugin-analysis
+          path: test/*.json
+        
