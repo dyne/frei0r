@@ -45,8 +45,45 @@ jobs:
             awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
 
+  linux-build:
+    name: 🐧 linux build
+    runs-on: ubuntu-latest
+    needs: [semantic-release]
+    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: apt install deps
+        run: |
+          sudo apt-get update -y -q
+          sudo apt-get install -y -q --no-install-recommends cmake ninja-build libopencv-dev libgavl-dev libfreetype-dev libcairo-dev
+      - name: Build using cmake+ninja
+        run: |
+          mkdir build && cd build
+          cmake -G "Ninja" ../
+          ninja
+      - name: Upload linux filter
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-filter
+          path: build/src/filter/**/*.so
+      - name: Upload linux mixer2
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-mixer2
+          path: build/src/mixer2/**/*.so
+      - name: Upload linux mixer3
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-mixer3
+          path: build/src/mixer3/**/*.so
+      - name: Upload linux generator
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-linux-generator
+          path: build/src/generator/**/*.so
+
   win-build:
-    name: 💻 win64 build
+    name: 🪟 win64 build
     runs-on: windows-latest
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
@@ -84,7 +121,7 @@ jobs:
           path: build/src/generator/**/*.dll
 
   osx-build:
-    name: 💻 osx build
+    name: 🍏 osx build
     runs-on: macos-latest
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
@@ -125,7 +162,7 @@ jobs:
 
   draft-binary-release:
     name: 📦 Pack release
-    needs: [semantic-release, win-build, osx-build]
+    needs: [semantic-release, win-build, osx-build, linux-build]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
@@ -165,13 +202,28 @@ jobs:
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
-          sha256sum *.zip > SHA256SUMS.txt
+          dst=frei0r-${{ needs.semantic-release.outputs.version }}_linux
+          mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
+          find frei0r-bin/release-linux-filter    -type f -name '*.so' -exec cp {} $dst/filter    \;
+          find frei0r-bin/release-linux-generator -type f -name '*.so' -exec cp {} $dst/generator \;
+          find frei0r-bin/release-linux-mixer2    -type f -name '*.so' -exec cp {} $dst/mixer2    \;
+          find frei0r-bin/release-linux-mixer3    -type f -name '*.so' -exec cp {} $dst/mixer3    \;
+          cp README.md $dst/README.txt
+          cp COPYING   $dst/LICENSE.txt
+          cp ChangeLog $dst/ChangeLog.txt
+          cp AUTHORS   $dst/AUTHORS.txt
+          cp include/frei0r.h include/frei0r.hpp $dst/
+          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
+          tar cvfz $dst.tar.gz $dst
+
+          sha256sum *.zip *.tar.gz > SHA256SUMS.txt
 
       - name: release all archives
         uses: softprops/action-gh-release@v1
         with:
           files: |
             *.zip
+            *.tar.gz
             SHA256SUMS.txt
           tag_name: ${{ needs.semantic-release.outputs.version }}
           draft: true
