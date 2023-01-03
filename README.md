@@ -1,14 +1,16 @@
 [![Frei0r logo](https://github.com/dyne/frei0r/raw/gh_pages/pics/frei0r.png)](https://frei0r.dyne.org)
 
+<img src="https://files.dyne.org/software_by_dyne.png" width="300">
 
-[![software by Dyne.org](https://files.dyne.org/software_by_dyne.png)](http://www.dyne.org)
-
-[![frei0r](https://github.com/dyne/frei0r/actions/workflows/main.yml/badge.svg)](https://github.com/dyne/frei0r/actions/workflows/main.yml)
+[![frei0r](https://github.com/dyne/frei0r/actions/workflows/test.yml/badge.svg)](https://github.com/dyne/frei0r/actions/workflows/test.yml)
+[![frei0r](https://github.com/dyne/frei0r/actions/workflows/release.yml/badge.svg)](https://github.com/dyne/frei0r/actions/workflows/release.yml)
 
 
 # What frei0r is 
 
 The frei0r project is a collection of free and open source video effects plugins that can be used with a variety of video editing and processing software.
+
+[For an extensive introduction to frei0r please read this story.](https://jaromil.medium.com/frei0r-the-free-and-open-source-video-effect-preservation-project-604134dde8b3?source=friends_link&sk=c83a054b979d421279f5fc3d2ea1acd8)
 
 The frei0r project welcomes contributions by people who are passionate about video effects, its collection consists of more than 100 plugins made to work on any target platform (GNU/Linux, Apple/OSX and MS/Win) without the need for special video hardware. These plugins can be used to add a wide range of effects to video, such as color correction, blurring, and distortion.
 
@@ -23,23 +25,16 @@ It is not meant as a generic API for all kinds of video applications, as it does
 
 Eventually the frei0r API can be wrapped by higher level APIs expanding its functionalities, for instance GStreamer, MLT, FFmpeg and Pure Data do.
 
-## History 
-
-Frei0r has been around since 2004, born from yearly brainstormings
-held at the Piksel conference with the participation of various free
-and open source video software developers.
-
-Among the free and open source video application supporting frei0r are: KDEnLive, FFmpeg, MLT, PureData, Open Movie Editor, DVEdit, Gephex, LiVES, FreeJ, VeeJay, Flowblade, and Shotcut among the others.
+## Links
 
 Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
-
-## Links
 
 Some applications using frei0r, sorted in order of most recent activity
 
 - [MLT](http://www.mltframework.org/)
 - [KDEnLive](http://www.kdenlive.org/)
 - [Shotcut](https://www.shotcut.org/)
+- [FFMpeg](https://g=ffmpeg.org)
 - [PureData](http://www.artefacte.org/pd/)
 - [Open  Movie  Editor](http://openmovieeditor.sourceforge.net/)
 - [DVEdit](http://www.freenet.org.nz/dvedit)
