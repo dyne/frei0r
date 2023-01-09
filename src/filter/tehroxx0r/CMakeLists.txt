@@ -1,5 +1,5 @@
-set (SOURCES tehRoxx0r.c)
-set (TARGET tehRoxx0r)
+set (SOURCES tehroxx0r.c)
+set (TARGET tehroxx0r)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
