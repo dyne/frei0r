@@ -1,5 +1,5 @@
-set (SOURCES hqdn3d.c)
-set (TARGET hqdn3d)
+set (SOURCES denoise_hqdn3d.c)
+set (TARGET denoise_hqdn3d)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
