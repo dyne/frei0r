@@ -333,6 +333,9 @@ void f0r_update(f0r_instance_t instance, double time,
   unsigned char* src = (unsigned char*)inframe;
   int pixels = inst->width * inst->height;
 
+  // Clear the destination
+  memset(dst, 0, pixels * sizeof(uint32_t));
+
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
   draw_gradient(inst, dst, src, time);
   frei0r_cairo_unpremultiply_rgba (dst, pixels);
