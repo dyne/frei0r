@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 	}
 	fprintf(stdout," ]\n");
   }
-  fprintf(stdout,"\n},\n");
+  fprintf(stdout,"\n}\n");
   fflush(stdout);
   f0r_deinit();
   dlclose(dl_handle);
