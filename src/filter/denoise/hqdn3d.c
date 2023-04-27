@@ -324,6 +324,9 @@ inst *in;
 in=(inst*)instance;
 
 free(in->vps.Line);
+free(in->vps.Frame[0]);
+free(in->vps.Frame[1]);
+free(in->vps.Frame[2]);
 free(in->Rplani);
 free(in->Gplani);
 free(in->Bplani);
