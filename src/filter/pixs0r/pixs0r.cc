@@ -59,7 +59,7 @@ struct pixshift0r
                 }
                 else
                 {
-                    std::copy (inframe, inframe + m_width, outframe);
+                    std::copy (inrow, inrow + m_width, outrow);
                 }
             }
 
