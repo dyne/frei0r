@@ -666,7 +666,7 @@ void updateBsplineMap(f0r_instance_t instance)
             c = 1;
         }
         step = 1 / (double)c;
-        position *curve = (position *) malloc(c * sizeof(position));
+        position *curve = (position *) malloc((c + 1) * sizeof(position));
         while (t <= 1) {
             curve[pn++] = pointOnBezier(t, p);
             t += step;
@@ -759,9 +759,10 @@ void updateCsplineMap(f0r_instance_t instance)
     }
     if (inst->drawCurves) {
         int scale = inst->height / 2;
+        free(inst->curveMap);
         inst->curveMap = malloc(scale * sizeof(float));
         for(i = 0; i < scale; i++)
-            inst->curveMap[i] = spline((float)i / scale, points, (size_t)inst->pointNumber, coeffs) * scale;
+            inst->curveMap[i] = spline((double)i / scale, points, (size_t)inst->pointNumber, coeffs) * scale;
     }
 
     free(coeffs);
