@@ -57,7 +57,7 @@ public:
           {
             tmp = src1[b] << 8;
             tmp /= 256 - src2[b];
-            dst[b] = MAX255(tmp);
+            dst[b] = MIN(tmp, 255);
           }
   
         dst[ALPHA] = MIN (src1[ALPHA], src2[ALPHA]);
@@ -73,6 +73,6 @@ public:
 frei0r::construct<dodge> plugin("dodge",
                                 "Perform an RGB[A] dodge operation between the pixel sources, using the generalised algorithm: D = saturation of 255 or (A * 256) / (256 - B)",
                                 "Jean-Sebastien Senecal",
-                                0,2,
+                                0,3,
                                 F0R_COLOR_MODEL_RGBA8888);
 
