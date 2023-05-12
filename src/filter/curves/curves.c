@@ -255,9 +255,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->pointNumber = 2;
   inst->formula = 1;
   inst->bspline = calloc(1, sizeof(char));
-  inst->bsplineMap = malloc(sizeof(double));
-  inst->csplineMap = malloc(sizeof(double));
-  inst->curveMap = malloc(sizeof(float));
+  inst->bsplineMap = NULL;
+  inst->csplineMap = NULL;
+  inst->curveMap = NULL;
   inst->points[0] = 0;
   inst->points[1] = 0;
   inst->points[2] = 1;
@@ -273,12 +273,12 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 
 void f0r_destruct(f0r_instance_t instance)
 {
-  if (((curves_instance_t*)instance)->bspline)
-      free(((curves_instance_t*)instance)->bspline);
-  free(((curves_instance_t*)instance)->bsplineMap);
-  free(((curves_instance_t*)instance)->csplineMap);
-  free(((curves_instance_t*)instance)->curveMap);
-  free(instance);
+  curves_instance_t* inst = (curves_instance_t*)instance;
+  if (inst->bspline)   free(inst->bspline);
+  if(inst->bsplineMap) free(inst->bsplineMap);
+  if(inst->csplineMap) free(inst->csplineMap);
+  if(inst->curveMap)   free(inst->curveMap);
+  free(inst);
 }
 
 void f0r_set_param_value(f0r_instance_t instance,
@@ -775,6 +775,13 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   curves_instance_t* inst = (curves_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
+
+  // test initalization c/b spline
+  double *splinemap = strlen(inst->bspline)>0 ? inst->bsplineMap : inst->csplineMap;
+  if(!splinemap) {
+	memcpy(outframe,inframe,inst->width * inst->height * 4);
+	return;
+  }
 
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
