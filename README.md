@@ -147,7 +147,7 @@ For bug reporting please use our [issue tracker](https://github.com/dyne/frei0r/
 
 You can get in touch with some developers over various dyne.org chat channels, for instance
 
-### https://t.me/dyne_chat
+### https://t.me/frei0r
 
 We als have an (old) mailinglist open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](https://lists.dyne.org/lurker/list/frei0r.en.html) of discussions, searchable and indexed online.
 
