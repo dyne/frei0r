@@ -104,7 +104,7 @@ static inline float dist_box_c(float chue, float cy, float cz, float dhue, float
 	float ax,ay,az,r;
 	
 	// wrap hue term -0.5 .. 0.5
-	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
+	ax = 0.5f - fabsf(fabsf(hue - chue) - 0.5f);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
 	az=fabsf(z-cz)*dz;
@@ -119,7 +119,7 @@ static inline float dist_eli_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
+	ax = 0.5f - fabsf(fabsf(hue - chue) - 0.5f);
 	ax=ax*dhue;
 	ay=(y-cy)*dy;
 	az=(z-cz)*dz;
@@ -131,7 +131,7 @@ static inline float dist_oct_c(float chue, float cy, float cz, float dhue, float
 {
 	float ax,ay,az,r;
 	
-	ax = 0.5 - fabsf(fabsf(hue - chue) - 0.5);
+	ax = 0.5f - fabsf(fabsf(hue - chue) - 0.5f);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
 	az=fabsf(z-cz)*dz;
@@ -797,10 +797,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 //---------------------------------------------------
 void f0r_destruct(f0r_instance_t instance)
 {
-	inst *in;
-	
-	in=(inst*)instance;
-	
 	free(instance);
 }
 
