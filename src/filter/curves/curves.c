@@ -274,10 +274,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
   curves_instance_t* inst = (curves_instance_t*)instance;
-  if (inst->bspline)   free(inst->bspline);
-  if(inst->bsplineMap) free(inst->bsplineMap);
-  if(inst->csplineMap) free(inst->csplineMap);
-  if(inst->curveMap)   free(inst->curveMap);
+  free(inst->bspline);
+  free(inst->bsplineMap);
+  free(inst->csplineMap);
+  free(inst->curveMap);
   free(inst);
 }
 
