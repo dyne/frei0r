@@ -131,7 +131,7 @@ DelayGrab::DelayGrab(int wdt, int hgt) {
 }
 
 DelayGrab::~DelayGrab() {
-  if(delaymap) free(delaymap);
+  free(delaymap);
   free(imagequeue);
 }
 
@@ -271,7 +271,7 @@ void DelayGrab::set_blocksize(int bs) {
   delaymapheight = (geo.h)/blocksize;
   delaymapsize = delaymapheight*delaymapwidth;
 
-  if(delaymap) { free(delaymap); delaymap = NULL; }
+  free(delaymap);
   delaymap = malloc(delaymapsize*4);
 
   createDelaymap(current_mode);

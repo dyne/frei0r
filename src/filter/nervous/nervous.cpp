@@ -99,7 +99,7 @@ Nervous::Nervous(int wdt, int hgt) {
 }
 
 Nervous::~Nervous() {
-  if(buffer) free(buffer);
+  free(buffer);
 }
 
 void Nervous::_init(int wdt, int hgt) {
