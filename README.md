@@ -32,18 +32,17 @@ Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
 Some applications using frei0r, sorted in order of most recent activity
 
 - [MLT](http://www.mltframework.org/)
+- [LiquidSoap](https://www.liquidsoap.info/)
 - [KDEnLive](http://www.kdenlive.org/)
 - [Shotcut](https://www.shotcut.org/)
-- [FFMpeg](https://g=ffmpeg.org)
-- [PureData](http://www.artefacte.org/pd/)
+- [FFMpeg](https://ffmpeg.org)
+- [PureData](https://puredata.info/)
 - [Open  Movie  Editor](http://openmovieeditor.sourceforge.net/)
-- [DVEdit](http://www.freenet.org.nz/dvedit)
 - [Gephex](http://www.gephex.org/)
 - [LiVES](http://lives.sf.net)
 - [FreeJ](http://freej.dyne.org)
-- [MøB](http://mob.bek.no/)
 - [VeeJay](http://veejayhq.net)
-- [Flowblade](http://code.google.com/p/flowblade/)
+- [Flowblade](http://jliljebl.github.io/flowblade/)
 
 
 # Downloads
