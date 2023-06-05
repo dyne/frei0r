@@ -19,7 +19,7 @@ The frei0r project is a great resource for anyone interested in algorithms for v
 
 ## What frei0r is not 
 
-Frei0r itself is just a C/C++ header and a collection of small programs using it to accept an input frame, change it in any possible way and returning an output frame.
+Frei0r itself is just a C/C++ header and a collection of small programs using it to accept an input frame, change it in any possible way and return an output frame.
 
 It is not meant as a generic API for all kinds of video applications, as it doesn't provides things like an extensive parameter mechanism or event handling.
 
@@ -27,22 +27,22 @@ Eventually the frei0r API can be wrapped by higher level APIs expanding its func
 
 ## Links
 
-Wikipedia page about frei0r: http://en.wikipedia.org/wiki/Frei0r
+Wikipedia page about frei0r: https://en.wikipedia.org/wiki/Frei0r
 
 Some applications using frei0r, sorted in order of most recent activity
 
-- [MLT](http://www.mltframework.org/)
+- [MLT](https://www.mltframework.org/)
 - [LiquidSoap](https://www.liquidsoap.info/)
-- [KDEnLive](http://www.kdenlive.org/)
+- [KDEnLive](https://www.kdenlive.org/)
 - [Shotcut](https://www.shotcut.org/)
 - [FFMpeg](https://ffmpeg.org)
 - [PureData](https://puredata.info/)
-- [Open  Movie  Editor](http://openmovieeditor.sourceforge.net/)
-- [Gephex](http://www.gephex.org/)
+- [Open  Movie  Editor](http://www.openmovieeditor.org/)
+- [Gephex](https://gephex.org/)
 - [LiVES](http://lives.sf.net)
-- [FreeJ](http://freej.dyne.org)
+- [FreeJ](https://freej.dyne.org)
 - [VeeJay](http://veejayhq.net)
-- [Flowblade](http://jliljebl.github.io/flowblade/)
+- [Flowblade](https://jliljebl.github.io/flowblade/)
 
 
 # Downloads
@@ -67,12 +67,12 @@ We distribute official builds of frei0r plugins as .dll for the Win64 platform f
 
 Ports of frei0r are included in all major BSD distros:
 - FreeBSD https://www.freshports.org/graphics/frei0r
-- OpenBSD https://openports.se/multimedia/frei0r-plugins
+- OpenBSD
 - NetBSD https://pkgsrc.se/multimedia/frei0r
 
 ### GNU / Linux
 
-Binary packages are mantained on various distributions, but they may not be completely up to date with latest release.
+Binary packages are maintained on various distributions, but they may not be completely up to date with the latest release.
 
 - [frei0r*](https://repology.org/project/frei0r/versions)
 - [frei0r-plugins*](https://repology.org/project/frei0r-plugins/versions)
@@ -87,7 +87,7 @@ Official builds of frei0r plugins as .dlsym for the Apple/OSX platform will be s
 # Documentation 
 
 
-If you are new to frei0r (but not to programming) the best thing is probably to have a look at the [frei0r header](/include/frei0r.h), which is quite simple and well documented. The [doxyfied documentation](http://frei0r.dyne.org/codedoc/html) is also available for browsing on-line.
+If you are new to frei0r (but not to programming) the best thing is probably to have a look at the [frei0r header](/include/frei0r.h), which is quite simple and well documented. The [doxyfied documentation](https://frei0r.dyne.org/codedoc/html) is also available for browsing online.
 
 
 ## C++ Filter example 
@@ -148,7 +148,7 @@ You can get in touch with some developers over various dyne.org chat channels, f
 
 ### https://t.me/frei0r
 
-We als have an (old) mailinglist open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](https://lists.dyne.org/lurker/list/frei0r.en.html) of discussions, searchable and indexed online.
+We also have an (old) mailing list open to [subscription](https://mailinglists.dyne.org/cgi-bin/mailman/listinfo/frei0r) and we provide [public archives](https://lists.dyne.org/lurker/list/frei0r.en.html) of discussions, searchable and indexed online.
 
 ## Acknowledgments 
 
