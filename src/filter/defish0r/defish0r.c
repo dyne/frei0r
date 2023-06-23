@@ -1,5 +1,5 @@
 /* defish0r.c
-
+ *
  * Copyright (C) 2010 Marko Cebokli   http://lea.hamradio.si/~s57uuu
  * This file is a Frei0r plugin.
  *
@@ -35,78 +35,93 @@
 #include "interp.h"
 
 
-double PI=3.14159265358979;
+double PI = 3.14159265358979;
 
 //add simplified 'Elestic Scale' to fix superview
 float stretchWidth(int width, int widthCentre, float currentXPos, float stretchFactor)
 {
-	double ratio, lowerWeight = 0.0, higherWeight = 0.0, linearRatio;
-	unsigned int lengthSection;
-	float relativeXPos = 0.0f;
+  double       ratio, lowerWeight = 0.0, higherWeight = 0.0, linearRatio;
+  unsigned int lengthSection;
+  float        relativeXPos = 0.0f;
 
-	//midline?
-	if (currentXPos < (float)widthCentre)
-	{
-		lengthSection = widthCentre - 1;
-		linearRatio = (double) ( currentXPos ) / lengthSection;
-		ratio = sin(linearRatio * PI - PI) * stretchFactor + linearRatio;
-	}
-	else
-	{
-		lengthSection = width - widthCentre - 1;
-		linearRatio = (double) ( currentXPos - widthCentre ) / lengthSection;
-		ratio = sin(linearRatio * PI) * stretchFactor + linearRatio;
-	}
-	ratio = ratio <= 0.0 ? 0.0 : ratio;
+  //midline?
+  if (currentXPos < (float)widthCentre)
+  {
+    lengthSection = widthCentre - 1;
+    linearRatio   = (double)(currentXPos) / lengthSection;
+    ratio         = sin(linearRatio * PI - PI) * stretchFactor + linearRatio;
+  }
+  else
+  {
+    lengthSection = width - widthCentre - 1;
+    linearRatio   = (double)(currentXPos - widthCentre) / lengthSection;
+    ratio         = sin(linearRatio * PI) * stretchFactor + linearRatio;
+  }
+  ratio = ratio <= 0.0 ? 0.0 : ratio;
 
-	relativeXPos = (float) ( ratio * lengthSection );
+  relativeXPos = (float)(ratio * lengthSection);
 
-	if (currentXPos < (float)widthCentre)
-		relativeXPos -= currentXPos;
-	else
-		relativeXPos -= ( currentXPos - widthCentre );
+  if (currentXPos < (float)widthCentre)
+  {
+    relativeXPos -= currentXPos;
+  }
+  else
+  {
+    relativeXPos -= (currentXPos - widthCentre);
+  }
 
-	return relativeXPos;
+  return (relativeXPos);
 }
-
 
 //---------------------------------------------------------
 //	r = 0...1    izhod = 0...maxr
 //ta funkcija da popacenje v odvisnosti od r
 float fish(int n, float r, float f)
 {
-	float rr,ff;
+  float rr, ff;
 
-	//printf("ff=%f\n",ff);
-	switch (n)
-	{
-	case 0:		//equidistant
-		ff=f*2.0f/(float)PI;
-		rr=tanf(r/ff);
-		break;
-	case 1:		//ortographic
-		ff=r/f;
-		if (ff>1.0)
-			rr=-1.0;
-		else
-			rr=tanf(asinf(ff));
-		break;
-	case 2:		//equiarea
-		ff=r/2.0f/f;
-		if (ff>1.0f)
-			rr=-1.0f;
-		else
-			rr=tanf(2.0f*asinf(r/2.0f/f));
-		break;
-	case 3:		//stereographic
-		ff=f*2.0f/(float)PI;
-		rr=tanf(2.0f*atanf(r/2.0f/ff));
-		break;
-	default:
-		//		printf("Neznana fishitvena funkcija %d\n",n);
-		break;
-	}
-	return rr;
+  //printf("ff=%f\n",ff);
+  switch (n)
+  {
+  case 0:               //equidistant
+    ff = f * 2.0f / (float)PI;
+    rr = tanf(r / ff);
+    break;
+
+  case 1:               //ortographic
+    ff = r / f;
+    if (ff > 1.0)
+    {
+      rr = -1.0;
+    }
+    else
+    {
+      rr = tanf(asinf(ff));
+    }
+    break;
+
+  case 2:               //equiarea
+    ff = r / 2.0f / f;
+    if (ff > 1.0f)
+    {
+      rr = -1.0f;
+    }
+    else
+    {
+      rr = tanf(2.0f * asinf(r / 2.0f / f));
+    }
+    break;
+
+  case 3:               //stereographic
+    ff = f * 2.0f / (float)PI;
+    rr = tanf(2.0f * atanf(r / 2.0f / ff));
+    break;
+
+  default:
+    //		printf("Neznana fishitvena funkcija %d\n",n);
+    break;
+  }
+  return (rr);
 }
 
 //---------------------------------------------------------
@@ -114,27 +129,31 @@ float fish(int n, float r, float f)
 //	r = 0...1    izhod = 0...1
 float defish(int n, float r, float f, float mr)
 {
-	float rr;
+  float rr;
 
-	switch (n)
-	{
-	case 0:		//equidistant
-		rr=f*2.0f/(float)PI*atanf(r*mr);
-		break;
-	case 1:		//ortographic
-		rr=f*sinf(atanf(r*mr));
-		break;
-	case 2:		//equiarea
-		rr=2.0f*f*sinf(atanf(r*mr)/2.0f);
-		break;
-	case 3:		//stereographic
-		rr=f*4.0f/(float)PI*tanf(atanf(r*mr)/2.0f);
-		break;
-	default:
-		//		printf("Neznana fishitvena funkcija %d\n",n);
-		break;
-	}
-	return rr;
+  switch (n)
+  {
+  case 0:               //equidistant
+    rr = f * 2.0f / (float)PI * atanf(r * mr);
+    break;
+
+  case 1:               //ortographic
+    rr = f * sinf(atanf(r * mr));
+    break;
+
+  case 2:               //equiarea
+    rr = 2.0f * f * sinf(atanf(r * mr) / 2.0f);
+    break;
+
+  case 3:               //stereographic
+    rr = f * 4.0f / (float)PI * tanf(atanf(r * mr) / 2.0f);
+    break;
+
+  default:
+    //		printf("Neznana fishitvena funkcija %d\n",n);
+    break;
+  }
+  return (rr);
 }
 
 //----------------------------------------------------------------
@@ -149,57 +168,60 @@ float defish(int n, float r, float f, float mr)
 //pari, paro = pixel aspect ratio (input / output)
 //dx, dy   offset on input (for non-cosited chroma subsampling)
 void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
-	, float stretchFactor, float yScale)
+             , float stretchFactor, float yScale)
 {
-	float rmax,maxr,r,kot,x,y,imax;
-	int i, j, ww;
-	float ii,jj,sc;
-	int wiMid = wi/2;
-	int hiMid = hi/2;
+  float rmax, maxr, r, kot, x, y, imax;
+  int   i, j, ww;
+  float ii, jj, sc;
+  int   wiMid = wi / 2;
+  int   hiMid = hi / 2;
 
-	rmax=hypotf(ho/2.0f,wo/2.0f*paro);
-	maxr=fish(n,1.0,f);
-	imax=hypotf(hi/2.0f,wi/2.0f*pari);
-	sc=imax/maxr;
+  rmax = hypotf(ho / 2.0f, wo / 2.0f * paro);
+  maxr = fish(n, 1.0, f);
+  imax = hypotf(hi / 2.0f, wi / 2.0f * pari);
+  sc   = imax / maxr;
 
-	//printf("Fishmap: F=%5.2f  Rmax= %7.2f  Maxr=%6.2f  sc=%6.2f  scal=%6.2f\n",f,rmax,maxr,sc,scal);
+  //printf("Fishmap: F=%5.2f  Rmax= %7.2f  Maxr=%6.2f  sc=%6.2f
+  //  scal=%6.2f\n",f,rmax,maxr,sc,scal);
 
-	for (i=0;i<hi;i++)
-	{
-		ii=(float)(i-hiMid)*yScale; //add Y scale
-		for (j=0;j<wi;j++)
-		{
-			jj=(j-wiMid)*paro;
-			r=hypotf(ii,jj);
-			kot=atan2f(ii,jj);
-			r=fish(n,r/rmax*scal,f)*sc;
-			ww=2*(wo*i+j);
-			if (r<0.0)
-			{
-				map[ww]=-1;
-				map[ww+1]=-1;
-			}
-			else
-			{
-				x=wiMid+r*cosf(kot)/pari;
-				y=hiMid+r*sinf(kot);
-				if ((x>0)&(x<(wi-1))&(y>0)&(y<(hi-1)))
-				{
-					if (stretchFactor != 0.0f)
-						x += stretchWidth(wo, wiMid, x, stretchFactor);	//add stretch
-					map[ww]=x+dx;
-					map[ww+1]=y+dy;
-				}
-				else
-				{
-					map[ww]=-1;
-					map[ww+1]=-1;
-				}
-			}
-		}
-	}
+  for (i = 0; i < hi; i++)
+  {
+    ii = (float)(i - hiMid) * yScale;       //add Y scale
+    for (j = 0; j < wi; j++)
+    {
+      jj  = (j - wiMid) * paro;
+      r   = hypotf(ii, jj);
+      kot = atan2f(ii, jj);
+      r   = fish(n, r / rmax * scal, f) * sc;
+      ww  = 2 * (wo * i + j);
+      if (r < 0.0)
+      {
+        map[ww]     = -1;
+        map[ww + 1] = -1;
+      }
+      else
+      {
+        x = wiMid + r * cosf(kot) / pari;
+        y = hiMid + r * sinf(kot);
+        if ((x > 0) & (x < (wi - 1)) & (y > 0) & (y < (hi - 1)))
+        {
+          if (stretchFactor != 0.0f)
+          {
+            x += stretchWidth(wo, wiMid, x, stretchFactor);                                     //add
+                                                                                                // stretch
+          }
+          map[ww]     = x + dx;
+          map[ww + 1] = y + dy;
+        }
+        else
+        {
+          map[ww]     = -1;
+          map[ww + 1] = -1;
+        }
+      }
+    }
+  }
 }
-
 
 //----------------------------------------------------------------
 //nafila array map s polozaji pikslov
@@ -216,89 +238,92 @@ void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float p
 //stretch = dymanic stretch, convert between 4:3 and 16:9
 //yScale = -0.5.. 0.5 change aspect ratio on y acess only
 void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
-	, int lbox, float stretchFactor, float yScale)
+               , int lbox, float stretchFactor, float yScale)
 {
-	float rmax,maxr,r,kot,x,y,imax;
-	int i,j,ww;
-	float ii,jj,sc;
-	int wiMid = wi/2;
-	int hiMid = hi/2;
+  float rmax, maxr, r, kot, x, y, imax;
+  int   i, j, ww;
+  float ii, jj, sc;
+  int   wiMid = wi / 2;
+  int   hiMid = hi / 2;
 
-	rmax=hypotf(ho/2.0f,wo/2.0f*paro);
-	maxr=fish(n,1.0,f);
-	imax=hypotf(hi/2.0f,wi/2.0f*pari);
-	sc=imax/maxr;
+  rmax = hypotf(ho / 2.0f, wo / 2.0f * paro);
+  maxr = fish(n, 1.0, f);
+  imax = hypotf(hi / 2.0f, wi / 2.0f * pari);
+  sc   = imax / maxr;
 
-	//printf("Defishmap: F=%f  rmax= %f  Maxr=%f   sc=%6.2f  scal=%6.2f\n",f,rmax,maxr,sc,scal);
+  //printf("Defishmap: F=%f  rmax= %f  Maxr=%f   sc=%6.2f
+  //  scal=%6.2f\n",f,rmax,maxr,sc,scal);
 
-	for (i=0;i<hi;i++)
-	{
-		ii = (float)(i-hiMid)*yScale; //add Y scale
-		for (j=0;j<wi;j++)
-		{
-			jj=(j-wiMid)*paro; //aspect....
-			r=hypotf(ii,jj)/scal;
-			kot=atan2f(ii,jj);
-			ww=2*(wi*i+j);
-			r=defish(n,r/sc,f,1.0)*imax;
-			if (r<0.0)
-			{
-				map[ww]=-1;
-				map[ww+1]=-1;
-			}
-			else
-			{
-				x=wiMid+r*cosf(kot)/pari;
-				y=hiMid+r*sinf(kot);
+  for (i = 0; i < hi; i++)
+  {
+    ii = (float)(i - hiMid) * yScale;         //add Y scale
+    for (j = 0; j < wi; j++)
+    {
+      jj  = (j - wiMid) * paro;            //aspect....
+      r   = hypotf(ii, jj) / scal;
+      kot = atan2f(ii, jj);
+      ww  = 2 * (wi * i + j);
+      r   = defish(n, r / sc, f, 1.0) * imax;
+      if (r < 0.0)
+      {
+        map[ww]     = -1;
+        map[ww + 1] = -1;
+      }
+      else
+      {
+        x = wiMid + r * cosf(kot) / pari;
+        y = hiMid + r * sinf(kot);
 
-				if ((x>0)&&(x<(wi-1))&&(y>0)&&(y<(hi-1)))
-				{
-					if (stretchFactor != 0.0f)
-						x += stretchWidth(wi, wiMid, x, stretchFactor);	//add stretch
+        if ((x > 0) && (x < (wi - 1)) && (y > 0) && (y < (hi - 1)))
+        {
+          if (stretchFactor != 0.0f)
+          {
+            x += stretchWidth(wi, wiMid, x, stretchFactor);                                     //add
+                                                                                                // stretch
+          }
+          map[ww]     = x;
+          map[ww + 1] = y;
+        }
+        else
+        {
+          map[ww]     = -1;
+          map[ww + 1] = -1;
+        }
+      }
+    }
+  }
 
-					map[ww]=x;
-					map[ww+1]=y;
-				}
-				else
-				{
-					map[ww]=-1;
-					map[ww+1]=-1;
-				}
-			}
-		}
-	}
-
-	//crop all 4 borders
-	if (lbox)
-	{	//top/bottom
-		for (i = 0; i < hi; i++)
-		{
-			ww = 2 * (wi*i + wiMid);
-			if (map[ww] <= 0)
-			{
-				for (j = 0; j < wi; j++)
-				{ //clear entire row
-					ww = 2 * (wi*i + j);
-					map[ww] = -1;
-					map[ww + 1] = -1;
-				}
-			}
-		}
-		//left/right
-		for (i = 0; i < wi; i++)
-		{
-			ww = 2 * (wi*hiMid +i);
-			if (map[ww] <= 0)
-			{
-				for (j = 0; j < hi; j++)
-				{ //clear entire column
-					ww = 2 * (wi*j + i);
-					map[ww] = -1;
-					map[ww + 1] = -1;
-				}
-			}
-		}
-	}
+  //crop all 4 borders
+  if (lbox)
+  {             //top/bottom
+    for (i = 0; i < hi; i++)
+    {
+      ww = 2 * (wi * i + wiMid);
+      if (map[ww] <= 0)
+      {
+        for (j = 0; j < wi; j++)
+        {                         //clear entire row
+          ww          = 2 * (wi * i + j);
+          map[ww]     = -1;
+          map[ww + 1] = -1;
+        }
+      }
+    }
+    //left/right
+    for (i = 0; i < wi; i++)
+    {
+      ww = 2 * (wi * hiMid + i);
+      if (map[ww] <= 0)
+      {
+        for (j = 0; j < hi; j++)
+        {                         //clear entire column
+          ww          = 2 * (wi * j + i);
+          map[ww]     = -1;
+          map[ww + 1] = -1;
+        }
+      }
+    }
+  }
 }
 
 //=====================================================
@@ -315,22 +340,22 @@ void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float
 //stretch 0..1 stretch video to fix superview distorsion
 typedef struct
 {
-	int w;
-	int h;
-	float f;
-	int dir;
-	int type;
-	int scal;
-	int intp;
-	float mscale;
-	int aspt;
-	float mpar;
-	float par;
-	float *map;
-	int lbox;
-	float stretch;
-	float yScale;
-	interpp interpol;
+  int     w;
+  int     h;
+  float   f;
+  int     dir;
+  int     type;
+  int     scal;
+  int     intp;
+  float   mscale;
+  int     aspt;
+  float   mpar;
+  float   par;
+  float * map;
+  int     lbox;
+  float   stretch;
+  float   yScale;
+  interpp interpol;
 } param;
 
 
@@ -338,65 +363,84 @@ typedef struct
 //-------------------------------------------------------
 interpp set_intp(param p)
 {
-	switch (p.intp)	//katero interpolacijo bo uporabil
-	{
-		//	case -1:return interpNNpr_b;	//nearest neighbor+print
-	case 0:	return interpNN_b32;	//nearest neighbor
-	case 1: return interpBL_b32;	//bilinear
-	case 2:	return interpBC_b32;	//bicubic smooth
-	case 3:	return interpBC2_b32;	//bicibic sharp
-	case 4:	return interpSP4_b32;	//spline 4x4
-	case 5:	return interpSP6_b32;	//spline 6x6
-	case 6: return interpSC16_b32;	//lanczos 8x8
-	default: return NULL;
-	}
+  switch (p.intp)       //katero interpolacijo bo uporabil
+  {
+  //	case -1:return interpNNpr_b;	//nearest neighbor+print
+  case 0: return (interpNN_b32);        //nearest neighbor
+
+  case 1: return (interpBL_b32);        //bilinear
+
+  case 2: return (interpBC_b32);        //bicubic smooth
+
+  case 3: return (interpBC2_b32);       //bicibic sharp
+
+  case 4: return (interpSP4_b32);       //spline 4x4
+
+  case 5: return (interpSP6_b32);       //spline 6x6
+
+  case 6: return (interpSC16_b32);      //lanczos 8x8
+
+  default: return (NULL);
+  }
 }
 
 //--------------------------------------------------------
 void make_map(param p)
 {
-	float rmax,maxr,imax,fscal,dscal;
+  float rmax, maxr, imax, fscal, dscal;
 
-	rmax=hypotf(p.h/2.0,p.w/2.0*p.par);
-	maxr=fish(p.type,1.0,p.f);
-	imax=hypotf(p.h/2.0,p.w/2.0*p.par);
+  rmax = hypotf(p.h / 2.0, p.w / 2.0 * p.par);
+  maxr = fish(p.type, 1.0, p.f);
+  imax = hypotf(p.h / 2.0, p.w / 2.0 * p.par);
 
-	if (p.dir==0)		//defish
+  if (p.dir == 0)               //defish
+  {
+    switch (p.scal)
     {
-		switch (p.scal)
-		{
-		case 0:		//fill
-			dscal=maxr*p.h/2.0/rmax/fish(p.type,p.h/2.0/rmax,p.f);
-			break;
-		case 1:		//keep
-			dscal=maxr*p.f;
-			if ((p.type==0)||(p.type==3)) dscal=dscal/PI*2.0;break;
-		case 2:		//fit
-			dscal=1.0; break;
-		case 3:		//manual
-			dscal=p.mscale; break;
-		}
-		defishmap(p.w ,p.h ,p.w ,p.h, p.type, p.f, dscal, p.par, p.par, 0.0, 0.0,  p.map, p.lbox, p.stretch, p.yScale);
-    }
-	else		//fish
-    {
-		switch (p.scal)
-		{
-		case 0:		//fill
-			fscal=1.0;break;
-		case 1:		//keep
-			fscal=maxr*p.f;
-			if ((p.type==0)||(p.type==3)) fscal=fscal/PI*2.0;
-			break;
-		case 2:		//fit
-			fscal=2.0*defish(p.type,p.h/2.0*maxr/imax,p.f,1.0)/p.h*rmax;
-			break;
-		case 3:		//manual
-			fscal=1.0/p.mscale; break;
-		}
-		fishmap(p.w, p.h, p.w ,p.h, p.type, p.f, fscal, p.par, p.par, 0.0, 0.0,  p.map, p.stretch, p.yScale);
-    }
+    case 0:                     //fill
+      dscal = maxr * p.h / 2.0 / rmax / fish(p.type, p.h / 2.0 / rmax, p.f);
+      break;
 
+    case 1:                     //keep
+      dscal = maxr * p.f;
+      if ((p.type == 0) || (p.type == 3))
+      {
+        dscal = dscal / PI * 2.0;
+      }
+      break;
+
+    case 2:                     //fit
+      dscal = 1.0; break;
+
+    case 3:                     //manual
+      dscal = p.mscale; break;
+    }
+    defishmap(p.w, p.h, p.w, p.h, p.type, p.f, dscal, p.par, p.par, 0.0, 0.0, p.map, p.lbox, p.stretch, p.yScale);
+  }
+  else                  //fish
+  {
+    switch (p.scal)
+    {
+    case 0:                     //fill
+      fscal = 1.0; break;
+
+    case 1:                     //keep
+      fscal = maxr * p.f;
+      if ((p.type == 0) || (p.type == 3))
+      {
+        fscal = fscal / PI * 2.0;
+      }
+      break;
+
+    case 2:                     //fit
+      fscal = 2.0 * defish(p.type, p.h / 2.0 * maxr / imax, p.f, 1.0) / p.h * rmax;
+      break;
+
+    case 3:                     //manual
+      fscal = 1.0 / p.mscale; break;
+    }
+    fishmap(p.w, p.h, p.w, p.h, p.type, p.f, fscal, p.par, p.par, 0.0, 0.0, p.map, p.stretch, p.yScale);
+  }
 }
 
 //*********************************************************
@@ -405,7 +449,7 @@ void make_map(param p)
 //-----------------------------------------------
 int f0r_init()
 {
-	return 1;
+  return (1);
 }
 
 //------------------------------------------------
@@ -414,156 +458,165 @@ void f0r_deinit()
 }
 
 //-----------------------------------------------
-void f0r_get_plugin_info(f0r_plugin_info_t* info)
+void f0r_get_plugin_info(f0r_plugin_info_t *info)
 {
-
-	info->name="Defish0r";
-	info->author="Marko Cebokli";
-	info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
-	info->color_model=F0R_COLOR_MODEL_RGBA8888;
-	info->frei0r_version=FREI0R_MAJOR_VERSION;
-	info->major_version=0;
-	info->minor_version=4;
-	info->num_params=11;
-	info->explanation="Non rectilinear lens mappings";
+  info->name           = "Defish0r";
+  info->author         = "Marko Cebokli";
+  info->plugin_type    = F0R_PLUGIN_TYPE_FILTER;
+  info->color_model    = F0R_COLOR_MODEL_RGBA8888;
+  info->frei0r_version = FREI0R_MAJOR_VERSION;
+  info->major_version  = 0;
+  info->minor_version  = 4;
+  info->num_params     = 11;
+  info->explanation    = "Non rectilinear lens mappings";
 }
 
 //--------------------------------------------------
-void f0r_get_param_info(f0r_param_info_t* info, int param_index)
+void f0r_get_param_info(f0r_param_info_t *info, int param_index)
 {
-	switch(param_index)
-	{
-	case 0:
-		info->name = "Amount";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Focal Ratio";
-		break;
-	case 1:
-		info->name = "DeFish";
-		info->type = F0R_PARAM_BOOL;
-		info->explanation = "Fish or Defish";
-		break;
-	case 2:
-		info->name = "Type";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Mapping function";
-		break;
-	case 3:
-		info->name = "Scaling";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Scaling method";
-		break;
-	case 4:
-		info->name = "Manual Scale";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Manual Scale";
-		break;
-	case 5:
-		info->name = "Interpolator";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Quality of interpolation";
-		break;
-	case 6:
-		info->name = "Aspect type";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Pixel aspect ratio presets";
-		break;
-	case 7:
-		info->name = "Manual Aspect";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Manual Pixel Aspect ratio";
-		break;
-	case 8:
-		info->name = "Crop";
-		info->type = F0R_PARAM_BOOL;
-		info->explanation = "Straighten all edges of video frame";
-		break;
-	case 9:
-		info->name = "Non-Linear scale";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Fix camera scaling between 4:3 and 16:9";
-		break;
-	case 10:
-		info->name = "Y Scale";
-		info->type = F0R_PARAM_DOUBLE;
-		info->explanation = "Scale Y to affect aspect ratio";
-		break;
-	}
+  switch (param_index)
+  {
+  case 0:
+    info->name        = "Amount";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Focal Ratio";
+    break;
 
+  case 1:
+    info->name        = "DeFish";
+    info->type        = F0R_PARAM_BOOL;
+    info->explanation = "Fish or Defish";
+    break;
+
+  case 2:
+    info->name        = "Type";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Mapping function";
+    break;
+
+  case 3:
+    info->name        = "Scaling";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Scaling method";
+    break;
+
+  case 4:
+    info->name        = "Manual Scale";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Manual Scale";
+    break;
+
+  case 5:
+    info->name        = "Interpolator";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Quality of interpolation";
+    break;
+
+  case 6:
+    info->name        = "Aspect type";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Pixel aspect ratio presets";
+    break;
+
+  case 7:
+    info->name        = "Manual Aspect";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Manual Pixel Aspect ratio";
+    break;
+
+  case 8:
+    info->name        = "Crop";
+    info->type        = F0R_PARAM_BOOL;
+    info->explanation = "Straighten all edges of video frame";
+    break;
+
+  case 9:
+    info->name        = "Non-Linear scale";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Fix camera scaling between 4:3 and 16:9";
+    break;
+
+  case 10:
+    info->name        = "Y Scale";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "Scale Y to affect aspect ratio";
+    break;
+  }
 }
 
 //--------------------------------------------------------
 //kao constructor za frei0r
 f0r_instance_t  f0r_construct(unsigned int width, unsigned int height)
 {
-	param *p;
+  param *p;
 
-	p=(param*)calloc(1, sizeof(param));
+  p = (param *)calloc(1, sizeof(param));
 
-	p->w=width;
-	p->h=height;
-	p->f=20.0;		//defaults (not used??)
-	p->dir=1;
-	p->type=2;
-	p->scal=2;
-	p->intp=1;
-	p->mscale=1.0;
-	p->aspt=0;		//square pixels
-	p->par=1.0;		//square pixels
-	p->mpar=1.0;
-	p->lbox=0;			//letterbox
-	p->stretch = 0.0f;	//dynamic stretch
-	p->yScale = 1.0f;	//seperate Y stretch
+  p->w       = width;
+  p->h       = height;
+  p->f       = 20.0;            //defaults (not used??)
+  p->dir     = 1;
+  p->type    = 2;
+  p->scal    = 2;
+  p->intp    = 1;
+  p->mscale  = 1.0;
+  p->aspt    = 0;               //square pixels
+  p->par     = 1.0;             //square pixels
+  p->mpar    = 1.0;
+  p->lbox    = 0;               //letterbox
+  p->stretch = 0.0f;            //dynamic stretch
+  p->yScale  = 1.0f;            //seperate Y stretch
 
-	p->map=(float*)calloc(1, sizeof(float)*(p->w*p->h*2+2));
-	p->interpol=set_intp(*p);
+  p->map      = (float *)calloc(1, sizeof(float) * (p->w * p->h * 2 + 2));
+  p->interpol = set_intp(*p);
 
-	make_map(*p);
+  make_map(*p);
 
-	//printf("Construct, w=%d h=%d\n",width,height);
+  //printf("Construct, w=%d h=%d\n",width,height);
 
-	return (f0r_instance_t)p;
+  return ((f0r_instance_t)p);
 }
 
 //---------------------------------------------------
 void f0r_destruct(f0r_instance_t instance)
 {
-	param *p;
-	p=(param*)instance;
+  param *p;
 
-	free(p->map);
-	free(instance);
+  p = (param *)instance;
+
+  free(p->map);
+  free(instance);
 }
 
 //----------------------------------------------------
 //not used in frei0r plugin
 void change_param(param *p, int w, int h, float f, int dir, int type, int scal, int intp)
 {
-	p->f=f;
-	p->dir=dir;
-	p->type=type;
-	p->scal=scal;
-	p->intp=intp;
+  p->f    = f;
+  p->dir  = dir;
+  p->type = type;
+  p->scal = scal;
+  p->intp = intp;
 
-	if ((w!=p->w)||(h!=p->h))
-	{
-		free(p->map);
-		p->map=(float*)calloc(1, sizeof(float)*(w*h*2+2));
-		p->w=w;
-		p->h=h;
-	}
+  if ((w != p->w) || (h != p->h))
+  {
+    free(p->map);
+    p->map = (float *)calloc(1, sizeof(float) * (w * h * 2 + 2));
+    p->w   = w;
+    p->h   = h;
+  }
 
-	p->interpol=set_intp(*p);
-	make_map(*p);
+  p->interpol = set_intp(*p);
+  make_map(*p);
 }
 
 //-----------------------------------------------------
 void print_param(param p)
-		//not used in frei0r plugin
+//not used in frei0r plugin
 {
-	printf("Param: w=%d h=%d f=%f dir=%d",p.w, p.h, p.f, p.dir);
-	printf(" type=%d scal=%d intp=%d",p.type, p.scal, p.intp);
-	printf(" mscale=%f par=%f mpar=%f\n",p.mscale, p.par, p.mpar);
+  printf("Param: w=%d h=%d f=%f dir=%d", p.w, p.h, p.f, p.dir);
+  printf(" type=%d scal=%d intp=%d", p.type, p.scal, p.intp);
+  printf(" mscale=%f par=%f mpar=%f\n", p.mscale, p.par, p.mpar);
 }
 
 //------------------------------------------------------
@@ -571,9 +624,12 @@ void print_param(param p)
 //only for positive x
 float pwr(float x, float p)
 {
-	if (x<=0) return 0;
-	//printf("exp(%f)=%f\n",x,expf(p*logf(x)));
-	return expf(p*logf(x));
+  if (x <= 0)
+  {
+    return (0);
+  }
+  //printf("exp(%f)=%f\n",x,expf(p*logf(x)));
+  return (expf(p * logf(x)));
 }
 
 //-----------------------------------------------------
@@ -581,11 +637,11 @@ float pwr(float x, float p)
 //min and max must be positive!
 float map_value_forward_log(double v, float min, float max)
 {
-	float sr,k;
+  float sr, k;
 
-	sr=sqrtf(min*max);
-	k=2.0*log(max/sr);
-	return sr*expf(k*(v-0.5));
+  sr = sqrtf(min * max);
+  k  = 2.0 * log(max / sr);
+  return (sr * expf(k * (v - 0.5)));
 }
 
 //-----------------------------------------------------
@@ -593,25 +649,25 @@ float map_value_forward_log(double v, float min, float max)
 //min and max must be positive!
 double map_value_backward_log(float v, float min, float max)
 {
-	float sr,k;
+  float sr, k;
 
-	sr=sqrtf(min*max);
-	k=2.0*log(max/sr);
-	return logf(v/sr)/k+0.5;
+  sr = sqrtf(min * max);
+  k  = 2.0 * log(max / sr);
+  return (logf(v / sr) / k + 0.5);
 }
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
 float map_value_forward(double v, float min, float max)
 {
-	return min+(max-min)*v;
+  return (min + (max - min) * v);
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
 double map_value_backward(float v, float min, float max)
 {
-	return (v-min)/(max-min);
+  return ((v - min) / (max - min));
 }
 
 //-----------------------------------------------------
@@ -623,147 +679,203 @@ double map_value_backward(float v, float min, float max)
 // tip 2: 0.5...10             tip 3: (0.1) 0.5...10
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_index)
 {
-	param *p;
-	int chg,tmpi;
-	float tmpf;
+  param *p;
+  int    chg, tmpi;
+  float  tmpf;
 
-	p=(param*)instance;
+  p = (param *)instance;
 
-	//printf("set parm: index=%d, value=%f\n",param_index,*(float*)parm);
-	chg=0;
-	switch(param_index)
-	{
-	case 0:	//f
-		tmpf=pwr(*((double*)parm),1.0/5.0);
-		//    tmpf=map_value_forward(*((double*)parm), 10.0, 0.1);
-		tmpf=map_value_forward(tmpf, 20.0, 0.1);
-		if (p->f != tmpf) chg=1;
-		p->f=tmpf;
-		break;
-	case 1:	//fish
-		tmpi=map_value_forward(*((double*)parm), 1.0, 0.0);//BOOL!!
-		if (p->dir != tmpi) chg=1;
-		p->dir=tmpi;
-		break;
-	case 2:	//type
-		tmpi=map_value_forward(*((double*)parm), 0.0, 3.999);
-		if (p->type != tmpi) chg=1;
-		p->type=tmpi;
-		break;
-	case 3:	//scaling
-		tmpi=map_value_forward(*((double*)parm), 0.0, 3.999);
-		if (p->scal != tmpi) chg=1;
-		p->scal=tmpi;
-		break;
-	case 4:	//manual scale
-		tmpf=map_value_forward_log(*((double*)parm), 0.01, 100.0);
-		if (p->mscale != tmpf) chg=1;
-		p->mscale=tmpf;
-		break;
-	case 5:	//interpolator
-		tmpi=map_value_forward(*((double*)parm), 0.0, 6.999);
-		if (p->intp != tmpi) chg=1;
-		p->intp=tmpi;
-		break;
-	case 6:	//aspect type
-		tmpi=map_value_forward(*((double*)parm), 0.0, 4.999);
-		if (p->aspt != tmpi) chg=1;
-		p->aspt=tmpi;
-		break;
-	case 7:	//manual aspect
-		tmpf=map_value_forward_log(*((double*)parm), 0.5, 2.0);
-		if (p->mpar != tmpf) chg=1;
-		p->mpar=tmpf;
-		break;
-	case 8: //letterbox
-		tmpi=(int)map_value_forward(*((double*)parm), 0.0f, 1.0f);//BOOL!!
-		if (p->lbox != tmpi) chg=1;
-		p->lbox=tmpi;
-		break;
-	case 9: //stretch
-		tmpf=map_value_forward(*((double*)parm), -0.2f, 0.2f);
-		if (p->stretch != tmpf) chg=1;
-		p->stretch=tmpf;
-		break;
-	case 10: //Y scale
-		tmpf=map_value_forward(*((double*)parm), 1.5f, 0.5f);
-		if (p->yScale != tmpf) chg=1;
-		p->yScale=tmpf;
-		break;
-	}
+  //printf("set parm: index=%d, value=%f\n",param_index,*(float*)parm);
+  chg = 0;
+  switch (param_index)
+  {
+  case 0:       //f
+    tmpf = pwr(*((double *)parm), 1.0 / 5.0);
+    //    tmpf=map_value_forward(*((double*)parm), 10.0, 0.1);
+    tmpf = map_value_forward(tmpf, 20.0, 0.1);
+    if (p->f != tmpf)
+    {
+      chg = 1;
+    }
+    p->f = tmpf;
+    break;
 
-	if (chg!=0)
-	{
-		switch (p->aspt)	//pixel aspect ratio
-		{
-		case 0: p->par=1.000;break;		//square pixels
-		case 1: p->par=1.067;break;		//PAL DV
-		case 2: p->par=0.889;break;		//NTSC DV
-		case 3: p->par=1.333;break;		//HDV
-		case 4: p->par=p->mpar;break;	//manual
-		}
-		p->interpol=set_intp(*p);
-		make_map(*p);
-	}
+  case 1:                                                  //fish
+    tmpi = map_value_forward(*((double *)parm), 1.0, 0.0); //BOOL!!
+    if (p->dir != tmpi)
+    {
+      chg = 1;
+    }
+    p->dir = tmpi;
+    break;
 
-	//print_param(*p);
+  case 2:       //type
+    tmpi = map_value_forward(*((double *)parm), 0.0, 3.999);
+    if (p->type != tmpi)
+    {
+      chg = 1;
+    }
+    p->type = tmpi;
+    break;
+
+  case 3:       //scaling
+    tmpi = map_value_forward(*((double *)parm), 0.0, 3.999);
+    if (p->scal != tmpi)
+    {
+      chg = 1;
+    }
+    p->scal = tmpi;
+    break;
+
+  case 4:       //manual scale
+    tmpf = map_value_forward_log(*((double *)parm), 0.01, 100.0);
+    if (p->mscale != tmpf)
+    {
+      chg = 1;
+    }
+    p->mscale = tmpf;
+    break;
+
+  case 5:       //interpolator
+    tmpi = map_value_forward(*((double *)parm), 0.0, 6.999);
+    if (p->intp != tmpi)
+    {
+      chg = 1;
+    }
+    p->intp = tmpi;
+    break;
+
+  case 6:       //aspect type
+    tmpi = map_value_forward(*((double *)parm), 0.0, 4.999);
+    if (p->aspt != tmpi)
+    {
+      chg = 1;
+    }
+    p->aspt = tmpi;
+    break;
+
+  case 7:       //manual aspect
+    tmpf = map_value_forward_log(*((double *)parm), 0.5, 2.0);
+    if (p->mpar != tmpf)
+    {
+      chg = 1;
+    }
+    p->mpar = tmpf;
+    break;
+
+  case 8:                                                         //letterbox
+    tmpi = (int)map_value_forward(*((double *)parm), 0.0f, 1.0f); //BOOL!!
+    if (p->lbox != tmpi)
+    {
+      chg = 1;
+    }
+    p->lbox = tmpi;
+    break;
+
+  case 9:       //stretch
+    tmpf = map_value_forward(*((double *)parm), -0.2f, 0.2f);
+    if (p->stretch != tmpf)
+    {
+      chg = 1;
+    }
+    p->stretch = tmpf;
+    break;
+
+  case 10:       //Y scale
+    tmpf = map_value_forward(*((double *)parm), 1.5f, 0.5f);
+    if (p->yScale != tmpf)
+    {
+      chg = 1;
+    }
+    p->yScale = tmpf;
+    break;
+  }
+
+  if (chg != 0)
+  {
+    switch (p->aspt)                    //pixel aspect ratio
+    {
+    case 0: p->par = 1.000; break;      //square pixels
+
+    case 1: p->par = 1.067; break;      //PAL DV
+
+    case 2: p->par = 0.889; break;      //NTSC DV
+
+    case 3: p->par = 1.333; break;      //HDV
+
+    case 4: p->par = p->mpar; break;    //manual
+    }
+    p->interpol = set_intp(*p);
+    make_map(*p);
+  }
+
+  //print_param(*p);
 }
 
 //--------------------------------------------------
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t parm, int param_index)
 {
-	param *p;
-	float tmpf;
+  param *p;
+  float  tmpf;
 
-	p=(param*)instance;
+  p = (param *)instance;
 
-	switch(param_index)
-	{
-	case 0:	//f
-		//    *((double*)parm)=map_value_backward(p->f, 10.0, 0.1);
-		tmpf=map_value_backward(p->f, 20.0, 0.1);
-		*((double*)parm)=pwr(tmpf, 5.0);
-		break;
-	case 1:	//fish
-		*((double*)parm)=map_value_backward(p->dir, 1.0, 0.0); //BOOL!!
-		break;
-	case 2:	//type
-		*((double*)parm)=map_value_backward(p->type, 0.0, 3.0);
-		break;
-	case 3:	//scaling
-		*((double*)parm)=map_value_backward(p->scal, 0.0, 3.0);
-		break;
-	case 4:	//manual scale
-		*((double*)parm)=map_value_backward_log(p->mscale, 0.01, 100.0);
-		break;
-	case 5:	//interpolator
-		*((double*)parm)=map_value_backward(p->intp, 0.0, 6.0);
-		break;
-	case 6:	//aspect type
-		*((double*)parm)=map_value_backward(p->aspt, 0.0, 4.999);
-		break;
-	case 7:	//manual aspect
-		*((double*)parm)=map_value_backward_log(p->mpar, 0.5, 2.0);
-		break;
-	case 8:	//letterbox
-		*((double*)parm)=map_value_backward((float)p->lbox, 0.0f, 1.0f); //BOOL!!
-		break;
-	case 9:	//stretch/upscale fix
-		*((double*)parm)=map_value_backward_log(p->stretch, -0.2f, 0.2f);
-		break;
-	case 10:	//Y scale
-		*((double*)parm)=map_value_backward(p->yScale, 1.5f, 0.5f);
-		break;
-	}
+  switch (param_index)
+  {
+  case 0:       //f
+                //    *((double*)parm)=map_value_backward(p->f, 10.0, 0.1);
+    tmpf = map_value_backward(p->f, 20.0, 0.1);
+    *((double *)parm) = pwr(tmpf, 5.0);
+    break;
+
+  case 1:                                                     //fish
+    *((double *)parm) = map_value_backward(p->dir, 1.0, 0.0); //BOOL!!
+    break;
+
+  case 2:       //type
+    *((double *)parm) = map_value_backward(p->type, 0.0, 3.0);
+    break;
+
+  case 3:       //scaling
+    *((double *)parm) = map_value_backward(p->scal, 0.0, 3.0);
+    break;
+
+  case 4:       //manual scale
+    *((double *)parm) = map_value_backward_log(p->mscale, 0.01, 100.0);
+    break;
+
+  case 5:       //interpolator
+    *((double *)parm) = map_value_backward(p->intp, 0.0, 6.0);
+    break;
+
+  case 6:       //aspect type
+    *((double *)parm) = map_value_backward(p->aspt, 0.0, 4.999);
+    break;
+
+  case 7:       //manual aspect
+    *((double *)parm) = map_value_backward_log(p->mpar, 0.5, 2.0);
+    break;
+
+  case 8:                                                               //letterbox
+    *((double *)parm) = map_value_backward((float)p->lbox, 0.0f, 1.0f); //BOOL!!
+    break;
+
+  case 9:       //stretch/upscale fix
+    *((double *)parm) = map_value_backward_log(p->stretch, -0.2f, 0.2f);
+    break;
+
+  case 10:              //Y scale
+    *((double *)parm) = map_value_backward(p->yScale, 1.5f, 0.5f);
+    break;
+  }
 }
 
 //-------------------------------------------------
-void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
+void f0r_update(f0r_instance_t instance, double time, const uint32_t *inframe, uint32_t *outframe)
 {
-	param *p;
+  param *p;
 
-	p=(param*)instance;
+  p = (param *)instance;
 
-	remap32(p->w, p->h, p->w, p->h, (unsigned char*) inframe, (unsigned char*) outframe, p->map, 0, p->interpol);
-
+  remap32(p->w, p->h, p->w, p->h, (unsigned char *)inframe, (unsigned char *)outframe, p->map, 0, p->interpol);
 }

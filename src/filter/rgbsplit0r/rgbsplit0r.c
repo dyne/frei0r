@@ -1,7 +1,7 @@
 /* rgbsplit0r.c
  * Copyright (C) 2016 IDENT Software ~ http://identsoft.org
  * Inspired by the witch house and web culture
- * 
+ *
  * This file is a Frei0r plugin.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,199 +26,198 @@
 
 typedef struct rgbsplit0r_instance
 {
-    unsigned int width;
-    unsigned int height;
-    unsigned int shiftX;
-    unsigned int shiftY;
-
+  unsigned int width;
+  unsigned int height;
+  unsigned int shiftX;
+  unsigned int shiftY;
 } rgbsplit0r_instance_t;
 
 
 inline static void rgbsplit0r_extract_color(uint32_t *pixelIn, uint32_t *pixelOut,
                                             short int colorIndex)
 {
-    uint8_t *pxIn  = (uint8_t *)pixelIn,
-            *pxOut = (uint8_t *)pixelOut;
+  uint8_t *pxIn  = (uint8_t *)pixelIn,
+          *pxOut = (uint8_t *)pixelOut;
 
-    switch (colorIndex)
-    {
-        case 0 :
-            pxOut[0] = pxIn[0];
-            pxOut[1] = 0;
-            pxOut[2] = 0;
-            break;
+  switch (colorIndex)
+  {
+  case 0:
+    pxOut[0] = pxIn[0];
+    pxOut[1] = 0;
+    pxOut[2] = 0;
+    break;
 
-        case 1 :
-            pxOut[1] = pxIn[1];
-            pxOut[0] = 0;
-            pxOut[2] = 0;
-            break;
+  case 1:
+    pxOut[1] = pxIn[1];
+    pxOut[0] = 0;
+    pxOut[2] = 0;
+    break;
 
-        case 2 :
-            pxOut[2] = pxIn[2];
-            pxOut[1] = 0;
-            pxOut[0] = 0;
-            break;
-    }
-    pxOut[3] = pxIn[3];
+  case 2:
+    pxOut[2] = pxIn[2];
+    pxOut[1] = 0;
+    pxOut[0] = 0;
+    break;
+  }
+  pxOut[3] = pxIn[3];
 }
 
 int f0r_init()
 {
-    return 1;
+  return (1);
 }
 
 void f0r_deinit()
-{ /* no initialization required */ }
-
-void f0r_get_plugin_info(f0r_plugin_info_t* rgbsplit0rInfo)
-{
-    rgbsplit0rInfo->name = "rgbsplit0r";
-    rgbsplit0rInfo->author = "IDENT Software";
-    rgbsplit0rInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-    rgbsplit0rInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
-    rgbsplit0rInfo->frei0r_version = FREI0R_MAJOR_VERSION;
-    rgbsplit0rInfo->major_version = 1;
-    rgbsplit0rInfo->minor_version = 1;
-    rgbsplit0rInfo->num_params =  2;
-    rgbsplit0rInfo->explanation = "RGB splitting and shifting";
+{ /* no initialization required */
 }
 
-void f0r_get_param_info(f0r_param_info_t* info, int param_index)
+void f0r_get_plugin_info(f0r_plugin_info_t *rgbsplit0rInfo)
 {
-    switch(param_index) {
-        case 0:
-        {
-            info->name = "Vertical split distance";
-            info->type = F0R_PARAM_DOUBLE;
-            info->explanation = "How far should layers be moved vertically from each other";
-            break;
-        }
+  rgbsplit0rInfo->name           = "rgbsplit0r";
+  rgbsplit0rInfo->author         = "IDENT Software";
+  rgbsplit0rInfo->plugin_type    = F0R_PLUGIN_TYPE_FILTER;
+  rgbsplit0rInfo->color_model    = F0R_COLOR_MODEL_RGBA8888;
+  rgbsplit0rInfo->frei0r_version = FREI0R_MAJOR_VERSION;
+  rgbsplit0rInfo->major_version  = 1;
+  rgbsplit0rInfo->minor_version  = 1;
+  rgbsplit0rInfo->num_params     = 2;
+  rgbsplit0rInfo->explanation    = "RGB splitting and shifting";
+}
 
-        case 1:
-        {
-            info->name = "Horizontal split distance";
-            info->type = F0R_PARAM_DOUBLE;
-            info->explanation = "How far should layers be moved horizontally from each other";
-            break;
-        }
-    }
+void f0r_get_param_info(f0r_param_info_t *info, int param_index)
+{
+  switch (param_index)
+  {
+  case 0:
+  {
+    info->name        = "Vertical split distance";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "How far should layers be moved vertically from each other";
+    break;
+  }
+
+  case 1:
+  {
+    info->name        = "Horizontal split distance";
+    info->type        = F0R_PARAM_DOUBLE;
+    info->explanation = "How far should layers be moved horizontally from each other";
+    break;
+  }
+  }
 }
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-    rgbsplit0r_instance_t* inst = (rgbsplit0r_instance_t*)calloc(1, sizeof(*inst));
-    inst->width = width; inst->height = height;
-    inst->shiftY = 0;
-    inst->shiftX = 0;
+  rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t *)calloc(1, sizeof(*inst));
 
-    return (f0r_instance_t)inst;
+  inst->width  = width; inst->height = height;
+  inst->shiftY = 0;
+  inst->shiftX = 0;
+
+  return ((f0r_instance_t)inst);
 }
 
 void f0r_destruct(f0r_instance_t instance)
 {
-    free(instance);
+  free(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
-			 f0r_param_t param, int param_index)
+void f0r_set_param_value(f0r_instance_t instance,
+                         f0r_param_t param, int param_index)
 {
-    assert(instance);
-    rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t*)instance;
+  assert(instance);
+  rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t *)instance;
 
-    switch (param_index)
-    {
+  switch (param_index)
+  {
+  case 0:        // vertical shift
+  {
+    // scale to [-1/16..1/16]
+    double shiftY = *((double *)param) - 0.5;
 
-        case 0 : // vertical shift
-        {
-            // scale to [-1/16..1/16]
-            double shiftY = *((double*)param) - 0.5;
+    // Convert to range from 0 to one eighth of height
+    shiftY = ((inst->height / 8) * shiftY);
 
-            // Convert to range from 0 to one eighth of height
-            shiftY = ((inst->height / 8) * shiftY);
+    inst->shiftY = (unsigned int)shiftY;
+    break;
+  }
 
-            inst->shiftY = (unsigned int)shiftY;
-            break;
-        }
+  case 1:        // horizontal shift
+  {
+    // scale to [-1/16..1/16]
+    double shiftX = *((double *)param) - 0.5;
 
-        case 1 : // horizontal shift
-        {
-            // scale to [-1/16..1/16]
-            double shiftX = *((double*)param) - 0.5;
-            
-            // Convert to range from 0 to one eighth of width
-            shiftX = ((inst->width / 8) * shiftX);
+    // Convert to range from 0 to one eighth of width
+    shiftX = ((inst->width / 8) * shiftX);
 
-            inst->shiftX = (unsigned int)shiftX;
-            break;
-        }
-    }
+    inst->shiftX = (unsigned int)shiftX;
+    break;
+  }
+  }
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
-			f0r_param_t param, int param_index)
+                         f0r_param_t param, int param_index)
 {
+  assert(instance);
+  rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t *)instance;
 
-    assert(instance);
-    rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t*)instance;
+  switch (param_index)
+  {
+  case 0:        // vertical shift
+  {
+    // convert plugin's param to frei0r range
+    *((double *)param) = (inst->shiftY) / (inst->height / 8) + 0.5;
+    break;
+  }
 
-    switch (param_index)
-    {
-        case 0 : // vertical shift
-        {
-            // convert plugin's param to frei0r range
-            *((double*)param) = (inst->shiftY) / (inst->height / 8) + 0.5;
-            break;
-        }
-
-        case 1 : // horizontal shift
-        {
-            // convert plugin's param to frei0r range
-            *((double*)param) = (inst->shiftX) / (inst->width / 8) + 0.5;
-            break;
-        }
-    }
-
+  case 1:        // horizontal shift
+  {
+    // convert plugin's param to frei0r range
+    *((double *)param) = (inst->shiftX) / (inst->width / 8) + 0.5;
+    break;
+  }
+  }
 }
-
 
 void f0r_update(f0r_instance_t instance, double time,
-		const uint32_t* src, uint32_t* dst)
+                const uint32_t *src, uint32_t *dst)
 {
-    assert(instance);
-    rgbsplit0r_instance_t* inst = (rgbsplit0r_instance_t*)instance;
-    unsigned int x, y;
+  assert(instance);
+  rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t *)instance;
+  unsigned int           x, y;
 
-    for (y = 0; y < inst->height; y++)
-        for (x = 0; x < inst->width; x++)
-        {
-            uint32_t pxR = 0, pxG = 0, pxB = 0;
+  for (y = 0; y < inst->height; y++)
+  {
+    for (x = 0; x < inst->width; x++)
+    {
+      uint32_t pxR = 0, pxG = 0, pxB = 0;
 
-            // First make a blue layer shifted back
-            if (((x - inst->shiftX) < inst->width) &&
-                ((y - inst->shiftY) < inst->height))
-            {
-                rgbsplit0r_extract_color((uint32_t *)(src +
-                    (x - inst->shiftX) +
-                    (y - inst->shiftY)*inst->width),
-                    &pxB, 2);
-            }
+      // First make a blue layer shifted back
+      if (((x - inst->shiftX) < inst->width) &&
+          ((y - inst->shiftY) < inst->height))
+      {
+        rgbsplit0r_extract_color((uint32_t *)(src +
+                                              (x - inst->shiftX) +
+                                              (y - inst->shiftY) * inst->width),
+                                 &pxB, 2);
+      }
 
-            // The red layer is shifted forward
-            if ((x + inst->shiftX < inst->width) &&
-                (y + inst->shiftY < inst->height))
-            {
-                rgbsplit0r_extract_color((uint32_t *)(src +
-                    (x + inst->shiftX) +
-                    (y + inst->shiftY)*inst->width),
-                    &pxR, 0);
-            }
+      // The red layer is shifted forward
+      if ((x + inst->shiftX < inst->width) &&
+          (y + inst->shiftY < inst->height))
+      {
+        rgbsplit0r_extract_color((uint32_t *)(src +
+                                              (x + inst->shiftX) +
+                                              (y + inst->shiftY) * inst->width),
+                                 &pxR, 0);
+      }
 
-            // Green layer is on its place
-            rgbsplit0r_extract_color((uint32_t *)(src + x + (y*inst->width)),
-                    &pxG, 1);
+      // Green layer is on its place
+      rgbsplit0r_extract_color((uint32_t *)(src + x + (y * inst->width)),
+                               &pxG, 1);
 
-            *(dst + x + (y*inst->width)) = (pxG | pxB | pxR);
-        }
+      *(dst + x + (y * inst->width)) = (pxG | pxB | pxR);
+    }
+  }
 }
-

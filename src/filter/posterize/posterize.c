@@ -3,7 +3,7 @@
  * Copyright 2006 Jerry Huxtable
  *
  * posterize.c
- * Copyright 2012 Janne Liljeblad 
+ * Copyright 2012 Janne Liljeblad
  *
  * This file is a Frei0r plugin.
  *
@@ -32,37 +32,38 @@ typedef struct posterize_instance
 {
   unsigned int width;
   unsigned int height;
-  double levels;
+  double       levels;
 } posterize_instance_t;
 
 int f0r_init()
 {
-  return 1;
+  return (1);
 }
 
 void f0r_deinit()
-{ /* no initialization required */ }
-
-void f0r_get_plugin_info(f0r_plugin_info_t* posterize_info)
-{
-  posterize_info->name = "posterize";
-  posterize_info->author = "Janne Liljeblad";
-  posterize_info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  posterize_info->color_model = F0R_COLOR_MODEL_RGBA8888;
-  posterize_info->frei0r_version = FREI0R_MAJOR_VERSION;
-  posterize_info->major_version = 0; 
-  posterize_info->minor_version = 1; 
-  posterize_info->num_params =  1; 
-  posterize_info->explanation = "Posterizes image by reducing the number of colors used in image";
+{ /* no initialization required */
 }
 
-void f0r_get_param_info(f0r_param_info_t* info, int param_index)
+void f0r_get_plugin_info(f0r_plugin_info_t *posterize_info)
 {
-  switch(param_index)
+  posterize_info->name           = "posterize";
+  posterize_info->author         = "Janne Liljeblad";
+  posterize_info->plugin_type    = F0R_PLUGIN_TYPE_FILTER;
+  posterize_info->color_model    = F0R_COLOR_MODEL_RGBA8888;
+  posterize_info->frei0r_version = FREI0R_MAJOR_VERSION;
+  posterize_info->major_version  = 0;
+  posterize_info->minor_version  = 1;
+  posterize_info->num_params     = 1;
+  posterize_info->explanation    = "Posterizes image by reducing the number of colors used in image";
+}
+
+void f0r_get_param_info(f0r_param_info_t *info, int param_index)
+{
+  switch (param_index)
   {
   case 0:
-    info->name = "levels"; 
-    info->type = F0R_PARAM_DOUBLE;
+    info->name        = "levels";
+    info->type        = F0R_PARAM_DOUBLE;
     info->explanation = "Number of values per channel";
     break;
   }
@@ -70,11 +71,13 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-	posterize_instance_t* inst = (posterize_instance_t*)calloc(1, sizeof(*inst));
-	inst->width = width; 
+  posterize_instance_t *inst = (posterize_instance_t *)calloc(1, sizeof(*inst));
+
+  inst->width  = width;
   inst->height = height;
-	inst->levels = 5.0 / 48.0;// input range 0 - 1 will be interpreted as levels range 2 - 50
-	return (f0r_instance_t)inst;
+  inst->levels = 5.0 / 48.0;      // input range 0 - 1 will be interpreted as
+                                  // levels range 2 - 50
+  return ((f0r_instance_t)inst);
 }
 
 void f0r_destruct(f0r_instance_t instance)
@@ -82,16 +85,16 @@ void f0r_destruct(f0r_instance_t instance)
   free(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
+void f0r_set_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
   assert(instance);
-  posterize_instance_t* inst = (posterize_instance_t*)instance;
+  posterize_instance_t *inst = (posterize_instance_t *)instance;
 
-  switch(param_index)
+  switch (param_index)
   {
   case 0:
-    inst->levels = *((double*)param);
+    inst->levels = *((double *)param);
     break;
   }
 }
@@ -100,22 +103,22 @@ void f0r_get_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
   assert(instance);
-  posterize_instance_t* inst = (posterize_instance_t*)instance;
-  
-  switch(param_index)
+  posterize_instance_t *inst = (posterize_instance_t *)instance;
+
+  switch (param_index)
   {
   case 0:
-    *((double*)param) = inst->levels;
+    *((double *)param) = inst->levels;
     break;
   }
 }
 
 void f0r_update(f0r_instance_t instance, double time,
-                const uint32_t* inframe, uint32_t* outframe)
+                const uint32_t *inframe, uint32_t *outframe)
 {
   assert(instance);
-  posterize_instance_t* inst = (posterize_instance_t*)instance;
-  unsigned int len = inst->width * inst->height;
+  posterize_instance_t *inst = (posterize_instance_t *)instance;
+  unsigned int          len  = inst->width * inst->height;
 
   // convert input value 0.0-1.0 to int value 2-50
   double levelsInput = inst->levels * 48.0;
@@ -124,15 +127,15 @@ void f0r_update(f0r_instance_t instance, double time,
 
   // create levels table
   unsigned char levels[256];
-  int i;
+  int           i;
   for (i = 0; i < 256; i++)
   {
-		  levels[i] = 255 * (numLevels*i / 256) / (numLevels-1);
+    levels[i] = 255 * (numLevels * i / 256) / (numLevels - 1);
   }
 
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-  unsigned char r,g,b = 0;
+  unsigned char *      dst = (unsigned char *)outframe;
+  const unsigned char *src = (unsigned char *)inframe;
+  unsigned char        r, g, b = 0;
   while (len--)
   {
     r = *src++;
@@ -149,4 +152,3 @@ void f0r_update(f0r_instance_t instance, double time,
     *dst++ = *src++;//copy alpha
   }
 }
-

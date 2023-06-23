@@ -76,51 +76,49 @@
 #include "frei0r.h"
 #include "frei0r_math.h"
 
-#define MAX_HISTORY_LEN     128
+#define MAX_HISTORY_LEN    128
 
 typedef struct
 {
-  int num_pixels;     // Number of pixels in a frame.
-  int frame_num;      // Increments on each frame, starting from 0.
+  int   num_pixels;   // Number of pixels in a frame.
+  int   frame_num;    // Increments on each frame, starting from 0.
 
   // Per-extrema, per-channel fri0r params
   struct
   {
-    uint8_t history[MAX_HISTORY_LEN]; // Param history, for temporal smoothing.
-    uint16_t history_sum;       // Sum of history entries.
-    float param;                // Target output value [0,255]
-  } min[3], max[3];             // Min and max for each channel in {R,G,B}.
+    uint8_t  history[MAX_HISTORY_LEN]; // Param history, for temporal smoothing.
+    uint16_t history_sum;              // Sum of history entries.
+    float    param;                    // Target output value [0,255]
+  }     min[3], max[3];                // Min and max for each channel in
+                                       // {R,G,B}.
 
   // Per-instance frei0r params, each a float in the range [0,1].
-  int history_len;      // Global max history length, which controls amount of
+  int   history_len;    // Global max history length, which controls amount of
                         // temporal smoothing.  [1,MAX_HISTORY_LEN].
   float independence;   // Ratio of independent vs linked normalization [0,1].
   float strength;       // Mixing strength for the normalization [0,1].
 } normaliz0r_instance_t;
 
-int
-f0r_init ()
+int f0r_init()
 {
-  return 1;
+  return (1);
 }
 
-void
-f0r_deinit ()
+void f0r_deinit()
 {
 }
 
-void
-f0r_get_plugin_info (f0r_plugin_info_t* info)
+void f0r_get_plugin_info(f0r_plugin_info_t *info)
 {
-  info->name = "Normaliz0r";
-  info->author = "Chungzuwalla (chungzuwalla\100rling.com)";
-  info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  info->color_model = F0R_COLOR_MODEL_RGBA8888;
+  info->name           = "Normaliz0r";
+  info->author         = "Chungzuwalla (chungzuwalla\100rling.com)";
+  info->plugin_type    = F0R_PLUGIN_TYPE_FILTER;
+  info->color_model    = F0R_COLOR_MODEL_RGBA8888;
   info->frei0r_version = FREI0R_MAJOR_VERSION;
-  info->major_version = 0;
-  info->minor_version = 1;
-  info->num_params = 5;
-  info->explanation = "Normalize (aka histogram stretch, contrast stretch)";
+  info->major_version  = 0;
+  info->minor_version  = 1;
+  info->num_params     = 5;
+  info->explanation    = "Normalize (aka histogram stretch, contrast stretch)";
 }
 
 static char *param_infos[] =
@@ -132,21 +130,20 @@ static char *param_infos[] =
   "Strength",     "Strength of filter, from no effect to full normalization (default 1.0)",
 };
 
-void
-f0r_get_param_info (f0r_param_info_t* info, int param_index)
+void f0r_get_param_info(f0r_param_info_t *info, int param_index)
 {
-  info->name = param_infos[param_index * 2];
-  info->type = (param_index <= 1) ? F0R_PARAM_COLOR : F0R_PARAM_DOUBLE;
+  info->name        = param_infos[param_index * 2];
+  info->type        = (param_index <= 1) ? F0R_PARAM_COLOR : F0R_PARAM_DOUBLE;
   info->explanation = param_infos[param_index * 2 + 1];
 }
 
-f0r_instance_t
-f0r_construct (unsigned int width, unsigned int height)
+f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-  normaliz0r_instance_t* inst = (normaliz0r_instance_t*)calloc(1, sizeof(*inst));
+  normaliz0r_instance_t *inst = (normaliz0r_instance_t *)calloc(1, sizeof(*inst));
   int c;
+
   inst->num_pixels = width * height;
-  inst->frame_num = 0;
+  inst->frame_num  = 0;
   for (c = 0; c < 3; c++)
   {
     inst->min[c].history_sum = 0;
@@ -156,109 +153,113 @@ f0r_construct (unsigned int width, unsigned int height)
     inst->max[c].param = 255.0; // white
   }
   // Set default per-instance frei0r param values.
-  inst->history_len = 1;        // [1,MAX_HISTORY_LEN]; default is no smoothing
+  inst->history_len  = 1;       // [1,MAX_HISTORY_LEN]; default is no smoothing
   inst->independence = 1.0;     // [0,1]; default is fully independent
-  inst->strength = 1.0;         // [0,1]; default is full strength
-  return (f0r_instance_t)inst;
+  inst->strength     = 1.0;     // [0,1]; default is full strength
+  return ((f0r_instance_t)inst);
 }
 
-void
-f0r_destruct (f0r_instance_t instance)
+void f0r_destruct(f0r_instance_t instance)
 {
-  free (instance);
+  free(instance);
 }
 
-void
-f0r_set_param_value (f0r_instance_t instance, f0r_param_t param,
-                     int param_index)
+void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param,
+                         int param_index)
 {
   assert(instance);
-  normaliz0r_instance_t* inst = (normaliz0r_instance_t*)instance;
+  normaliz0r_instance_t *inst = (normaliz0r_instance_t *)instance;
   float val;
 
   switch (param_index)
-    {
-    case 0:
-      inst->min[0].param = ((f0r_param_color_t*)param)->r * 255.0;
-      inst->min[1].param = ((f0r_param_color_t*)param)->g * 255.0;
-      inst->min[2].param = ((f0r_param_color_t*)param)->b * 255.0;
-      break;
-    case 1:
-      inst->max[0].param = ((f0r_param_color_t*)param)->r * 255.0;
-      inst->max[1].param = ((f0r_param_color_t*)param)->g * 255.0;
-      inst->max[2].param = ((f0r_param_color_t*)param)->b * 255.0;
-      break;
-    case 2:
-      val = (float)CLAMP(*((double* )param), 0.0, 1.0);
-      // Map [0,1] <-> [1,MAX_HISTORY_LEN]
-      inst->history_len = (int)(val * (MAX_HISTORY_LEN - 1)) + 1;
-      break;
-    case 3:
-      val = (float)CLAMP(*((double* )param), 0.0, 1.0);
-      inst->independence = val;
-      break;
-    case 4:
-      val = (float)CLAMP(*((double* )param), 0.0, 1.0);
-      inst->strength = val;
-      break;
-    }
+  {
+  case 0:
+    inst->min[0].param = ((f0r_param_color_t *)param)->r * 255.0;
+    inst->min[1].param = ((f0r_param_color_t *)param)->g * 255.0;
+    inst->min[2].param = ((f0r_param_color_t *)param)->b * 255.0;
+    break;
+
+  case 1:
+    inst->max[0].param = ((f0r_param_color_t *)param)->r * 255.0;
+    inst->max[1].param = ((f0r_param_color_t *)param)->g * 255.0;
+    inst->max[2].param = ((f0r_param_color_t *)param)->b * 255.0;
+    break;
+
+  case 2:
+    val = (float)CLAMP(*((double * )param), 0.0, 1.0);
+    // Map [0,1] <-> [1,MAX_HISTORY_LEN]
+    inst->history_len = (int)(val * (MAX_HISTORY_LEN - 1)) + 1;
+    break;
+
+  case 3:
+    val = (float)CLAMP(*((double * )param), 0.0, 1.0);
+    inst->independence = val;
+    break;
+
+  case 4:
+    val            = (float)CLAMP(*((double * )param), 0.0, 1.0);
+    inst->strength = val;
+    break;
+  }
 }
 
-void
-f0r_get_param_value (f0r_instance_t instance, f0r_param_t param,
-                     int param_index)
+void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param,
+                         int param_index)
 {
   assert(instance);
-  normaliz0r_instance_t* inst = (normaliz0r_instance_t*)instance;
+  normaliz0r_instance_t *inst = (normaliz0r_instance_t *)instance;
   switch (param_index)
-    {
-    case 0:
-      ((f0r_param_color_t*)param)->r = inst->min[0].param / 255.0;
-      ((f0r_param_color_t*)param)->g = inst->min[1].param / 255.0;
-      ((f0r_param_color_t*)param)->b = inst->min[2].param / 255.0;
-      break;
-    case 1:
-      ((f0r_param_color_t*)param)->r = inst->max[0].param / 255.0;
-      ((f0r_param_color_t*)param)->g = inst->max[1].param / 255.0;
-      ((f0r_param_color_t*)param)->b = inst->max[2].param / 255.0;
-      break;
-    case 2:
-      // Map [0,1] <-> [1,MAX_HISTORY_LEN]
-      *((double*)param) = (double)(inst->history_len - 1) / (MAX_HISTORY_LEN - 1);
-      break;
-    case 3:
-      *((double*)param) = inst->independence;
-      break;
-    case 4:
-      *((double*)param) = inst->strength;
-      break;
-    }
+  {
+  case 0:
+    ((f0r_param_color_t *)param)->r = inst->min[0].param / 255.0;
+    ((f0r_param_color_t *)param)->g = inst->min[1].param / 255.0;
+    ((f0r_param_color_t *)param)->b = inst->min[2].param / 255.0;
+    break;
+
+  case 1:
+    ((f0r_param_color_t *)param)->r = inst->max[0].param / 255.0;
+    ((f0r_param_color_t *)param)->g = inst->max[1].param / 255.0;
+    ((f0r_param_color_t *)param)->b = inst->max[2].param / 255.0;
+    break;
+
+  case 2:
+    // Map [0,1] <-> [1,MAX_HISTORY_LEN]
+    *((double *)param) = (double)(inst->history_len - 1) / (MAX_HISTORY_LEN - 1);
+    break;
+
+  case 3:
+    *((double *)param) = inst->independence;
+    break;
+
+  case 4:
+    *((double *)param) = inst->strength;
+    break;
+  }
 }
 
-void
-f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
-            uint32_t* outframe)
+void f0r_update(f0r_instance_t instance, double time, const uint32_t *inframe,
+                uint32_t *outframe)
 {
   assert(instance);
-  normaliz0r_instance_t* inst = (normaliz0r_instance_t*)instance;
+  normaliz0r_instance_t *inst = (normaliz0r_instance_t *)instance;
   int c;
 
   // Per-extrema, per-channel local variables.
   struct
   {
     uint8_t in;                 // Original input byte value for this frame.
-    float smoothed;             // Smoothed input value [0,255].
-    float out;                  // Output value [0,255].
+    float   smoothed;           // Smoothed input value [0,255].
+    float   out;                // Output value [0,255].
   } min[3], max[3];             // Min and max for each channel in {R,G,B}.
 
   // First, scan the input frame to find, for each channel, the minimum
   // (min.in) and maximum (max.in) values present in the channel.
   {
-    const uint8_t *in = (const uint8_t*)inframe;
+    const uint8_t *in = (const uint8_t *)inframe;
 
-#define INIT(c)     (min[c].in = max[c].in = in[c])
-#define EXTEND(c)   (min[c].in = MIN(min[c].in, in[c])), \
-                    (max[c].in = MAX(max[c].in, in[c]))
+#define INIT(c)      (min[c].in = max[c].in = in[c])
+#define EXTEND(c)    (min[c].in = MIN(min[c].in, in[c])), \
+        (max[c].in = MAX(max[c].in, in[c]))
     INIT(0);
     INIT(1);
     INIT(2);
@@ -296,9 +297,9 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
     for (c = 0; c < 3; c++)
     {
       inst->min[c].history_sum += (inst->min[c].history[history_idx] = min[c].in);
-      min[c].smoothed = (float)inst->min[c].history_sum / (float)num_history_vals;
+      min[c].smoothed           = (float)inst->min[c].history_sum / (float)num_history_vals;
       inst->max[c].history_sum += (inst->max[c].history[history_idx] = max[c].in);
-      max[c].smoothed = (float)inst->max[c].history_sum / (float)num_history_vals;
+      max[c].smoothed           = (float)inst->max[c].history_sum / (float)num_history_vals;
     }
   }
 
@@ -321,17 +322,17 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
     // mixing in the correct proportion of the linked normalization input range
     // [rgb_min_smoothed,rgb_max_smoothed].
     min[c].smoothed = (min[c].smoothed * inst->independence)
-        + (rgb_min_smoothed * (1.0 - inst->independence));
+                      + (rgb_min_smoothed * (1.0 - inst->independence));
     max[c].smoothed = (max[c].smoothed * inst->independence)
-        + (rgb_max_smoothed * (1.0 - inst->independence));
+                      + (rgb_max_smoothed * (1.0 - inst->independence));
 
     // Calculate the output range [min.out,max.out] as a ratio of the full-
     // strength output range [min.param,max.param] and the original input
     // range [min.in,max.in], based on the user-specified filter strength.
     min[c].out = (inst->min[c].param * inst->strength)
-        + ((float)min[c].in * (1.0 - inst->strength));
+                 + ((float)min[c].in * (1.0 - inst->strength));
     max[c].out = (inst->max[c].param * inst->strength)
-        + ((float)max[c].in * (1.0 - inst->strength));
+                 + ((float)max[c].in * (1.0 - inst->strength));
 
     // Now, build a lookup table which linearly maps the adjusted input range
     // [min.smoothed,max.smoothed] to the output range [min.out,max.out].
@@ -343,7 +344,9 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
       // There is no dynamic range to expand.  No mapping for this channel.
       int in_val;
       for (in_val = min[c].in; in_val <= max[c].in; in_val++)
+      {
         lut[c][in_val] = min[c].out;
+      }
     }
     else
     {
@@ -352,7 +355,7 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
       // [min.smoothed,max.smoothed], some output values may fall outside the
       // [0,255] dynamic range.  We need to CLAMP() them.
       float scale = (max[c].out - min[c].out) / (max[c].smoothed - min[c].smoothed);
-      int in_val;
+      int   in_val;
       for (in_val = min[c].in; in_val <= max[c].in; in_val++)
       {
         int out_val = ROUND((in_val - min[c].smoothed) * scale + min[c].out);
@@ -364,10 +367,10 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
   // Finally, process the pixels of the input frame using the lookup tables.
   // Copy alpha as-is.
   {
-    const uint8_t *in = (const uint8_t*)inframe;
-    uint8_t *out = (uint8_t*)outframe;
+    const uint8_t *in  = (const uint8_t *)inframe;
+    uint8_t *      out = (uint8_t *)outframe;
 
-#define MAP(c)      (out[c] = lut[c][in[c]])
+#define MAP(c)    (out[c] = lut[c][in[c]])
 
     unsigned int num_pixels = inst->num_pixels;
     while (num_pixels--)
@@ -376,8 +379,8 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
       MAP(1);
       MAP(2);
       out[3] = in[3];  // copy alpha
-      in += 4;
-      out += 4;
+      in    += 4;
+      out   += 4;
     }
   }
 
