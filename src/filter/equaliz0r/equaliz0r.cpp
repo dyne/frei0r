@@ -29,26 +29,26 @@ class equaliz0r : public frei0r::filter
   unsigned char rlut[256];
   unsigned char glut[256];
   unsigned char blut[256];
-  
+
   // Intensity histograms.
   unsigned int rhist[256];
   unsigned int ghist[256];
   unsigned int bhist[256];
 
-  void updateLookUpTables(const uint32_t* in)
+  void updateLookUpTables(const uint32_t *in)
   {
-    unsigned int size = width*height;
-    
+    unsigned int size = width * height;
+
     // First pass : build histograms.
-    
+
     // Reset histograms.
-    memset(rhist, 0, 256*sizeof(unsigned int));
-    memset(ghist, 0, 256*sizeof(unsigned int));
-    memset(bhist, 0, 256*sizeof(unsigned int));
+    memset(rhist, 0, 256 * sizeof(unsigned int));
+    memset(ghist, 0, 256 * sizeof(unsigned int));
+    memset(bhist, 0, 256 * sizeof(unsigned int));
 
     // Update histograms.
-    const unsigned char *in_ptr = (const unsigned char*) in;
-    for (unsigned int i=0; i<size; ++i)
+    const unsigned char *in_ptr = (const unsigned char *)in;
+    for (unsigned int i = 0; i < size; ++i)
     {
       // update 'em
       rhist[*in_ptr++]++;
@@ -58,46 +58,45 @@ class equaliz0r : public frei0r::filter
     }
 
     // Second pass : update look-up tables.
-    in_ptr = (const unsigned char*) in;
+    in_ptr = (const unsigned char *)in;
 
     // Cumulative intensities of histograms.
     unsigned int
       rcum = 0,
       gcum = 0,
       bcum = 0;
-      
-    for (int i=0; i<256; ++i)
+
+    for (int i = 0; i < 256; ++i)
     {
       // update cumulatives
       rcum += rhist[i];
       gcum += ghist[i];
       bcum += bhist[i];
-      
-      // update 'em
-      rlut[i] = CLAMP0255( (rcum << 8) / size ); // = 256 * rcum / size
-      glut[i] = CLAMP0255( (gcum << 8) / size ); // = 256 * gcum / size
-      blut[i] = CLAMP0255( (bcum << 8) / size ); // = 256 * bcum / size
-      
-      in_ptr++; // skip alpha
-    }
 
+      // update 'em
+      rlut[i] = CLAMP0255((rcum << 8) / size); // = 256 * rcum / size
+      glut[i] = CLAMP0255((gcum << 8) / size); // = 256 * gcum / size
+      blut[i] = CLAMP0255((bcum << 8) / size); // = 256 * bcum / size
+
+      in_ptr++;                                // skip alpha
+    }
   }
-  
+
 public:
   equaliz0r(unsigned int width, unsigned int height)
   {
   }
-  
+
   virtual void update(double time,
-                      uint32_t* out,
-                      const uint32_t* in)
+                      uint32_t *out,
+                      const uint32_t *in)
   {
-    std::copy(in, in + width*height, out);
+    std::copy(in, in + width * height, out);
     updateLookUpTables(in);
-    unsigned int size = width*height;
-    const unsigned char *in_ptr = (const unsigned char*) in;
-    unsigned char *out_ptr = (unsigned char*) out;
-    for (unsigned int i=0; i<size; ++i)
+    unsigned int         size    = width * height;
+    const unsigned char *in_ptr  = (const unsigned char *)in;
+    unsigned char *      out_ptr = (unsigned char *)out;
+    for (unsigned int i = 0; i < size; ++i)
     {
       *out_ptr++ = rlut[*in_ptr++];
       *out_ptr++ = glut[*in_ptr++];
@@ -108,9 +107,8 @@ public:
 };
 
 
-frei0r::construct<equaliz0r> plugin("Equaliz0r",
-                                    "Equalizes the intensity histograms",
-                                    "Jean-Sebastien Senecal (Drone)",
-                                    0,2,
-                                    F0R_COLOR_MODEL_RGBA8888);
-
+frei0r::construct <equaliz0r> plugin("Equaliz0r",
+                                     "Equalizes the intensity histograms",
+                                     "Jean-Sebastien Senecal (Drone)",
+                                     0, 2,
+                                     F0R_COLOR_MODEL_RGBA8888);

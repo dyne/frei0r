@@ -1,4 +1,4 @@
-/* 
+/*
  * primaries
  * 2009 Hedde Bosman
  *
@@ -26,56 +26,68 @@
 
 #include <iostream>
 
-union px_t {
-	uint32_t u;
-	unsigned char c[4]; // 0=B, 1=G,2=R,3=A ? i think :P
+union px_t
+{
+  uint32_t      u;
+  unsigned char c[4];       // 0=B, 1=G,2=R,3=A ? i think :P
 };
 
 class primaries : public frei0r::filter {
 private:
-	double factor;
-	
-public:
-	primaries(unsigned int width, unsigned int height) {
-		factor = 1;
-		register_param(factor, "Factor", "influence of mean px value. > 32 = 0");
-	}
-	~primaries() {
-	}
+  double factor;
 
-	virtual void update(double time,
-	                    uint32_t* out,
-                        const uint32_t* in) {
-		unsigned char mean = 0;
-		
-		int f = factor+1; // f = [2,inf)
-		int factor127 = (f*f-3)*127;
-		int factorTot = f*f;
-		if (factor127 < 0) {
-			factor127 = 0;
-			factorTot = 3;
-		}
-		
-		for (unsigned int i = 0; i < size; i++) {
-			px_t pi;
-			pi.u = in[i];
-			
-			if (f > 32) // influence of mean color value does hardly change after this value
-				mean = 127;
-			else 
-				mean = (pi.c[0] + pi.c[1] + pi.c[2] + factor127)/factorTot;
-			pi.c[0] = (pi.c[0] > mean ? 255 : 0);
-			pi.c[1] = (pi.c[1] > mean ? 255 : 0);
-			pi.c[2] = (pi.c[2] > mean ? 255 : 0);
-			
-			out[i] = pi.u;
-		}
-	}
+public:
+  primaries(unsigned int width, unsigned int height)
+  {
+    factor = 1;
+    register_param(factor, "Factor", "influence of mean px value. > 32 = 0");
+  }
+
+  ~primaries()
+  {
+  }
+
+  virtual void update(double time,
+                      uint32_t *out,
+                      const uint32_t *in)
+  {
+    unsigned char mean = 0;
+
+    int f         = factor + 1;   // f = [2,inf)
+    int factor127 = (f * f - 3) * 127;
+    int factorTot = f * f;
+
+    if (factor127 < 0)
+    {
+      factor127 = 0;
+      factorTot = 3;
+    }
+
+    for (unsigned int i = 0; i < size; i++)
+    {
+      px_t pi;
+      pi.u = in[i];
+
+      if (f > 32)                   // influence of mean color value does hardly
+                                    // change after this value
+      {
+        mean = 127;
+      }
+      else
+      {
+        mean = (pi.c[0] + pi.c[1] + pi.c[2] + factor127) / factorTot;
+      }
+      pi.c[0] = (pi.c[0] > mean ? 255 : 0);
+      pi.c[1] = (pi.c[1] > mean ? 255 : 0);
+      pi.c[2] = (pi.c[2] > mean ? 255 : 0);
+
+      out[i] = pi.u;
+    }
+  }
 };
 
 
-frei0r::construct<primaries> plugin("primaries",
-									"Reduce image to primary colors",
-									"Hedde Bosman",
-									0,2);
-
+frei0r::construct <primaries> plugin("primaries",
+                                     "Reduce image to primary colors",
+                                     "Hedde Bosman",
+                                     0, 2);

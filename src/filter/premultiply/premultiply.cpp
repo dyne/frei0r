@@ -21,64 +21,71 @@
 
 class Premultiply : public frei0r::filter
 {
-
 public:
 
-    Premultiply(unsigned int width, unsigned int height)
-        : m_unpremultiply(0)
-    {
-        register_param(m_unpremultiply, "unpremultiply", "Whether to unpremultiply instead");
-    }
+  Premultiply(unsigned int width, unsigned int height)
+    : m_unpremultiply(0)
+  {
+    register_param(m_unpremultiply, "unpremultiply", "Whether to unpremultiply instead");
+  }
 
-    ~Premultiply()
-    {
-    }
+  ~Premultiply()
+  {
+  }
 
-    virtual void update(double,
-                        uint32_t* out,
-                        const uint32_t* in)
+  virtual void update(double,
+                      uint32_t *out,
+                      const uint32_t *in)
+  {
+    uint8_t *    src = (uint8_t *)in;
+    uint8_t *    dst = (uint8_t *)out;
+    unsigned int n   = width * height + 1;
+
+    if (!m_unpremultiply)
     {
-        uint8_t *src = (uint8_t*) in;
-        uint8_t *dst = (uint8_t*) out;
-        unsigned int n = width * height + 1;
-        if (!m_unpremultiply) {
-            // premultiply
-            while (--n) {
-                uint8_t a = src[3];
-                dst[0] = (src[0] * a) >> 8;
-                dst[1] = (src[1] * a) >> 8;
-                dst[2] = (src[2] * a) >> 8;
-                dst[3] =  a;
-                src += 4;
-                dst += 4;
-            }
-        } else {
-            // unpremultiply
-            while (--n) {
-                uint8_t a = src[3];
-                if (a > 0 && a < 255) {
-                    dst[0] = MIN((src[0] << 8) / a, 255);
-                    dst[1] = MIN((src[1] << 8) / a, 255);
-                    dst[2] = MIN((src[2] << 8) / a, 255);
-                } else {
-                    dst[0] = src[0];
-                    dst[1] = src[1];
-                    dst[2] = src[2];
-                }
-                dst[3] = a;
-                src += 4;
-                dst += 4;
-            }
+      // premultiply
+      while (--n)
+      {
+        uint8_t a = src[3];
+        dst[0] = (src[0] * a) >> 8;
+        dst[1] = (src[1] * a) >> 8;
+        dst[2] = (src[2] * a) >> 8;
+        dst[3] = a;
+        src   += 4;
+        dst   += 4;
+      }
+    }
+    else
+    {
+      // unpremultiply
+      while (--n)
+      {
+        uint8_t a = src[3];
+        if (a > 0 && a < 255)
+        {
+          dst[0] = MIN((src[0] << 8) / a, 255);
+          dst[1] = MIN((src[1] << 8) / a, 255);
+          dst[2] = MIN((src[2] << 8) / a, 255);
         }
+        else
+        {
+          dst[0] = src[0];
+          dst[1] = src[1];
+          dst[2] = src[2];
+        }
+        dst[3] = a;
+        src   += 4;
+        dst   += 4;
+      }
     }
+  }
 
 private:
-    bool m_unpremultiply;
-
+  bool m_unpremultiply;
 };
 
-frei0r::construct<Premultiply> plugin("Premultiply or Unpremultiply",
-                "Multiply (or divide) each color component by the pixel's alpha value",
-                "Dan Dennedy",
-                0, 2,
-                F0R_COLOR_MODEL_RGBA8888);
+frei0r::construct <Premultiply> plugin("Premultiply or Unpremultiply",
+                                       "Multiply (or divide) each color component by the pixel's alpha value",
+                                       "Dan Dennedy",
+                                       0, 2,
+                                       F0R_COLOR_MODEL_RGBA8888);

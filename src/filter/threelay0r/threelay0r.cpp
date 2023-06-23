@@ -1,4 +1,4 @@
-/* 
+/*
  * Threelay0r
  * 2009 Hedde Bosman
  *
@@ -30,69 +30,94 @@
 class threelay0r : public frei0r::filter
 {
 private:
-	static unsigned char grey(unsigned int value) {
-		unsigned char* rgba = reinterpret_cast<unsigned char*>(&value);
-		unsigned char gw= (rgba[0] + rgba[1] + 2*rgba[2])/4;
-		return gw;
-	}
-	
-	struct histogram {
-		histogram()	: hist(256)	{
-			std::fill(hist.begin(),hist.end(),0);
-		}
-		
-		void operator()(uint32_t value)	{
-			++hist[grey(value)];
-		}
-		
-		std::vector<unsigned int> hist;
-	};
+  static unsigned char grey(unsigned int value)
+  {
+    unsigned char *rgba = reinterpret_cast <unsigned char *>(&value);
+    unsigned char  gw   = (rgba[0] + rgba[1] + 2 * rgba[2]) / 4;
+
+    return (gw);
+  }
+
+  struct histogram
+  {
+    histogram()     : hist(256)
+    {
+      std::fill(hist.begin(), hist.end(), 0);
+    }
+
+    void operator()(uint32_t value)
+    {
+      ++hist[grey(value)];
+    }
+
+    std::vector <unsigned int> hist;
+  };
 
 public:
-	threelay0r(unsigned int width, unsigned int height) {}
+  threelay0r(unsigned int width, unsigned int height)
+  {
+  }
 
-	virtual void update(double time,
-	                    uint32_t* out,
-                        const uint32_t* in) {
-		histogram h;
-		
-		// create histogramm
-		for (const unsigned int* i=in; i != in + (width*height);++i)
-			h(*i);
+  virtual void update(double time,
+                      uint32_t *out,
+                      const uint32_t *in)
+  {
+    histogram h;
 
-		// calc th
-		int th1 = 1;
-		int th2 = 255;
-		
-		unsigned num = 0;
-		unsigned int num1div3 = 4*size/10; // number of pixels in the lower level
-		unsigned int num2div3 = 8*size/10; // number of pixels in the lower two levels
-		for (int i = 0; i < 256; i++) { // wee bit faster than a double loop
-			num += h.hist[i];
-			if (num < num1div3) th1 = i;
-			if (num < num2div3) th2 = i;
-		}
-		
-		// create the 3 level image
-		uint32_t* outpixel= out;
-		const uint32_t* pixel=in;
-		while(pixel != in+size) // size = defined in frei0r.hpp
-		{
-			if ( grey(*pixel) < th1 )
-				*outpixel=0xFF000000;
-			else if ( grey(*pixel) < th2)
-				*outpixel=0xFF808080;
-			else
-				*outpixel=0xFFFFFFFF;
-			++outpixel;
-			++pixel;
-		}
-	}
+    // create histogramm
+    for (const unsigned int *i = in; i != in + (width * height); ++i)
+    {
+      h(*i);
+    }
+
+    // calc th
+    int th1 = 1;
+    int th2 = 255;
+
+    unsigned     num      = 0;
+    unsigned int num1div3 = 4 * size / 10;      // number of pixels in the lower
+                                                // level
+    unsigned int num2div3 = 8 * size / 10;      // number of pixels in the lower
+                                                // two levels
+    for (int i = 0; i < 256; i++)               // wee bit faster than a double
+                                                // loop
+    {
+      num += h.hist[i];
+      if (num < num1div3)
+      {
+        th1 = i;
+      }
+      if (num < num2div3)
+      {
+        th2 = i;
+      }
+    }
+
+    // create the 3 level image
+    uint32_t *      outpixel = out;
+    const uint32_t *pixel    = in;
+    while (pixel != in + size)          // size = defined in frei0r.hpp
+    {
+      if (grey(*pixel) < th1)
+      {
+        *outpixel = 0xFF000000;
+      }
+      else if (grey(*pixel) < th2)
+      {
+        *outpixel = 0xFF808080;
+      }
+      else
+      {
+        *outpixel = 0xFFFFFFFF;
+      }
+      ++outpixel;
+      ++pixel;
+    }
+  }
 };
 
 
-frei0r::construct<threelay0r> plugin("threelay0r",
-									"dynamic 3 level thresholding",
-									"Hedde Bosman",
-									0,2);
-
+frei0r::construct <threelay0r> plugin("threelay0r",
+                                      "dynamic 3 level thresholding",
+                                      "Hedde Bosman",
+                                      0, 2);
