@@ -34,7 +34,6 @@
 
 #include <frei0r.hpp>
 
-
 #define CLIP_EDGES \
   if(x - radius < 1) left -= (x-radius-1); \
   if(y - radius < 1) top  -= (y-radius-1); \
@@ -66,23 +65,32 @@ typedef struct {
 class Water: public frei0r::filter {
 public:
 
-  double physics;
-  bool rain;
-  bool distort;
-  bool smooth;
-  bool surfer;
-  bool swirl;
-  bool randomize_swirl;
+  f0r_param_double physics;
+  f0r_param_bool swirl;
+  f0r_param_bool rain;
+  f0r_param_bool surfer;
+  f0r_param_bool smooth;
+  f0r_param_bool distort;
+  f0r_param_position position;
+  //bool randomize_swirl;
 
   Water(unsigned int width, unsigned int height) {
-    physics = 0.0;
-    register_param(physics, "physics", "water density: from 1 to 4");
-    register_param(rain, "rain", "rain drops all over");
-    register_param(distort, "distort", "distort all surface like dropping a bucket to the floor");
-    register_param(smooth, "smooth", "smooth up all perturbations on the surface");
-    register_param(surfer, "surfer", "surf the surface with a wandering finger");
+    physics = 1.0;
+    swirl = 1;
+    rain = 0;
+    surfer = 0;
+    distort = 0;
+    smooth = 0;
+    position.x = 0;
+    position.y = 0;
+    register_param(physics, "physics", "water density: from 0.0 to 1.0");
     register_param(swirl, "swirl", "swirling whirpool in the center");
-    register_param(randomize_swirl, "randomize_swirl", "randomize the swirling angle");
+    register_param(rain, "rain", "rain drops all over");
+    register_param(surfer, "surfer", "surf the surface with a wandering finger");
+    register_param(smooth, "smooth", "smooth up all perturbations on the surface");
+    register_param(distort, "distort", "distort all surface like dropping a bucket to the floor");
+    register_param(position, "position", "swirl position coordinate, Relative center coordinate");
+    //register_param(randomize_swirl, "randomize_swirl", "randomize the swirling angle");
 
     Hpage = 0;
     ox = 80;
@@ -92,26 +100,26 @@ public:
 
     BkGdImagePre = BkGdImage = BkGdImagePost = 0;
     Height[0] = Height[1] = 0;
-    
+
     /* default physics */
     density = 4;
     pheight = 600;
     radius = 30;
-    
+
     raincount = 0;
     blend = 0;
-    
+
     fastsrand(::time(NULL));
-    
+
     FCreateSines();
 
     geo = new ScreenGeometry();
     geo->w = width;
     geo->h = height;
-    geo->size =  width*height*sizeof(uint32_t);
+    geo->size =  width*(height+1)*sizeof(uint32_t);
 
     water_surfacesize = geo->size;
-    calc_optimization = (height-1)*width;
+    calc_optimization = (height)*(width);
     
     xang = fastrand()%2048;
     yang = fastrand()%2048;
@@ -119,19 +127,14 @@ public:
     
     /* buffer allocation tango */
     if ( width*height > 0 ) {
-        Height[0] = (uint32_t*)calloc(width*height, sizeof(uint32_t));
-        Height[1] = (uint32_t*)calloc(width*height, sizeof(uint32_t));
+        Height[0] = (uint32_t*)calloc(width*(height+1), sizeof(uint32_t));
+        Height[1] = (uint32_t*)calloc(width*(height+1), sizeof(uint32_t));
     }
-    //    buffer =    (uint32_t*)    malloc(geo->size);
     if ( geo->size > 0 ) {
         BkGdImagePre = (uint32_t*) malloc(geo->size);
         BkGdImage =    (uint32_t*) malloc(geo->size);
         BkGdImagePost = (uint32_t*)malloc(geo->size);
     }
-
-
-    swirl = 1;
-
   }
 
   ~Water() {
@@ -141,15 +144,13 @@ public:
     free(BkGdImagePre);
     free(BkGdImage);
     free(BkGdImagePost);
-    //    free(buffer);
   }
 
-  virtual void update() {
-
+  virtual void update(double time,
+                        uint32_t* out,
+                        const uint32_t* in) {
     memcpy(BkGdImage, in, width*height*sizeof(uint32_t));
-    
-    water_update();
-
+    water_update(out);
   }
   
 private:
@@ -190,14 +191,14 @@ private:
   void water_clear();
   void water_distort();
   void water_setphysics(double physics);
-  void water_update();
+  void water_update(uint32_t* out);
   void water_drop(int x, int y);
   void water_bigsplash(int x, int y);
   void water_surfer();
   void water_swirl();
   void water_3swirls();
   
-  void DrawWater(int page);
+  void DrawWater(int page,uint32_t* out);
   void CalcWater(int npage, int density);
   void CalcWaterBigFilter(int npage, int density);
   
@@ -237,58 +238,6 @@ private:
   
 };
 
-
-
-
-
-/* TODO: port as parameters:
-
-int kbd_input(char key) {
-  int res = 1;
-  switch(key) {
-  case 'e': // bigsplash in center
-    water_bigsplash(geo->w>>1,geo->y>>1);
-    break;
-  case 'r': // random splash 
-    water_bigsplash(fastrand()%geo->w,fastrand()%geo->h);
-    break;
-  case 't': // rain
-    rain = (rain)?0:1;
-    break;
-  case 'd': // distort surface
-    if(!rain) water_distort();
-    break;
-  case 'f': // smooth surface
-    SmoothWater(Hpage);
-    break;
-  case 'y': // swirl
-    swirl = (swirl)?0:1;
-    break;
-  case 'u': // surfer
-    surfer = (surfer)?0:1;
-    break;
-  case 'g': // randomize swirl angles
-    swirlangle = fastrand()%2048;
-    xang = fastrand()%2048;
-    yang = fastrand()%2048;
-    break;
-    
-  case 'q':
-    if(physics>1) physics--;
-    water_setphysics(physics);
-    break;
-  case 'w':
-    if(physics<4) physics++;
-    water_setphysics(physics);
-
-  default:
-    res = 0;
-    break;
-  }
-  return(res);
-}
-*/
-
 void Water::water_clear() {
   memset(Height[0], 0, water_surfacesize);
   memset(Height[1], 0, water_surfacesize);
@@ -322,7 +271,9 @@ void Water::water_setphysics(double physics) {
   }
 }
 
-void Water::water_update() {
+void Water::water_update(uint32_t* out) {
+  if(distort && !rain) water_distort();
+  if(smooth) SmoothWater(Hpage);
 
   if(rain) {
     raincount++;
@@ -334,7 +285,7 @@ void Water::water_update() {
 
   if(swirl) water_swirl();
   if(surfer) water_surfer();
-  DrawWater(Hpage);
+  DrawWater(Hpage,out);
 
   CalcWater(Hpage^1, density);
   Hpage ^=1 ;
@@ -357,18 +308,18 @@ void Water::water_bigsplash(int x, int y) {
 void Water::water_surfer() {
   x = (geo->w>>1)
     + ((
-	(
-	 (FSin( (xang* 65) >>8) >>8) *
-	 (FSin( (xang*349) >>8) >>8)
-	 ) * ((geo->w-8)>>1)
-	) >> 16);
+    (
+     (FSin( (xang* 65) >>8) >>8) *
+     (FSin( (xang*349) >>8) >>8)
+     ) * ((geo->w-8)>>1)
+    ) >> 16);
   y = (geo->h>>1)
     + ((
-	(
-	 (FSin( (yang*377) >>8) >>8) *
-	 (FSin( (yang* 84) >>8) >>8)
-	 ) * ((geo->h-8)>>1)
-	) >> 16);
+    (
+     (FSin( (yang*377) >>8) >>8) *
+     (FSin( (yang* 84) >>8) >>8)
+     ) * ((geo->h-8)>>1)
+    ) >> 16);
   xang += 13;
   yang += 12;
   
@@ -377,16 +328,16 @@ void Water::water_surfer() {
       offset = (oy+y)/2*geo->w + ((ox+x)>>1); // QUAAA
       Height[Hpage][offset] = pheight;
       Height[Hpage][offset + 1] =
-	Height[Hpage][offset - 1] =
-	Height[Hpage][offset + geo->w] =
-	Height[Hpage][offset - geo->w] = pheight >> 1;
+      Height[Hpage][offset - 1] =
+      Height[Hpage][offset + geo->w] =
+      Height[Hpage][offset - geo->w] = pheight >> 1;
       
       offset = y*geo->w + x;
       Height[Hpage][offset] = pheight<<1;
       Height[Hpage][offset + 1] =
-	Height[Hpage][offset - 1] =
-	Height[Hpage][offset + geo->w] =
-	Height[Hpage][offset - geo->w] = pheight;
+      Height[Hpage][offset - 1] =
+      Height[Hpage][offset + geo->w] =
+      Height[Hpage][offset - geo->w] = pheight;
     }
   else
     {
@@ -401,84 +352,88 @@ void Water::water_surfer() {
 void Water::water_swirl() {
   x = (geo->w>>1)
     + ((
-	(FCos(swirlangle)) * (25)
-	) >> 16);
+    (FCos(swirlangle)) * (25)
+    ) >> 16);
+    
   y = (geo->h>>1)
     + ((
-	(FSin(swirlangle)) * (25)
-	) >> 16);
+    (FSin(swirlangle)) * (25)
+    ) >> 16);
+  x += position.x;
+  y += position.y;
+
   swirlangle += 50;
   if(mode & 0x4000)
-    HeightBlob(x,y, radius>>2, pheight, Hpage);
+    HeightBlob(x, y, radius>>2, pheight, Hpage);
   else
     WarpBlob(x, y, radius, pheight, Hpage);
 }
-
 
 void Water::water_3swirls() {
 #define ANGLE 15
   x = (95)
     + ((
-	(FCos(swirlangle)) * (ANGLE)
-	) >> 16);
+    (FCos(swirlangle)) * (ANGLE)
+    ) >> 16);
   y = (45)
     + ((
-	(FSin(swirlangle)) * (ANGLE)
-	) >> 16);
+    (FSin(swirlangle)) * (ANGLE)
+    ) >> 16);
 
   if(mode & 0x4000) HeightBlob(x,y, radius>>2, pheight, Hpage);
   else WarpBlob(x, y, radius, pheight, Hpage);
   
   x = (95)
     + ((
-	(FCos(swirlangle)) * (ANGLE)
-	) >> 16);
+    (FCos(swirlangle)) * (ANGLE)
+    ) >> 16);
   y = (255)
     + ((
-	(FSin(swirlangle)) * (ANGLE)
-	) >> 16);
+    (FSin(swirlangle)) * (ANGLE)
+    ) >> 16);
   
   if(mode & 0x4000) HeightBlob(x,y, radius>>2, pheight, Hpage);
   else WarpBlob(x, y, radius, pheight, Hpage);
   
   x = (345)
     + ((
-	(FCos(swirlangle)) * (ANGLE)
-	) >> 16);
+    (FCos(swirlangle)) * (ANGLE)
+    ) >> 16);
   y = (150)
     + ((
-	(FSin(swirlangle)) * (ANGLE)
-	) >> 16);
+    (FSin(swirlangle)) * (ANGLE)
+    ) >> 16);
  
  if(mode & 0x4000) HeightBlob(x,y, radius>>2, pheight, Hpage);
   else WarpBlob(x, y, radius, pheight, Hpage);
-
 
   swirlangle += 50;
 }
 
 /* internal physics routines */
-void Water::DrawWater(int page) {
+void Water::DrawWater(int page,uint32_t* out) {
   int dx, dy;
   int x, y;
-  int c;
-  int offset=geo->w + 1;
+  uint32_t offset=geo->w + 1;
+  uint32_t newoffset;
   int *ptr = (int*)&Height[page][0];
+  int maxoffset=geo->size/sizeof(uint32_t);
   
-  for (y = calc_optimization; offset < y; offset += 2) {
+  for (y = calc_optimization; offset < y; offset+=2) {
     for (x = offset+geo->w-2; offset < x; offset++) {
+
       dx = ptr[offset] - ptr[offset+1];
       dy = ptr[offset] - ptr[offset+geo->w];
-      c = BkGdImage[offset + geo->w*(dy>>3) + (dx>>3)];
-      
-      out[offset] = c;
-
+      newoffset = offset + geo->w*(dy>>3) + (dx>>3);
+      if(newoffset<maxoffset)
+        out[offset] = BkGdImage[newoffset];
       offset++;
+
       dx = ptr[offset] - ptr[offset+1];
       dy = ptr[offset] - ptr[offset+geo->w];
-      c = BkGdImage[offset + geo->w*(dy>>3) + (dx>>3)];
-
-      out[offset] = c;      
+      newoffset = offset + geo->w*(dy>>3) + (dx>>3);
+      if(newoffset<maxoffset)
+        out[offset] = BkGdImage[newoffset];
     }
   }
 }
@@ -494,15 +449,15 @@ void Water::CalcWater(int npage, int density) {
     for (x = count+geo->w-2; count < x; count++) {
       /* eight pixels */
       newh = ((oldptr[count + geo->w]
-	       + oldptr[count - geo->w]
-	       + oldptr[count + 1]
-	       + oldptr[count - 1]
-	       + oldptr[count - geo->w - 1]
-	       + oldptr[count - geo->w + 1]
-	       + oldptr[count + geo->w - 1]
-	       + oldptr[count + geo->w + 1]
-	       ) >> 2 )
-	- newptr[count];
+           + oldptr[count - geo->w]
+           + oldptr[count + 1]
+           + oldptr[count - 1]
+           + oldptr[count - geo->w - 1]
+           + oldptr[count - geo->w + 1]
+           + oldptr[count + geo->w - 1]
+           + oldptr[count + geo->w + 1]
+           ) >> 2 )
+    - newptr[count];
       newptr[count] =  newh - (newh >> density);
     }
   }
@@ -519,15 +474,15 @@ void Water::SmoothWater(int npage) {
     for(x=1; x<geo->w-1; x++) {
       /* eight pixel */
       newh          = ((oldptr[count + geo->w]
-			+ oldptr[count - geo->w]
-			+ oldptr[count + 1]
-			+ oldptr[count - 1]
-			+ oldptr[count - geo->w - 1]
-			+ oldptr[count - geo->w + 1]
-			+ oldptr[count + geo->w - 1]
-			+ oldptr[count + geo->w + 1]
-			) >> 3 )
-	+ newptr[count];
+            + oldptr[count - geo->w]
+            + oldptr[count + 1]
+            + oldptr[count - 1]
+            + oldptr[count - geo->w - 1]
+            + oldptr[count - geo->w + 1]
+            + oldptr[count + geo->w - 1]
+            + oldptr[count + geo->w + 1]
+            ) >> 3 )
+    + newptr[count];
       
       
       newptr[count] =  newh>>1;
@@ -548,36 +503,36 @@ void Water::CalcWaterBigFilter(int npage, int density) {
     for(x=2; x<geo->w-2; x++) {
       /* 25 pixels */
       newh = (
-	      (
-	       (
-		(oldptr[count + geo->w]
-		 + oldptr[count - geo->w]
-		 + oldptr[count + 1]
-		 + oldptr[count - 1]
-		 )<<1)
-	       + ((oldptr[count - geo->w - 1]
-		   + oldptr[count - geo->w + 1]
-		   + oldptr[count + geo->w - 1]
-		   + oldptr[count + geo->w + 1]))
-	       + ( (
-		    oldptr[count - (geo->w<<1)]
-		    + oldptr[count + (geo->w<<1)]
-		    + oldptr[count - 2]
-		    + oldptr[count + 2]
-		    ) >> 1 )
-	       + ( (
-		    oldptr[count - (geo->w<<1) - 1]
-		    + oldptr[count - (geo->w<<1) + 1]
-		    + oldptr[count + (geo->w<<1) - 1]
-		    + oldptr[count + (geo->w<<1) + 1]
-		    + oldptr[count - 2 - geo->w]
-		    + oldptr[count - 2 + geo->w]
-		    + oldptr[count + 2 - geo->w]
-		    + oldptr[count + 2 + geo->w]
-		    ) >> 2 )
-	       )
-	      >> 3)
-	- (newptr[count]);
+          (
+           (
+        (oldptr[count + geo->w]
+         + oldptr[count - geo->w]
+         + oldptr[count + 1]
+         + oldptr[count - 1]
+         )<<1)
+           + ((oldptr[count - geo->w - 1]
+           + oldptr[count - geo->w + 1]
+           + oldptr[count + geo->w - 1]
+           + oldptr[count + geo->w + 1]))
+           + ( (
+            oldptr[count - (geo->w<<1)]
+            + oldptr[count + (geo->w<<1)]
+            + oldptr[count - 2]
+            + oldptr[count + 2]
+            ) >> 1 )
+           + ( (
+            oldptr[count - (geo->w<<1) - 1]
+            + oldptr[count - (geo->w<<1) + 1]
+            + oldptr[count + (geo->w<<1) - 1]
+            + oldptr[count + (geo->w<<1) + 1]
+            + oldptr[count - 2 - geo->w]
+            + oldptr[count - 2 + geo->w]
+            + oldptr[count + 2 - geo->w]
+            + oldptr[count + 2 + geo->w]
+            ) >> 2 )
+           )
+          >> 3)
+    - (newptr[count]);
       newptr[count] =  newh - (newh >> density);
       count++;
     }
@@ -649,7 +604,7 @@ void Water::WarpBlob(int x, int y, int radius, int height, int page) {
     for(cx = left; cx < right; cx++) {
       square = cy*cy + cx*cx;
       if(square < radsquare) {
-	Height[page][geo->w*(cy+y) + cx+x]
+    Height[page][geo->w*(cy+y) + cx+x]
           += (int)((radius-isqrt(square))*(float)(height));
       }
     }
@@ -685,7 +640,6 @@ void Water::SineBlob(int x, int y, int radius, int height, int page) {
 }
 
 frei0r::construct<Water> plugin("Water",
-				"water drops on a video surface",
-				"Jaromil",
-				3,0);
-
+                "water drops on a video surface",
+                "Jaromil",
+                4,0);
