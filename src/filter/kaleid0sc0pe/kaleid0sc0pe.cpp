@@ -25,7 +25,9 @@
 #include "kaleid0sc0pe.h"
 #include <memory>
 #include <cstring>
+#ifndef NO_FUTURE
 #include <future>
+#endif
 
 #ifdef __SSE2__
 #define USE_SSE2
@@ -612,6 +614,21 @@ std::int32_t Kaleid0sc0pe::process(const void* in_frame, void* out_frame)
     if (m_n_segments == 0) {
         init();
     }
+#ifdef NO_FUTURE
+    Block block(reinterpret_cast<const std::uint8_t*>(in_frame),
+        reinterpret_cast<std::uint8_t*>(out_frame),
+        0, 0,
+        m_width - 1, m_height - 1);
+#ifdef __SSE2__
+    if (m_edge_reflect) {
+        process_block(&block);
+    } else {
+        process_block_bg(&block);
+    }
+#else
+    process_block(&block);
+#endif
+#else
     if (m_n_threads == 1) {
         Block block(reinterpret_cast<const std::uint8_t*>(in_frame),
             reinterpret_cast<std::uint8_t*>(out_frame),
@@ -655,6 +672,7 @@ std::int32_t Kaleid0sc0pe::process(const void* in_frame, void* out_frame)
             f.wait();
         }
     }
+#endif
 
     return 0;
 }
