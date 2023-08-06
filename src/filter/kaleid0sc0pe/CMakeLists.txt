@@ -1,5 +1,6 @@
 include(CheckIncludeFileCXX)
 include(CheckCSourceCompiles)
+include(CheckCXXSourceCompiles)
 
 cmake_policy(SET CMP0056 NEW)
 cmake_policy(SET CMP0066 NEW)
@@ -59,4 +60,10 @@ else()
     endif()
 endif()
 
+check_cxx_source_compiles("
+			    #include <future>
+			    int main(){ std::future<void> f; return 0;}" HAS_WORKING_FUTURE)
+if (NOT HAS_WORKING_FUTURE)
+	add_definitions(-DNO_FUTURE)
+endif()
 install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})
