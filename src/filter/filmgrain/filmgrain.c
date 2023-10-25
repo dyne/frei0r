@@ -245,7 +245,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             }
 
             // dust
-            if(rand() < 2 && rand() < 2)
+            if(inst->dust_amt != 0.0 && rand() < 2 && rand() < 2)
             {
                 if(rand() < inst->dust_amt * 10)
                 {
