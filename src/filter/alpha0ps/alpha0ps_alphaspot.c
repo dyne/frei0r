@@ -82,7 +82,7 @@ void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
                     g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            sl[i*w+j] = g * 255.0f;
+            sl[i*w+j] = lrintf(g * 255.0f);
         }
     }
 }
@@ -117,7 +117,7 @@ void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
                     g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            sl[i*w+j] = g * 255.0f;
+            sl[i*w+j] = lrintf(g * 255.0f);
         }
     }
 }
@@ -162,7 +162,7 @@ void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
                     g = min + (lim-wb-db)/wb*(max-min);
                 }
             }
-            sl[i*w+j] = g * 255.0f;
+            sl[i*w+j] = lrintf(g * 255.0f);
         }
     }
 }
@@ -195,7 +195,7 @@ void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
                     g = min + (1.0f - wb-db)/wb*(max-min);
                 }
             }
-            sl[i*w+j] = g * 255.0f;
+            sl[i*w+j] = lrintf(g * 255.0f);
         }
     }
 }
