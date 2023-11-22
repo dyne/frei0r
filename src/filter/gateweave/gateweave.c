@@ -314,8 +314,23 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
         inst->step = 0;
         inst->prev_key_x = inst->next_key_x;
         inst->prev_key_y = inst->next_key_y;
-        inst->next_key_x = gateweave_random_range(inst->max_move_x, inst->next_key_x);
-        inst->next_key_y = gateweave_random_range(inst->max_move_y, inst->next_key_y);
+        if(inst->max_move_x > 0)
+        {
+            inst->next_key_x = gateweave_random_range(inst->max_move_x, inst->next_key_x);
+        }
+        else
+        {
+            inst->next_key_x = 0;
+        }
+
+        if(inst->max_move_y > 0)
+        {
+            inst->next_key_y = gateweave_random_range(inst->max_move_y, inst->next_key_y);
+        }
+        else
+        {
+            inst->next_key_y = 0;
+        }
     }
     /* old way of doing this
     double xs = inst->prev_key_x + (inst->next_key_x - inst->prev_key_x) * (inst->step / (inst->interval * 40));
@@ -329,6 +344,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     // new way of doing this
     inst->prev_key_x = gateweave_lerp(inst->prev_key_x, inst->next_key_x, 0.1);
     inst->prev_key_y = gateweave_lerp(inst->prev_key_y, inst->next_key_y, 0.1);
+
     inst->step++;
     gateweave_shift_picture(inframe, outframe, inst->buf, inst->prev_key_x, inst->prev_key_y, inst->width, inst->height);
 }
