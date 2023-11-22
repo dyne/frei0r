@@ -207,9 +207,31 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             grain = random_range_uint8(0, inst->grain_amt * 75);
         }
 
-        b = clamp_grain(((*(inframe + i) & 0x00FF0000) >> 16) - (grain * inst->grain_b));
-        g = clamp_grain(((*(inframe + i) & 0x0000FF00) >>  8) - (grain * inst->grain_g));
-        r = clamp_grain( (*(inframe + i) & 0x000000FF)        - (grain * inst->grain_r));
+        // dust
+        if(rand() < 2 && rand() < 2)
+        {
+            if(rand() < inst->dust_amt * 10)
+            {
+                if(rand() % 2 == 0)
+                {
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                }
+                else
+                {
+                    r = 255;
+                    g = 255;
+                    b = 255;
+                }
+            }
+        }
+        else
+        {
+            b = clamp_grain(((*(inframe + i) & 0x00FF0000) >> 16) - (grain * inst->grain_b));
+            g = clamp_grain(((*(inframe + i) & 0x0000FF00) >>  8) - (grain * inst->grain_g));
+            r = clamp_grain( (*(inframe + i) & 0x000000FF)        - (grain * inst->grain_r));
+        }
 
         *(inst->buf + i) = (*(inst->buf + i) & 0xFFFFFF00) | r;
         *(inst->buf + i) = (*(inst->buf + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
@@ -244,31 +266,9 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
                 }
             }
 
-            // dust
-            if(inst->dust_amt != 0.0 && rand() < 2 && rand() < 2)
-            {
-                if(rand() < inst->dust_amt * 10)
-                {
-                    if(rand() % 2 == 0)
-                    {
-                        r = 0;
-                        g = 0;
-                        b = 0;
-                    }
-                    else
-                    {
-                        r = 255;
-                        g = 255;
-                        b = 255;
-                    }
-                }
-            }
-            else
-            {
-                b = b / pixel_count;
-                g = g / pixel_count;
-                r = r / pixel_count;
-            }
+            b = b / pixel_count;
+            g = g / pixel_count;
+            r = r / pixel_count;
 
             *(outframe + i) = (*(outframe + i) & 0xFFFFFF00) | r;
             *(outframe + i) = (*(outframe + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
