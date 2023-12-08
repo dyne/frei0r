@@ -1,19 +1,18 @@
-# Frei0r developers union
 
-Read here an account of [Frei0r's project history](https://medium.com/think-do-tank/frei0r-the-free-and-open-source-video-effect-preservation-project-604134dde8b3).
+Project initiated at the Piksel Festival in 2004
+hosted by BEK - Bergen Senter for Elektronisk Kunst
+Maintained at the Dyne.org Foundation
 
-Frei0r is maintained by [Jaromil](https://jaromil.dyne.org) for the Dyne.org Foundation.
-
-## Developers who contributed, in alphabetic order:
+Developers who contributed, in alphabetic order:
 
 Akito Iwakura
 Albert Frisch
-Brendan Hack
 Brian Matherly
 Burkhard Plaum
 Carlo E. Prelz
 Christoph Willing
 Dan Dennedy
+Denis Roio (Jaromil)
 Filippo Giunchedi
 Gabriel Finch (Salsaman)
 Georg Seidel
