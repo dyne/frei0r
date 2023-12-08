@@ -17,7 +17,7 @@ public:
                       const uint32_t* in)
   {
     unsigned int
-      first_line=static_cast<unsigned int>(height*std::fmod(hsync,1.0));
+      first_line=static_cast<unsigned int>(height*std::fmod(std::fabs(hsync),1.0));
     
     std::copy(in+width*first_line, in+width*height, out);
     std::copy(in, in+width*first_line, out+width*(height-first_line));
