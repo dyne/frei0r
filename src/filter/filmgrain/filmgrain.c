@@ -15,6 +15,7 @@ typedef struct flimgrain_instance
     double grain_b;
     double blur_amt;
     double dust_amt;
+    double flicker_amt;
 
     uint32_t* buf;
 
@@ -37,7 +38,24 @@ inline uint8_t clamp_grain(int x)
     {
         return 0;
     }
+    if(x > 255)
+    {
+        return 255;
+    }
     return (uint8_t)x;
+}
+
+inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int flicker)
+{
+    if(color > 255 - threshold)
+    {
+        return 255 - threshold;
+    }
+    if(color < threshold >> 1)
+    {
+        return threshold >> 1;
+    }
+    return clamp_grain(color + flicker);
 }
 
 
@@ -61,7 +79,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
     info->frei0r_version = FREI0R_MAJOR_VERSION;
     info->major_version = 0;
     info->minor_version = 1;
-    info->num_params = 6;
+    info->num_params = 7;
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
@@ -76,19 +94,19 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
     case 1:
         info->name = "Red Grain";
-        info->explanation = "The percentage of grain applied to the red channel";
+        info->explanation = "The percentage of grain applied to the red channel.";
         info->type = F0R_PARAM_DOUBLE;
         break;
 
     case 2:
         info->name = "Green Grain";
-        info->explanation = "The percentage of grain applied to the green channel";
+        info->explanation = "The percentage of grain applied to the green channel.";
         info->type = F0R_PARAM_DOUBLE;
         break;
 
     case 3:
         info->name = "Blue Grain";
-        info->explanation = "The percentage of grain applied to the blue channel";
+        info->explanation = "The percentage of grain applied to the blue channel.";
         info->type = F0R_PARAM_DOUBLE;
         break;
 
@@ -97,9 +115,16 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
         info->explanation = "The intensity of the blur.";
         info->type = F0R_PARAM_DOUBLE;
         break;
+
     case 5:
         info->name = "Dust Amount";
         info->explanation = "The amount of dust particles on the image.";
+        info->type = F0R_PARAM_DOUBLE;
+        break;
+
+    case 6:
+        info->name = "Flicker";
+        info->explanation = "The amount of variation in brightness between frames.";
         info->type = F0R_PARAM_DOUBLE;
         break;
     }
@@ -111,12 +136,13 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 
     inst->width = width;
     inst->height = height;
-    inst->grain_amt = 0.25;
+    inst->grain_amt = 0.5;
     inst->grain_r = 0.75;
     inst->grain_g = 1.0;
     inst->grain_b = 0.5;
-    inst->blur_amt = 0.3;
+    inst->blur_amt = 0.5;
     inst->dust_amt = 0.2;
+    inst->flicker_amt = 0.5;
     inst->buf = (uint32_t*)calloc(width * height, sizeof(uint32_t));
 
     return (f0r_instance_t)inst;
@@ -128,6 +154,7 @@ void f0r_destruct(f0r_instance_t instance)
     free(inst->buf);
     free(instance);
 }
+
 
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
@@ -151,6 +178,8 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         break;
     case 5:
         inst->dust_amt = *((double*)param);
+    case 6:
+        inst->flicker_amt = *((double*)param);
         break;
     }
 }
@@ -177,9 +206,12 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         break;
     case 5:
         *((double*)param) = inst->dust_amt;
+    case 6:
+        *((double*)param) = inst->flicker_amt;
         break;
     }
 }
+
 
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
@@ -190,6 +222,13 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     uint32_t b;
     uint32_t a;
     uint8_t grain;
+    uint8_t reduce_t = random_range_uint8(inst->grain_amt * 20, inst->grain_amt * 20 + inst->flicker_amt * 10);
+    int flicker = random_range_uint8(0, inst->flicker_amt * 8);
+
+    if(rand() % 2)
+    {
+        flicker *= -1;
+    }
 
     // first grain
     if(inst->blur_amt == 0.0)
@@ -198,19 +237,12 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     }
     for(unsigned int i = 0; i < inst->height * inst->width; i++)
     {
-        if(((*(inframe + i) & 0x00FF0000) >> 16) + ((*(inframe + i) & 0x0000FF00) >> 8) + (*(inframe + i) & 0x000000FF) > 750)
-        {
-            grain = random_range_uint8(inst->grain_amt * 50, inst->grain_amt * 100);
-        }
-        else
-        {
-            grain = random_range_uint8(0, inst->grain_amt * 75);
-        }
+        grain = random_range_uint8(0, inst->grain_amt * 40);
 
         // dust
         if(rand() < 2 && rand() < 2)
         {
-            if(rand() < inst->dust_amt * 10)
+            if(rand() < inst->dust_amt * 30)
             {
                 if(rand() % 2 == 0)
                 {
@@ -228,9 +260,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
         }
         else
         {
-            b = clamp_grain(((*(inframe + i) & 0x00FF0000) >> 16) - (grain * inst->grain_b));
-            g = clamp_grain(((*(inframe + i) & 0x0000FF00) >>  8) - (grain * inst->grain_g));
-            r = clamp_grain( (*(inframe + i) & 0x000000FF)        - (grain * inst->grain_r));
+            // reducing the range of each color helps look more "filmish"
+            b = reduce_color_range((*(inframe + i) & 0x00FF0000) >> 16, reduce_t, flicker);
+            g = reduce_color_range((*(inframe + i) & 0x0000FF00) >>  8, reduce_t, flicker);
+            r = reduce_color_range(  *(inframe + i) & 0x000000FF      , reduce_t, flicker);
+
+            b = clamp_grain(b - (grain * inst->grain_b));
+            g = clamp_grain(g - (grain * inst->grain_g));
+            r = clamp_grain(r - (grain * inst->grain_r));
         }
 
         *(inst->buf + i) = (*(inst->buf + i) & 0xFFFFFF00) | r;
@@ -251,7 +288,8 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             g = ((*(inst->buf + i) & 0x0000FF00) >>  8) * pixel_count;
             r = ((*(inst->buf + i) & 0x000000FF)      ) * pixel_count;
 
-            blur_range = random_range_uint8(0, inst->blur_amt * 4);
+
+            blur_range = random_range_uint8(0, inst->blur_amt * 8 * ((r + g + b) >> 11));
             for(int xx = -blur_range - 1; xx < blur_range; xx++)
             {
                 for(int yy = -blur_range - 1; yy < blur_range; yy++)
