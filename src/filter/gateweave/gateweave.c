@@ -31,14 +31,15 @@ typedef struct gateweave_instance
 inline double gateweave_random_range(double range, double last)
 {
     // the maximum shift is 10 pixels
-    // since range is between 0 and 1, we want to multiply it by 1000
-    // this will generate an integer between -1000 and 1000 for the shift
-    // and then we divide by 100 to receive a decimal answer between -2.00 and 2.00
+    // since range includes fractional values, we want to multiply it by 100
+    // this will generate an integer between -100 and 100 for the shift
+    // and then we divide by 100 to receive a decimal answer between -10.00 and 10.00
     range *= 10;
-    int int_range = range * 200;
-    int rnd = (rand() % (int_range * 2)) - int_range;
-    double ret = rnd / 100;
+    int int_range = range * 100;
+    int_range = (rand() % (int_range * 2)) - int_range;
+    double ret = int_range / 100;
 
+    // we don't want to generate a value we already generate twice in a row
     if(ret > range)
     {
         ret = range;
@@ -47,7 +48,7 @@ inline double gateweave_random_range(double range, double last)
     {
         ret = -range;
     }
-    if(abs(ret) >= abs(last) - 0.1)
+    if(abs(ret) >= abs(last) - 0.12)
     {
         ret *= -1;
     }
@@ -308,7 +309,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 {
     gateweave_instance_t* inst = (gateweave_instance_t*)instance;
 
-    if(inst->step > inst->interval * 40)
+    if(inst->step > inst->interval * 20)
     {
         // create a new position
         inst->step = 0;
