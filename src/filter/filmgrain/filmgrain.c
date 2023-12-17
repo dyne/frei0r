@@ -51,9 +51,9 @@ inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int flicke
     {
         return 255 - threshold;
     }
-    if(color < threshold >> 1)
+    if(color < threshold)
     {
-        return threshold >> 1;
+        return threshold;
     }
     return clamp_grain(color + flicker);
 }
@@ -222,7 +222,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     uint32_t b;
     uint32_t a;
     uint8_t grain;
-    uint8_t reduce_t = random_range_uint8(inst->grain_amt * 20, inst->grain_amt * 20 + inst->flicker_amt * 10);
+    uint8_t reduce_t = random_range_uint8(0, inst->flicker_amt * 5) + inst->grain_amt * 40;
     int flicker = random_range_uint8(0, inst->flicker_amt * 8);
 
     if(rand() % 2)
@@ -237,8 +237,6 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     }
     for(unsigned int i = 0; i < inst->height * inst->width; i++)
     {
-        grain = random_range_uint8(0, inst->grain_amt * 40);
-
         // dust
         if(rand() < 2 && rand() < 2)
         {
@@ -263,7 +261,9 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             // reducing the range of each color helps look more "filmish"
             b = reduce_color_range((*(inframe + i) & 0x00FF0000) >> 16, reduce_t, flicker);
             g = reduce_color_range((*(inframe + i) & 0x0000FF00) >>  8, reduce_t, flicker);
-            r = reduce_color_range(  *(inframe + i) & 0x000000FF      , reduce_t, flicker);
+            r = reduce_color_range( *(inframe + i) & 0x000000FF       , reduce_t, flicker);
+
+            grain = random_range_uint8(0, inst->grain_amt * (40 + ((r + g + b) >> 5)));
 
             b = clamp_grain(b - (grain * inst->grain_b));
             g = clamp_grain(g - (grain * inst->grain_g));
@@ -282,14 +282,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
         int blur_range;
         for(int i = 0; i < inst->height * inst->width; i++)
         {
-            pixel_count = random_range_uint8(1, 3);
+            pixel_count = 1;
             a = (*(inframe + i) & 0xFF000000) >> 24;
-            b = ((*(inst->buf + i) & 0x00FF0000) >> 16) * pixel_count;
-            g = ((*(inst->buf + i) & 0x0000FF00) >>  8) * pixel_count;
-            r = ((*(inst->buf + i) & 0x000000FF)      ) * pixel_count;
+            b = ((*(inst->buf + i) & 0x00FF0000) >> 16);
+            g = ((*(inst->buf + i) & 0x0000FF00) >>  8);
+            r = ((*(inst->buf + i) & 0x000000FF)      );
 
 
-            blur_range = random_range_uint8(0, inst->blur_amt * 8 * ((r + g + b) >> 11));
+            blur_range = random_range_uint8(0, inst->blur_amt * 4);
             for(int xx = -blur_range - 1; xx < blur_range; xx++)
             {
                 for(int yy = -blur_range - 1; yy < blur_range; yy++)
