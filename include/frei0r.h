@@ -23,7 +23,7 @@
  * @section sec_overview Overview
  *
  * If you are new to frei0r, the best thing is probably to have
- * a look at the <a href="frei0r_8h-source.html">frei0r header</a>,
+ * a look at the <a href="frei0r_8h_source.html">frei0r header</a>,
  * which is quite simple.
  *
  * After that, you might want to look at the 
