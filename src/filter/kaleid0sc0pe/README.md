@@ -9,6 +9,11 @@ Written by Brendan Hack. Original source repository at [https://github.com/gbend
 | [![Colorful Stones](colorful_stones-400.jpg)](colorful_stones.jpg)  | [![Kaleidoscoped Colorful Stones](colorful_stones-tr16-400.jpg)](colorful_stones-tr16.jpg)  |
 |Licensed under [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/?ref=ccsearch&atype=html "CC BY 2.0") | Segmentation 16, source segment centred to top right|
 
+| Source Image | ["New Years Day 2024"](https://www.youtube.com/watch?v=9tZwRUTyD08 "New Years Day 2024)") (YouTube)|
+| - | - |
+| [![New Years Day 2024 Source](new-years-day-2024-source-480.jpg)](new-years-day-2024-source-480.jpg)  | [![New Years Day 2024 YouTube](https://img.youtube.com/vi/9tZwRUTyD08/0.jpg)](https://www.youtube.com/watch?v=9tZwRUTyD08)  |
+| Video created from single source image via zoom/rotate/pan and kaleidoscope animation | Animated Music Video created in [KdenLive](https://kdenlive.org) by [Paul Haesler](https://www.youtube.com/@PaulHaesler) |
+
 | [Created Many and Strange (Official Music Video)](https://www.youtube.com/watch?v=2r9ggSie1wI) (YouTube) by [Spaceman Paul](https://github.com/SpacemanPaul "Spaceman Paul") |
 | --- | 
 | [![Created Many and Strange (Official Music Video) by @SpacemanPaul](https://img.youtube.com/vi/2r9ggSie1wI/0.jpg)](https://www.youtube.com/watch?v=2r9ggSie1wI) |
