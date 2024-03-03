@@ -16,7 +16,6 @@ typedef struct gateweave_instance
     double max_move_y;
 
     // other variables that the effect uses to keep track of things
-    unsigned int step;
     double next_key_x;
     double next_key_y;
     double prev_key_x;
@@ -28,7 +27,7 @@ typedef struct gateweave_instance
 
 
 // these functions are for the effect
-inline double gateweave_random_range(double range, double last)
+double gateweave_random_range(double range, double last)
 {
     // the maximum shift is 10 pixels
     // since range includes fractional values, we want to multiply it by 100
@@ -37,7 +36,7 @@ inline double gateweave_random_range(double range, double last)
     range *= 10;
     int int_range = range * 100;
     int_range = (rand() % (int_range * 2)) - int_range;
-    double ret = int_range / 100;
+    double ret = int_range / 100.0;
 
     // we don't want to generate a value we already generate twice in a row
     if(ret > range)
@@ -48,14 +47,14 @@ inline double gateweave_random_range(double range, double last)
     {
         ret = -range;
     }
-    if(abs(ret) >= abs(last) - 0.12)
+    if((ret > 0 && ret >= last - 0.12) || (ret < 0 && ret <= last + 0.12))
     {
         ret *= -1;
     }
     return ret;
 }
 
-double gateweave_lerp(double v0, double v1, double t)
+inline double gateweave_lerp(double v0, double v1, double t)
 {
     return v0 + t * (v1 - v0);
 }
@@ -247,12 +246,11 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 
     inst->width = width;
     inst->height = height;
-    inst->interval = 0.15;
+    inst->interval = 0.6;
     inst->max_move_x = 0.2;
     inst->max_move_y = 0.2;
 
     // other variables that the effect uses to keep track of things
-    inst->step = 0;
     inst->next_key_x = gateweave_random_range(inst->max_move_x, 0);
     inst->next_key_y = gateweave_random_range(inst->max_move_y, 0);
     inst->prev_key_x = 0;
@@ -308,44 +306,12 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
     gateweave_instance_t* inst = (gateweave_instance_t*)instance;
+    
+    inst->next_key_x = gateweave_random_range(inst->max_move_x, inst->next_key_x);
+    inst->next_key_y = gateweave_random_range(inst->max_move_y, inst->next_key_y);
+    
+    inst->prev_key_x = gateweave_lerp(inst->next_key_x, inst->prev_key_x, inst->interval);
+    inst->prev_key_y = gateweave_lerp(inst->next_key_y, inst->prev_key_y, inst->interval);
 
-    if(inst->step > inst->interval * 20)
-    {
-        // create a new position
-        inst->step = 0;
-        inst->prev_key_x = inst->next_key_x;
-        inst->prev_key_y = inst->next_key_y;
-        if(inst->max_move_x > 0)
-        {
-            inst->next_key_x = gateweave_random_range(inst->max_move_x, inst->next_key_x);
-        }
-        else
-        {
-            inst->next_key_x = 0;
-        }
-
-        if(inst->max_move_y > 0)
-        {
-            inst->next_key_y = gateweave_random_range(inst->max_move_y, inst->next_key_y);
-        }
-        else
-        {
-            inst->next_key_y = 0;
-        }
-    }
-    /* old way of doing this
-    double xs = inst->prev_key_x + (inst->next_key_x - inst->prev_key_x) * (inst->step / (inst->interval * 40));
-    double yx = inst->prev_key_y + (inst->next_key_y - inst->prev_key_y) * (inst->step / (inst->interval * 40));
-
-
-    inst->step++;
-    gateweave_shift_picture(inframe, outframe, inst->buf, xs, yx, inst->width, inst->height);
-    */
-
-    // new way of doing this
-    inst->prev_key_x = gateweave_lerp(inst->prev_key_x, inst->next_key_x, 0.1);
-    inst->prev_key_y = gateweave_lerp(inst->prev_key_y, inst->next_key_y, 0.1);
-
-    inst->step++;
     gateweave_shift_picture(inframe, outframe, inst->buf, inst->prev_key_x, inst->prev_key_y, inst->width, inst->height);
 }
