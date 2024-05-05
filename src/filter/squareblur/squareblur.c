@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "frei0r.h"
-#include "blur.h"
+#include "frei0r/blur.h"
 
 int f0r_init()
 {

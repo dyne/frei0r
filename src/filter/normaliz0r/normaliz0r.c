@@ -74,7 +74,7 @@
 #include <stdio.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 #define MAX_HISTORY_LEN     128
 

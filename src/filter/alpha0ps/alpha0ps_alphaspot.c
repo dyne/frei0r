@@ -29,7 +29,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 //#include <stdio.h>
 #include <frei0r.h>
-#include <frei0r_math.h>
+#include <frei0r/math.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
