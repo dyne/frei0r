@@ -28,7 +28,7 @@
 #include <frei0r.h>
 #include <string.h>
 #include <math.h>
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 #include "interp.h"
 
 //----------------------------------------

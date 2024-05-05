@@ -20,7 +20,7 @@
 #include <math.h>
 #include "frei0r.h"
 #include <stdlib.h>
-#include "blur.h"
+#include "frei0r/blur.h"
 
 typedef struct mask0mate_instance {
 	double left, top, right, bottom;

@@ -27,7 +27,7 @@
 #include <math.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 double PI = 3.14159; 
 double pixelScale = 255.9;

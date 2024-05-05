@@ -20,7 +20,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "frei0r.hpp"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 /**
   This filter implements a standard way of color correction proposed by

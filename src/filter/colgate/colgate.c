@@ -88,7 +88,7 @@
 #endif
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 enum ParamIndex {
 	NEUTRAL_COLOR,

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 
 // let's try to walk through everything because i'm a moron

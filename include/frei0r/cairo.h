@@ -1,5 +1,5 @@
 /*
- * frei0r_cairo.h
+ * frei0r/cairo.h
  * Copyright 2012 Janne Liljeblad 
  *
  * This file is part of Frei0r.
@@ -22,7 +22,7 @@
 
 #include <cairo.h>
 #include <string.h>
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 /**
 * String identifiers for gradient types available using Cairo.

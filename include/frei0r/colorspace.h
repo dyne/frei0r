@@ -1,4 +1,4 @@
-/* frei0r_colorspace.h
+/* frei0r/colorspace.h
  * Copyright (C) 2004 Mathieu Guindon, Julien Keable, Jean-Sebastien Senecal
  * This file is part of Frei0r.
  *
@@ -20,7 +20,7 @@
 #ifndef INCLUDED_FREI0R_COLORSPACE_H
 #define INCLUDED_FREI0R_COLORSPACE_H
 
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 #include <stdlib.h>
 #include <math.h>
 
