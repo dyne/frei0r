@@ -32,7 +32,7 @@
 #include <assert.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 #define GIMP_RGB_LUMINANCE_RED    (0.2126)
 #define GIMP_RGB_LUMINANCE_GREEN  (0.7152)

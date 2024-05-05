@@ -1,5 +1,5 @@
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 #include <stdlib.h>
 #include <assert.h>
 

@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <math.h>
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 static int MY_MAX_RAND = 32767;// I assume RAND_MAX to be at least this big.
 static double gaussian_lookup[32767];

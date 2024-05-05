@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 #define MAX_GAMMA 4.0
 

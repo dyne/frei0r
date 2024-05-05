@@ -28,7 +28,7 @@
 #include <stdio.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 #define MAX3(a, b, c) ( ( a > b && a > c) ? a : (b > c ? b : c) )
 #define MIN3(a, b, c) ( ( a < b && a < c) ? a : (b < c ? b : c) )

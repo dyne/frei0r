@@ -20,7 +20,7 @@
 #include <math.h>
 #include "frei0r.h"
 #include <stdlib.h>
-#include "blur.h"
+#include "frei0r/blur.h"
 
 typedef struct glow_instance {
 	double blur;
