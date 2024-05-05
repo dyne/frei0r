@@ -19,7 +19,7 @@
 #include <cairo.h>
 #endif
 #include "frei0r.hpp"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 #include "gradientlut.hpp"
 #include <string>
 #include <stdlib.h>

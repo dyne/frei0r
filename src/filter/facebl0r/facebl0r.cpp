@@ -20,7 +20,7 @@
 #include <string.h>
 #include <opencv2/opencv.hpp>
 #include "frei0r.hpp"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 class TrackedObj {
 public:

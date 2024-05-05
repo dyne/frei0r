@@ -27,7 +27,7 @@
 #include <math.h>
 
 #include "frei0r.h"
-#include "frei0r_cairo.h"
+#include "frei0r/cairo.h"
 
 typedef struct cairo_gradient_instance
 {

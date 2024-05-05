@@ -24,7 +24,7 @@
 #include <cairo.h>
 
 #include "frei0r.h"
-#include "frei0r_cairo.h"
+#include "frei0r/cairo.h"
 
 #define MAX_ROWS    20
 #define MAX_COLUMNS 20 

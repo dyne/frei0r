@@ -7,7 +7,7 @@
  *
  *				Paul Haeberli - 1993
  */
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 #include <math.h>
 #include <stdio.h>
 
