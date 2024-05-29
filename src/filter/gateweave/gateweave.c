@@ -29,6 +29,11 @@ typedef struct gateweave_instance
 // these functions are for the effect
 double gateweave_random_range(double range, double last)
 {
+    if(range <= 0)
+    {
+        return 0;
+    }
+    
     // the maximum shift is 10 pixels
     // since range includes fractional values, we want to multiply it by 100
     // this will generate an integer between -100 and 100 for the shift
