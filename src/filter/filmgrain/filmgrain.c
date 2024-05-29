@@ -23,7 +23,7 @@ typedef struct flimgrain_instance
 
 
 // these functions are for the effect
-inline uint8_t random_range_uint8(uint8_t min, uint8_t max)
+static inline uint8_t random_range_uint8(uint8_t min, uint8_t max)
 {
     if(min == max)
     {
@@ -32,7 +32,7 @@ inline uint8_t random_range_uint8(uint8_t min, uint8_t max)
     return (rand() % (max - min)) + min;
 }
 
-inline uint8_t clamp_grain(int x)
+static inline uint8_t clamp_grain(int x)
 {
     if(x < 0)
     {
@@ -45,7 +45,7 @@ inline uint8_t clamp_grain(int x)
     return (uint8_t)x;
 }
 
-inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int flicker)
+static inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int flicker)
 {
     if(color > 255 - threshold)
     {
