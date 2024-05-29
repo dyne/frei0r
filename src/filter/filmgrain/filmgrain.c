@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "frei0r.h"
+#include "frei0r_math.h"
 
 
 typedef struct flimgrain_instance
@@ -17,8 +18,6 @@ typedef struct flimgrain_instance
     double dust_amt;
     double flicker_amt;
 
-    uint32_t* buf;
-
 } filmgrain_instance_t;
 
 
@@ -32,30 +31,9 @@ static inline uint8_t random_range_uint8(uint8_t min, uint8_t max)
     return (rand() % (max - min)) + min;
 }
 
-static inline uint8_t clamp_grain(int x)
-{
-    if(x < 0)
-    {
-        return 0;
-    }
-    if(x > 255)
-    {
-        return 255;
-    }
-    return (uint8_t)x;
-}
-
 static inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int flicker)
 {
-    if(color > 255 - threshold)
-    {
-        return 255 - threshold;
-    }
-    if(color < (threshold >> 1))
-    {
-        return (threshold >> 1);
-    }
-    return clamp_grain(color + flicker);
+    return CLAMP0255(CLAMP(color, threshold >> 1, 255 - threshold) + flicker);
 }
 
 
@@ -143,7 +121,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->blur_amt = 0.5;
     inst->dust_amt = 0.2;
     inst->flicker_amt = 0.5;
-    inst->buf = (uint32_t*)calloc(width * height, sizeof(uint32_t));
 
     return (f0r_instance_t)inst;
 }
@@ -151,7 +128,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 void f0r_destruct(f0r_instance_t instance)
 {
     filmgrain_instance_t* inst = (filmgrain_instance_t*)instance;
-    free(inst->buf);
     free(instance);
 }
 
@@ -216,6 +192,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
     filmgrain_instance_t* inst = (filmgrain_instance_t*)instance;
+    uint32_t* buf = outframe;
 
     uint32_t r;
     uint32_t g;
@@ -231,10 +208,12 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     }
 
     // first grain
-    if(inst->blur_amt == 0.0)
+    if(inst->blur_amt != 0.0)
     {
-        inst->buf = outframe;
+        // only need a buf if blur is > 0
+        buf = (uint32_t*)calloc(inst->width * inst->height, sizeof(uint32_t));
     }
+
     for(unsigned int i = 0; i < inst->height * inst->width; i++)
     {
         // dust
@@ -265,14 +244,14 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 
             grain = random_range_uint8(0, inst->grain_amt * (40 + ((r + g + b) >> 5)));
 
-            b = clamp_grain(b - (grain * inst->grain_b));
-            g = clamp_grain(g - (grain * inst->grain_g));
-            r = clamp_grain(r - (grain * inst->grain_r));
+            b = CLAMP0255(b - (grain * inst->grain_b));
+            g = CLAMP0255(g - (grain * inst->grain_g));
+            r = CLAMP0255(r - (grain * inst->grain_r));
         }
 
-        *(inst->buf + i) = (*(inst->buf + i) & 0xFFFFFF00) | r;
-        *(inst->buf + i) = (*(inst->buf + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
-        *(inst->buf + i) = (*(inst->buf + i) & 0xFF00FFFF) | ((uint32_t)b << 16);
+        *(buf + i) = (*(buf + i) & 0xFFFFFF00) | r;
+        *(buf + i) = (*(buf + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
+        *(buf + i) = (*(buf + i) & 0xFF00FFFF) | ((uint32_t)b << 16);
     }
 
     // then blur
@@ -284,10 +263,9 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
         {
             pixel_count = 1;
             a = (*(inframe + i) & 0xFF000000) >> 24;
-            b = ((*(inst->buf + i) & 0x00FF0000) >> 16);
-            g = ((*(inst->buf + i) & 0x0000FF00) >>  8);
-            r = ((*(inst->buf + i) & 0x000000FF)      );
-
+            b = ((*(buf + i) & 0x00FF0000) >> 16);
+            g = ((*(buf + i) & 0x0000FF00) >>  8);
+            r = ((*(buf + i) & 0x000000FF)      );
 
             blur_range = random_range_uint8(0, inst->blur_amt * 4);
             for(int xx = -blur_range - 1; xx < blur_range; xx++)
@@ -296,9 +274,9 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
                 {
                     if((i + xx + (yy * inst->width)) > 0 && (i + xx + (yy * inst->width)) < (inst->width * inst->height) - 1)
                     {
-                        b += (*(inst->buf + i + xx + (yy * inst->width)) & 0x00FF0000) >> 16;
-                        g += (*(inst->buf + i + xx + (yy * inst->width)) & 0x0000FF00) >>  8;
-                        r += (*(inst->buf + i + xx + (yy * inst->width)) & 0x000000FF);
+                        b += (*(buf + i + xx + (yy * inst->width)) & 0x00FF0000) >> 16;
+                        g += (*(buf + i + xx + (yy * inst->width)) & 0x0000FF00) >>  8;
+                        r += (*(buf + i + xx + (yy * inst->width)) & 0x000000FF);
                         pixel_count++;
                     }
                 }
@@ -312,5 +290,10 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             *(outframe + i) = (*(outframe + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
             *(outframe + i) = (*(outframe + i) & 0xFF00FFFF) | ((uint32_t)b << 16);
         }
+    }
+
+    if(buf != outframe)
+    {
+        free(buf);
     }
 }
