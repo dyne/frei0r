@@ -54,12 +54,12 @@ double gateweave_random_range(double range, double last)
     return ret;
 }
 
-inline double gateweave_lerp(double v0, double v1, double t)
+static inline double gateweave_lerp(double v0, double v1, double t)
 {
     return v0 + t * (v1 - v0);
 }
 
-inline double gateweave_abs(double x)
+static inline double gateweave_abs(double x)
 {
     if(x < 0)
     {
@@ -71,7 +71,7 @@ inline double gateweave_abs(double x)
     }
 }
 
-inline int gateweave_clamp(double x)
+static inline int gateweave_clamp(double x)
 {
     if(x > 255)
     {
@@ -306,10 +306,10 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
     gateweave_instance_t* inst = (gateweave_instance_t*)instance;
-    
+
     inst->next_key_x = gateweave_random_range(inst->max_move_x, inst->next_key_x);
     inst->next_key_y = gateweave_random_range(inst->max_move_y, inst->next_key_y);
-    
+
     inst->prev_key_x = gateweave_lerp(inst->next_key_x, inst->prev_key_x, inst->interval);
     inst->prev_key_y = gateweave_lerp(inst->next_key_y, inst->prev_key_y, inst->interval);
 
