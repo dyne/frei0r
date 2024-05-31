@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#include <math.h>
 #include "frei0r.h"
+#include "frei0r_math.h"
 
 
 // let's try to walk through everything because i'm a moron
@@ -21,19 +23,17 @@ typedef struct gateweave_instance
     double prev_key_x;
     double prev_key_y;
 
-    uint32_t* buf;
-
 } gateweave_instance_t;
 
 
 // these functions are for the effect
-double gateweave_random_range(double range, double last)
+static double gateweave_random_range(double range, double last)
 {
     if(range <= 0)
     {
         return 0;
     }
-    
+
     // the maximum shift is 10 pixels
     // since range includes fractional values, we want to multiply it by 100
     // this will generate an integer between -100 and 100 for the shift
@@ -43,15 +43,8 @@ double gateweave_random_range(double range, double last)
     int_range = (rand() % (int_range * 2)) - int_range;
     double ret = int_range / 100.0;
 
-    // we don't want to generate a value we already generate twice in a row
-    if(ret > range)
-    {
-        ret = range;
-    }
-    else if(ret < -range)
-    {
-        ret = -range;
-    }
+    // we don't want to generate a value similar to one we already generated twice in a row
+    ret = CLAMP(ret, -range, range);
     if((ret > 0 && ret >= last - 0.12) || (ret < 0 && ret <= last + 0.12))
     {
         ret *= -1;
@@ -64,33 +57,6 @@ static inline double gateweave_lerp(double v0, double v1, double t)
     return v0 + t * (v1 - v0);
 }
 
-static inline double gateweave_abs(double x)
-{
-    if(x < 0)
-    {
-        return -x;
-    }
-    else
-    {
-        return x;
-    }
-}
-
-static inline int gateweave_clamp(double x)
-{
-    if(x > 255)
-    {
-        return 255;
-    }
-    else if(x < 0)
-    {
-        return 0;
-    }
-    else
-    {
-        return (int)x;
-    }
-}
 
 // this function mixes the colors of two pixels
 // a is the original pixel that will be changed
@@ -99,33 +65,35 @@ static inline int gateweave_clamp(double x)
 // an amount of 1 means pixel a will be equal to pixel b
 // an amount of 0 means pixel a will be equal to pixel a (no change)
 // an amount of 0.5 means pixel a will be equal to 0.5 * pixel a + 0.5 * pixel b
-uint32_t gateweave_blend_color(uint32_t a, uint32_t b, double amount)
+static uint32_t gateweave_blend_color(uint32_t a, uint32_t b, double amount)
 {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-    uint8_t alpha;
+    uint8_t c_a;
+    uint8_t c_b;
+    uint8_t c_g;
+    uint8_t c_r;
     uint32_t output;
 
     //   RRGGBBAA
     // 0xFFFFFFFF
-    red   = gateweave_clamp(((a & 0xFF000000) >> 24) * (1 - amount) + ((b & 0xFF000000) >> 24) * (amount));
-    green = gateweave_clamp(((a & 0x00FF0000) >> 16) * (1 - amount) + ((b & 0x00FF0000) >> 16) * (amount));
-    blue  = gateweave_clamp(((a & 0x0000FF00) >>  8) * (1 - amount) + ((b & 0x0000FF00) >>  8) * (amount));
-    alpha = gateweave_clamp(((a & 0x000000FF)) * (1 - amount) + ((b & 0x000000FF)) * (amount));
+    c_a = CLAMP0255(((a & 0xFF000000) >> 24) * (1 - amount) + ((b & 0xFF000000) >> 24) * (amount));
+    c_b = CLAMP0255(((a & 0x00FF0000) >> 16) * (1 - amount) + ((b & 0x00FF0000) >> 16) * (amount));
+    c_g = CLAMP0255(((a & 0x0000FF00) >>  8) * (1 - amount) + ((b & 0x0000FF00) >>  8) * (amount));
+    c_r = CLAMP0255(((a & 0x000000FF))       * (1 - amount) + ((b & 0x000000FF))       * (amount));
 
-    output = (output & 0xFFFFFF00) | alpha;
-    output = (output & 0xFFFF00FF) | ((uint32_t)blue  <<  8);
-    output = (output & 0xFF00FFFF) | ((uint32_t)green << 16);
-    output = (output & 0x00FFFFFF) | ((uint32_t)red   << 24);
+    output = (output & 0xFFFFFF00) |  (uint32_t)c_r;
+    output = (output & 0xFFFF00FF) | ((uint32_t)c_g <<  8);
+    output = (output & 0xFF00FFFF) | ((uint32_t)c_b << 16);
+    output = (output & 0x00FFFFFF) | ((uint32_t)c_a << 24);
 
     return output;
 }
 
 // this function is the one that ultimately manipulates the image
 // it shifts the image and can do so to a value less than one pixel
-void gateweave_shift_picture(const uint32_t* in, uint32_t* out, uint32_t* buf, double shift_x, double shift_y, int w, int h)
+static inline void gateweave_shift_picture(const uint32_t* in, uint32_t* out, double shift_x, double shift_y, int w, int h)
 {
+    uint32_t* buf = (uint32_t*)calloc(w * h, sizeof(uint32_t));
+
     // first we shift to the nearest whole pixel
     int int_shift_x = shift_x;
     int int_shift_y = shift_y;
@@ -156,7 +124,7 @@ void gateweave_shift_picture(const uint32_t* in, uint32_t* out, uint32_t* buf, d
     int shift_component_y;
 
     char larger_x_comp = 0;
-    if(gateweave_abs(shift_x) > gateweave_abs(shift_y))
+    if(fabs(shift_x) > fabs(shift_y))
     {
         larger_x_comp = 1;
     }
@@ -195,6 +163,7 @@ void gateweave_shift_picture(const uint32_t* in, uint32_t* out, uint32_t* buf, d
             }
         }
     }
+    free(buf);
 }
 
 
@@ -261,16 +230,12 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->prev_key_x = 0;
     inst->prev_key_y = 0;
 
-    // and allocate memory for the buffers
-    inst->buf = (uint32_t*)calloc(width * height, sizeof(uint32_t));
-
     return (f0r_instance_t)inst;
 }
 
 void f0r_destruct(f0r_instance_t instance)
 {
     gateweave_instance_t* inst = (gateweave_instance_t*)instance;
-    free(inst->buf);
     free(instance);
 }
 
@@ -311,12 +276,11 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
     gateweave_instance_t* inst = (gateweave_instance_t*)instance;
-
     inst->next_key_x = gateweave_random_range(inst->max_move_x, inst->next_key_x);
     inst->next_key_y = gateweave_random_range(inst->max_move_y, inst->next_key_y);
 
     inst->prev_key_x = gateweave_lerp(inst->next_key_x, inst->prev_key_x, inst->interval);
     inst->prev_key_y = gateweave_lerp(inst->next_key_y, inst->prev_key_y, inst->interval);
 
-    gateweave_shift_picture(inframe, outframe, inst->buf, inst->prev_key_x, inst->prev_key_y, inst->width, inst->height);
+    gateweave_shift_picture(inframe, outframe, inst->prev_key_x, inst->prev_key_y, inst->width, inst->height);
 }
