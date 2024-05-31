@@ -22,13 +22,14 @@ typedef struct flimgrain_instance
 
 
 // these functions are for the effect
-static inline uint8_t random_range_uint8(uint8_t min, uint8_t max)
+static inline uint8_t random_range_uint8(uint8_t x)
 {
-    if(min == max)
+    // never divide by zero
+    if(x < 1)
     {
-        return min;
+        return 0;
     }
-    return (rand() % (max - min)) + min;
+    return rand() % x;
 }
 
 static inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int flicker)
@@ -154,6 +155,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         break;
     case 5:
         inst->dust_amt = *((double*)param);
+        break;
     case 6:
         inst->flicker_amt = *((double*)param);
         break;
@@ -182,6 +184,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         break;
     case 5:
         *((double*)param) = inst->dust_amt;
+        break;
     case 6:
         *((double*)param) = inst->flicker_amt;
         break;
@@ -197,10 +200,9 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     uint32_t r;
     uint32_t g;
     uint32_t b;
-    uint32_t a;
     uint8_t grain;
-    uint8_t reduce_t = random_range_uint8(0, inst->flicker_amt * 5) + inst->grain_amt * 40;
-    int flicker = random_range_uint8(0, inst->flicker_amt * 8);
+    uint8_t reduce_t = random_range_uint8(inst->flicker_amt * 5) + inst->grain_amt * 40;
+    int flicker = random_range_uint8(inst->flicker_amt * 8);
 
     if(rand() % 2)
     {
@@ -217,22 +219,19 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     for(unsigned int i = 0; i < inst->height * inst->width; i++)
     {
         // dust
-        if(rand() < 2 && rand() < 2)
+        if(rand() < inst->dust_amt * 2048)
         {
-            if(rand() < inst->dust_amt * 200)
+            if(rand() % 2 == 0)
             {
-                if(rand() % 2 == 0)
-                {
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                }
-                else
-                {
-                    r = 255;
-                    g = 255;
-                    b = 255;
-                }
+                r = 0;
+                g = 0;
+                b = 0;
+            }
+            else
+            {
+                r = 255;
+                g = 255;
+                b = 255;
             }
         }
         else
@@ -242,16 +241,19 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             g = reduce_color_range((*(inframe + i) & 0x0000FF00) >>  8, reduce_t, flicker);
             r = reduce_color_range( *(inframe + i) & 0x000000FF       , reduce_t, flicker);
 
-            grain = random_range_uint8(0, inst->grain_amt * (40 + ((r + g + b) >> 5)));
+            grain = random_range_uint8(inst->grain_amt * (40 + ((r + g + b) >> 5)));
 
             b = CLAMP0255(b - (grain * inst->grain_b));
             g = CLAMP0255(g - (grain * inst->grain_g));
             r = CLAMP0255(r - (grain * inst->grain_r));
         }
 
-        *(buf + i) = (*(buf + i) & 0xFFFFFF00) | r;
-        *(buf + i) = (*(buf + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
-        *(buf + i) = (*(buf + i) & 0xFF00FFFF) | ((uint32_t)b << 16);
+        *(buf + i) = (*(buf + i) & 0xFFFFFF00) |  r;
+        *(buf + i) = (*(buf + i) & 0xFFFF00FF) | (g <<  8);
+        *(buf + i) = (*(buf + i) & 0xFF00FFFF) | (b << 16);
+
+        // alpha channel is preserved and no grain is applied to it
+        *(outframe + i) = (*(outframe + i) & 0x00FFFFFF) | (*(inframe + i) & 0xFF000000);
     }
 
     // then blur
@@ -262,12 +264,11 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
         for(int i = 0; i < inst->height * inst->width; i++)
         {
             pixel_count = 1;
-            a = (*(inframe + i) & 0xFF000000) >> 24;
             b = ((*(buf + i) & 0x00FF0000) >> 16);
             g = ((*(buf + i) & 0x0000FF00) >>  8);
             r = ((*(buf + i) & 0x000000FF)      );
 
-            blur_range = random_range_uint8(0, inst->blur_amt * 4);
+            blur_range = random_range_uint8(inst->blur_amt * 4);
             for(int xx = -blur_range - 1; xx < blur_range; xx++)
             {
                 for(int yy = -blur_range - 1; yy < blur_range; yy++)
@@ -286,14 +287,10 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
             g = g / pixel_count;
             r = r / pixel_count;
 
-            *(outframe + i) = (*(outframe + i) & 0xFFFFFF00) | r;
-            *(outframe + i) = (*(outframe + i) & 0xFFFF00FF) | ((uint32_t)g <<  8);
-            *(outframe + i) = (*(outframe + i) & 0xFF00FFFF) | ((uint32_t)b << 16);
+            *(outframe + i) = (*(outframe + i) & 0xFFFFFF00) |  r;
+            *(outframe + i) = (*(outframe + i) & 0xFFFF00FF) | (g <<  8);
+            *(outframe + i) = (*(outframe + i) & 0xFF00FFFF) | (b << 16);
         }
-    }
-
-    if(buf != outframe)
-    {
         free(buf);
     }
 }
