@@ -37,6 +37,16 @@ static inline uint32_t reduce_color_range(uint32_t color, uint8_t threshold, int
     return CLAMP0255(CLAMP(color, threshold >> 1, 255 - threshold) + flicker);
 }
 
+#define DUST_RAND_LIMIT 1000000000
+static inline int big_rand()
+{
+    #if RAND_MAX > DUST_RAND_LIMIT
+    return rand() % DUST_RAND_LIMIT;
+    #else
+    return (rand() * (RAND_MAX + 1) + rand()) % DUST_RAND_LIMIT;
+    #endif
+}
+
 
 // these functions are for frei0r
 // mostly copy/paste/slightly modified from the other frei0r effects
@@ -219,7 +229,7 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     for(unsigned int i = 0; i < inst->height * inst->width; i++)
     {
         // dust
-        if(rand() < inst->dust_amt * 2048)
+        if(big_rand() < inst->dust_amt * 1000)
         {
             if(rand() % 2 == 0)
             {
