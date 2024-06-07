@@ -69,7 +69,7 @@ and therefore time consuming "walks" through memory.
 
 #include <sys/types.h>
 #include <string.h>
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 //---------------------------------------------------------
 //koeficienti za biquad lowpass  iz f in q

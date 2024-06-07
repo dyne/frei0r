@@ -17,7 +17,7 @@
  */
 
 #include "frei0r.hpp"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 class Premultiply : public frei0r::filter
 {

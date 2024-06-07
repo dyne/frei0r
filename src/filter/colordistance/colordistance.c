@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 typedef struct colordistance_instance
 {

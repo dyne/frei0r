@@ -20,7 +20,7 @@
  */
 
 #include "frei0r.hpp"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 #define NBYTES 4
 #define ALPHA 3

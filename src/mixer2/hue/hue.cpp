@@ -19,8 +19,8 @@
  */
 
 #include "frei0r.hpp"
-#include "frei0r_math.h"
-#include "frei0r_colorspace.h"
+#include "frei0r/math.h"
+#include "frei0r/colorspace.h"
 
 #define NBYTES 4
 

@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 #define SIGMOIDAL_BASE   2
 #define SIGMOIDAL_RANGE 20

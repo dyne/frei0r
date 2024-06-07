@@ -27,7 +27,7 @@
 #include <math.h>
 
 #include "frei0r.h"
-#include "frei0r_math.h"
+#include "frei0r/math.h"
 
 int ditherMagic2x2Matrix[] = {
 	 	 0, 2,
