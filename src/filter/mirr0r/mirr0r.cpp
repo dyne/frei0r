@@ -18,26 +18,9 @@
  */
 
 #include "frei0r.hpp"
-#include <stdlib.h>
-#include <assert.h>
+#include "frei0r/math.h"
+#define _USE_MATH_DEFINES
 #include <math.h>
-#include <cairo.h>
-
-#define PI 3.14159265358979323846
-
-#ifdef __cplusplus
-extern "C"{
-#endif
-
-#define register
-
-#include "frei0r/cairo.h"
-
-#undef register
-
-#ifdef __cplusplus
-}
-#endif
 
 class Mirr0r : public frei0r::filter {
 
@@ -91,7 +74,7 @@ public:
         float center_y = (float)h / 2.0f;
 
         // Convert the rotation to radians
-        float angle = (float)(this->rotation * PI / 180.0f);
+        float angle = (float)(this->rotation * M_PI / 180.0f);
         float cos_angle = cosf(angle);
         float sin_angle = sinf(angle);
 
