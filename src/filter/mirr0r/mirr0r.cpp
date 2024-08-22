@@ -19,8 +19,9 @@
 
 #include "frei0r.hpp"
 #include "frei0r/math.h"
+#include <cairo.h>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 class Mirr0r : public frei0r::filter {
 
@@ -52,69 +53,66 @@ public:
 
     }
 
-    virtual void update(double time, uint32_t* out, const uint32_t* in){
-        const unsigned char* src = (unsigned char*)in;
-        unsigned char* dst = (unsigned char*)out;
-
+    virtual void update(double time, uint32_t* out, const uint32_t* in) {
+        
         int w = this->width;
         int h = this->height;
 
-        if (w <= 0 || h <= 0) {
-            return;
-        }
+        // Calculate the stride for the image surface based on width and format
+        int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
+    
+        // Create a Cairo surface for the destination image
+        cairo_surface_t* dest_image = cairo_image_surface_create_for_data((unsigned char*)out,
+                                                                        CAIRO_FORMAT_ARGB32,
+                                                                        w,
+                                                                        h,
+                                                                        stride);
+        
+        // Create a Cairo drawing context for the destination surface
+        cairo_t *cr = cairo_create(dest_image);
 
-        // Zoom limit range from -0.9 to 2.0
-        float zoom = 1.0f + CLAMP(this->zoom, -0.9, 2.0);
+        // Create a Cairo surface for the source image
+        cairo_surface_t *image = cairo_image_surface_create_for_data((unsigned char*)in,
+                                                                    CAIRO_FORMAT_ARGB32,
+                                                                    w,
+                                                                    h,
+                                                                    stride);
+        // Create a pattern from the source image surface
+        cairo_pattern_t *pattern = cairo_pattern_create_for_surface(image);
+        // Set the pattern extend mode to reflect (mirror) when the pattern is out of bounds
+        cairo_pattern_set_extend (pattern, CAIRO_EXTEND_REFLECT);
 
-        int x_offset_px = (int)(this->x_offset * w);
-        int y_offset_px = (int)(this->y_offset * h);
+        // Initialize the transformation matrix
+        cairo_matrix_t matrix;
+        cairo_matrix_init_identity(&matrix);
 
-        // Calculate the center of the destination image
+        // Calculate the center coordinates of the destination image
         float center_x = (float)w / 2.0f;
         float center_y = (float)h / 2.0f;
+        
+        float scale_factor = 1.0f - CLAMP(this->zoom, -0.99, 0.99);
 
-        // Convert the rotation to radians
-        float angle = (float)(this->rotation * M_PI / 180.0f);
-        float cos_angle = cosf(angle);
-        float sin_angle = sinf(angle);
+        // Apply transformations 
+        cairo_matrix_translate(&matrix, center_x - (this->x_offset) * w, center_y - (this->y_offset) * h);
+        cairo_matrix_scale(&matrix, scale_factor, scale_factor);
+        cairo_matrix_rotate(&matrix, this->rotation * M_PI / 180.0);
+        cairo_matrix_translate(&matrix, -center_x, -center_y);
 
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-               // Convert the destination coordinates to source coordinates with zoom
-                float src_x = (x - center_x) / zoom + center_x;
-                float src_y = (y - center_y) / zoom + center_y;
+        // Set the transformation matrix for the pattern
+        cairo_pattern_set_matrix(pattern, &matrix);
+        // Set the source pattern to be used for drawing
+        cairo_set_source(cr, pattern);
+        
+        // Draw a rectangle covering the entire image area
+        cairo_rectangle(cr, 0, 0, w, h);
+        // Fill the rectangle with the source pattern
+        cairo_fill(cr);
 
-                // Apply the rotation
-                float rotated_x = cos_angle * (src_x - center_x) - sin_angle * (src_y - center_y) + center_x;
-                float rotated_y = sin_angle * (src_x - center_x) + cos_angle * (src_y - center_y) + center_y;
-
-                // Apply the offset
-                rotated_x += x_offset_px;
-                rotated_y += y_offset_px;
-
-                int src_x_int = (int)rotated_x % (w * 2);
-                int src_y_int = (int)rotated_y % (h * 2);
-
-                // Reflect the image if coordinates are out of bounds
-                // If less than the bound
-                if (src_x_int < 0) {
-                    src_x_int = 0 - src_x_int - 1;
-                }
-                if (src_y_int < 0) {
-                    src_y_int = 0 - src_y_int - 1;
-                }
-                // If greater than the bounds
-                if (src_x_int >= w) {
-                    src_x_int = w - (src_x_int - w) - 1;
-                }
-                if (src_y_int >= h) {
-                    src_y_int = h - (src_y_int - h) - 1;
-                }
-
-                // Copy the pixel from the source image to the destination buffer
-                ((uint32_t*)dst)[y * w + x] = ((const uint32_t*)src)[src_y_int * w + src_x_int];
-            }
-        }
+        // Clean up resources
+        cairo_pattern_destroy (pattern);
+        cairo_surface_destroy (image);
+        cairo_surface_destroy (dest_image);
+        cairo_destroy (cr);
     }
 };
 
@@ -124,3 +122,4 @@ frei0r::construct<Mirr0r> plugin(
     "Johann JEG",
     1, 0,
     F0R_COLOR_MODEL_RGBA8888);
+    
