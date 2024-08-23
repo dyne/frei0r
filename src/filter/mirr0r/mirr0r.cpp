@@ -53,6 +53,14 @@ public:
 
     }
 
+    void clearScreen(cairo_t* cr, int width, int height) {
+        cairo_save (cr);
+        cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0);
+        cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+        cairo_paint (cr);
+        cairo_restore (cr);
+    }
+
     virtual void update(double time, uint32_t* out, const uint32_t* in) {
         
         int w = this->width;
@@ -70,6 +78,9 @@ public:
         
         // Create a Cairo drawing context for the destination surface
         cairo_t *cr = cairo_create(dest_image);
+
+        // Clear the screen
+        clearScreen(cr, w, h);
 
         // Create a Cairo surface for the source image
         cairo_surface_t *image = cairo_image_surface_create_for_data((unsigned char*)in,
