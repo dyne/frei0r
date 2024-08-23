@@ -43,10 +43,10 @@ public:
 
         this->width = width;
         this->height = height;
-        this->x_offset = 0.5;
-        this->y_offset = 0.5;
+        this->x_offset = 0.0;
+        this->y_offset = 0.0;
         this->zoom = 0.5;
-        this->rotation = 0.5;
+        this->rotation = 0.0;
     }
 
     ~Mirr0r(){
@@ -90,12 +90,12 @@ public:
         float center_x = (float)w / 2.0f;
         float center_y = (float)h / 2.0f;
         
-        float scale_factor = 1.0f - CLAMP(this->zoom, -0.99, 0.99);
-
+        float scale_factor = 1.5f - this->zoom;
+        
         // Apply transformations 
         cairo_matrix_translate(&matrix, center_x - (this->x_offset) * w, center_y - (this->y_offset) * h);
         cairo_matrix_scale(&matrix, scale_factor, scale_factor);
-        cairo_matrix_rotate(&matrix, this->rotation * M_PI / 180.0);
+        cairo_matrix_rotate(&matrix, this->rotation * M_PI);
         cairo_matrix_translate(&matrix, -center_x, -center_y);
 
         // Set the transformation matrix for the pattern
