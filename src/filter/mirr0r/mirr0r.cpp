@@ -18,7 +18,6 @@
  */
 
 #include "frei0r.hpp"
-#include "frei0r/math.h"
 #include <cairo.h>
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -26,6 +25,7 @@
 class Mirr0r : public frei0r::filter {
 
 private:
+
     unsigned int width;
     unsigned int height;
     double x_offset;
