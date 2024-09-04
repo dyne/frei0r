@@ -12,6 +12,8 @@ endif (${OpenCV_FOUND})
 if (${Cairo_FOUND})
   add_subdirectory (cairoimagegrid)
   add_subdirectory (cairogradient)
+  add_subdirectory (mirr0r)
+  add_subdirectory (shakeoscillate)
 endif (${Cairo_FOUND})
 
 add_subdirectory (3dflippo)
