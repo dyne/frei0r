@@ -39,3 +39,4 @@ doc/html
 /out/
 /.vs/
 CMakeSettings.json
+.vscode
