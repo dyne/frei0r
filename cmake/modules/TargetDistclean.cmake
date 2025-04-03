@@ -19,6 +19,7 @@ if(UNIX)
    *~
   )
   add_custom_command(
+     POST_BUILD
      COMMENT "running target clean"
      TARGET distclean
      COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target clean
