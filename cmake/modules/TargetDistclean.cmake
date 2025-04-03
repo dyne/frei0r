@@ -3,9 +3,11 @@
 # Jan Woetzel 04/2003
 #
 
-IF (UNIX)
-  ADD_CUSTOM_TARGET (distclean @echo cleaning for source distribution)
-  SET(DISTCLEANED
+if(UNIX)
+  add_custom_target(distclean
+     COMMENT "cleaning for source distribution"
+  )
+  set(DISTCLEANED
    cmake.depends
    cmake.check_depends
    CMakeCache.txt
@@ -16,13 +18,17 @@ IF (UNIX)
    gmon.out
    *~
   )
-  
-  ADD_CUSTOM_COMMAND(
-    DEPENDS clean
+  add_custom_command(
+     COMMENT "running target clean"
+     TARGET distclean
+     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target clean
+  )
+  add_custom_command(
+    POST_BUILD
     COMMENT "distribution clean"
     COMMAND rm
     ARGS    -Rf CMakeTmp ${DISTCLEANED}
     TARGET  distclean
   )
-ENDIF(UNIX)
+endif(UNIX)
 
