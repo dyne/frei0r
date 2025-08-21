@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.12...3.31)
 
-list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
 project (frei0r)
 set (VERSION 1.8)
@@ -29,13 +29,13 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 
 set (LIBDIR "${CMAKE_INSTALL_LIBDIR}/frei0r-1")
-set (FREI0R_DEF "${CMAKE_SOURCE_DIR}/msvc/frei0r_1_0.def")
-set (FREI0R_1_1_DEF "${CMAKE_SOURCE_DIR}/msvc/frei0r_1_1.def")
+set (FREI0R_DEF "${CMAKE_CURRENT_SOURCE_DIR}/msvc/frei0r_1_0.def")
+set (FREI0R_1_1_DEF "${CMAKE_CURRENT_SOURCE_DIR}/msvc/frei0r_1_1.def")
 
 # --- custom targets: ---
 INCLUDE( cmake/modules/TargetDistclean.cmake OPTIONAL)
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # For code documentation run: doxygen doc/Doxyfile
 # add_subdirectory (doc)
