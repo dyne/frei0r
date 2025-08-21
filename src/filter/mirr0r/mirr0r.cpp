@@ -22,7 +22,7 @@
 #define _USE_MATH_DEFINES
 #ifdef _MSC_VER
 #include <math.h>
-#elif
+#else
 #include <cmath>
 #endif
 class Mirr0r : public frei0r::filter {
