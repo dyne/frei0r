@@ -119,7 +119,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->ntsc_settings.data = NULL;
     inst->ntsc_settings.w = width;
     inst->ntsc_settings.h = height;
-    inst->ntsc_settings.raw = 1;
+    inst->ntsc_settings.raw = 0;
     inst->ntsc_settings.as_color = 1;
     inst->ntsc_settings.field = 0;
     inst->ntsc_settings.frame = 0;
