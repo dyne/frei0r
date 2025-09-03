@@ -129,7 +129,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Update Homebrew
         run: |
-          brew update --preinstall
+          brew update
       - name: Install Homebrew dependencies
         run: |
           env HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 \
