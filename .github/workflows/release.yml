@@ -133,7 +133,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           env HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 \
-          brew install cmake ninja cairo
+          brew install ninja cairo
       - name: Build using ninja
         run: |
           mkdir build && cd build
