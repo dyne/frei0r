@@ -183,7 +183,7 @@ jobs:
           cp README.md $dst/README.txt
           cp COPYING   $dst/LICENSE.txt
           cp ChangeLog $dst/ChangeLog.txt
-          cp AUTHORS   $dst/AUTHORS.txt
+          cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
@@ -197,7 +197,7 @@ jobs:
           cp README.md $dst/README.txt
           cp COPYING   $dst/LICENSE.txt
           cp ChangeLog $dst/ChangeLog.txt
-          cp AUTHORS   $dst/AUTHORS.txt
+          cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
@@ -211,7 +211,7 @@ jobs:
           cp README.md $dst/README.txt
           cp COPYING   $dst/LICENSE.txt
           cp ChangeLog $dst/ChangeLog.txt
-          cp AUTHORS   $dst/AUTHORS.txt
+          cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           tar cvfz $dst.tar.gz $dst
