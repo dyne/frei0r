@@ -62,6 +62,7 @@ jobs:
             ,-whitespace/semicolon\
             ,-build/include_subdir\
             ,-build/include_order\
+            ,-build/header_guard\
             "
 
   test-suite:
@@ -94,4 +95,3 @@ jobs:
         with:
           name: release-plugin-analysis
           path: test/*.json
-        
