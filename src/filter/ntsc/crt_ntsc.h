@@ -8,18 +8,17 @@
  *   Discord: https://discord.com/invite/hdYctSmyQJ
  */
 /*****************************************************************************/
-#ifndef _CRT_NTSC_VHS_H_
-#define _CRT_NTSC_VHS_H_
+#ifndef _CRT_NTSC_H_
+#define _CRT_NTSC_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* crt_ntscvhs.h
+/* crt_ntsc.h
  *
- * An interface to convert a digital image to an analog NTSC signal with VHS
- * quality and some optional signal aberration at the bottom.
- *
+ * An interface to convert a digital image to an analog NTSC signal.
+ * 
  */
 /* 0 = vertical  chroma (228 chroma clocks per line) */
 /* 1 = checkered chroma (227.5 chroma clocks per line) */
@@ -42,7 +41,7 @@ extern "C" {
 #define CRT_TOP         21     /* first line with active video */
 #define CRT_BOT         261    /* final line with active video */
 #define CRT_LINES       (CRT_BOT - CRT_TOP) /* number of active video lines */
-
+    
 #define CRT_CC_SAMPLES  4 /* samples per chroma period (samples per 360 deg) */
 #define CRT_CC_VPER     1 /* vertical period in which the artifacts repeat */
 
@@ -62,14 +61,14 @@ extern "C" {
  * |---------------------------------------------------------------------------|
  *   HBLANK (~10900 ns)                 ACTIVE VIDEO (~52600 ns)
  * |-------------------||------------------------------------------------------|
- *
- *
+ *   
+ *   
  *   WITHIN HBLANK PERIOD:
- *
+ *   
  *   FP (~1500 ns)  SYNC (~4700 ns)  BW (~600 ns)  CB (~2500 ns)  BP (~1600 ns)
  * |--------------||---------------||------------||-------------||-------------|
  *      BLANK            SYNC           BLANK          BLANK          BLANK
- *
+ * 
  */
 #define LINE_BEG         0
 #define FP_ns            1500      /* front porch */
@@ -96,32 +95,11 @@ extern "C" {
 /* somewhere between 7 and 12 cycles */
 #define CB_CYCLES   10
 
-#define VHS_OFF 0
-#define VHS_SP 1
-#define VHS_LP 2
-#define VHS_EP 3
-
-#define VHS_MODE VHS_OFF
-
 /* frequencies for bandlimiting */
 #define L_FREQ           1431818 /* full line */
-
-#define Y_FREQ_OFF          420000  /* Luma   (Y) 4.2  MHz of the 14.31818 MHz */
-#define I_FREQ_OFF          150000  /* Chroma (I) 1.5  MHz of the 14.31818 MHz */
-#define Q_FREQ_OFF           55000   /* Chroma (Q) 0.55 MHz of the 14.31818 MHz */
-
-#define Y_FREQ_SP           300000  /* Luma   (Y) 3.0  MHz of the 14.31818 MHz */
-#define I_FREQ_SP            62700   /* Chroma (I) 627  kHz of the 14.31818 MHz */
-#define Q_FREQ_SP            62700   /* Chroma (Q) 627  kHz of the 14.31818 MHz */
-
-#define Y_FREQ_LP           240000  /* Luma   (Y) 2.4  MHz of the 14.31818 MHz */
-#define I_FREQ_LP            40000   /* Chroma (I) 400  kHz of the 14.31818 MHz */
-#define Q_FREQ_LP            40000   /* Chroma (Q) 400  kHz of the 14.31818 MHz */
-
-#define Y_FREQ_EP           200000  /* Luma   (Y) 2.0  MHz of the 14.31818 MHz */
-#define I_FREQ_EP            37000   /* Chroma (I) 370  kHz of the 14.31818 MHz */
-#define Q_FREQ_EP            37000   /* Chroma (Q) 370  kHz of the 14.31818 MHz */
-
+#define Y_FREQ           420000  /* Luma   (Y) 4.2  MHz of the 14.31818 MHz */
+#define I_FREQ           150000  /* Chroma (I) 1.5  MHz of the 14.31818 MHz */
+#define Q_FREQ           55000   /* Chroma (Q) 0.55 MHz of the 14.31818 MHz */
 
 /* IRE units (100 = 1.0V, -40 = 0.0V) */
 #define WHITE_LEVEL      100
@@ -132,6 +110,7 @@ extern "C" {
 
 struct NTSC_SETTINGS {
     const unsigned char *data; /* image data */
+    int format;     /* pix format (one of the CRT_PIX_FORMATs in crt_core.h) */
     int w, h;       /* width and height of image */
     int raw;        /* 0 = scale image to fit monitor, 1 = don't scale */
     int as_color;   /* 0 = monochrome, 1 = full color */
@@ -140,14 +119,6 @@ struct NTSC_SETTINGS {
     int hue;        /* 0-359 */
     int xoffset;    /* x offset in sample space. 0 is minimum value */
     int yoffset;    /* y offset in # of lines. 0 is minimum value */
-    int do_aberration; /* 0 = no aberration, 1 = with aberration */
-
-    // these are changed by the vhs mode
-    int vhs_mode;
-    int y_freq;
-    int i_freq;
-    int q_freq;
-
     /* make sure your NTSC_SETTINGS struct is zeroed out before you do anything */
     int iirs_initialized; /* internal state */
 };
