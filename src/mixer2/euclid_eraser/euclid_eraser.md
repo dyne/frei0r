@@ -21,16 +21,16 @@ This mixer takes the (first) reference input, such as a static
 background, and removes it from every frame in the video stream of the
 second input.
 
-The alpha channel on the output is based on the euclidian distance of
+The alpha channel on the output is based on the euclidean distance of
 the two input coordinates in 3-d RGB space. If the calculated distance
-betwen the two inputs for a given pixel is less than a provided
+between the two inputs for a given pixel is less than a provided
 (variable) threshold amount, that indicates the pixel in the
 background (reference) image is the same or similar enough to the
 operational (second) input that is part of the background to be
 removed, and the transparency is set to fully transparent via the
 alpha channel (set to 0).
 
-If the calcuated distance exceeds the threshold, then that pixel is
+If the calculated distance exceeds the threshold, then that pixel is
 part of the foreground image to be retained, and the transparency
 of it is set to be fully opaque (alpha channel for that pixel set
 to 255).

@@ -64,7 +64,7 @@ public:
         r1 = r2;
         g1 = g2;
 
-        /*  set the dstination  */
+        /*  set the destination  */
         hsl_to_rgb_int(&r1, &g1, &b1);
 
         dst[0] = r1;

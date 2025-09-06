@@ -124,7 +124,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		case 0:
 			info->name = "brightness";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Brightnesss of image";
+			info->explanation = "Brightness of image";
 			break;
     case 1:
       info->name = "sharpness";

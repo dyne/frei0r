@@ -422,7 +422,7 @@ for (i=h/2+100; i<h; i=i+100)
 }
 
 //----------------------------------------------------------
-//draws a transparent mesurement grid
+//draws a transparent measurement grid
 //*a = alpha channel
 void grid(unsigned char *sl, int w, int h, unsigned char *a)
 {

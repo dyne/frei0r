@@ -388,7 +388,7 @@ void f0r_get_param_value(f0r_instance_t instance,
 
 double* gaussSLESolve(size_t size, double* A) {
 	int extSize = size + 1;
-	//direct way: tranform matrix A to triangular form
+	//direct way: transform matrix A to triangular form
 	for(int row = 0; row < size; row++) {
 		int col = row;
 		int lastRowToSwap = size - 1;
@@ -546,7 +546,7 @@ position pointOnBezier(double t, position points[4])
     /*
      * Calculating a point on the bezier curve using the coefficients from Bernstein basis polynomial of degree 3.
      * Using the De Casteljau algorithm would be slightly faster when calculating a lot of values
-     * but the difference is far from noticable here since we update the spline only when the parameter changes
+     * but the difference is far from noticeable here since we update the spline only when the parameter changes
      */
     double c1 = (1-t) * (1-t) * (1-t);
     double c2 = 3 * t * (1-t) * (1-t);
@@ -776,7 +776,7 @@ void f0r_update(f0r_instance_t instance, double time,
   curves_instance_t* inst = (curves_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
 
-  // test initalization c/b spline
+  // test initialization c/b spline
   double *splinemap = strlen(inst->bspline)>0 ? inst->bsplineMap : inst->csplineMap;
   if(!splinemap) {
 	memcpy(outframe,inframe,inst->width * inst->height * 4);

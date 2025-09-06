@@ -58,7 +58,7 @@ typedef struct
 	float sga;
 	int inv;
 	
-	//auxilliary variables for fibe2o
+	//auxiliary variables for fibe2o
 	float f,q,a0,a1,a2,b0,b1,b2,rd1,rd2,rs1,rs2,rc1,rc2;
 	
 } inst;

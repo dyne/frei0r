@@ -75,27 +75,27 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		case 0:
 			info->name = "x";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "X position of second input, value interperted as range -2*width - 3*width";
+			info->explanation = "X position of second input, value interpreted as range -2*width - 3*width";
 			break;
 		case 1:
 			info->name = "y";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Y position of second input, value interperted as range -2*height - 3*height";
+			info->explanation = "Y position of second input, value interpreted as range -2*height - 3*height";
 			break;
 		case 2:
 			info->name = "x scale";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "X scale of second input, value interperted as range 0 - 5";
+			info->explanation = "X scale of second input, value interpreted as range 0 - 5";
 			break;
 		case 3:
 			info->name = "y scale";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Y scale of second input, value interperted as range 0 - 5";
+			info->explanation = "Y scale of second input, value interpreted as range 0 - 5";
 			break;
 		case 4:
 			info->name = "rotation";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Rotation of second input, value interperted as range 0 - 360";
+			info->explanation = "Rotation of second input, value interpreted as range 0 - 360";
 			break;
 		case 5:
 			info->name = "opacity";
