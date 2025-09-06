@@ -1,9 +1,9 @@
 /*****************************************************************************/
 /*
  * NTSC/CRT - integer-only NTSC video signal encoding / decoding emulation
- *
+ * 
  *   by EMMIR 2018-2023
- *
+ *   
  *   YouTube: https://www.youtube.com/@EMMIR_KC/videos
  *   Discord: https://discord.com/invite/hdYctSmyQJ
  */
@@ -11,7 +11,7 @@
 
 #include "crt_core.h"
 
-#if (CRT_SYSTEM == CRT_SYSTEM_NTSCVHS)
+#if (CRT_SYSTEM == CRT_SYSTEM_NTSC)
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,7 +35,7 @@ static int e11[] = {
     15133, /* e^2 */
     41135, /* e^3 */
     111817 /* e^4 */
-};
+}; 
 
 /* fixed point e^x */
 static int
@@ -61,7 +61,7 @@ expx(int n)
     if (idx > 0) {
         res = EXP_MUL(res, e11[idx]);
     }
-
+    
     n &= EXP_MASK;
     nxt = EXP_ONE;
     acc = 0;
@@ -99,7 +99,7 @@ static void
 init_iir(struct IIRLP *f, int freq, int limit)
 {
     int rate; /* cycles/pixel rate */
-
+    
     memset(f, 0, sizeof(struct IIRLP));
     rate = (freq << 9) / limit;
     f->c = EXP_ONE - expx(-((EXP_PI << 9) / rate));
@@ -137,41 +137,29 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
     int ccburst[CRT_CC_SAMPLES]; /* color phase for burst */
     int sn, cs, n, ph;
     int inv_phase = 0;
-    int aberration = 0;
+    int bpp;
 
     if (!s->iirs_initialized) {
-        int y_freq = Y_FREQ_OFF;
-        int i_freq = I_FREQ_OFF;
-        int q_freq = Q_FREQ_OFF;
-
-        switch(s->vhs_mode)
-        {
-        case VHS_OFF:
-            break;
-        case VHS_SP:
-            y_freq = Y_FREQ_SP;
-            i_freq = I_FREQ_SP;
-            q_freq = Q_FREQ_SP;
-            break;
-        case VHS_LP:
-            y_freq = Y_FREQ_LP;
-            i_freq = I_FREQ_LP;
-            q_freq = Q_FREQ_LP;
-            break;
-        case VHS_EP:
-            y_freq = Y_FREQ_EP;
-            i_freq = I_FREQ_EP;
-            q_freq = Q_FREQ_EP;
-            break;
-        default:
-            break;
-        }
-
-        init_iir(&iirY, L_FREQ, y_freq);
-        init_iir(&iirI, L_FREQ, i_freq);
-        init_iir(&iirQ, L_FREQ, q_freq);
+        init_iir(&iirY, L_FREQ, Y_FREQ);
+        init_iir(&iirI, L_FREQ, I_FREQ);
+        init_iir(&iirQ, L_FREQ, Q_FREQ);
         s->iirs_initialized = 1;
     }
+#if CRT_DO_BLOOM
+    if (s->raw) {
+        destw = s->w;
+        desth = s->h;
+        if (destw > ((AV_LEN * 55500) >> 16)) {
+            destw = ((AV_LEN * 55500) >> 16);
+        }
+        if (desth > ((CRT_LINES * 63500) >> 16)) {
+            desth = ((CRT_LINES * 63500) >> 16);
+        }
+    } else {
+        destw = (AV_LEN * 55500) >> 16;
+        desth = (CRT_LINES * 63500) >> 16;
+    }
+#else
     if (s->raw) {
         destw = s->w;
         desth = s->h;
@@ -182,7 +170,7 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
             desth = ((CRT_LINES * 64500) >> 16);
         }
     }
-
+#endif
     if (s->as_color) {
         for (x = 0; x < CRT_CC_SAMPLES; x++) {
             n = s->hue + x * (360 / CRT_CC_SAMPLES);
@@ -198,10 +186,14 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
         memset(ccmodI, 0, sizeof(ccmodI));
         memset(ccmodQ, 0, sizeof(ccmodQ));
     }
-
+    
+    bpp = crt_bpp4fmt(s->format);
+    if (bpp == 0) {
+        return; /* just to be safe */
+    }
     xo = AV_BEG  + s->xoffset + (AV_LEN    - destw) / 2;
     yo = CRT_TOP + s->yoffset + (CRT_LINES - desth) / 2;
-
+    
     s->field &= 1;
     s->frame &= 1;
     inv_phase = (s->field == s->frame);
@@ -209,13 +201,11 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
 
     /* align signal */
     xo = (xo & ~3);
-    if (s->do_aberration) {
-        aberration = ((rand() % 12) - 8) + 14;
-    }
+    
     for (n = 0; n < CRT_VRES; n++) {
         int t; /* time */
         signed char *line = &v->analog[n * CRT_HRES];
-
+        
         t = LINE_BEG;
 
         if (n <= 3 || (n >= 7 && n <= 9)) {
@@ -238,13 +228,11 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
             while (t < (offs[3] * CRT_HRES / 100)) line[t++] = BLANK_LEVEL;
         } else {
             int cb;
-            if (n < (CRT_VRES - aberration)) {
-                /* video line */
-                while (t < SYNC_BEG) line[t++] = BLANK_LEVEL; /* FP */
-                while (t < BW_BEG)   line[t++] = SYNC_LEVEL;  /* SYNC */
-            }
-            while (t < AV_BEG)   line[t++] = BLANK_LEVEL; /* BW + CB + BP */
 
+            /* video line */
+            while (t < SYNC_BEG) line[t++] = BLANK_LEVEL; /* FP */
+            while (t < BW_BEG)   line[t++] = SYNC_LEVEL;  /* SYNC */
+            while (t < AV_BEG)   line[t++] = BLANK_LEVEL; /* BW + CB + BP */
             if (n < CRT_TOP) {
                 while (t < CRT_HRES) line[t++] = BLANK_LEVEL;
             }
@@ -263,48 +251,65 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
         }
     }
 
-    if(s->vhs_mode != VHS_OFF)
-    {
-        /* reset hsync every frame so only the bottom part is warped */
-        v->hsync = 0;
-    }
-
     for (y = 0; y < desth; y++) {
         int field_offset;
         int sy;
-
+        
         field_offset = (s->field * s->h + desth) / desth / 2;
         sy = (y * s->h) / desth;
-
+    
         sy += field_offset;
 
         if (sy >= s->h) sy = s->h;
-
+        
         sy *= s->w;
-
+        
         reset_iir(&iirY);
         reset_iir(&iirI);
         reset_iir(&iirQ);
-
+        
         for (x = 0; x < destw; x++) {
             int fy, fi, fq;
             int rA, gA, bA;
             const unsigned char *pix;
             int ire; /* composite signal */
             int xoff;
-
-            pix = s->data + ((((x * s->w) / destw) + sy) * BPP);
-            rA = pix[0];
-            gA = pix[1];
-            bA = pix[2];
-
+            
+            pix = s->data + ((((x * s->w) / destw) + sy) * bpp);
+            switch (s->format) {
+                case CRT_PIX_FORMAT_RGB:
+                case CRT_PIX_FORMAT_RGBA:
+                    rA = pix[0];
+                    gA = pix[1];
+                    bA = pix[2];
+                    break;
+                case CRT_PIX_FORMAT_BGR: 
+                case CRT_PIX_FORMAT_BGRA:
+                    rA = pix[2];
+                    gA = pix[1];
+                    bA = pix[0];
+                    break;
+                case CRT_PIX_FORMAT_ARGB:
+                    rA = pix[1];
+                    gA = pix[2];
+                    bA = pix[3];
+                    break;
+                case CRT_PIX_FORMAT_ABGR:
+                    rA = pix[3];
+                    gA = pix[2];
+                    bA = pix[1];
+                    break;
+                default:
+                    rA = gA = bA = 0;
+                    break;
+            }
 
             /* RGB to YIQ */
             fy = (19595 * rA + 38470 * gA +  7471 * bA) >> 14;
             fi = (39059 * rA - 18022 * gA - 21103 * bA) >> 14;
             fq = (13894 * rA - 34275 * gA + 20382 * bA) >> 14;
             ire = BLACK_LEVEL + v->black_point;
-
+            
             xoff = (x + xo) % CRT_CC_SAMPLES;
             /* bandlimit Y,I,Q */
             fy = iirf(&iirY, fy);
@@ -319,14 +324,7 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
     }
     for (n = 0; n < CRT_CC_VPER; n++) {
         for (x = 0; x < CRT_CC_SAMPLES; x++) {
-            if(s->vhs_mode != VHS_OFF)
-            {
-                v->ccf[n][x] = 0;
-            }
-            else
-            {
-                v->ccf[n][x] = iccf[x] << 7;
-            }
+            v->ccf[n][x] = iccf[x] << 7;
         }
     }
 }
