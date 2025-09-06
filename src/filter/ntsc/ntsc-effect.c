@@ -154,11 +154,13 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     
     // clear the output frame
     memset(outframe, 0, inst->width * inst->height * sizeof(uint32_t));
+    inst->crt.blend = 0;
     
     // set everything up for the simulation
-    inst->ntsc.data = (const char*)inframe;
     inst->crt.out = (char*)outframe;
+    inst->ntsc.data = (const char*)inframe;
 
+_render_field:
     inst->ntsc.field = inst->field & 1;
 
     if (inst->ntsc.field == 0) {
@@ -170,8 +172,16 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     crt_modulate(&(inst->crt), &(inst->ntsc));
     crt_demodulate(&(inst->crt), inst->noise);
     
-    if(!inst->progressive)
+    inst->field ^= 1;
+    // if we are in progressive mode, we render both fields onto the frame.
+    // in interlaced mode, we will hit the opposite field on the next frame.
+    if(inst->field && inst->progressive)
     {
-        inst->field ^= 1;
+        // if we are not leaving scanlines blank, we will want to blend the frames in progressive mode
+        if(!inst->crt.scanlines)
+        {
+            inst->crt.blend = 1;
+        }
+        goto _render_field;
     }
 }
