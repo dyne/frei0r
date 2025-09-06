@@ -143,7 +143,7 @@ private:
     /// <tt>source_x,source_y</tt>
     /// @param x x coordinate to start rotate from
     /// @param y y coordinate to rotate
-    /// @param source_x receives the x coordiante results
+    /// @param source_x receives the x coordinate results
     /// @param source_y receives the y coordinate results
     inline void rotate(int x, int y, __m128 *source_x, __m128 *source_y);
 #else
@@ -164,8 +164,8 @@ private:
     Reflect_info calculate_reflect_info(std::uint32_t x, std::uint32_t y);
 
     /// Converts coordinates to screen space
-    /// @param x recieves x coordinate
-    /// @param y recieves y coordinate
+    /// @param x receives x coordinate
+    /// @param y receives y coordinate
     /// @param sx source x coordinate
     /// @param sy source y coordinate
     void to_screen(float *x, float *y, std::uint32_t sx, std::uint32_t sy);

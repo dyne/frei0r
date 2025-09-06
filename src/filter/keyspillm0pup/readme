@@ -68,7 +68,7 @@ CASCADING
 This plugin can be cascaded, but it is not possible to get the same
 color based mask in the second instance, because the colors will be
 changed by the first instance. To enable two operations with the
-same mask, each plugin instance can do two opertions.
+same mask, each plugin instance can do two operations.
 With transparency and edge masks, cascading is a bit easier.
 If the hue gate and saturation threshold are not used, transparency
 and edge masks can be exactly the same in cascaded plugins.
@@ -122,10 +122,10 @@ Enable a second operation to be performed with the same mask.
 
 Show mask:
 This will show the selected mask as a greyscale image, to help with
-fine tuning of the masks. Shoud be OFF for the final render.
+fine tuning of the masks. Should be OFF for the final render.
 
 Mask to Alpha:
 Copies the active mask to the alpha channel.
 For all normal spill cleaning operations, this should be OFF.
-By seting it ON, the keyspillm0pup itself can be used as a keyer,
+By setting it ON, the keyspillm0pup itself can be used as a keyer,
 or to generate some special effects.

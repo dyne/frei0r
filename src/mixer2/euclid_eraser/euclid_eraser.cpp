@@ -112,7 +112,7 @@ private:
 };
 
 frei0r::construct<euclid_eraser> plugin("euclid_eraser",
-	"Erasing backgrounds with euclidian distance",
+	"Erasing backgrounds with euclidean distance",
         "Erik H. Beck",
         0,1,
         F0R_COLOR_MODEL_RGBA8888);

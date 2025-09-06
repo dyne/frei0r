@@ -19,8 +19,8 @@
  */
 
 /*******************************************************************
- * The remapping functions use a map aray, which contains a pair
- * of floating values fo each pixel of the output image. These
+ * The remapping functions use a map array, which contains a pair
+ * of floating values of each pixel of the output image. These
  * represent the location in the input image, from where the value
  * of the given output pixel should be interpolated.
  * They are given in pixels of the input image.

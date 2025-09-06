@@ -91,9 +91,9 @@ typedef struct spillsupress_instance
 {
   unsigned int width;
   unsigned int height;
-  double supress_type; /* type of spill supression applied to image 
-                        <= 0.5, green supress
-                        > 0.5, blue supress */
+  double supress_type; /* type of spill suppression applied to image 
+                        <= 0.5, green suppress
+                        > 0.5, blue suppress */
 } spillsupress_instance_t;
 
 int f0r_init()
@@ -134,7 +134,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	spillsupress_instance_t* inst = (spillsupress_instance_t*)calloc(1, sizeof(*inst));
 	inst->width = width; 
   inst->height = height;
-	inst->supress_type = 0.0; // default supress type is green supress
+	inst->supress_type = 0.0; // default suppress type is green suppress
 	return (f0r_instance_t)inst;
 }
 

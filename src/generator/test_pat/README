@@ -163,11 +163,11 @@ Selects between three possible cross sections, 12(3), 23(1), 31(2)
 NOTE: the numbers tell which two axes are represented in the 2D plane,
 (the first two numbers), and which axis is controlled by the "third
 axis value" slider (the third number in parentheses). For example,
-23(1) in RGB menas that G will change along the horizontal axis, B
+23(1) in RGB means that G will change along the horizontal axis, B
 along vertical, and R will be set by the "third axis value" slider.
 
 Third axis value:
-sets the value along the "third" axis, which cannot be accomodated
+sets the value along the "third" axis, which cannot be accommodated
 on a 2D display.
 
 Fullscreen:
@@ -380,7 +380,7 @@ All patterns, except 8 and 9 which are square waves, are drawn as
 smooth phase sinewaves.
 
 NOTE: These patterns are very sensitive to scaling and interpolation,
-any warts there will be revealed in a very drastical manner! Monitor
+any warts there will be revealed in a drastic manner! Monitor
 windows in video software are often done in a "fast" way, so it may
 be necessary to do a final rendering, to see a fair result.
 
