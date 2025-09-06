@@ -1,6 +1,6 @@
 /*
  *	matrix - 
- *		Use 4x4 matricies to process color images.
+ *		Use 4x4 matrices to process color images.
  *
  *	To compile:
  cc matrix.c -o matrix -lgutil -limage -lgl -lm
@@ -73,7 +73,7 @@ applymatrix(unsigned long *lptr,float mat[4][4],int n)
 
 /* 
  *	matrixmult -	
- *		multiply two matricies
+ *		multiply two matrices
  */
 void
 matrixmult(float a[4][4],float b[4][4],float c[4][4])
@@ -132,7 +132,7 @@ xformpnt(float matrix[4][4],float x,float y,float z,float *tx,float *ty,float *t
 
 /* 
  *	cscalemat -	
- *		make a color scale marix
+ *		make a color scale matrix
  */
 void
 cscalemat(float mat[4][4],float rscale,float gscale,float bscale)
@@ -164,7 +164,7 @@ cscalemat(float mat[4][4],float rscale,float gscale,float bscale)
 
 /* 
  *	lummat -	
- *		make a luminance marix
+ *		make a luminance matrix
  */
 void
 lummat(float mat[4][4])
@@ -199,7 +199,7 @@ lummat(float mat[4][4])
 
 /* 
  *	saturatemat -	
- *		make a saturation marix
+ *		make a saturation matrix
  */
 void
 saturatemat(float mat[4][4],float sat)

@@ -658,7 +658,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
     case 4:		//contrast bands
       trakovi(inst->sl, inst->w, inst->h);
       break;
-    case 5:		//gama ckecking chart
+    case 5:		//gama checking chart
       gamatest(inst->sl, inst->w, inst->h);
       break;
     case 6:		//for testing orthicon simulator

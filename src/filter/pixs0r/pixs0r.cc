@@ -128,7 +128,7 @@ void f0r_get_param_info	(f0r_param_info_t *info, int param_index)
         case 0:
             info->name = "shift_intensity";
             info->type = F0R_PARAM_DOUBLE;
-            info->explanation = "Agressiveness of row/column-shifting";
+            info->explanation = "Aggressiveness of row/column-shifting";
             break;
         
         case 1:

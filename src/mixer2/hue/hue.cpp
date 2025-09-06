@@ -68,7 +68,7 @@ public:
         if (g2)
           r1 = r2;
 
-        /*  set the dstination  */
+        /*  set the destination  */
         hsv_to_rgb_int (&r1, &g1, &b1);
 
         dst[0] = r1;

@@ -38,7 +38,7 @@ color subspace.
 Invert selection:
 When ON, the selected color will be transparent, as normally used
 with keying. When OFF (default) the selected color will be opaque,
-for exmaple for alpha controlled adjustment of that color only.
+for example for alpha controlled adjustment of that color only.
 
 Delta XXXX:
 These three parameters determine the size of the color subspace

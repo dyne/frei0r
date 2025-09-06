@@ -205,7 +205,7 @@ else
 }
 
 //-----------------------------------------------------------
-//probe size markers in the magnifier diaplay
+//probe size markers in the magnifier display
 void sxmarkers(float_rgba *s, int w, int h, int x0, int y0, int np, int sx, int sy, int vp)
 {
 int np2,x,y,i,j;

@@ -68,8 +68,8 @@ Arp ML3D:	multilevel spatio-temporal, see [1]
 ML3DEX:		multilevel spatio-temporal, see [1]
 
 
-[1] Anil Christopher Kokaram: Motion Picure Restoration
-  phd disertation
+[1] Anil Christopher Kokaram: Motion Picture Restoration
+  phd dissertation
 
 ****************************************** */
 

@@ -32,19 +32,19 @@
 
 ////// TODO / IDEAS / ... //////
 // IDEA - directionnal echo ? (X/Y like parameter )
-// TODO RGB gradiant by fading influence need more love (See '//Fade by color layers')!
-// FIXME SSE2 version doesnt support RGB fading influence !
+// TODO RGB gradient by fading influence need more love (See '//Fade by color layers')!
+// FIXME SSE2 version doesn't support RGB fading influence !
 
-// FIXME (Veejay specifics?) on activate/desactivate/activate/..., some buffers must be cleared!
+// FIXME (Veejay specifics?) on activate/deactivate/activate/..., some buffers must be cleared!
 
-// EXPORE ME -
+// EXPLORE ME -
 //~ if((skip_count++)>m_skip) {
 //~ -      skip_count = 0;
 //~ -      m_factor += (factor * 64);
 //~ [...]
 //~ }
 
-// EXPLORE ME a very high m_factor value give some interresting color result (      m_factor += (factor * 64) * m_skip;)
+// EXPLORE ME a very high m_factor value give some interesting color result (      m_factor += (factor * 64) * m_skip;)
 
 
 /* Intrinsic declarations */
@@ -129,7 +129,7 @@ public:
     m_skip_count = 0;
 
     register_param(factor, "Fade Factor", "Disappearance rate of the echo"); // 0 No fade, 1 No Trace
-    register_param(bright, "Direction", "Darker or Brighter echo"); // Add or Substract data
+    register_param(bright, "Direction", "Darker or Brighter echo"); // Add or Subtract data
     register_param(flag_r, "Keep RED", "Influence on Red channel"); // 0 Fade canal, 1 Keep canal data
     register_param(flag_g, "Keep GREEN", "Influence on Green channel"); // 0 Fade canal, 1 Keep canal data
     register_param(flag_b, "Keep BLUE", "Influence on Blue channel"); // 0 Fade canal, 1 Keep canal data
@@ -139,7 +139,7 @@ public:
     //~ register_param(factor_r, "Fade R", "influence"); // 0 No fade, 1 No Trace
     //~ register_param(factor_g, "Fade G", "influence"); // 0 No fade, 1 No Trace
     //~ register_param(factor_b, "Fade B", "influence"); // 0 No fade, 1 No Trace
-    //~ register_param(flag_rgb, "Plans comparaison", "RGB");
+    //~ register_param(flag_rgb, "Plans comparison", "RGB");
 
   }
   ~aech0r() {
