@@ -60,6 +60,23 @@ crt_sincos14(int *s, int *c, int n)
     }
 }
 
+extern int
+crt_bpp4fmt(int format)
+{
+    switch (format) {
+        case CRT_PIX_FORMAT_RGB:
+        case CRT_PIX_FORMAT_BGR:
+            return 3;
+        case CRT_PIX_FORMAT_ARGB:
+        case CRT_PIX_FORMAT_RGBA:
+        case CRT_PIX_FORMAT_ABGR:
+        case CRT_PIX_FORMAT_BGRA:
+            return 4;
+        default:
+            return 0;
+    }
+}
+
 /*****************************************************************************/
 /********************************* FILTERS ***********************************/
 /*****************************************************************************/
@@ -222,10 +239,11 @@ eqf(struct EQF *f, int s)
 /*****************************************************************************/
 
 extern void
-crt_resize(struct CRT *v, int w, int h, unsigned char *out)
+crt_resize(struct CRT *v, int w, int h, int f, unsigned char *out)
 {
     v->outw = w;
     v->outh = h;
+    v->out_format = f;
     v->out = out;
 }
 
@@ -240,21 +258,13 @@ crt_reset(struct CRT *v)
     v->white_point = 100;
     v->hsync = 0;
     v->vsync = 0;
-
-    v->scanlines = 0; /* leave gaps between lines if necessary */
-    v->blend = 0; /* blend new field onto previous image */
-
-    // these options were previously #defined in crt_core.h
-    v->crt_do_vsync = 1;
-    v->crt_do_hsync = 1;
-    v->do_vhs_noise = 0;
 }
 
 extern void
-crt_init(struct CRT *v, int w, int h, unsigned char *out)
+crt_init(struct CRT *v, int w, int h, int f, unsigned char *out)
 {
     memset(v, 0, sizeof(struct CRT));
-    crt_resize(v, w, h, out);
+    crt_resize(v, w, h, f, out);
     crt_reset(v);
     v->rn = 194;
 
@@ -293,58 +303,61 @@ crt_demodulate(struct CRT *v, int noise)
     int huesn, huecs;
     int xnudge = -3, ynudge = 3;
     int bright = v->brightness - (BLACK_LEVEL + v->black_point);
-    int pitch;
+    int bpp, pitch;
+#if CRT_DO_BLOOM
+    int prev_e; /* filtered beam energy per scan line */
+    int max_e; /* approx maximum energy in a scan line */
+#endif
 
-    pitch = v->outw * BPP;
+    bpp = crt_bpp4fmt(v->out_format);
+    if (bpp == 0) {
+        return;
+    }
+    pitch = v->outw * bpp;
 
     crt_sincos14(&huesn, &huecs, ((v->hue % 360) + 33) * 8192 / 180);
     huesn >>= 11; /* make 4-bit */
     huecs >>= 11;
 
     rn = v->rn;
-    if(!v->crt_do_vsync)
-    {
-        /* determine field before we add noise,
-         * otherwise it's not reliably recoverable
-         */
-        for (i = -CRT_VSYNC_WINDOW; i < CRT_VSYNC_WINDOW; i++) {
-            line = POSMOD(v->vsync + i, CRT_VRES);
-            sig = v->analog + line * CRT_HRES;
-            s = 0;
-            for (j = 0; j < CRT_HRES; j++) {
-                s += sig[j];
-                if (s <= (CRT_VSYNC_THRESH * SYNC_LEVEL)) {
-                    goto found_field;
-                }
+#if !CRT_DO_VSYNC
+    /* determine field before we add noise,
+     * otherwise it's not reliably recoverable
+     */
+    for (i = -CRT_VSYNC_WINDOW; i < CRT_VSYNC_WINDOW; i++) {
+        line = POSMOD(v->vsync + i, CRT_VRES);
+        sig = v->analog + line * CRT_HRES;
+        s = 0;
+        for (j = 0; j < CRT_HRES; j++) {
+            s += sig[j];
+            if (s <= (CRT_VSYNC_THRESH * SYNC_LEVEL)) {
+                goto found_field;
             }
         }
-    found_field:
-        /* if vsync signal was in second half of line, odd field */
-        field = (j > (CRT_HRES / 2));
-        v->vsync = -3;
     }
-    if(v->do_vhs_noise)
-    {
-        line = ((rand() % 8) - 4) + 14;
-    }
+found_field:
+    /* if vsync signal was in second half of line, odd field */
+    field = (j > (CRT_HRES / 2));
+    v->vsync = -3;
+#endif
+#if ((CRT_SYSTEM == CRT_SYSTEM_NTSCVHS) && CRT_VHS_NOISE)
+    line = ((rand() % 8) - 4) + 14;
+#endif
     for (i = 0; i < CRT_INPUT_SIZE; i++) {
         int nn = noise;
-        if(v->do_vhs_noise)
-        {
-            rn = rand();
-            if (i > (CRT_INPUT_SIZE - CRT_HRES * (16 + ((rand() % 20) - 10))) &&
-                i < (CRT_INPUT_SIZE - CRT_HRES * (5 + ((rand() % 8) - 4)))) {
-                int ln, sn, cs;
+#if ((CRT_SYSTEM == CRT_SYSTEM_NTSCVHS) && CRT_VHS_NOISE)
+        rn = rand();
+        if (i > (CRT_INPUT_SIZE - CRT_HRES * (16 + ((rand() % 20) - 10))) &&
+            i < (CRT_INPUT_SIZE - CRT_HRES * (5 + ((rand() % 8) - 4)))) {
+            int ln, sn, cs;
 
-                ln = (i * line) / CRT_HRES;
-                crt_sincos14(&sn, &cs, ln * 8192 / 180);
-                nn = cs >> 8;
-            }
+            ln = (i * line) / CRT_HRES;
+            crt_sincos14(&sn, &cs, ln * 8192 / 180);
+            nn = cs >> 8;
         }
-        else
-        {
-            rn = (214019 * rn + 140327895);
-        }
+#else
+        rn = (214019 * rn + 140327895);
+#endif
         /* signal + noise */
         s = v->analog[i] + (((((rn >> 16) & 0xff) - 0x7f) * nn) >> 8);
         if (s >  127) { s =  127; }
@@ -353,37 +366,40 @@ crt_demodulate(struct CRT *v, int noise)
     }
     v->rn = rn;
 
-    if(v->crt_do_vsync)
-    {
-        /* Look for vertical sync.
-         *
-         * This is done by integrating the signal and
-         * seeing if it exceeds a threshold. The threshold of
-         * the vertical sync pulse is much higher because the
-         * vsync pulse is a lot longer than the hsync pulse.
-         * The signal needs to be integrated to lessen
-         * the noise in the signal.
-         */
-        for (i = -CRT_VSYNC_WINDOW; i < CRT_VSYNC_WINDOW; i++) {
-            line = POSMOD(v->vsync + i, CRT_VRES);
-            sig = v->inp + line * CRT_HRES;
-            s = 0;
-            for (j = 0; j < CRT_HRES; j++) {
-                s += sig[j];
-                /* increase the multiplier to make the vsync
-                 * more stable when there is a lot of noise
-                 */
-                if (s <= (CRT_VSYNC_THRESH * SYNC_LEVEL)) {
-                    goto vsync_found;
-                }
+#if CRT_DO_VSYNC
+    /* Look for vertical sync.
+     *
+     * This is done by integrating the signal and
+     * seeing if it exceeds a threshold. The threshold of
+     * the vertical sync pulse is much higher because the
+     * vsync pulse is a lot longer than the hsync pulse.
+     * The signal needs to be integrated to lessen
+     * the noise in the signal.
+     */
+    for (i = -CRT_VSYNC_WINDOW; i < CRT_VSYNC_WINDOW; i++) {
+        line = POSMOD(v->vsync + i, CRT_VRES);
+        sig = v->inp + line * CRT_HRES;
+        s = 0;
+        for (j = 0; j < CRT_HRES; j++) {
+            s += sig[j];
+            /* increase the multiplier to make the vsync
+             * more stable when there is a lot of noise
+             */
+            if (s <= (CRT_VSYNC_THRESH * SYNC_LEVEL)) {
+                goto vsync_found;
             }
         }
-    vsync_found:
-        v->vsync = line; /* vsync found (or gave up) at this line */
-        /* if vsync signal was in second half of line, odd field */
-        field = (j > (CRT_HRES / 2));
     }
+vsync_found:
+    v->vsync = line; /* vsync found (or gave up) at this line */
+    /* if vsync signal was in second half of line, odd field */
+    field = (j > (CRT_HRES / 2));
+#endif
 
+#if CRT_DO_BLOOM
+    max_e = (128 + (noise / 2)) * AV_LEN;
+    prev_e = (16384 / 8);
+#endif
     /* ratio of output height to active video lines in the signal */
     ratio = (v->outh << 16) / CRT_LINES;
     ratio = (ratio + 32768) >> 16;
@@ -405,6 +421,9 @@ crt_demodulate(struct CRT *v, int noise)
         int xpos, ypos;
         int beg, end;
         int phasealign;
+#if CRT_DO_BLOOM
+        int line_w;
+#endif
 
         beg = (line - CRT_TOP + 0) * (v->outh + v->v_fac) / CRT_LINES + field;
         end = (line - CRT_TOP + 1) * (v->outh + v->v_fac) / CRT_LINES + field;
@@ -424,14 +443,11 @@ crt_demodulate(struct CRT *v, int noise)
                 break;
             }
         }
-        if(v->crt_do_hsync)
-        {
-            v->hsync = POSMOD(i + v->hsync, CRT_HRES);
-        }
-        else
-        {
-            v->hsync = 0;
-        }
+#if CRT_DO_HSYNC
+        v->hsync = POSMOD(i + v->hsync, CRT_HRES);
+#else
+        v->hsync = 0;
+#endif
 
         xpos = POSMOD(AV_BEG + v->hsync + xnudge, CRT_HRES);
         ypos = POSMOD(line + v->vsync + ynudge, CRT_VRES);
@@ -493,13 +509,28 @@ crt_demodulate(struct CRT *v, int noise)
         }
 #endif
         sig = v->inp + pos;
+#if CRT_DO_BLOOM
+        s = 0;
+        for (i = 0; i < AV_LEN; i++) {
+            s += sig[i]; /* sum up the scan line */
+        }
+        /* bloom emulation */
+        prev_e = (prev_e * 123 / 128) + ((((max_e >> 1) - s) << 10) / max_e);
+        line_w = (AV_LEN * 112 / 128) + (prev_e >> 9);
 
+        dx = (line_w << 12) / v->outw;
+        scanL = ((AV_LEN / 2) - (line_w >> 1) + 8) << 12;
+        scanR = (AV_LEN - 1) << 12;
+
+        L = (scanL >> 12);
+        R = (scanR >> 12);
+#else
         dx = ((AV_LEN - 1) << 12) / v->outw;
         scanL = 0;
         scanR = (AV_LEN - 1) << 12;
         L = 0;
         R = AV_LEN;
-
+#endif
         reset_eq(&eqY);
         reset_eq(&eqI);
         reset_eq(&eqQ);
@@ -552,8 +583,26 @@ crt_demodulate(struct CRT *v, int noise)
 
             if (v->blend) {
                 aa = (r << 16 | g << 8 | b);
-                bb = cL[0] << 16 | cL[1] << 8 | cL[2];
 
+                switch (v->out_format) {
+                    case CRT_PIX_FORMAT_RGB:
+                    case CRT_PIX_FORMAT_RGBA:
+                        bb = cL[0] << 16 | cL[1] << 8 | cL[2];
+                        break;
+                    case CRT_PIX_FORMAT_BGR:
+                    case CRT_PIX_FORMAT_BGRA:
+                        bb = cL[2] << 16 | cL[1] << 8 | cL[0];
+                        break;
+                    case CRT_PIX_FORMAT_ARGB:
+                        bb = cL[1] << 16 | cL[2] << 8 | cL[3];
+                        break;
+                    case CRT_PIX_FORMAT_ABGR:
+                        bb = cL[3] << 16 | cL[2] << 8 | cL[1];
+                        break;
+                    default:
+                        bb = 0;
+                        break;
+                }
 
                 /* blend with previous color there */
                 bb = (((aa & 0xfefeff) >> 1) + ((bb & 0xfefeff) >> 1));
@@ -561,12 +610,52 @@ crt_demodulate(struct CRT *v, int noise)
                 bb = (r << 16 | g << 8 | b);
             }
 
-            cL[0] = bb >> 16 & 0xff;
-            cL[1] = bb >>  8 & 0xff;
-            cL[2] = bb >>  0 & 0xff;
-            cL[3] = 0xff;
+            switch (v->out_format) {
+                case CRT_PIX_FORMAT_RGB:
+                    cL[0] = bb >> 16 & 0xff;
+                    cL[1] = bb >>  8 & 0xff;
+                    cL[2] = bb >>  0 & 0xff;
+                    break;
 
-            cL += BPP;
+                case CRT_PIX_FORMAT_RGBA:
+                    cL[0] = bb >> 16 & 0xff;
+                    cL[1] = bb >>  8 & 0xff;
+                    cL[2] = bb >>  0 & 0xff;
+                    cL[3] = 0xff;
+                    break;
+
+                case CRT_PIX_FORMAT_BGR:
+                    cL[0] = bb >>  0 & 0xff;
+                    cL[1] = bb >>  8 & 0xff;
+                    cL[2] = bb >> 16 & 0xff;
+                    break;
+
+                case CRT_PIX_FORMAT_BGRA:
+                    cL[0] = bb >>  0 & 0xff;
+                    cL[1] = bb >>  8 & 0xff;
+                    cL[2] = bb >> 16 & 0xff;
+                    cL[3] = 0xff;
+                    break;
+
+                case CRT_PIX_FORMAT_ARGB:
+                    cL[0] = 0xff;
+                    cL[1] = bb >> 16 & 0xff;
+                    cL[2] = bb >>  8 & 0xff;
+                    cL[3] = bb >>  0 & 0xff;
+                    break;
+
+                case CRT_PIX_FORMAT_ABGR:
+                    cL[0] = 0xff;
+                    cL[1] = bb >>  0 & 0xff;
+                    cL[2] = bb >>  8 & 0xff;
+                    cL[3] = bb >> 16 & 0xff;
+                    break;
+
+                default:
+                    break;
+            }
+
+            cL += bpp;
         }
 
         /* duplicate extra lines */
