@@ -341,7 +341,7 @@ void f0r_update2(f0r_instance_t instance, double time,
                                              inframe3);
 }
 
-// compability for frei0r 1.0 
+// compatibility for frei0r 1.0 
 void f0r_update(f0r_instance_t instance, 
 		double time, const uint32_t* inframe, uint32_t* outframe)
 {
