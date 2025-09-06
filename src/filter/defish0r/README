@@ -2,7 +2,7 @@ Defish0r is a Frei0r plugin that can convert fisheye video to
 rectilinear, and vice versa. It is based on the angular mapping
 functions actually used in fisheye lens design, to get the best
 possible results. It can also be used to correct the slight distortion
-of some wideangle convertors, or to bend the image beyond recognition
+of some wideangle converters, or to bend the image beyond recognition
 for special effects and light shows.
 
 
@@ -64,7 +64,7 @@ Description of the available parameters:
  unreasonable values the image might indeed disappear, when there are
  math overflows or imaginary results... (types 1 and 2 are more prone
  to image vanishing). Anyway, when working in the "special effect"
- range, it is alway worth to try manual scaling.
+ range, it is always worth to try manual scaling.
 
 "DeFish"
    If checked, the transform direction is from fisheye to rectiliear,
@@ -163,7 +163,7 @@ Type = 1000
 Scaling = 1000 (manual)
 Manual Scale = 191
 
-For an effect, reminiscent of some scenes from the "2001 Spcae Odyssey" try
+For an effect, reminiscent of some scenes from the "2001 Space Odyssey" try
 this:
 Amount = 876
 Defish = ON

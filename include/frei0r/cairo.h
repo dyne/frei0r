@@ -196,7 +196,7 @@ void freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN(cairo_pattern_t *pat, double
 /**
 * frei0r_cairo_get_pixel_position
 * @norm_pos: position in range 0 - 1, either x or y
-* @dim: dimension, either witdh or height
+* @dim: dimension, either width or height
 *
 * Converts double range [0 -> 1] to pixel range [-2*dim -> 3*dim]. Input 0.4 gives position 0.
 *

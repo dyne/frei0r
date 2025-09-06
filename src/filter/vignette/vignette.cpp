@@ -142,7 +142,7 @@ private:
         for (int y = 0; y < m_height; y++) {
             for (int x = 0; x < m_width; x++) {
 
-                // Euclidian distance to the center, normalized to [0,1]
+                // Euclidean distance to the center, normalized to [0,1]
                 r = std::sqrt(std::pow(scaleX*(x-cx), 2) + std::pow(scaleY*(y-cy), 2))/rmax;
 
                 // Subtract the clear center

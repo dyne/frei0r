@@ -336,7 +336,7 @@ static void ctmf_helper(
  * odd dimensions. Images of arbitrary size may be processed.
  *
  * To process multi-channel images, you must call this function multiple times,
- * changing the source and destination adresses and steps such that each channel
+ * changing the source and destination addresses and steps such that each channel
  * is processed as an independent single-channel image.
  *
  * Processing images of arbitrary bit depth is not supported.

@@ -210,7 +210,7 @@ void Partik0l::blossom(uint32_t* out) {
   double zx, zy;
 
   /* here place a formula that draws on the screen
-     the surface being drawed at this point is always blank */
+     the surface being drawn at this point is always blank */
   for( a=0.0 ; a<pi2; a+=0.005 ) {
     zx = blossom_m*a;
     zy = blossom_n*a;
