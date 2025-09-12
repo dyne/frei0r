@@ -1,5 +1,5 @@
 /*
- * p0st0r.c -- a (color continious) posterization of thy neon dreams
+ * heatmap0r.c -- feel the heat, frei0r style.
  *
  * Copyright (C) 2025 Cynthia (cynthia2048@proton.me)
  *
@@ -88,7 +88,7 @@ void f0r_destruct(f0r_instance_t instance)
 
 void f0r_get_plugin_info(f0r_plugin_info_t* info)
 {
-    info->name = "Tint0r2";
+    info->name = "heatmap0r";
     info->author = "Cynthia";
     info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
     info->color_model = F0R_COLOR_MODEL_RGBA8888;
