@@ -1,5 +1,5 @@
-set (SOURCES p0st0r.c)
-set (TARGET p0st0r)
+set (SOURCES heatmap0r.c)
+set (TARGET heatmap0r)
 
 if (MSVC)
   set (SOURCES ${SOURCES} ${FREI0R_DEF})
