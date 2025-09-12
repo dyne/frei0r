@@ -72,9 +72,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 
     inst->width = width; inst->height = height;
     inst->gp = 0.5;
-    inst->white = (f0r_param_color_t) {1.0, 1.0, 1.0};
-    inst->grey = (f0r_param_color_t) {0.5, 0.5, 0.5};
-    inst->black = (f0r_param_color_t) {0.0, 0.0, 0.0};
+    inst->white = (f0r_param_color_t) {/* Yellow */     1.0,  1.0, 0.0};
+    inst->grey  = (f0r_param_color_t) {/* Deeppink */   1.0,  0.0, 0.5};
+    inst->black = (f0r_param_color_t) {/* Darkviolet */ 0.27, 0.0, 0.5};
 
     gen_tint0r2_luts (inst);
 
