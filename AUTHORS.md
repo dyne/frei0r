@@ -27,6 +27,7 @@ Jean-Baptiste Mardelle
 Jean-François Fortin Tam 
 Jean-Sebastien Senecal
 Jerome Blanchi (d.j.a.y)
+Johann Jeg
 Joshua M. Doe
 Luca Bigliardi
 Maksim Golovkin (Максим Головкин)
