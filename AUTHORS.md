@@ -51,4 +51,5 @@ Steinar H. Gunderson
 Thomas Coldrick
 Thomas Perl
 Till Theato
+Vadim Druzhin
 Vincent Pinon
