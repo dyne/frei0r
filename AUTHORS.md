@@ -21,7 +21,7 @@ Gabriel Finch (Salsaman)
 Georg Seidel
 Henner Zeller
 Hedde Bosman
-IOhannes M. Zmölnig
+IOhannes m. zmölnig
 Janne Liljeblad
 Jean-Baptiste Mardelle
 Jean-François Fortin Tam 
@@ -33,7 +33,7 @@ Maksim Golovkin (Максим Головкин)
 Marko Cebokli
 Martin Bayer
 Mathieu Guindon
-Matthias Schnoell
+Matthias Schnöll
 Nicolas Carion
 Niels Elburg
 Phillip Promesberger
