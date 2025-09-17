@@ -852,7 +852,7 @@ public:
                         fb = m_rgbLightMask[pixel].b;
 
                         if (lowerOverexposure > 0) {
-                            // Comparisation of plots with octave:
+                            // Comparison of plots with octave:
                             // clf;hold on;plot([0 1],[0 1],'k');plot(range,ones(length(range),1),'k');plot(range,sqrt(range));plot(range,log(1+range),'k');plot(range,log(1+range),'g');plot(range,(log(1+range)/3).^.5,'r');axis equal
                             fr = pow( log(1+fr)/lowerOverexposure, .5 );
                             fg = pow( log(1+fg)/lowerOverexposure, .5 );

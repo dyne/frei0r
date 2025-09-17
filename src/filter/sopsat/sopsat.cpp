@@ -132,7 +132,7 @@ public:
 	                    uint32_t* out,
                         const uint32_t* in)
     {
-        // Rebuild the lookup table in case the prarameters have changed.
+        // Rebuild the lookup table in case the parameters have changed.
         updateLUT();
 
         unsigned char *pixel = (unsigned char *) in;

@@ -51,7 +51,7 @@ public:
             
     uint32_t b;
   
-    /* FIXME: Is the burn effect supposed to be dependant on the sign of this
+    /* FIXME: Is the burn effect supposed to be dependent on the sign of this
      * temporary variable? */
     int tmp;
   

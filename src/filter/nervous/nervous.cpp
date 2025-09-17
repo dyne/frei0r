@@ -4,7 +4,7 @@
  *
  * 2002/2/9 
  *   Original code copied same frame twice, and did not use memcpy().
- *   I modifed those point.
+ *   I modified those point.
  *   -Kentarou Fukuchi
  *
  * 2009/8/26

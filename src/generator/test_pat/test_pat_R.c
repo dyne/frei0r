@@ -513,7 +513,7 @@ else
 }
 
 //----------------------------------------------------------
-//fills frame with constand 2D spatial frequency
+//fills frame with constant 2D spatial frequency
 //ar = pixel aspect ratio (not used currently)
 void diags(float *sl, int w, int h, float a, float ar, float fh, float fv)
 {

@@ -207,7 +207,7 @@ for (i=0;i<=255;i++)
 //convert from paked uchar RGBA to packed float RGBA
 //w,h are width and height of the image
 //tab = table used for RGB conversion
-//atab = table used for alpha converion (usually linear)
+//atab = table used for alpha conversion (usually linear)
 static inline void RGBA8_2_float(const uint32_t *in, float_rgba *out, int w, int h, float *tab, float *atab)
 {
 int i;
@@ -224,7 +224,7 @@ for (i=0;i<w*h;i++)
 
 //--------------------------------------------------------
 //convert from paked uchar RGBA to packed float RGBA,
-//covert RGB only, SKIP ALPHA
+//convert RGB only, SKIP ALPHA
 //w,h are width and height of the image
 //tab = table used for RGB conversion
 static inline void RGB8_2_float(const uint32_t *in, float_rgba *out, int w, int h, float *tab)
@@ -259,7 +259,7 @@ for (i=0;i<w*h;i++)
 //----------------------------------------------------------
 //convert from packed float RGBA to packed uchar RGBA
 //tab = table used for RGB conversion
-//atab = table used for alpha converion (usually linear)
+//atab = table used for alpha conversion (usually linear)
 static inline void float_2_RGBA8(const float_rgba *in, uint32_t *out, int w, int h, uint8_t *tab, uint8_t *atab)
 {
 int i;
@@ -276,7 +276,7 @@ for (i=0;i<w*h;i++)
 
 //----------------------------------------------------------
 //convert from packed float RGBA to packed uchar RGBA
-//covert RGB only, SKIP ALPHA
+//convert RGB only, SKIP ALPHA
 //tab = table used for RGB conversion
 static inline void float_2_RGB8(const float_rgba *in, uint32_t *out, int w, int h, uint8_t *tab)
 {

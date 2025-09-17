@@ -36,7 +36,7 @@ namespace std
 {
 
 // default delete for IKaleid0sc0pe
-// this isn't going to work across an actaul shared object boundary but
+// this isn't going to work across an actual shared object boundary but
 // not particular worried about that at the moment
 template<>
 class default_delete<libkaleid0sc0pe::IKaleid0sc0pe>
@@ -257,7 +257,7 @@ public:
     /**
      * Sets the number of threads to use when processing.
      * Default to 0.
-     * @param threading the nubmer of threads to use. \c 0, calculate automatically,
+     * @param threading the number of threads to use. \c 0, calculate automatically,
      * otherwise the explicit thread count.
      * @return
      *          -  0: Success
