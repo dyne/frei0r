@@ -105,7 +105,7 @@ The algorithms are very simple, but the code is a bit bloated,
 because I did some optimizations for speed.
 The algorithms are so simple, that using SSE didn't bring
 much speedup - the limiting factor is memory bandwidth, not
-arithmetics. Therefore I decided not to include the SSE versions.
+arithmetic. Therefore I decided not to include the SSE versions.
 
 
 

@@ -89,7 +89,7 @@ The supplied Kdenlive effect description XML file should change this range to
 left corner x=1000, y=1000, the upper right corner x=2000, y=1000 and so on. It
 should also set the defaults so that the undistorted input picture is displayed.
 If you have no image, check that the corners specify a nonzero area at least
-partly overlaping the output window.
+partly overlapping the output window.
 
 2. Stretch, x and y
 

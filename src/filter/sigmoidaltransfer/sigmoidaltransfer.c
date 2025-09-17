@@ -109,7 +109,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 		case 0:
 			info->name = "base";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Midpoint of sigmoidal curve";
+			info->explanation = "Brightness of image. Midpoint of sigmoidal curve";
 			break;
         case 1:
           info->name = "sharpness";
