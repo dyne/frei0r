@@ -14,6 +14,7 @@ Brian Matherly
 Burkhard Plaum
 Carlo E. Prelz
 Christoph Willing
+Cynthia
 Erik Beck
 Esmane
 Filippo Giunchedi
