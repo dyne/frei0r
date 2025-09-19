@@ -30,16 +30,16 @@ typedef struct {
 
     f0r_param_color_t black, grey, white;
     double gp; //< Grey point
-} tint0r2_t;
+} heatmap0r_t;
 
-static void gen_tint0r2_luts(tint0r2_t *inst)
+static void gen_heatmap0r_luts(heatmap0r_t *inst)
 {
     double luma;
-    double c0, c1, c2;
+    double L0, L1, L2;
     double gp = inst->gp;
     double l0 = 1.0 / gp,
-          l1 = 1.0 / (gp * (gp - 1.0)),
-          l2 = 1.0 / (1.0 - gp);
+           l1 = 1.0 / (gp * (gp - 1.0)),
+           l2 = 1.0 / (1.0 - gp);
 
     f0r_param_color_t black = inst->black,
                       grey = inst->grey,
@@ -68,7 +68,7 @@ void f0r_deinit() {}
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-    tint0r2_t* inst = (tint0r2_t*)calloc(1, sizeof(*inst));
+    heatmap0r_t* inst = calloc(1, sizeof(*inst));
 
     inst->width = width; inst->height = height;
     inst->gp = 0.5;
@@ -76,7 +76,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->grey  = (f0r_param_color_t) {/* Deeppink */   1.0,  0.0, 0.5};
     inst->black = (f0r_param_color_t) {/* Darkviolet */ 0.27, 0.0, 0.5};
 
-    gen_tint0r2_luts (inst);
+    gen_heatmap0r_luts (inst);
 
     return (f0r_instance_t)inst;
 }
@@ -96,7 +96,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
     info->major_version = 0;
     info->minor_version = 1;
     info->num_params = 4;
-    info->explanation = "Performs a tricolour tinting of an image";
+    info->explanation = "Performs trichromatic tinting";
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
@@ -130,7 +130,7 @@ void f0r_set_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
     assert(instance);
-    tint0r2_t* inst = (tint0r2_t*)instance;
+    heatmap0r_t* inst = (heatmap0r_t*)instance;
 
     switch(param_index)
     {
@@ -148,14 +148,14 @@ void f0r_set_param_value(f0r_instance_t instance,
             break;
     }
 
-    gen_tint0r2_luts (inst);
+    gen_heatmap0r_luts (inst);
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
     assert(instance);
-    tint0r2_t* inst = (tint0r2_t*)instance;
+    heatmap0r_t* inst = (heatmap0r_t*)instance;
 
     switch(param_index)
     {
@@ -178,7 +178,7 @@ void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
     assert(instance);
-    tint0r2_t* inst = (tint0r2_t*)instance;
+    heatmap0r_t* inst = (heatmap0r_t*)instance;
     unsigned int len = inst->width * inst->height;
 
     const unsigned char* src = (void*)inframe;
