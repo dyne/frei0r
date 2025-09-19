@@ -213,8 +213,8 @@ void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float p
 //pari,paro = pixel aspect ratio (input / output)
 //dx, dy   offset on input (for non-cosited chroma subsampling)
 //lbox = letterbox
-//stretch = dymanic stretch, convert between 4:3 and 16:9
-//yScale = -0.5.. 0.5 change aspect ratio on y acess only
+//stretch = dynamic stretch, convert between 4:3 and 16:9
+//yScale = -0.5.. 0.5 change aspect ratio on y access only
 void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
 	, int lbox, float stretchFactor, float yScale)
 {
@@ -312,7 +312,7 @@ void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float
 //aspt:	0..4	aspect type square, PAL, NTSC, HDV, manual
 //par:	pixel aspect ratio
 //lbox: 1=letterbox
-//stretch 0..1 stretch video to fix superview distorsion
+//stretch 0..1 stretch video to fix superview distortion
 typedef struct
 {
 	int w;
@@ -513,7 +513,7 @@ f0r_instance_t  f0r_construct(unsigned int width, unsigned int height)
 	p->mpar=1.0;
 	p->lbox=0;			//letterbox
 	p->stretch = 0.0f;	//dynamic stretch
-	p->yScale = 1.0f;	//seperate Y stretch
+	p->yScale = 1.0f;	//separate Y stretch
 
 	p->map=(float*)calloc(1, sizeof(float)*(p->w*p->h*2+2));
 	p->interpol=set_intp(*p);

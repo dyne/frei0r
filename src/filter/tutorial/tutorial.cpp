@@ -108,7 +108,7 @@ public:
                         const uint32_t* in)
     {
         // Just copy input to output.
-        // This is useful if ony few changes are made to the output.
+        // This is useful if only few changes are made to the output.
         // If the whole image is processed, this makes no sense!
         std::copy(in, in + width*height, out);
 
@@ -125,7 +125,7 @@ public:
 
         // This parameter allows one to do simple benchmarking: Rendering a
         // video with uint8_t pointers and with uint32_t pointers.
-        // (Don't forget to substract the rendering time without this effect applied to avoid counting
+        // (Don't forget to subtract the rendering time without this effect applied to avoid counting
         // encoding and decoding as well!)
         if (m_pointerMethod == 0) {
             uint8_t *in_pointer = (uint8_t *) in;
