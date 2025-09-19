@@ -222,7 +222,7 @@ public:
                 for (unsigned int pixel = 0; pixel < width*4; pixel++) {
                     // Use linear interpolation on the colours
                     
-                    // Use pointer arithmetics. Colour values are stored 
+                    // Use pointer arithmetic. Colour values are stored 
                     // as AABBGGRR in the uint32_t values.
                     // Convert each colour separately.
                     

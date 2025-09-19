@@ -15,7 +15,7 @@ initial release of plugin
 ## Description of the parameters:
 
 "Scale Center":<br/>
-Sets the horizontal center where the scaling orgins from. range: [0,1]
+Sets the horizontal center where the scaling origins from. range: [0,1]
 
 
 "Linear Scale Area":<br/>
