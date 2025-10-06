@@ -569,11 +569,11 @@ int tokenise(char *string, const char *delimiter, char ***tokens)
     int count = 0;
     char *input = strdup(string);
     char *result = NULL;
-    result = strtok(input, delimiter);
+    result = strtok_r(string, delimiter, &input);
     while (result != NULL) {
         *tokens = realloc(*tokens, (count + 1) * sizeof(char *));
         (*tokens)[count++] = strdup(result);
-        result = strtok(NULL, delimiter);
+        result = strtok_r(NULL, delimiter, &input);
     }
     free(input);
     return count;
