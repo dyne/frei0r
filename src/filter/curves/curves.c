@@ -557,6 +557,10 @@ position pointOnBezier(double t, position points[4])
     return pos;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+# define strtok_r strtok_s
+#endif
+
 /**
  * Splits given string into sub-strings at given delimiter.
  * \param string input string
