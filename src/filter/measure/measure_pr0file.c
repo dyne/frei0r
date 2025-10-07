@@ -114,7 +114,7 @@ while (c[i]!=0)
 //justified
 //p=0 one decimal place    p=1 three decimal places
 //m=1 always show sign
-void forstr(float a, int p, int m, char *s)
+inline static void forstr(float a, int p, int m, char *s)
 {
 float b;
 char *p3=" %5.3f";
@@ -320,7 +320,7 @@ if ((dit&0x00000001)!=0)	//marker 1 value
   if (m1>0)
     {
     forstr(data[0],1-u,0,frs);
-    sprintf(fs,"%%s Mk1=%s", frs);
+    snprintf(fs,255,"%%s Mk1=%s", frs);
     sprintf(str,fs,str,data[0]);
     }
   else
@@ -331,7 +331,7 @@ if ((dit&0x00000004)!=0)	//marker 2 value
   if (m2>0)
     {
     forstr(data[1],1-u,0,frs);
-    sprintf(fs,"%%s Mk2=%s", frs);
+    snprintf(fs,255,"%%s Mk2=%s", frs);
     sprintf(str,fs,str,data[1]);
     }
   else
@@ -342,7 +342,7 @@ if ((dit&0x00000010)!=0)	//difference marker2-marker1
   if ((m2>0)&&(m1>0))
     {
     forstr(data[2],1-u,0,frs);
-    sprintf(fs,"%%s D=%s", frs);
+    snprintf(fs,255,"%%s D=%s", frs);
     sprintf(str,fs,str,data[2]);
     }
   else
@@ -351,25 +351,25 @@ if ((dit&0x00000010)!=0)	//difference marker2-marker1
 if ((dit&0x00000020)!=0)	//average of profile
   {
   forstr(data[3],1-u,0,frs);
-  sprintf(fs,"%%s Avg=%s", frs);
+  snprintf(fs,255,"%%s Avg=%s", frs);
   sprintf(str,fs,str,data[3]);
   }
 if ((dit&0x00000040)!=0)	//RMS of profile
   {
   forstr(data[4],1-u,0,frs);
-  sprintf(fs,"%%s RMS=%s", frs);
+  snprintf(fs,255,"%%s RMS=%s", frs);
   sprintf(str,fs,str,data[4]);
   }
 if ((dit&0x00000080)!=0)	//MIN of profile
   {
   forstr(data[5],1-u,0,frs);
-  sprintf(fs,"%%s Min=%s", frs);
+  snprintf(fs,255,"%%s Min=%s", frs);
   sprintf(str,fs,str,data[5]);
   }
 if ((dit&0x00000100)!=0)	//MAX of profile
   {
   forstr(data[6],1-u,0,frs);
-  sprintf(fs,"%%s Max=%s", frs);
+  snprintf(fs,255,"%%s Max=%s", frs);
   sprintf(str,fs,str,data[6]);
   }
 }
@@ -408,7 +408,7 @@ if (y<h/2-20) *poz=1;	//bottom
 if (y>h/2+20) *poz=0;	//top
 x0=h/20;
 vx=w*15/16;
-vy = h*6/16; 
+vy = h*6/16;
 y0 = (*poz==0) ? h/20 : h-h/20-vy;
 
 //end points of profile
@@ -1035,4 +1035,3 @@ prof(in->sl, in->w, in->h, &in->poz, in->x, in->y, in->tilt, in->len, 1, in->mer
 
 floatrgba2color(in->sl, outframe, in->w , in->h);
 }
-
