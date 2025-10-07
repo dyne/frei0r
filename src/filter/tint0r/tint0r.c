@@ -1,5 +1,6 @@
 /* tint0r.c
- * Copyright (C) 2009 Maksim Golovkin (m4ks1k@gmail.com)
+ * Copyright (C) 2009 Maksim Golovkin (m4ks1k@gmail.com),
+ *               2025 Cynthia (cynthia2048@proton.me)
  * This file is a Frei0r plugin.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,11 +18,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#include "frei0r.h"
-#include "frei0r/math.h"
+#ifdef __SSE4_1__
+#include <smmintrin.h>
+#endif
+
+#include <frei0r.h>
+#include <frei0r/math.h>
 
 typedef struct tint0r_instance
 {
@@ -43,35 +49,35 @@ void f0r_deinit()
 void f0r_get_plugin_info(f0r_plugin_info_t* tint0r_instance_t)
 {
   tint0r_instance_t->name = "Tint0r";
-  tint0r_instance_t->author = "Maksim Golovkin";
+  tint0r_instance_t->author = "Maksim Golovkin & Cynthia";
   tint0r_instance_t->plugin_type = F0R_PLUGIN_TYPE_FILTER;
-  tint0r_instance_t->color_model = F0R_COLOR_MODEL_RGBA8888;
+  tint0r_instance_t->color_model = F0R_COLOR_MODEL_BGRA8888;
   tint0r_instance_t->frei0r_version = FREI0R_MAJOR_VERSION;
-  tint0r_instance_t->major_version = 0; 
-  tint0r_instance_t->minor_version = 1; 
-  tint0r_instance_t->num_params = 3; 
-  tint0r_instance_t->explanation = "Tint a source image with specified color";
+  tint0r_instance_t->major_version = 0;
+  tint0r_instance_t->minor_version = 1;
+  tint0r_instance_t->num_params = 3;
+  tint0r_instance_t->explanation = "Tint a source image with specified colors";
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
   switch(param_index)
   {
-  case 0:
-    info->name = "Map black to";
-    info->type = F0R_PARAM_COLOR;
-    info->explanation = "The color to map source color with null luminance";
-    break;
-  case 1:
-	  info->name = "Map white to";
-	  info->type = F0R_PARAM_COLOR;
-	  info->explanation = "The color to map source color with full luminance";
-	  break;
-  case 2:
-	  info->name = "Tint amount";
-	  info->type = F0R_PARAM_DOUBLE;
-	  info->explanation = "Amount of color";
-	  break;
+    case 0:
+      info->name = "Map black to";
+      info->type = F0R_PARAM_COLOR;
+      info->explanation = "The color to map source color with null luminance";
+      break;
+    case 1:
+      info->name = "Map white to";
+      info->type = F0R_PARAM_COLOR;
+      info->explanation = "The color to map source color with full luminance";
+      break;
+    case 2:
+      info->name = "Tint amount";
+      info->type = F0R_PARAM_DOUBLE;
+      info->explanation = "Amount of color";
+      break;
   }
 }
 
@@ -79,10 +85,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
   tint0r_instance_t* inst = (tint0r_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width; inst->height = height;
-  inst->amount = .25;
-  inst->whiteColor.r = .5;
+  inst->amount = 0.25;
+  inst->whiteColor.r = 0.5;
   inst->whiteColor.g = 1.0;
-  inst->whiteColor.b = .5;
+  inst->whiteColor.b = 0.5;
   inst->blackColor.r = 0.0;
   inst->blackColor.g = 0.0;
   inst->blackColor.b = 0.0;
@@ -94,7 +100,7 @@ void f0r_destruct(f0r_instance_t instance)
   free(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
+void f0r_set_param_value(f0r_instance_t instance,
                          f0r_param_t param, int param_index)
 {
   assert(instance);
@@ -102,18 +108,18 @@ void f0r_set_param_value(f0r_instance_t instance,
 
   switch(param_index)
   {
-	case 0:
-	  /* black color */
-	  inst->blackColor =  *((f0r_param_color_t *)param);
-	  break;
-	case 1:
-	  /* white color */
-	  inst->whiteColor =  *((f0r_param_color_t *)param);
-	  break;
-	case 2:
-	  /* amount */
-	  inst->amount = *((double *)param);
-	  break;
+    case 0:
+      /* black color */
+      inst->blackColor =  *((f0r_param_color_t *)param);
+      break;
+    case 1:
+      /* white color */
+      inst->whiteColor =  *((f0r_param_color_t *)param);
+      break;
+    case 2:
+      /* amount */
+      inst->amount = *((double *)param);
+      break;
   }
 }
 
@@ -122,53 +128,110 @@ void f0r_get_param_value(f0r_instance_t instance,
 {
   assert(instance);
   tint0r_instance_t* inst = (tint0r_instance_t*)instance;
-  
+
   switch(param_index)
   {
-  case 0:
-	*((f0r_param_color_t*)param) = inst->blackColor;
-	break;
-  case 1:
-	*((f0r_param_color_t*)param) = inst->whiteColor;
-	break;
-  case 2:
-	*((double *)param) = inst->amount;
-	break;
+    case 0:
+      *((f0r_param_color_t*)param) = inst->blackColor;
+      break;
+    case 1:
+      *((f0r_param_color_t*)param) = inst->whiteColor;
+      break;
+    case 2:
+      *((double *)param) = inst->amount;
+      break;
   }
 }
 
-unsigned char map_color(double amount, double comp_amount, float color, float luma, float minColor, float maxColor) {
+#ifndef __SSE4_1__
+static inline unsigned char map_color(double amount, double comp_amount, float color, float luma, float minColor, float maxColor)
+{
   double val = (comp_amount * color) + amount * (luma * (maxColor - minColor) + minColor);
   return (unsigned char)(255*CLAMP(val, 0, 1));
 }
+#endif
 
 void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
   assert(instance);
   tint0r_instance_t* inst = (tint0r_instance_t*)instance;
+
+  #ifdef __SSE4_1__
+  size_t len = (inst->width * inst->height) / 4;
+
+  const __m128 weights = _mm_set_ps(0.0, 0.299, 0.587, 0.114),
+  amount = _mm_set1_ps(inst->amount),
+  /* Pass the alpha channel */
+  comp_amount = _mm_set_ps(1.0,
+                           1.0 - inst->amount,
+                           1.0 - inst->amount,
+                           1.0 - inst->amount);
+
+  f0r_param_color_t black = inst->blackColor,
+  white  = inst->whiteColor;
+
+  /* Zero the alpha component to exclude it from calculations. */
+  const __m128 cmin = _mm_set_ps(0.0, black.r, black.g, black.b),
+  cdelta = _mm_sub_ps(_mm_set_ps(0.0, white.r, white.g, white.b), cmin),
+  tmp0 = _mm_mul_ps(cdelta, amount),
+  tmp1 = _mm_mul_ps(_mm_mul_ps(amount, _mm_set1_ps(255.0)), cmin);
+
+  __m128 p, p0, p1, p2, p3, luma;
+  #else
   unsigned int len = inst->width * inst->height;
   double amount = inst->amount;
   double comp_amount = 1.0 - inst->amount;
-  
+
   unsigned char* dst = (unsigned char*)outframe;
   const unsigned char* src = (unsigned char*)inframe;
   float b, g, r;
   float luma;
+  #endif
 
   while (len--)
   {
-	r = *src++ / 255.;
-	g = *src++ / 255.;
-	b = *src++ / 255.;
-	
-	luma = (b * .114 + g * .587 + r * .299);
-	
-	*dst++ = map_color(amount, comp_amount, r, luma, inst->blackColor.r, inst->whiteColor.r);
-	*dst++ = map_color(amount, comp_amount, g, luma, inst->blackColor.g, inst->whiteColor.g);
-	*dst++ = map_color(amount, comp_amount, b, luma, inst->blackColor.b, inst->whiteColor.b);
+    #ifdef __SSE4_1__
+    /* Load four pixels at once. */
+    p = _mm_loadu_si128((__m128i*)inframe);
 
-	*dst++ = *src++;  // copy alpha
+    /* Extract four pixels into separate XMM registers and convert them to float. */
+    p0 = _mm_cvtepi32_ps(_mm_cvtepu8_epi32(p));
+    p1 = _mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_srli_si128(p, 4)));
+    p2 = _mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_srli_si128(p, 8)));
+    p3 = _mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_srli_si128(p, 12)));
+    #else
+    b = *src++ / 255.;
+    g = *src++ / 255.;
+    r = *src++ / 255.;
+    #endif
+
+    #ifdef __SSE4_1__
+    #define tint(v) \
+      luma = _mm_dp_ps((v), weights, 0x7F); \
+      v = _mm_add_ps(_mm_mul_ps(comp_amount, (v)), \
+                     _mm_add_ps(_mm_mul_ps(luma, tmp0), tmp1)); \
+      v = _mm_cvtps_epi32(v)
+
+    tint(p0); tint(p1); tint(p2); tint(p3);
+
+    /* Gather the processed pixels */
+    p = _mm_packus_epi16(_mm_packus_epi32(p0, p1),
+                         _mm_packus_epi32(p2, p3));
+
+    _mm_storeu_si128((__m128i*)outframe, p);
+
+    /* Stride of 128 bits; i.e. 16 bytes */
+    inframe += 4;
+    outframe += 4;
+    #else
+    luma = (b * .114 + g * .587 + r * .299);
+
+    *dst++ = map_color(amount, comp_amount, b, luma, inst->blackColor.b, inst->whiteColor.b);
+    *dst++ = map_color(amount, comp_amount, g, luma, inst->blackColor.g, inst->whiteColor.g);
+    *dst++ = map_color(amount, comp_amount, r, luma, inst->blackColor.r, inst->whiteColor.r);
+    *dst++ = *src++;
+    #endif
   }
 }
 
