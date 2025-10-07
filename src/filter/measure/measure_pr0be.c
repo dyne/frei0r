@@ -38,7 +38,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 double PI=3.14159265358979;
 
 //---------------------------------------------------------------
-void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
+static inline void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -139,7 +139,7 @@ draw_rectangle(s, w, h, x1, y1+1, v,  1, black);
 //justified
 //p=0 one decimal place    p=1 three decimal places
 //m=1 always show sign
-void forstr(float a, int p, int m, char *s)
+inline static void forstr(float a, int p, int m, char *s)
 {
 float b;
 char *p3=" %5.3f";
@@ -192,14 +192,14 @@ if (mm==1)
   forstr(s.rms,1-u,0,rs);
   forstr(s.min,1-u,m,ns);
   forstr(s.max,1-u,m,xs);
-  sprintf(fs,"%s%s%s %s%s", lab, as, rs, ns, xs);
+  snprintf(fs,255,"%s%s%s %s%s", lab, as, rs, ns, xs);
   sprintf(str,fs,s.avg,s.rms,s.min,s.max);
   }
 else
   {
   forstr(s.avg,1-u,m,as);
   forstr(s.rms,1-u,0,rs);
-  sprintf(fs,"%s%s%s", lab, as, rs);
+  snprintf(fs,255,"%s%s%s", lab, as, rs);
   sprintf(str,fs,s.avg,s.rms);
   }
 }
@@ -251,7 +251,7 @@ if (sx>np)
       s[w*y+x]=white;
       x=x0+(np+2)*vp-i-1;
       s[w*y+x]=white;
-      }	
+      }
   }
 if (sy>np)
   {
@@ -263,7 +263,7 @@ if (sy>np)
       s[w*y+x]=white;
       y=y0+(np+2)*vp-i-1;
       s[w*y+x]=white;
-      }	
+      }
   }
 
 }
@@ -301,7 +301,7 @@ y0=h/20;
 if (bw==1)		//big window
   {
   vx=240;
-  vy = (m<=2) ? 320 : 300; 
+  vy = (m<=2) ? 320 : 300;
   x0 = (*poz==0) ? h/20 : w-h/20-vx;
   np=25;  		//size of magnifier
   xn = (m<=2) ? x0+8 : x0+70;
@@ -745,4 +745,3 @@ crosshair(in->sl, in->w, in->h, in->x, in->y, 2*in->sx+1, 2*in->sy+1, 15);
 
 floatrgba2color(in->sl, outframe, in->w , in->h);
 }
-
