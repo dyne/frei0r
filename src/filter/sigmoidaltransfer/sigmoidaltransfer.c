@@ -1,8 +1,10 @@
 /*
- * This file is contains sigmoidal transfer function from file plug-ins/common/softglow.c in gimp.
+ * This file used to contain sigmoidal transfer function from file plug-ins/common/softglow.c in gimp.
+ * However, it is now modified to match ImageMagick; i.e. whereas only the steepness of the sigmoidal
+ * curves was tunable earlier, now the midpoint of the curve is adjustable as well -- both to a degree.
  *
  * sigmoidaltransfer.c
- * Copyright 2012 Janne Liljeblad 
+ * Copyright 2012 Janne Liljeblad, 2025 Cynthia
  *
  * This file is a Frei0r plugin.
  *
@@ -28,35 +30,25 @@
 #include "frei0r.h"
 #include "frei0r/math.h"
 
-#define SIGMOIDAL_BASE   2
-#define SIGMOIDAL_RANGE 20
-
 typedef struct sigmoidal_instance
 {
   unsigned int width;
   unsigned int height;
-  double brightness;
+  double base;
   double sharpness;
+
+  /* Precomputed values of the (scaled and shifted) sigmoid function
+     is stored in this lookup table. */
+  uint8_t lut[256];
 } sigmoidal_instance_t;
 
-static inline int gimp_rgb_to_l_int (int red,
-                   int green,
-                   int blue)
+void gen_sigmoid_lut (uint8_t *const lut, const float base, const float sharpness)
 {
-  int min, max;
+  float k = expf(sharpness * 5.0) / 255.0;
+  float b = (base - 0.5) * 63.0;
 
-  if (red > green)
-    {
-      max = MAX (red,   blue);
-      min = MIN (green, blue);
-    }
-  else
-    {
-      max = MAX (green, blue);
-      min = MIN (red,   blue);
-    }
-
-  return ROUND ((max + min) / 2.0);
+  for (int i = 0; i < 256; ++i)
+    lut[i] = CLAMP (255.0 / (1.0 + expf(-k * (i - b - 127.0))), 0, 255.0);
 }
 
 void sigmoidal_transfer(f0r_instance_t instance, double time,
@@ -65,9 +57,6 @@ void sigmoidal_transfer(f0r_instance_t instance, double time,
   assert(instance);
   sigmoidal_instance_t* inst = (sigmoidal_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
-
-  double brightness = inst->brightness;
-  double sharpness = inst->sharpness;
 
   const unsigned char* src = (unsigned char*)inframe;
   unsigned char* dst = (unsigned char*)outframe;
@@ -81,13 +70,9 @@ void sigmoidal_transfer(f0r_instance_t instance, double time,
     b = *src++;
 
     //desaturate 
-    luma = (unsigned char) gimp_rgb_to_l_int (r, g, b);
-
+    luma = (unsigned char)(0.299 * r + 0.587 * g + 0.114 * b);
     //compute sigmoidal transfer
-    val = luma / 255.0;
-    val = 255.0 / (1 + exp (-(SIGMOIDAL_BASE + (sharpness * SIGMOIDAL_RANGE)) * (val - 0.5)));
-    val = val * brightness;
-    luma = (unsigned char) CLAMP (val, 0, 255);
+    luma = inst->lut[luma];
 
     *dst++ = luma;
     *dst++ = luma;
@@ -108,12 +93,12 @@ void f0r_deinit()
 void f0r_get_plugin_info(f0r_plugin_info_t* sigmoidalInfo)
 {
   sigmoidalInfo->name = "sigmoidaltransfer";
-  sigmoidalInfo->author = "Janne Liljeblad";
+  sigmoidalInfo->author = "Janne Liljeblad & Cynthia";
   sigmoidalInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
   sigmoidalInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
   sigmoidalInfo->frei0r_version = FREI0R_MAJOR_VERSION;
-  sigmoidalInfo->major_version = 0; 
-  sigmoidalInfo->minor_version = 9; 
+  sigmoidalInfo->major_version = 1;
+  sigmoidalInfo->minor_version = 0;
   sigmoidalInfo->num_params =  2; 
   sigmoidalInfo->explanation = "Desaturates image and creates a particular look that could be called Stamp, Newspaper or Photocopy";
 }
@@ -122,15 +107,15 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
 	switch ( param_index ) {
 		case 0:
-			info->name = "brightness";
+			info->name = "base";
 			info->type = F0R_PARAM_DOUBLE;
-			info->explanation = "Brightness of image";
+			info->explanation = "Brightness of image. Midpoint of sigmoidal curve";
 			break;
-    case 1:
-      info->name = "sharpness";
-      info->type = F0R_PARAM_DOUBLE;
-      info->explanation = "Sharpness of transfer";
-      break;
+        case 1:
+          info->name = "sharpness";
+          info->type = F0R_PARAM_DOUBLE;
+          info->explanation = "Sharpness of transfer";
+          break;
 	}
 }
 
@@ -139,8 +124,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   sigmoidal_instance_t* inst = (sigmoidal_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width;
   inst->height = height;
-  inst->brightness = 0.75;
-  inst->sharpness = 0.85;
+  inst->base = 0.5;
+  inst->sharpness = 3.0 / 5.0;
+
+  gen_sigmoid_lut (inst->lut, inst->base, inst->sharpness);
   return (f0r_instance_t)inst;
 }
 
@@ -156,12 +143,14 @@ void f0r_set_param_value(f0r_instance_t instance,
 	switch (param_index)
   {
     case 0:
-      inst->brightness = *((double*)param);
+      inst->base = *((double*)param);
       break;
     case 1:
       inst->sharpness = *((double*)param);
       break;
   }
+
+  gen_sigmoid_lut (inst->lut, inst->base, inst->sharpness);
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
@@ -171,7 +160,7 @@ void f0r_get_param_value(f0r_instance_t instance,
 	switch (param_index) 
   {
     case 0:
-      *((double*)param) = inst->brightness;
+      *((double*)param) = inst->base;
       break;
     case 1:
       *((double*)param) = inst->sharpness;

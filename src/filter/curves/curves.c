@@ -557,6 +557,10 @@ position pointOnBezier(double t, position points[4])
     return pos;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+# define strtok_r strtok_s
+#endif
+
 /**
  * Splits given string into sub-strings at given delimiter.
  * \param string input string
@@ -569,11 +573,11 @@ int tokenise(char *string, const char *delimiter, char ***tokens)
     int count = 0;
     char *input = strdup(string);
     char *result = NULL;
-    result = strtok(input, delimiter);
+    result = strtok_r(string, delimiter, &input);
     while (result != NULL) {
         *tokens = realloc(*tokens, (count + 1) * sizeof(char *));
         (*tokens)[count++] = strdup(result);
-        result = strtok(NULL, delimiter);
+        result = strtok_r(NULL, delimiter, &input);
     }
     free(input);
     return count;
