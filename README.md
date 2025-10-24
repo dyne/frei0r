@@ -53,6 +53,10 @@ Stable frei0r releases are built automatically and made available on
 
 Frei0r sourcecode is released under the terms of the GNU General Public License and, eventually other compatible Free Software licenses.
 
+## Packaging
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/frei0r.svg?columns=3)](https://repology.org/project/frei0r/versions)
+
 ## Build dependencies 
 
 Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms, possibly in even more environments like embedded devices.
