@@ -8,7 +8,7 @@
  * a more eye-soothing threshold effect as seen in ImageMagick.
  *
  * This has the added benefit that, whereas the sigmoidal filter's base
- * requires manual tuning, here it is determined algorithimically and thus
+ * requires manual tuning, here it is determined algorithmically and thus
  * can adapt on a frame-to-frame basis.
  *
  * This file is a Frei0r plugin.
