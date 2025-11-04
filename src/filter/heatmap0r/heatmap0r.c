@@ -96,7 +96,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
     info->major_version = 0;
     info->minor_version = 1;
     info->num_params = 4;
-    info->explanation = "Performs a continious trichromatic tinting";
+    info->explanation = "Performs a continuous trichromatic tinting";
 }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
