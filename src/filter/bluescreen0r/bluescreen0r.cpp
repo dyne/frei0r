@@ -83,7 +83,7 @@ public:
 			*outpixel= (*pixel & 0x00FFFFFF); // copy all except alpha
 			
 			uint32_t d = distance(*pixel); // get distance
-			unsigned char a = 255; // default alpha
+			unsigned char a = (*pixel >> 24); // default alpha
 			if (d < distInt) {
 				a = 0;
 				if (d > distInt2) {
@@ -100,5 +100,8 @@ public:
 };
 
 
-frei0r::construct<bluescreen0r> plugin("bluescreen0r", "Color to alpha (blit SRCALPHA)", "Hedde Bosman",0,4,F0R_COLOR_MODEL_RGBA8888);
-
+frei0r::construct<bluescreen0r> plugin("bluescreen0r",
+									   "Color to alpha (blit SRCALPHA)",
+									   "Hedde Bosman",
+									   0, 5,
+									   F0R_COLOR_MODEL_RGBA8888);
