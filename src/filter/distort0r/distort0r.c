@@ -254,16 +254,21 @@ void interpolateGrid(grid_point_t* grid, unsigned int w, unsigned int h,
 	      step_line_u = (int32_t) ((u_right-u_left) >> GRID_SIZE_LOG); 
 	      step_line_v = (int32_t) ((v_right-v_left) >> GRID_SIZE_LOG); 
 	      
-	      for(block_x=0; block_x < GRID_SIZE; ++block_x) 
-		{ 
+	      for(block_x=0; block_x < GRID_SIZE; ++block_x)
+		{
 		  int uu = u_line_index >> 16;
 		  int vv = v_line_index >> 16;
-		  
-		  u_line_index += step_line_u; 
-		  v_line_index += step_line_v; 
-		  
-		  *pos++ = src[uu + vv * w]; 
-		} 
+
+		  u_line_index += step_line_u;
+		  v_line_index += step_line_v;
+
+		  // Bounds checking to prevent buffer overrun
+		  if (uu >= 0 && uu < (int)w && vv >= 0 && vv < (int)h) {
+		    *pos++ = src[uu + vv * w];
+		  } else {
+		    *pos++ = 0; // Black pixel for out-of-bounds access
+		  }
+		}
 	      
 	      start_col_uu += step_start_col_u; 
 	      end_col_uu   += step_end_col_u; 
