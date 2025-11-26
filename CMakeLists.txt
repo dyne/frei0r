@@ -1,9 +1,9 @@
-cmake_minimum_required (VERSION 3.12...3.31)
+cmake_minimum_required (VERSION 3.12)
 
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 project (frei0r)
-set (VERSION 1.8)
+set (VERSION 2.5.1)
 
 include(GNUInstallDirs)
 
