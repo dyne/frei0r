@@ -45,7 +45,7 @@ struct glitch0r_state // helps to save time when allocating in a loop
     short int howToDistort1;
     short int howToDistort2;
     short int passThisLine;
-} g0r_state;
+};
 
 typedef struct glitch0r_instance
 {
@@ -58,6 +58,8 @@ typedef struct glitch0r_instance
     short int colorGlitchIntensity;
     short int doColorDistortion;
     short int glitchChance;
+
+    struct glitch0r_state state; // Instance-specific state
 } glitch0r_instance_t;
 
 
@@ -68,17 +70,17 @@ inline static unsigned int rnd (unsigned int min, unsigned int max)
 
 inline static void glitch0r_state_reset(glitch0r_instance_t *inst)
 {
-    g0r_state.currentPos = 0;
-    g0r_state.currentBlock = rnd(1, inst->maxBlockSize);
-    g0r_state.blkShift = rnd(1, inst->maxBlockShift);
-    g0r_state.passThisLine = (inst->glitchChance < rnd(1, 101)) ? 1 : 0;
+    inst->state.currentPos = 0;
+    inst->state.currentBlock = rnd(1, inst->maxBlockSize);
+    inst->state.blkShift = rnd(1, inst->maxBlockShift);
+    inst->state.passThisLine = (inst->glitchChance < rnd(1, 101)) ? 1 : 0;
 
     if (inst->doColorDistortion)
     {
-        g0r_state.distortionSeed1 = rnd(0x00000000, 0xfffffffe);
-        g0r_state.distortionSeed2 = rnd(0x00000000, 0xfffffffe);
-        g0r_state.howToDistort1 = rnd (0, inst->colorGlitchIntensity);
-        g0r_state.howToDistort2 = rnd (0, inst->colorGlitchIntensity);
+        inst->state.distortionSeed1 = rnd(0x00000000, 0xfffffffe);
+        inst->state.distortionSeed2 = rnd(0x00000000, 0xfffffffe);
+        inst->state.howToDistort1 = rnd (0, inst->colorGlitchIntensity);
+        inst->state.howToDistort2 = rnd (0, inst->colorGlitchIntensity);
     }
 }
 
@@ -311,42 +313,42 @@ void f0r_update(f0r_instance_t instance, double time,
     for (y = 0; y < inst->height; y++)
     {
 
-        if (g0r_state.currentPos > g0r_state.currentBlock)
+        if (inst->state.currentPos > inst->state.currentBlock)
         {
             glitch0r_state_reset(inst);
         }
         else
-            g0r_state.currentPos++;
+            inst->state.currentPos++;
 
-        g0r_state.currentY = y*inst->width;
-        pixel = dst + g0r_state.currentY;
+        inst->state.currentY = y*inst->width;
+        pixel = dst + inst->state.currentY;
 
-        if (g0r_state.passThisLine)
+        if (inst->state.passThisLine)
         {
-            memcpy((uint32_t *)(dst + g0r_state.currentY),
-                   (uint32_t *)(src + g0r_state.currentY),
+            memcpy((uint32_t *)(dst + inst->state.currentY),
+                   (uint32_t *)(src + inst->state.currentY),
                    (inst->width) * sizeof(uint32_t));
             continue;
         }
 
-        for (x = g0r_state.blkShift; x < (inst->width); x++)
+        for (x = inst->state.blkShift; x < (inst->width); x++)
         {
-            *(pixel) = *(src + g0r_state.currentY + x);
+            *(pixel) = *(src + inst->state.currentY + x);
 
             if (inst->doColorDistortion)
                     glitch0r_pixel_dist0rt(pixel,
-                        g0r_state.distortionSeed1, g0r_state.howToDistort1);
+                        inst->state.distortionSeed1, inst->state.howToDistort1);
 
             pixel++;
         }
 
-        for (x = 0; x < g0r_state.blkShift; x++)
+        for (x = 0; x < inst->state.blkShift; x++)
         {
-            *(pixel) = *(src + g0r_state.currentY + x);
+            *(pixel) = *(src + inst->state.currentY + x);
 
             if (inst->doColorDistortion)
                     glitch0r_pixel_dist0rt(pixel,
-                        g0r_state.distortionSeed2, g0r_state.howToDistort2);
+                        inst->state.distortionSeed2, inst->state.howToDistort2);
 
             pixel++;
         }
