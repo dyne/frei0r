@@ -62,6 +62,14 @@
 */
 void frei0r_cairo_set_operator(cairo_t *cr, char *op)
 {
+  // Validate inputs
+  if (!cr || !op) {
+    if (cr) {
+      cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+    }
+    return;
+  }
+
   if(strcmp(op, NORMAL) == 0)
   {
     cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
@@ -231,6 +239,11 @@ double frei0r_cairo_get_scale (double norm_scale)
  */
 void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
 {
+  // Validate inputs
+  if (!rgba || pixels <= 0) {
+    return;
+  }
+
   int i = pixels + 1;
   while ( --i ) {
     register unsigned char a = rgba[3];
@@ -255,6 +268,11 @@ void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
  */
 void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
 {
+  // Validate inputs
+  if (!rgba || pixels <= 0) {
+    return;
+  }
+
   int i = pixels + 1;
   while ( --i ) {
     register unsigned char a = rgba[3];
@@ -281,6 +299,11 @@ void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
 void frei0r_cairo_premultiply_rgba2 (unsigned char *in, unsigned char *out,
                                      int pixels, int alpha)
 {
+  // Validate inputs
+  if (!in || !out || pixels <= 0) {
+    return;
+  }
+
   int i = pixels + 1;
   while ( --i ) {
     register unsigned char a = in[3];
