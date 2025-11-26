@@ -8,6 +8,8 @@ set (VERSION 2.5.1)
 include(GNUInstallDirs)
 
 option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
+option (WITHOUT_FACERECOGNITION "Disable facedetect plugin to avoid protobuf conflicts" OFF)
+
 if (NOT WITHOUT_OPENCV)
   find_package (OpenCV)
 endif ()
