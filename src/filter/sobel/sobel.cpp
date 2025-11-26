@@ -26,12 +26,16 @@ class sobel : public frei0r::filter
 public:
   sobel(unsigned int width, unsigned int height)
   {
+    this->width = width;
+    this->height = height;
   }
   
   virtual void update(double time,
                       uint32_t* out,
                       const uint32_t* in)
   {
+    if (width == 0 || height == 0) return;
+
     std::copy(in, in + width*height, out);
     for (unsigned int y=1; y<height-1; ++y)
     {
@@ -46,9 +50,9 @@ public:
         unsigned char *p7 = (unsigned char *)&in[(y+1)*width+(x-1)];
         unsigned char *p8 = (unsigned char *)&in[(y+1)*width+x];
         unsigned char *p9 = (unsigned char *)&in[(y+1)*width+(x+1)];
-        
+
         unsigned char *g = (unsigned char *)&out[y*width+x];
-        
+
         for (int i=0; i<3; ++i)
           g[i] = CLAMP0255(
                            abs(p1[i] + p2[i]*2 + p3[i] - p7[i] - p8[i]*2 - p9[i]) +

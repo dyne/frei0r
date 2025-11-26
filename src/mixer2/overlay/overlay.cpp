@@ -29,6 +29,9 @@ class overlay : public frei0r::mixer2
 public:
   overlay(unsigned int width, unsigned int height)
   {
+    this->width = width;
+    this->height = height;
+    this->size = width * height;
   }
 
   /**
@@ -44,22 +47,32 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
+    // Validate inputs
+    if (!out || !in1 || !in2) {
+      return;
+    }
+
     const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
     const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
     uint8_t *dst = reinterpret_cast<uint8_t*>(out);
     uint32_t sizeCounter = size;
-            
+
+    // Validate size
+    if (sizeCounter == 0) {
+      return;
+    }
+
     uint32_t b, tmp, tmpM;
-  
+
     while (sizeCounter--)
       {
         for (b = 0; b < ALPHA; b++)
           {
             dst[b] = INT_MULT(src1[b], src1[b] + INT_MULT(2 * src2[b], 255 - src1[b], tmpM), tmp);
           }
-  
+
         dst[ALPHA] = MIN(src1[ALPHA], src2[ALPHA]);
-  
+
         src1 += NBYTES;
         src2 += NBYTES;
         dst += NBYTES;

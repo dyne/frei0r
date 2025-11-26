@@ -10,11 +10,22 @@ The presence of optional libraries on the system will trigger compilation of ext
 
   + [Cairo](http://cairographics.org) required for cairo- filters and mixers
 
+## Optional build flags
+
+  + `-DWITHOUT_FACERECOGNITION=ON` - Disable face recognition plugins (facedetect and facebl0r) to avoid protobuf conflicts with applications like MLT
+
 It is recommended to use a separate `build` sub-folder.
 
 ```
 mkdir -p build
 cd build && cmake ../
+make
+```
+
+To disable face recognition plugins (recommended when using with MLT):
+```
+mkdir -p build
+cd build && cmake -DWITHOUT_FACERECOGNITION=ON ../
 make
 ```
 

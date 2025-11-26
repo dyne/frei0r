@@ -80,12 +80,13 @@ float AitNev3(int t, float xt[], float yt[], float x)
 {
     float p[10];
     int i,j,m;
-    float zero = 0.0f; // MSVC doesn't allow division through a zero literal, but allows it through non-const variable set to zero
 
     if ((x<xt[0])||(x>xt[t-1]))
     {
         //	printf("\n\n x=%f je izven mej tabele!",x);
-        return 1.0/zero;
+        // Return a reasonable value instead of dividing by zero
+        if (x<xt[0]) return yt[0];
+        else return yt[t-1];
     }
 
     //poisce, katere tocke bo uporabil
@@ -98,7 +99,13 @@ float AitNev3(int t, float xt[], float yt[], float x)
     for (j=1;j<4;j++)
         for (i=(4-1);i>=j;i--)
         {
-            p[i]=p[i]+(x-xt[i+m])/(xt[i+m]-xt[i-j+m])*(p[i]-p[i-1]);
+            // Check for division by zero
+            float denominator = xt[i+m]-xt[i-j+m];
+            if (denominator == 0.0f) {
+                // If denominator is zero, skip this iteration to avoid undefined behavior
+                continue;
+            }
+            p[i]=p[i]+(x-xt[i+m])/denominator*(p[i]-p[i-1]);
         }
     return p[4-1];
 }

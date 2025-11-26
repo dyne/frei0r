@@ -77,23 +77,42 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
+  // Validate inputs
+  if (width == 0 || height == 0) {
+    return NULL;
+  }
+
   cairo_blend_instance_t* inst = (cairo_blend_instance_t*)calloc(1, sizeof(*inst));
-  inst->width = width; 
+  if (!inst) {
+    return NULL;
+  }
+
+  inst->width = width;
   inst->height = height;
 
   inst->opacity = 1.0;
 
-	const char* blend_val = NORMAL;
-  inst->blend_mode  = (char*) malloc (strlen(blend_val) + 1 );
-	strcpy (inst->blend_mode, blend_val);
+  const char* blend_val = NORMAL;
+  inst->blend_mode  = (char*) malloc (strlen(blend_val) + 1);
+  if (!inst->blend_mode) {
+    free(inst);
+    return NULL;
+  }
+  strcpy (inst->blend_mode, blend_val);
 
   return (f0r_instance_t)inst;
 }
 
 void f0r_destruct(f0r_instance_t instance)
 {
+  if (!instance) {
+    return;
+  }
+
   cairo_blend_instance_t* inst = (cairo_blend_instance_t*)instance;
-  free(inst->blend_mode);
+  if (inst->blend_mode) {
+    free(inst->blend_mode);
+  }
   free(instance);
 }
 
@@ -104,12 +123,22 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
   char* sval;
 	switch(param_index) {
 		case 0:
-			inst->opacity = *((double*)param);
+		  // Validate double parameter
+		  if (param) {
+			  inst->opacity = *((double*)param);
+		  }
       break;
 		case 1:
-			sval = (*(char**)param);
-			inst->blend_mode = (char*)realloc (inst->blend_mode, strlen(sval) + 1);
-			strcpy (inst->blend_mode, sval);
+		  // Validate string parameter
+		  if (param) {
+			  sval = (*(char**)param);
+			  if (sval) {
+				  inst->blend_mode = (char*)realloc (inst->blend_mode, strlen(sval) + 1);
+				  if (inst->blend_mode) {
+					  strcpy (inst->blend_mode, sval);
+				  }
+			  }
+		  }
       break;
   }
 }
@@ -121,10 +150,16 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 
 	switch(param_index) {
 		case 0:
-    *((double*)param) = inst->opacity;
+		  if (param) {
+		    *((double*)param) = inst->opacity;
+		  }
 			break;
 		case 1:
-      *((f0r_param_string *)param) = inst->blend_mode;
+		  if (param && inst->blend_mode) {
+        *((f0r_param_string *)param) = inst->blend_mode;
+      } else if (param) {
+        *((f0r_param_string *)param) = "";
+      }
 			break;
   }
 }
@@ -135,27 +170,53 @@ void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned c
   int h = inst->height;
   int stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, w);
 
+  // Validate inputs
+  if (!inst || !out || !src || w <= 0 || h <= 0) {
+    return;
+  }
+
   cairo_surface_t* out_image = cairo_image_surface_create_for_data (out,
                                                                     CAIRO_FORMAT_ARGB32,
                                                                     w,
                                                                     h,
                                                                     stride);
+  // Check if surface creation succeeded
+  if (!out_image) {
+    return;
+  }
+
   cairo_t* cr = cairo_create (out_image);
+  // Check if context creation succeeded
+  if (!cr) {
+    cairo_surface_destroy (out_image);
+    return;
+  }
 
   cairo_surface_t* src_image = cairo_image_surface_create_for_data ((unsigned char*)src,
                                                                      CAIRO_FORMAT_ARGB32,
                                                                      w,
                                                                      h,
                                                                      stride);
+  // Check if surface creation succeeded
+  if (!src_image) {
+    cairo_destroy (cr);
+    cairo_surface_destroy (out_image);
+    return;
+  }
 
-  // Set source, blen mode and draw with current opacity
-  frei0r_cairo_set_operator(cr, inst->blend_mode);
+  // Validate blend mode string
+  if (inst->blend_mode) {
+    // Set source, blend mode and draw with current opacity
+    frei0r_cairo_set_operator(cr, inst->blend_mode);
+  }
+
   cairo_set_source_surface (cr, src_image, 0, 0);
   cairo_paint_with_alpha (cr, inst->opacity);
 
-  cairo_surface_destroy (out_image);
+  // Clean up in proper order
   cairo_surface_destroy (src_image);
   cairo_destroy (cr);
+  cairo_surface_destroy (out_image);
 }
 
 void f0r_update(f0r_instance_t instance, double time,
@@ -167,6 +228,11 @@ void f0r_update(f0r_instance_t instance, double time,
 void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
 		 const uint32_t* inframe2, const uint32_t* inframe3, uint32_t* outframe)
 {
+  // Validate inputs
+  if (!instance || !inframe1 || !inframe2 || !outframe) {
+    return;
+  }
+
   assert(instance);
   cairo_blend_instance_t* inst = (cairo_blend_instance_t*) instance;
 
@@ -174,6 +240,11 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   unsigned char* src = (unsigned char*)inframe2;
   unsigned char* out = (unsigned char*)outframe;
   int pixels = inst->width * inst->height;
+
+  // Validate dimensions
+  if (pixels <= 0) {
+    return;
+  }
 
   frei0r_cairo_premultiply_rgba2 (dst, out, pixels, -1);
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
