@@ -122,6 +122,9 @@ void f0r_update(f0r_instance_t instance, double time,
   levelsInput = CLAMP(levelsInput, 0.0, 48.0) + 2.0;
   int numLevels = (int)levelsInput;
 
+  // Prevent division by zero
+  if (numLevels < 2) numLevels = 2;
+
   // create levels table
   unsigned char levels[256];
   int i;

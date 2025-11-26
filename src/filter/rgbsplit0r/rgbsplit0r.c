@@ -112,6 +112,12 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->shiftY = 0;
     inst->shiftX = 0;
 
+    // Initialize default values for shift to avoid division by zero issues
+    if (width > 0 && height > 0) {
+        inst->shiftY = (unsigned int)((height / 8) * 0.0); // 0.0 corresponds to center
+        inst->shiftX = (unsigned int)((width / 8) * 0.0);  // 0.0 corresponds to center
+    }
+
     return (f0r_instance_t)inst;
 }
 
@@ -135,7 +141,10 @@ void f0r_set_param_value(f0r_instance_t instance,
             double shiftY = *((double*)param) - 0.5;
 
             // Convert to range from 0 to one eighth of height
-            shiftY = ((inst->height / 8) * shiftY);
+            if (inst->height > 0)
+                shiftY = ((inst->height / 8) * shiftY);
+            else
+                shiftY = 0;
 
             inst->shiftY = (unsigned int)shiftY;
             break;
@@ -145,9 +154,12 @@ void f0r_set_param_value(f0r_instance_t instance,
         {
             // scale to [-1/16..1/16]
             double shiftX = *((double*)param) - 0.5;
-            
+
             // Convert to range from 0 to one eighth of width
-            shiftX = ((inst->width / 8) * shiftX);
+            if (inst->width > 0)
+                shiftX = ((inst->width / 8) * shiftX);
+            else
+                shiftX = 0;
 
             inst->shiftX = (unsigned int)shiftX;
             break;
@@ -167,14 +179,20 @@ void f0r_get_param_value(f0r_instance_t instance,
         case 0 : // vertical shift
         {
             // convert plugin's param to frei0r range
-            *((double*)param) = (inst->shiftY) / (inst->height / 8) + 0.5;
+            if (inst->height > 0)
+                *((double*)param) = (inst->shiftY) / (inst->height / 8) + 0.5;
+            else
+                *((double*)param) = 0.5;
             break;
         }
 
         case 1 : // horizontal shift
         {
             // convert plugin's param to frei0r range
-            *((double*)param) = (inst->shiftX) / (inst->width / 8) + 0.5;
+            if (inst->width > 0)
+                *((double*)param) = (inst->shiftX) / (inst->width / 8) + 0.5;
+            else
+                *((double*)param) = 0.5;
             break;
         }
     }
@@ -195,8 +213,8 @@ void f0r_update(f0r_instance_t instance, double time,
             uint32_t pxR = 0, pxG = 0, pxB = 0;
 
             // First make a blue layer shifted back
-            if (((x - inst->shiftX) < inst->width) &&
-                ((y - inst->shiftY) < inst->height))
+            if (((int)x >= (int)inst->shiftX) &&
+                ((int)y >= (int)inst->shiftY))
             {
                 rgbsplit0r_extract_color((uint32_t *)(src +
                     (x - inst->shiftX) +
