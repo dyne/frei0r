@@ -46,7 +46,7 @@ typedef struct {
   uint32_t size;
 } ScreenGeometry;
 
-#define PIXELAT(x1,y1,s) ((s)+(x1)+ yprecal[y1])// (y1)*(geo->w)))
+#define PIXELAT(x1,y1,s,inst) ((s)+(x1)+ inst->yprecal[y1])// (y1)*(geo->w)))
 #define GMERROR(cc1,cc2) ((((RED(cc1)-RED(cc2))*(RED(cc1)-RED(cc2))) +	\
    			((GREEN(cc1)-GREEN(cc2)) *(GREEN(cc1)-GREEN(cc2))) + \
 			((BLUE(cc1)-BLUE(cc2))*(BLUE(cc1)-BLUE(cc2)))))
@@ -155,26 +155,26 @@ long Cartoon::GetMaxContrast(int32_t *src,int x,int y) {
   long error,max=0;
   
   /* Assumes PrePixelModify has been run */
-  c1 = *PIXELAT(x-m_diffspace,y,src);
-  c2 = *PIXELAT(x+m_diffspace,y,src);
+  c1 = *PIXELAT(x-m_diffspace,y,src,this);
+  c2 = *PIXELAT(x+m_diffspace,y,src,this);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
-  
-  c1 = *PIXELAT(x,y-m_diffspace,src);
-  c2 = *PIXELAT(x,y+m_diffspace,src);
+
+  c1 = *PIXELAT(x,y-m_diffspace,src,this);
+  c2 = *PIXELAT(x,y+m_diffspace,src,this);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
-  
-  c1 = *PIXELAT(x-m_diffspace,y-m_diffspace,src);
-  c2 = *PIXELAT(x+m_diffspace,y+m_diffspace,src);
+
+  c1 = *PIXELAT(x-m_diffspace,y-m_diffspace,src,this);
+  c2 = *PIXELAT(x+m_diffspace,y+m_diffspace,src,this);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
-  
-  c1 = *PIXELAT(x+m_diffspace,y-m_diffspace,src);
-  c2 = *PIXELAT(x-m_diffspace,y+m_diffspace,src);
+
+  c1 = *PIXELAT(x+m_diffspace,y-m_diffspace,src,this);
+  c2 = *PIXELAT(x-m_diffspace,y+m_diffspace,src,this);
   error = GMERROR(c1,c2);
   if (error>max) max = error;
-  
+
   return(max);
 }
 
