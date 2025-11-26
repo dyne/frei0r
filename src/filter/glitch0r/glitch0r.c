@@ -306,9 +306,9 @@ void f0r_update(f0r_instance_t instance, double time,
 
     uint32_t* dst = outframe;
     const uint32_t* src = inframe;
-    uint32_t *pixel; 
+    uint32_t *pixel;
 
-    g0r_state.currentBlock = rnd(1, inst->maxBlockSize);
+    inst->state.currentBlock = rnd(1, inst->maxBlockSize);
 
     for (y = 0; y < inst->height; y++)
     {
