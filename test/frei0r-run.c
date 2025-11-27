@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <frei0r.h>
 
@@ -16,6 +17,8 @@ typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int heigh
 typedef void (*f0r_update_f)(f0r_instance_t instance,
 		double time, const uint32_t* inframe, uint32_t* outframe);
 typedef void (*f0r_destruct_f)(f0r_instance_t instance);
+typedef void (*f0r_set_param_value_f)(f0r_instance_t instance, f0r_param_t param, int param_index);
+typedef void (*f0r_get_param_value_f)(f0r_instance_t instance, f0r_param_t param, int param_index);
 
 
 // Generate a simple color bar test pattern
@@ -85,6 +88,65 @@ void generate_test_pattern(uint32_t* frame, int width, int height) {
     }
 }
 
+// Test parameters by cycling through different values
+void test_parameters(f0r_instance_t instance, f0r_set_param_value_f f0r_set_param_value,
+                     f0r_get_param_info_f f0r_get_param_info, int num_params, int frame_count) {
+    f0r_param_info_t param_info;
+    double double_val;
+    f0r_param_color_t color_val;
+    f0r_param_position_t position_val;
+
+    for (int i = 0; i < num_params; i++) {
+        f0r_get_param_info(&param_info, i);
+
+        switch (param_info.type) {
+            case F0R_PARAM_BOOL:
+                // Alternate between 0.0 and 1.0 every 30 frames
+                double_val = (frame_count / 30) % 2;
+                f0r_set_param_value(instance, (f0r_param_t)&double_val, i);
+                break;
+
+            case F0R_PARAM_DOUBLE:
+                // Cycle through values 0.0 to 1.0 over 60 frames
+                double_val = (frame_count % 60) / 60.0;
+                f0r_set_param_value(instance, (f0r_param_t)&double_val, i);
+                break;
+
+            case F0R_PARAM_COLOR:
+                // Cycle through different colors
+                switch ((frame_count / 20) % 4) {
+                    case 0: // Red
+                        color_val.r = 1.0; color_val.g = 0.0; color_val.b = 0.0;
+                        break;
+                    case 1: // Green
+                        color_val.r = 0.0; color_val.g = 1.0; color_val.b = 0.0;
+                        break;
+                    case 2: // Blue
+                        color_val.r = 0.0; color_val.g = 0.0; color_val.b = 1.0;
+                        break;
+                    case 3: // White
+                        color_val.r = 1.0; color_val.g = 1.0; color_val.b = 1.0;
+                        break;
+                }
+                f0r_set_param_value(instance, (f0r_param_t)&color_val, i);
+                break;
+
+            case F0R_PARAM_POSITION:
+                // Move position in a circular pattern
+                position_val.x = 0.5 + 0.4 * sin(frame_count * 0.1);
+                position_val.y = 0.5 + 0.4 * cos(frame_count * 0.1);
+                f0r_set_param_value(instance, (f0r_param_t)&position_val, i);
+                break;
+
+            default:
+                // For unknown parameter types, set to middle value
+                double_val = 0.5;
+                f0r_set_param_value(instance, (f0r_param_t)&double_val, i);
+                break;
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
   // instance frei0r pointers
   static void *dl_handle;
@@ -95,10 +157,11 @@ int main(int argc, char* argv[]) {
   static f0r_get_param_info_f f0r_get_param_info;
   static f0r_param_info_t param;
   static f0r_instance_t instance;
-
   static f0r_construct_f f0r_construct;
   static f0r_update_f f0r_update;
   static f0r_destruct_f f0r_destruct;
+  static f0r_set_param_value_f f0r_set_param_value;
+  static f0r_get_param_value_f f0r_get_param_value;
 
   const char *usage = "Usage: frei0r-test [-td] <frei0r_plugin_file>";
   if (argc < 2) {
@@ -109,14 +172,18 @@ int main(int argc, char* argv[]) {
   int opt;
   int headless = 0;
   int debug = 0;
+  int frames = 100; // Number of frames to test
   char plugin_file[512];
-  while((opt =  getopt(argc, argv, "tdp:")) != -1) {
+  while((opt =  getopt(argc, argv, "tdf:p:")) != -1) {
 	switch(opt) {
 	case 't':
 	  headless = 1;
 	  break;
 	case 'd':
 	  debug = 1;
+	  break;
+	case 'f':
+	  frames = atoi(optarg);
 	  break;
 	case 'p':
 	  snprintf(plugin_file, 511, "%s", optarg);
@@ -148,6 +215,8 @@ int main(int argc, char* argv[]) {
   f0r_construct = (f0r_construct_f) dlsym(dl_handle,"f0r_construct");
   f0r_update = (f0r_update_f) dlsym(dl_handle,"f0r_update");
   f0r_destruct = (f0r_destruct_f) dlsym(dl_handle,"f0r_destruct");
+  f0r_set_param_value = (f0r_set_param_value_f) dlsym(dl_handle,"f0r_set_param_value");
+  f0r_get_param_value = (f0r_get_param_value_f) dlsym(dl_handle,"f0r_get_param_value");
 
   // always initialize plugin first
   f0r_init();
@@ -165,6 +234,26 @@ int main(int argc, char* argv[]) {
 		  pi.plugin_type == F0R_PLUGIN_TYPE_MIXER3 ? "mixer3" : "unknown",
 		  frei0r_color_model,
 		  pi.num_params);
+
+  // Print parameter information
+  if (pi.num_params > 0) {
+      fprintf(stderr,",\n \"parameters\":[\n");
+      for (int i = 0; i < pi.num_params; i++) {
+          f0r_get_param_info(&param, i);
+          const char* param_type =
+              param.type == F0R_PARAM_BOOL ? "bool" :
+              param.type == F0R_PARAM_DOUBLE ? "double" :
+              param.type == F0R_PARAM_COLOR ? "color" :
+              param.type == F0R_PARAM_POSITION ? "position" :
+              param.type == F0R_PARAM_STRING ? "string" : "unknown";
+
+          fprintf(stderr,"  {\"name\":\"%s\",\"type\":\"%s\",\"explanation\":\"%s\"}",
+                  param.name, param_type, param.explanation);
+          if (i < pi.num_params - 1) fprintf(stderr,",\n");
+      }
+      fprintf(stderr,"\n ]\n");
+  }
+  fprintf(stderr,"}\n");
 
   // TODO: just filters for now
   if( pi.plugin_type != F0R_PLUGIN_TYPE_FILTER ) {
@@ -190,14 +279,26 @@ int main(int argc, char* argv[]) {
   // Generate test pattern
   generate_test_pattern(input_buffer, frame_width, frame_height);
 
-  // Apply filter to test pattern
-  f0r_update(instance, 0.0, (const uint32_t*)input_buffer, output_buffer);
+  // Test the plugin with different parameter values
+  for (int frame = 0; frame < frames; frame++) {
+      // Update parameters if the plugin has any
+      if (pi.num_params > 0 && f0r_set_param_value) {
+          test_parameters(instance, f0r_set_param_value, f0r_get_param_info, pi.num_params, frame);
+      }
 
-  // For headless mode, we're done
+      // Apply filter to test pattern
+      f0r_update(instance, (double)frame / (double)fps, (const uint32_t*)input_buffer, output_buffer);
+
+      if (!headless && frame % 10 == 0) {
+          printf("Frame %d processed\n", frame);
+      }
+  }
+
   if (!headless) {
-      printf("Test pattern processed successfully. Plugin: %s\n", pi.name);
+      printf("Test completed successfully. Plugin: %s\n", pi.name);
+      printf("Tested %d frames with %d parameters\n", frames, pi.num_params);
       printf("Input: %dx%d test pattern\n", frame_width, frame_height);
-      printf("Output: %dx%d processed frame\n", frame_width, frame_height);
+      printf("Output: %dx%d processed frames\n", frame_width, frame_height);
   }
 
   free(input_buffer);
