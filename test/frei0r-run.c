@@ -1,8 +1,9 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <dlfcn.h>
-
-#include <opencv2/opencv.hpp>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <frei0r.h>
 
@@ -17,6 +18,73 @@ typedef void (*f0r_update_f)(f0r_instance_t instance,
 typedef void (*f0r_destruct_f)(f0r_instance_t instance);
 
 
+// Generate a simple color bar test pattern
+void generate_test_pattern(uint32_t* frame, int width, int height) {
+    // Create color bars: red, green, blue, white, black, cyan, magenta, yellow
+    int bar_width = width / 8;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int bar_index = x / bar_width;
+            if (bar_index >= 8) bar_index = 7;
+
+            uint8_t r, g, b, a = 255;
+
+            switch (bar_index) {
+                case 0: // Red
+                    r = 255; g = 0; b = 0;
+                    break;
+                case 1: // Green
+                    r = 0; g = 255; b = 0;
+                    break;
+                case 2: // Blue
+                    r = 0; g = 0; b = 255;
+                    break;
+                case 3: // White
+                    r = 255; g = 255; b = 255;
+                    break;
+                case 4: // Black
+                    r = 0; g = 0; b = 0;
+                    break;
+                case 5: // Cyan
+                    r = 0; g = 255; b = 255;
+                    break;
+                case 6: // Magenta
+                    r = 255; g = 0; b = 255;
+                    break;
+                case 7: // Yellow
+                    r = 255; g = 255; b = 0;
+                    break;
+                default:
+                    r = 128; g = 128; b = 128;
+                    break;
+            }
+
+            // Add some vertical variation for visual interest
+            if (y < height / 4) {
+                // Top quarter: keep original colors
+            } else if (y < height / 2) {
+                // Second quarter: darker
+                r = r * 0.7;
+                g = g * 0.7;
+                b = b * 0.7;
+            } else if (y < 3 * height / 4) {
+                // Third quarter: even darker
+                r = r * 0.4;
+                g = g * 0.4;
+                b = b * 0.4;
+            } else {
+                // Bottom quarter: much darker
+                r = r * 0.2;
+                g = g * 0.2;
+                b = b * 0.2;
+            }
+
+            frame[y * width + x] = (a << 24) | (b << 16) | (g << 8) | r;
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
   // instance frei0r pointers
   static void *dl_handle;
@@ -27,12 +95,13 @@ int main(int argc, char* argv[]) {
   static f0r_get_param_info_f f0r_get_param_info;
   static f0r_param_info_t param;
   static f0r_instance_t instance;
+
   static f0r_construct_f f0r_construct;
   static f0r_update_f f0r_update;
   static f0r_destruct_f f0r_destruct;
 
-  const char *usage = "Usage: frei0r-test [-td] <video_file> <frei0r_plugin_file>";
-  if (argc <3) {
+  const char *usage = "Usage: frei0r-test [-td] <frei0r_plugin_file>";
+  if (argc < 2) {
 	fprintf(stderr,"%s\n",usage);
 	return -1;
   }
@@ -40,9 +109,8 @@ int main(int argc, char* argv[]) {
   int opt;
   int headless = 0;
   int debug = 0;
-  char video_file[512];
   char plugin_file[512];
-  while((opt =  getopt(argc, argv, "tdv:p:")) != -1) {
+  while((opt =  getopt(argc, argv, "tdp:")) != -1) {
 	switch(opt) {
 	case 't':
 	  headless = 1;
@@ -53,22 +121,13 @@ int main(int argc, char* argv[]) {
 	case 'p':
 	  snprintf(plugin_file, 511, "%s", optarg);
 	  break;
-	case 'v':
-	  snprintf(video_file, 511, "%s", optarg);
-	  break;
 	}
   }
 
-  // Open the image file using OpenCV
-  cv::VideoCapture cap(video_file);
-  if (!cap.isOpened()) {
-	printf("Error opening image file\n");
-	return -1;
-  }
-  // Get video properties
-  int frame_width = (int) cap.get(cv::CAP_PROP_FRAME_WIDTH);
-  int frame_height = (int) cap.get(cv::CAP_PROP_FRAME_HEIGHT);
-  int fps = (int) cap.get(cv::CAP_PROP_FPS);
+  // Set fixed video properties for test pattern
+  int frame_width = 640;
+  int frame_height = 480;
+  int fps = 30;
 
   const char *file = basename(plugin_file);
   const char *dir = dirname(plugin_file);
@@ -110,14 +169,12 @@ int main(int argc, char* argv[]) {
   // TODO: just filters for now
   if( pi.plugin_type != F0R_PLUGIN_TYPE_FILTER ) {
 	fprintf(stderr,"Plugin is not of filter type, skip for now\n");
-	cap.release();
 	f0r_deinit();
 	dlclose(dl_handle);
 	exit(0);
   }
   if( pi.color_model != F0R_COLOR_MODEL_RGBA8888 ) {
 	fprintf(stderr,"Filter color model not supported: %s\n",frei0r_color_model);
-	cap.release();
 	f0r_deinit();
 	dlclose(dl_handle);
 	exit(1);
@@ -125,41 +182,26 @@ int main(int argc, char* argv[]) {
 
   instance = f0r_construct(frame_width, frame_height);
 
-  // Create a window to display the video
-  if(!headless) {
-	cv::namedWindow("frei0r", cv::WINDOW_NORMAL);
-	cv::resizeWindow("frei0r", frame_width, frame_height);
-	cv::namedWindow("source", cv::WINDOW_NORMAL);
-	cv::resizeWindow("source", frame_width, frame_height);
+  uint32_t *input_buffer;
+  uint32_t *output_buffer;
+  input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+  output_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+
+  // Generate test pattern
+  generate_test_pattern(input_buffer, frame_width, frame_height);
+
+  // Apply filter to test pattern
+  f0r_update(instance, 0.0, (const uint32_t*)input_buffer, output_buffer);
+
+  // For headless mode, we're done
+  if (!headless) {
+      printf("Test pattern processed successfully. Plugin: %s\n", pi.name);
+      printf("Input: %dx%d test pattern\n", frame_width, frame_height);
+      printf("Output: %dx%d processed frame\n", frame_width, frame_height);
   }
 
-  uint32_t *buffer;
-  /* //posix_memalign( (void**) &outframe, 16, frame_width * frame_height * 4 ); */
-  buffer = (uint32_t*)calloc(4, frame_width * frame_height );
-
-  // Read the image file frame by frame
-  cv::Mat frame;
-  while (cap.read(frame)) {
-	// Convert the OpenCV image to an RGBA pixel buffer
-	cv::Mat frame_rgba;
-	cv::cvtColor(frame, frame_rgba, cv::COLOR_RGB2RGBA);
-
-	// Create an SDL2 surface from the RGBA pixel buffer
-	f0r_update(instance, 0.0, (const uint32_t*)frame_rgba.data, buffer);
-
-	// Display the frames
-	if(!headless) {
-	  cv::imshow("source", frame);
-	  memcpy(frame_rgba.data, buffer, frame_width * frame_height * 4);
-	  cv::imshow("frei0r", frame_rgba);
-	  // Wait for a key press
-	  if(cv::waitKey(1000/fps) >= 0) break;
-	}
-  }
-
-  free(buffer);
-
-  cap.release(); // Release the video capture object
+  free(input_buffer);
+  free(output_buffer);
 
   f0r_destruct(instance);
   f0r_deinit();
