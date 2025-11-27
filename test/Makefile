@@ -15,14 +15,13 @@ all: frei0r-meta frei0r-run
 
 # build scan-plugins
 
-frei0r-run: CVFLAGS := $(shell pkg-config --libs --cflags opencv4)
 frei0r-run: frei0r-run.c
 	$(info Build frei0r plugin test run utility)
-	${CXX} ${DEBUG_FLAGS} -ggdb -O0 -I../include -o frei0r-run frei0r-run.c ${CVFLAGS} -ldl
+	${CXX} ${DEBUG_FLAGS} -ggdb -O0 -I../include -o frei0r-run frei0r-run.c -ldl
 
 check-asan: frei0r-run
 	@$(if $(wildcard ${PLUGINDIR}),,>&2 echo "Scan dir not found: ${PLUGINDIR}" && exit 1)
-	@find ${PLUGINDIR} -type f -name '*.so' -exec ./frei0r-run -t -v ${HOME}/Downloads/frei0r-all.webm -p {} \;
+	@find ${PLUGINDIR} -type f -name '*.so' -exec ./frei0r-run -t -p {} \;
 
 #	@$(if $(wildcard frei0r-test),,make test-utils)
 
