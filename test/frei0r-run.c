@@ -169,6 +169,14 @@ void test_parameters(f0r_instance_t instance, f0r_set_param_value_f f0r_set_para
                 f0r_set_param_value(instance, (f0r_param_t)&position_val, i);
                 break;
 
+            case F0R_PARAM_STRING:
+            {
+                // For string parameters, use "0" as default
+                char *string_val = "0";
+                f0r_set_param_value(instance, (f0r_param_t)&string_val, i);
+                break;
+            }
+
             default:
                 // For unknown parameter types, set to middle value
                 double_val = 0.5;
