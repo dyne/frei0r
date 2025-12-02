@@ -33,11 +33,12 @@
  * - Zone plate patch (tests spatial frequency response and aliasing)
  * - Frame counter (tests text/detail preservation)
  * 
- * @param frame      Output buffer in RGBA8888 format (32-bit per pixel)
- * @param width      Frame width in pixels
- * @param height     Frame height in pixels
- * @param frame_num  Current frame number (for animation)
+ * @param frame        Output buffer (32-bit per pixel)
+ * @param width        Frame width in pixels
+ * @param height       Frame height in pixels
+ * @param frame_num    Current frame number (for animation)
+ * @param color_model  Color model (F0R_COLOR_MODEL_BGRA8888, F0R_COLOR_MODEL_RGBA8888, or F0R_COLOR_MODEL_PACKED32)
  */
-void generate_animated_test_pattern(uint32_t* frame, int width, int height, int frame_num);
+void generate_animated_test_pattern(uint32_t* frame, int width, int height, int frame_num, int color_model);
 
 #endif // TEST_PATTERN_H

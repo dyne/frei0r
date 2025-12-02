@@ -26,15 +26,19 @@
 #endif
 
 static void set_pixel(uint32_t* frame, int width, int height, int x, int y, 
-                     uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+                     uint8_t r, uint8_t g, uint8_t b, uint8_t a, int color_model) {
     if (x >= 0 && x < width && y >= 0 && y < height) {
-        frame[y * width + x] = (a << 24) | (b << 16) | (g << 8) | r;
+        if (color_model == 0) {
+            frame[y * width + x] = (a << 24) | (r << 16) | (g << 8) | b;
+        } else {
+            frame[y * width + x] = (a << 24) | (b << 16) | (g << 8) | r;
+        }
     }
 }
 
 static void draw_circle(uint32_t* frame, int width, int height, 
                        int cx, int cy, int radius,
-                       uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+                       uint8_t r, uint8_t g, uint8_t b, uint8_t a, int color_model) {
     int x_start = cx - radius > 0 ? cx - radius : 0;
     int x_end = cx + radius < width ? cx + radius : width - 1;
     int y_start = cy - radius > 0 ? cy - radius : 0;
@@ -45,7 +49,7 @@ static void draw_circle(uint32_t* frame, int width, int height,
             int dx = x - cx;
             int dy = y - cy;
             if (dx * dx + dy * dy <= radius * radius) {
-                set_pixel(frame, width, height, x, y, r, g, b, a);
+                set_pixel(frame, width, height, x, y, r, g, b, a, color_model);
             }
         }
     }
@@ -53,7 +57,7 @@ static void draw_circle(uint32_t* frame, int width, int height,
 
 static void draw_filled_rect(uint32_t* frame, int width, int height,
                              int x1, int y1, int x2, int y2,
-                             uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+                             uint8_t r, uint8_t g, uint8_t b, uint8_t a, int color_model) {
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
     if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
     
@@ -64,14 +68,14 @@ static void draw_filled_rect(uint32_t* frame, int width, int height,
     
     for (int y = y1; y <= y2; y++) {
         for (int x = x1; x <= x2; x++) {
-            set_pixel(frame, width, height, x, y, r, g, b, a);
+            set_pixel(frame, width, height, x, y, r, g, b, a, color_model);
         }
     }
 }
 
 static void draw_rotated_square(uint32_t* frame, int width, int height,
                                 int cx, int cy, int size, double angle,
-                                uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+                                uint8_t r, uint8_t g, uint8_t b, uint8_t a, int color_model) {
     double cos_a = cos(angle);
     double sin_a = sin(angle);
     int half = size / 2;
@@ -80,14 +84,14 @@ static void draw_rotated_square(uint32_t* frame, int width, int height,
         for (int dx = -half; dx <= half; dx++) {
             int rx = (int)(dx * cos_a - dy * sin_a);
             int ry = (int)(dx * sin_a + dy * cos_a);
-            set_pixel(frame, width, height, cx + rx, cy + ry, r, g, b, a);
+            set_pixel(frame, width, height, cx + rx, cy + ry, r, g, b, a, color_model);
         }
     }
 }
 
 static void draw_digit(uint32_t* frame, int width, int height,
                       int x, int y, int digit, int scale,
-                      uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+                      uint8_t r, uint8_t g, uint8_t b, uint8_t a, int color_model) {
     // Simple 5x7 bitmap font for digits 0-9
     static const uint8_t font[10][7] = {
         {0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F}, // 0
@@ -113,7 +117,7 @@ static void draw_digit(uint32_t* frame, int width, int height,
                         set_pixel(frame, width, height, 
                                 x + col * scale + sx, 
                                 y + row * scale + sy, 
-                                r, g, b, a);
+                                r, g, b, a, color_model);
                     }
                 }
             }
@@ -123,9 +127,9 @@ static void draw_digit(uint32_t* frame, int width, int height,
 
 static void draw_number(uint32_t* frame, int width, int height,
                        int x, int y, int number, int scale,
-                       uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+                       uint8_t r, uint8_t g, uint8_t b, uint8_t a, int color_model) {
     if (number == 0) {
-        draw_digit(frame, width, height, x, y, 0, scale, r, g, b, a);
+        draw_digit(frame, width, height, x, y, 0, scale, r, g, b, a, color_model);
         return;
     }
     
@@ -141,13 +145,13 @@ static void draw_number(uint32_t* frame, int width, int height,
     temp = number;
     for (int i = digits - 1; i >= 0; i--) {
         int digit = temp % 10;
-        draw_digit(frame, width, height, x + i * 6 * scale, y, digit, scale, r, g, b, a);
+        draw_digit(frame, width, height, x + i * 6 * scale, y, digit, scale, r, g, b, a, color_model);
         temp /= 10;
     }
 }
 
 static void draw_zone_plate_patch(uint32_t* frame, int width, int height,
-                                  int cx, int cy, int size, int frame_num) {
+                                  int cx, int cy, int size, int frame_num, int color_model) {
     double phase = frame_num * 0.05;
     int half = size / 2;
     
@@ -159,12 +163,12 @@ static void draw_zone_plate_patch(uint32_t* frame, int width, int height,
             
             uint8_t intensity = (uint8_t)(value * 255);
             set_pixel(frame, width, height, cx + dx, cy + dy,
-                     intensity, intensity, intensity, 255);
+                     intensity, intensity, intensity, 255, color_model);
         }
     }
 }
 
-void generate_animated_test_pattern(uint32_t* frame, int width, int height, int frame_num) {
+void generate_animated_test_pattern(uint32_t* frame, int width, int height, int frame_num, int color_model) {
     // 1. Animated radial gradient background
     int center_x = width / 2;
     int center_y = height / 2;
@@ -193,7 +197,11 @@ void generate_animated_test_pattern(uint32_t* frame, int width, int height, int 
             uint8_t g = (uint8_t)((g_val + angular_mod) * 127 + 32);
             uint8_t b = (uint8_t)((b_val + angular_mod) * 127 + 32);
             
-            frame[y * width + x] = (255 << 24) | (b << 16) | (g << 8) | r;
+            if (color_model == 0) {
+                frame[y * width + x] = (255 << 24) | (r << 16) | (g << 8) | b;
+            } else {
+                frame[y * width + x] = (255 << 24) | (b << 16) | (g << 8) | r;
+            }
         }
     }
     
@@ -203,7 +211,7 @@ void generate_animated_test_pattern(uint32_t* frame, int width, int height, int 
     int circle_y = (int)(center_y + cos(frame_num * 0.037) * (center_y - circle_radius - 20));
     
     draw_circle(frame, width, height, circle_x, circle_y, circle_radius,
-                255, 200, 0, 255); // Yellow/orange circle
+                255, 200, 0, 255, color_model);
     
     // 3. Rotating square
     int square_size = 60;
@@ -212,7 +220,7 @@ void generate_animated_test_pattern(uint32_t* frame, int width, int height, int 
     double rotation = frame_num * 0.03;
     
     draw_rotated_square(frame, width, height, square_x, square_y, square_size, rotation,
-                       0, 255, 200, 255); // Cyan square
+                       0, 255, 200, 255, color_model);
     
     // 4. Horizontal moving bar
     int bar_height = 20;
@@ -220,16 +228,16 @@ void generate_animated_test_pattern(uint32_t* frame, int width, int height, int 
     
     draw_filled_rect(frame, width, height, 0, bar_y - bar_height/2, 
                     width - 1, bar_y + bar_height/2,
-                    255, 100, 200, 255); // Pink bar
+                    255, 100, 200, 255, color_model);
     
     // 5. Zone plate patch in corner
     int zone_size = 80;
     draw_zone_plate_patch(frame, width, height, 
                          width - zone_size/2 - 10, 
                          zone_size/2 + 10, 
-                         zone_size, frame_num);
+                         zone_size, frame_num, color_model);
     
     // 6. Frame counter
     draw_number(frame, width, height, 10, 10, frame_num, 2,
-               255, 255, 255, 255);
+               255, 255, 255, 255, color_model);
 }
