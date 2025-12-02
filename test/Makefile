@@ -32,13 +32,9 @@ frei0r-gui: frei0r-run.c test-pattern.c test-pattern.h
 
 check: frei0r-run
 	@$(if $(wildcard ${PLUGINDIR}),,>&2 echo "Scan dir not found: ${PLUGINDIR}" && exit 1)
-	@find $(PLUGINDIR) -type f -name '*.so' | while read f; do \
-	./frei0r-run -d -p $$f; if [ $$? -ne 0 ]; then break; fi; done
-
-
-#	@find ${PLUGINDIR} -type f -name '*.so' -exec ./frei0r-run -d -p {} \;
-
-#	@$(if $(wildcard frei0r-test),,make test-utils)
+	@find $(PLUGINDIR) -type f -name '*.so' | \
+		while IFS= read -r f; do \
+		./frei0r-run -d -p "$$f" || break; done
 
 frei0r-meta: frei0r-meta.c
 	$(info Build frei0r meta-data parsing utility)
