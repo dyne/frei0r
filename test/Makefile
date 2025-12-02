@@ -9,7 +9,8 @@ DEBUG_FLAGS := -O0 -g -ggdb -Wl,-undefined -Wl,dynamic_lookup -fsanitize=address
 CI_OPT_FLAGS := -O3 -ffast-math -flto -march=native -pipe
 
 # CI runs: make && make check (see .github/workflow)
-all: frei0r-meta frei0r-run
+# so the 'all' target is built in CI
+all: frei0r-meta frei0r-asan
 	@echo "Test targets available:"
 	@echo "frei0r-run     :: build headless test utility (default)"
 	@echo "frei0r-asan    :: build ASAN test utility"
