@@ -27,7 +27,7 @@ jobs:
   #   name: 🚨 REUSE Compliance
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v6
   #     - uses: fsfe/reuse-action@v1
 
   c-lint:
@@ -90,9 +90,4 @@ jobs:
           cd build && ninja
       - name: ${{ matrix.compiler }} analyze plugins
         run: |
-          cd test && make
-      - name: ${{ matrix.compiler }} upload plugin analysis
-        uses: actions/upload-artifact@v6
-        with:
-          name: release-plugin-analysis
-          path: test/*.json
+          cd test && make frei0r-asan && make check
