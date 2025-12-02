@@ -1,7 +1,7 @@
 /* rgbsplit0r.c
  * Copyright (C) 2016 IDENT Software ~ http://identsoft.org
  * Inspired by the witch house and web culture
- * 
+ *
  * This file is a Frei0r plugin.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -111,13 +111,6 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->width = width; inst->height = height;
     inst->shiftY = 0;
     inst->shiftX = 0;
-
-    // Initialize default values for shift to avoid division by zero issues
-    if (width > 0 && height > 0) {
-        inst->shiftY = (unsigned int)((height / 8) * 0.0); // 0.0 corresponds to center
-        inst->shiftX = (unsigned int)((width / 8) * 0.0);  // 0.0 corresponds to center
-    }
-
     return (f0r_instance_t)inst;
 }
 
@@ -126,7 +119,7 @@ void f0r_destruct(f0r_instance_t instance)
     free(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
+void f0r_set_param_value(f0r_instance_t instance,
 			 f0r_param_t param, int param_index)
 {
     assert(instance);
@@ -239,4 +232,3 @@ void f0r_update(f0r_instance_t instance, double time,
             *(dst + x + (y*inst->width)) = (pxG | pxB | pxR);
         }
 }
-
