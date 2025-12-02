@@ -1,3 +1,23 @@
+/* This file is part of frei0r (https://frei0r.dyne.org)
+ *
+ * Copyright (C) 2024-2025 Dyne.org foundation
+ * designed, written and maintained by Denis Roio <jaromil@dyne.org>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
 #include <unistd.h>
 #include <libgen.h>
 #include <dlfcn.h>
@@ -7,6 +27,13 @@
 #include <math.h>
 
 #include <frei0r.h>
+#include "test-pattern.h"
+
+#if defined(__linux__) && defined(GUI)
+#pragma message "Compiling GUI test"
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#endif
 
 // frei0r function prototypes
 typedef int (*f0r_init_f)(void);
@@ -163,24 +190,33 @@ int main(int argc, char* argv[]) {
   static f0r_set_param_value_f f0r_set_param_value;
   static f0r_get_param_value_f f0r_get_param_value;
 
-  const char *usage = "Usage: frei0r-test [-td] <frei0r_plugin_file>";
+  const char *usage = "Usage: frei0r-test [-tdg] [-f frames] -p <frei0r_plugin_file>\n"
+                      "  -d         debug mode\n"
+                      "  -g         graphical display mode (Linux/WSL)\n"
+                      "  -f frames  number of frames to process (default: 100)\n"
+                      "  -p plugin  path to frei0r plugin file";
   if (argc < 2) {
 	fprintf(stderr,"%s\n",usage);
 	return -1;
   }
 
   int opt;
-  int headless = 0;
+#if defined(GUI)
+  int graphical = 1;
+#else
+  int graphical = 0;
+#endif
   int debug = 0;
   int frames = 100; // Number of frames to test
   char plugin_file[512];
-  while((opt =  getopt(argc, argv, "tdf:p:")) != -1) {
+  plugin_file[0] = '\0';
+  while((opt =  getopt(argc, argv, "tdgf:p:")) != -1) {
 	switch(opt) {
-	case 't':
-	  headless = 1;
-	  break;
 	case 'd':
 	  debug = 1;
+	  break;
+	case 'g':
+	  graphical = 1;
 	  break;
 	case 'f':
 	  frames = atoi(optarg);
@@ -189,6 +225,11 @@ int main(int argc, char* argv[]) {
 	  snprintf(plugin_file, 511, "%s", optarg);
 	  break;
 	}
+  }
+
+  if (plugin_file[0] == '\0') {
+    fprintf(stderr, "Error: plugin file required (-p option)\n%s\n", usage);
+    return -1;
   }
 
   // Set fixed video properties for test pattern
@@ -226,34 +267,34 @@ int main(int argc, char* argv[]) {
 	pi.color_model == F0R_COLOR_MODEL_RGBA8888 ? "rgba8888" :
 	pi.color_model == F0R_COLOR_MODEL_PACKED32 ? "packed32" : "unknown");
 
-  fprintf(stderr,"{\n \"name\":\"%s\",\n \"type\":\"%s\",\n \"color_model\":\"%s\",\n \"num_params\":\"%d\"\n}",
-		  pi.name,
-		  pi.plugin_type == F0R_PLUGIN_TYPE_FILTER ? "filter" :
-		  pi.plugin_type == F0R_PLUGIN_TYPE_SOURCE ? "source" :
-		  pi.plugin_type == F0R_PLUGIN_TYPE_MIXER2 ? "mixer2" :
-		  pi.plugin_type == F0R_PLUGIN_TYPE_MIXER3 ? "mixer3" : "unknown",
-		  frei0r_color_model,
-		  pi.num_params);
-
-  // Print parameter information
-  if (pi.num_params > 0) {
+  if(debug) {
+    fprintf(stderr,"{\n \"name\":\"%s\",\n \"type\":\"%s\",\n \"color_model\":\"%s\",\n \"num_params\":\"%d\"\n}",
+            pi.name,
+            pi.plugin_type == F0R_PLUGIN_TYPE_FILTER ? "filter" :
+            pi.plugin_type == F0R_PLUGIN_TYPE_SOURCE ? "source" :
+            pi.plugin_type == F0R_PLUGIN_TYPE_MIXER2 ? "mixer2" :
+            pi.plugin_type == F0R_PLUGIN_TYPE_MIXER3 ? "mixer3" : "unknown",
+            frei0r_color_model,
+            pi.num_params);
+    // Print parameter information
+    if (pi.num_params > 0) {
       fprintf(stderr,",\n \"parameters\":[\n");
       for (int i = 0; i < pi.num_params; i++) {
-          f0r_get_param_info(&param, i);
-          const char* param_type =
-              param.type == F0R_PARAM_BOOL ? "bool" :
-              param.type == F0R_PARAM_DOUBLE ? "double" :
-              param.type == F0R_PARAM_COLOR ? "color" :
-              param.type == F0R_PARAM_POSITION ? "position" :
-              param.type == F0R_PARAM_STRING ? "string" : "unknown";
-
-          fprintf(stderr,"  {\"name\":\"%s\",\"type\":\"%s\",\"explanation\":\"%s\"}",
-                  param.name, param_type, param.explanation);
-          if (i < pi.num_params - 1) fprintf(stderr,",\n");
+        f0r_get_param_info(&param, i);
+        const char* param_type =
+          param.type == F0R_PARAM_BOOL ? "bool" :
+          param.type == F0R_PARAM_DOUBLE ? "double" :
+          param.type == F0R_PARAM_COLOR ? "color" :
+          param.type == F0R_PARAM_POSITION ? "position" :
+          param.type == F0R_PARAM_STRING ? "string" : "unknown";
+        fprintf(stderr,"  {\"name\":\"%s\",\"type\":\"%s\",\"explanation\":\"%s\"}",
+                param.name, param_type, param.explanation);
+        if (i < pi.num_params - 1) fprintf(stderr,",\n");
       }
       fprintf(stderr,"\n ]\n");
+    }
+    fprintf(stderr,"}\n");
   }
-  fprintf(stderr,"}\n");
 
   // TODO: just filters for now
   if( pi.plugin_type != F0R_PLUGIN_TYPE_FILTER ) {
@@ -266,7 +307,7 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr,"Filter color model not supported: %s\n",frei0r_color_model);
 	f0r_deinit();
 	dlclose(dl_handle);
-	exit(1);
+	exit(0);
   }
 
   instance = f0r_construct(frame_width, frame_height);
@@ -276,11 +317,54 @@ int main(int argc, char* argv[]) {
   input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
   output_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
 
-  // Generate test pattern
+#if defined(GUI)
+  // Generate initial test pattern
+  generate_animated_test_pattern(input_buffer, frame_width, frame_height, 0);
+#else
   generate_test_pattern(input_buffer, frame_width, frame_height);
+#endif
+
+#if defined(__linux__) && defined(GUI)
+  Display *display = NULL;
+  Window window;
+  GC gc;
+  XImage *ximage = NULL;
+
+  if (graphical) {
+      display = XOpenDisplay(NULL);
+      if (!display) {
+          fprintf(stderr, "Warning: Cannot open X display, falling back to headless mode\n");
+          graphical = 0;
+      } else {
+          int screen = DefaultScreen(display);
+          window = XCreateSimpleWindow(display, RootWindow(display, screen),
+                                       0, 0, frame_width, frame_height, 1,
+                                       BlackPixel(display, screen),
+                                       WhitePixel(display, screen));
+
+          XStoreName(display, window, pi.name);
+          XSelectInput(display, window, ExposureMask | KeyPressMask);
+          XMapWindow(display, window);
+          gc = XCreateGC(display, window, 0, NULL);
+
+          Visual *visual = DefaultVisual(display, screen);
+          ximage = XCreateImage(display, visual, 24, ZPixmap, 0,
+                               (char*)output_buffer, frame_width, frame_height, 32, 0);
+
+          XFlush(display);
+      }
+  }
+#endif
 
   // Test the plugin with different parameter values
   for (int frame = 0; frame < frames; frame++) {
+#if defined(GUI)
+      // Generate animated test pattern for this frame
+      generate_animated_test_pattern(input_buffer, frame_width, frame_height, frame);
+#else
+      generate_test_pattern(input_buffer, frame_width, frame_height);
+#endif
+
       // Update parameters if the plugin has any
       if (pi.num_params > 0 && f0r_set_param_value) {
           test_parameters(instance, f0r_set_param_value, f0r_get_param_info, pi.num_params, frame);
@@ -289,16 +373,47 @@ int main(int argc, char* argv[]) {
       // Apply filter to test pattern
       f0r_update(instance, (double)frame / (double)fps, (const uint32_t*)input_buffer, output_buffer);
 
-      if (!headless && frame % 10 == 0) {
+#if defined(__linux__) && defined(GUI)
+      if (graphical && display) {
+          ximage->data = (char*)output_buffer;
+          XPutImage(display, window, gc, ximage, 0, 0, 0, 0, frame_width, frame_height);
+          XFlush(display);
+
+          // Check for key press to exit early
+          while (XPending(display)) {
+              XEvent event;
+              XNextEvent(display, &event);
+              if (event.type == KeyPress) {
+                  fprintf(stderr, "\nInterrupted by user at frame %d\n", frame);
+                  frame = frames; // Exit loop
+                  break;
+              }
+          }
+
+          usleep(1000000 / fps); // Frame delay
+      }
+#endif
+
+      if (!graphical && frame % 10 == 0 && debug) {
           printf("Frame %d processed\n", frame);
       }
   }
 
-  if (!headless) {
-      printf("Test completed successfully. Plugin: %s\n", pi.name);
-      printf("Tested %d frames with %d parameters\n", frames, pi.num_params);
-      printf("Input: %dx%d test pattern\n", frame_width, frame_height);
-      printf("Output: %dx%d processed frames\n", frame_width, frame_height);
+#if defined(__linux__) && defined(GUI)
+  if (graphical && display) {
+      ximage->data = NULL; // Prevent XDestroyImage from freeing our buffer
+      XDestroyImage(ximage);
+      XFreeGC(display, gc);
+      XDestroyWindow(display, window);
+      XCloseDisplay(display);
+  }
+#endif
+
+  if(debug) {
+    printf("Test completed successfully. Plugin: %s\n", pi.name);
+    printf("Tested %d frames with %d parameters\n", frames, pi.num_params);
+    printf("Input: %dx%d test pattern\n", frame_width, frame_height);
+    printf("Output: %dx%d processed frames\n", frame_width, frame_height);
   }
 
   free(input_buffer);
