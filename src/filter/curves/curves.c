@@ -331,6 +331,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 	  break;
 	case 3:
 	  inst->pointNumber = floor(*((f0r_param_double *)param) * 10);
+	  if (inst->pointNumber > 5) inst->pointNumber = 5;
 	  break;
         case 4:
           inst->formula = *((f0r_param_double *)param);
@@ -738,7 +739,7 @@ void updateCsplineMap(f0r_instance_t instance)
     double *points = (double*)calloc(inst->pointNumber * 2, sizeof(double));
     int i = inst->pointNumber * 2;
     //copy point values
-    while(--i > 0)
+    while(--i >= 0)
         points[i] = inst->points[i];
     //sort point values by X component
     for(i = 1; i < inst->pointNumber; i++)
@@ -799,7 +800,7 @@ void f0r_update(f0r_instance_t instance, double time,
       points = (double*)calloc(inst->pointNumber * 2, sizeof(double));
       i = inst->pointNumber * 2;
       //copy point values
-      while(--i > 0)
+      while(--i >= 0)
           points[i] = inst->points[i];
       //sort point values by X component
       for(i = 1; i < inst->pointNumber; i++)
