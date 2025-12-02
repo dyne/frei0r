@@ -3,26 +3,32 @@ INCLUDES ?= -I ../include
 PLUGINDIR ?= ../build/src
 
 CXX ?= g++
-DEBUG_FLAGS ?= -O0 -g -ggdb -Wl,-undefined -Wl,dynamic_lookup -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope
 
-all: frei0r-meta frei0r-asan
+DEBUG_FLAGS := -O0 -g -ggdb -Wl,-undefined -Wl,dynamic_lookup -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope
+
+CI_OPT_FLAGS := -O3 -ffast-math -flto -march=native -pipe
+
+# CI runs: make && make check (see .github/workflow)
+all: frei0r-meta frei0r-run
 	@echo "Test targets available:"
-	@echo "scan-meta      :: scan all plugins and produce metadata"
-	@echo "check          :: run tests on all plugins"
-	@echo "frei0r-meta    :: build metadata plugin scanner"
+	@echo "frei0r-run     :: build headless test utility (default)"
 	@echo "frei0r-asan    :: build ASAN test utility"
-	@echo "frei0r-gui     :: build ASAN test utility"
+	@echo "frei0r-gui     :: build graphical test utility"
+	@echo "check          :: run the built test on all plugins"
+	@echo "frei0r-meta    :: build metadata plugin scanner"
+	@echo "scan-meta      :: scan all plugins and produce metadata"
 
-
-# build scan-plugins
-
-frei0r-gui: frei0r-run.c test-pattern.c test-pattern.h
+frei0r-run: frei0r-run.c
 	$(info Build frei0r plugin test run utility)
-	$(CXX) -O3 -ffast-math -I../include -o frei0r-run frei0r-run.c test-pattern.c -ldl -lm -lX11 -DGUI
+	$(CXX) $(CI_OPT_FLAGS) -I../include -o frei0r-run frei0r-run.c -ldl
 
 frei0r-asan: frei0r-run.c
 	$(info Build frei0r plugin test run utility)
-	$(CXX) $(DEBUG_FLAGS) -I../include -o frei0r-run frei0r-run.c test-pattern.c -ldl
+	$(CXX) $(DEBUG_FLAGS) -I../include -o frei0r-run frei0r-run.c -ldl
+
+frei0r-gui: frei0r-run.c test-pattern.c test-pattern.h
+	$(info Build frei0r plugin test run utility)
+	$(CXX) $(CI_OPT_FLAGS) -I../include -o frei0r-run frei0r-run.c test-pattern.c -ldl -lm -lX11 -DGUI
 
 check: frei0r-run
 	@$(if $(wildcard ${PLUGINDIR}),,>&2 echo "Scan dir not found: ${PLUGINDIR}" && exit 1)
