@@ -186,7 +186,9 @@ void f0r_update(f0r_instance_t inst, double time,
     }
 }
 
-void f0r_destruct(f0r_instance_t s)
+void f0r_destruct(f0r_instance_t inst)
 {
+    s0ft0tsu_t* s = inst;
+    free(s->lumaframe);
     free(s);
 }
