@@ -7,39 +7,45 @@ struct pixshift0r
 
     unsigned int m_shift_intensity;
     unsigned int m_block_height;
-    
+
     // If m_block_height == 0, then these bound block heights
     unsigned int m_block_height_min;
     unsigned int m_block_height_max;
 
-    // FIXME: It might be better to make it global variable.
-    std::random_device m_rng_dev;
+    std::mt19937 m_rng;
 
     std::uniform_int_distribution<long long int> m_shift_rng;
     std::uniform_int_distribution<unsigned int> m_block_height_rng;
 
     pixshift0r(unsigned int width, unsigned int height)
-        : m_width(width), m_height(height), m_block_height(0) {}
+        : m_width(width), m_height(height), m_block_height(0),
+          m_shift_intensity(0), m_block_height_min(1), m_block_height_max(1),
+          m_rng(std::random_device{}()),
+          m_shift_rng(0, 0), m_block_height_rng(1, 1) {}
 
     void process(const uint32_t *inframe, uint32_t *outframe)
     {
         for (unsigned int b = 0; b < m_height;)
         {
-            unsigned int block_height = m_block_height ? m_block_height : m_block_height_rng(m_rng_dev);
+            unsigned int block_height = m_block_height ? m_block_height : m_block_height_rng(m_rng);
 
             // Number of rows to shift is either block size or
             // what we can *safely* operate on (avoids corruption).
             block_height = std::min(block_height, m_height - b);
 
-            long long shift = m_shift_rng(m_rng_dev);
+            // Ensure we always make progress
+            if (block_height == 0)
+                block_height = 1;
+
+            long long shift = m_shift_intensity ? m_shift_rng(m_rng) : 0;
 
             for (unsigned int j = 0; j < block_height; ++j)
             {
-				// NOTE: Faulty implementations, such as FFmpeg don't
-				// check for (width % 8 == 0 && height % 8 == 0).
-				//
-				// A possible workaround for all filters, is a scale filter:
-				// (e.g "scale=round(in_w/8)*8:round(in_h/8)*8:flags=neighbor").
+        // NOTE: Faulty implementations, such as FFmpeg don't
+        // check for (width % 8 == 0 && height % 8 == 0).
+        //
+        // A possible workaround for all filters, is a scale filter:
+        // (e.g "scale=round(in_w/8)*8:round(in_h/8)*8:flags=neighbor").
                 //
                 // https://ffmpeg.org/doxygen/trunk/vf__frei0r_8c_source.html#l00352
                 size_t pitch = static_cast<size_t>(b + j) * m_width;
@@ -73,7 +79,7 @@ struct pixshift0r
         this->m_block_height_max = max_bh;
 
         auto rng_params = decltype(this->m_block_height_rng)::param_type(min_bh, max_bh);
-        
+
         this->m_block_height_rng.param(rng_params);
     }
 
@@ -84,7 +90,7 @@ struct pixshift0r
         long long intensity = static_cast<long long>(shift_intensity);
 
         auto rng_params = decltype(this->m_shift_rng)::param_type(-intensity, intensity);
-        
+
         this->m_shift_rng.param(rng_params);
     }
 };
@@ -102,8 +108,8 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     pixshift0r *instance = new pixshift0r(width, height);
 
     instance->set_shift_intensity(width / 100);
-    instance->set_block_height_range(height / 100, height / 10);
-    
+    instance->set_block_height_range(std::max(1u, height / 100), std::max(1u, height / 10));
+
     return instance;
 }
 
@@ -130,7 +136,7 @@ void f0r_get_param_info	(f0r_param_info_t *info, int param_index)
             info->type = F0R_PARAM_DOUBLE;
             info->explanation = "Aggressiveness of row/column-shifting";
             break;
-        
+
         case 1:
             info->name = "block_height";
             info->type = F0R_PARAM_DOUBLE;
@@ -154,7 +160,7 @@ void f0r_get_param_info	(f0r_param_info_t *info, int param_index)
 void f0r_get_param_value(
     f0r_instance_t instance,
     f0r_param_t param,
-    int param_index 
+    int param_index
 )
 {
     pixshift0r* context = (pixshift0r*)instance;
@@ -178,7 +184,7 @@ void f0r_get_param_value(
 void f0r_set_param_value(
     f0r_instance_t instance,
     f0r_param_t param,
-    int param_index 
+    int param_index
 )
 {
     pixshift0r* context = (pixshift0r*)instance;
@@ -203,7 +209,7 @@ void f0r_update	(
     f0r_instance_t instance,
     double,
     const uint32_t *inframe,
-    uint32_t *outframe 
+    uint32_t *outframe
 )
 {
     static_cast<pixshift0r*>(instance)->process(inframe, outframe);
@@ -211,7 +217,7 @@ void f0r_update	(
 
 void f0r_deinit() {}
 
-void f0r_destruct (f0r_instance_t instance)	
+void f0r_destruct (f0r_instance_t instance)
 {
     delete static_cast<pixshift0r*>(instance);
 }
