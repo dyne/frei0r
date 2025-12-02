@@ -42,14 +42,17 @@ typedef void (*f0r_get_plugin_info_f)(f0r_plugin_info_t *info);
 typedef void (*f0r_get_param_info_f)(f0r_param_info_t *info, int param_index);
 typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int height);
 typedef void (*f0r_update_f)(f0r_instance_t instance,
-		double time, const uint32_t* inframe, uint32_t* outframe);
+    double time, const uint32_t* inframe, uint32_t* outframe);
+typedef void (*f0r_update2_f)(f0r_instance_t instance, double time,
+    const uint32_t* inframe1, const uint32_t* inframe2,
+    const uint32_t* inframe3, uint32_t* outframe);
 typedef void (*f0r_destruct_f)(f0r_instance_t instance);
 typedef void (*f0r_set_param_value_f)(f0r_instance_t instance, f0r_param_t param, int param_index);
 typedef void (*f0r_get_param_value_f)(f0r_instance_t instance, f0r_param_t param, int param_index);
 
 
 // Generate a simple color bar test pattern
-void generate_test_pattern(uint32_t* frame, int width, int height, int color_model) {
+void generate_test_pattern(uint32_t* frame, int width, int height, int color_model, int pattern_variant) {
     // Create color bars: red, green, blue, white, black, cyan, magenta, yellow
     int bar_width = width / 8;
 
@@ -57,6 +60,16 @@ void generate_test_pattern(uint32_t* frame, int width, int height, int color_mod
         for (int x = 0; x < width; x++) {
             int bar_index = x / bar_width;
             if (bar_index >= 8) bar_index = 7;
+
+            // Rotate pattern based on variant
+            if (pattern_variant == 1) {
+                // Vertical bars instead
+                bar_index = y / (height / 8);
+                if (bar_index >= 8) bar_index = 7;
+            } else if (pattern_variant == 2) {
+                // Checkerboard
+                bar_index = ((x / bar_width) + (y / (height / 8))) % 8;
+            }
 
             uint8_t r, g, b, a = 255;
 
@@ -208,8 +221,8 @@ int main(int argc, char* argv[]) {
                       "  -f frames  number of frames to process (default: 100)\n"
                       "  -p plugin  path to frei0r plugin file";
   if (argc < 2) {
-	fprintf(stderr,"%s\n",usage);
-	return -1;
+  fprintf(stderr,"%s\n",usage);
+  return -1;
   }
 
   int opt;
@@ -223,20 +236,20 @@ int main(int argc, char* argv[]) {
   char plugin_file[512];
   plugin_file[0] = '\0';
   while((opt =  getopt(argc, argv, "tdgf:p:")) != -1) {
-	switch(opt) {
-	case 'd':
-	  debug = 1;
-	  break;
-	case 'g':
-	  graphical = 1;
-	  break;
-	case 'f':
-	  frames = atoi(optarg);
-	  break;
-	case 'p':
-	  snprintf(plugin_file, 511, "%s", optarg);
-	  break;
-	}
+  switch(opt) {
+  case 'd':
+    debug = 1;
+    break;
+  case 'g':
+    graphical = 1;
+    break;
+  case 'f':
+    frames = atoi(optarg);
+    break;
+  case 'p':
+    snprintf(plugin_file, 511, "%s", optarg);
+    break;
+  }
   }
 
   if (plugin_file[0] == '\0') {
@@ -257,8 +270,8 @@ int main(int argc, char* argv[]) {
   // load shared library
   dl_handle = dlopen(path, RTLD_NOW|RTLD_LOCAL|RTLD_NODELETE);
   if(!dl_handle) {
-	fprintf(stderr,"error: %s\n",dlerror());
-	exit(1);
+  fprintf(stderr,"error: %s\n",dlerror());
+  exit(1);
   }
   // get plugin function calls
   f0r_init = (f0r_init_f) dlsym(dl_handle,"f0r_init");
@@ -276,8 +289,8 @@ int main(int argc, char* argv[]) {
   // get info about plugin
   f0r_get_plugin_info(&pi);
   const char *frei0r_color_model = (pi.color_model == F0R_COLOR_MODEL_BGRA8888 ? "bgra8888" :
-	pi.color_model == F0R_COLOR_MODEL_RGBA8888 ? "rgba8888" :
-	pi.color_model == F0R_COLOR_MODEL_PACKED32 ? "packed32" : "unknown");
+  pi.color_model == F0R_COLOR_MODEL_RGBA8888 ? "rgba8888" :
+  pi.color_model == F0R_COLOR_MODEL_PACKED32 ? "packed32" : "unknown");
 
   if(debug) {
     fprintf(stderr,"{\n \"name\":\"%s\",\n \"type\":\"%s\",\n \"color_model\":\"%s\",\n \"num_params\":\"%d\"\n}",
@@ -308,26 +321,43 @@ int main(int argc, char* argv[]) {
     fprintf(stderr,"}\n");
   }
 
-  // TODO: just filters for now
-  if( pi.plugin_type != F0R_PLUGIN_TYPE_FILTER ) {
-	fprintf(stderr,"Plugin is not of filter type, skip for now\n");
-	f0r_deinit();
-	dlclose(dl_handle);
-	exit(0);
-  }
-
   instance = f0r_construct(frame_width, frame_height);
 
-  uint32_t *input_buffer;
+  uint32_t *input_buffer = NULL;
+  uint32_t *input_buffer2 = NULL;
+  uint32_t *input_buffer3 = NULL;
   uint32_t *output_buffer;
-  input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+
+  // Allocate buffers based on plugin type
+  if (pi.plugin_type == F0R_PLUGIN_TYPE_FILTER) {
+      input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+  } else if (pi.plugin_type == F0R_PLUGIN_TYPE_MIXER2) {
+      input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+      input_buffer2 = (uint32_t*)calloc(4, frame_width * frame_height);
+  } else if (pi.plugin_type == F0R_PLUGIN_TYPE_MIXER3) {
+      input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+      input_buffer2 = (uint32_t*)calloc(4, frame_width * frame_height);
+      input_buffer3 = (uint32_t*)calloc(4, frame_width * frame_height);
+  }
+  // SOURCE type needs no input buffer
+
   output_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
 
 #if defined(GUI)
-  // Generate initial test pattern
-  generate_animated_test_pattern(input_buffer, frame_width, frame_height, 0, pi.color_model);
+  // Generate initial test patterns
+  if (input_buffer)
+      generate_animated_test_pattern(input_buffer, frame_width, frame_height, 0, pi.color_model);
+  if (input_buffer2)
+      generate_animated_test_pattern(input_buffer2, frame_width, frame_height, 0, pi.color_model);
+  if (input_buffer3)
+      generate_animated_test_pattern(input_buffer3, frame_width, frame_height, 0, pi.color_model);
 #else
-  generate_test_pattern(input_buffer, frame_width, frame_height, pi.color_model);
+  if (input_buffer)
+      generate_test_pattern(input_buffer, frame_width, frame_height, pi.color_model, 0);
+  if (input_buffer2)
+      generate_test_pattern(input_buffer2, frame_width, frame_height, pi.color_model, 1);
+  if (input_buffer3)
+      generate_test_pattern(input_buffer3, frame_width, frame_height, pi.color_model, 2);
 #endif
 
 #if defined(__linux__) && defined(GUI)
@@ -362,13 +392,40 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
+  // Load f0r_update2 for mixers
+  f0r_update2_f f0r_update2 = NULL;
+  if (pi.plugin_type == F0R_PLUGIN_TYPE_MIXER2 || pi.plugin_type == F0R_PLUGIN_TYPE_MIXER3) {
+      f0r_update2 = (f0r_update2_f)dlsym(dl_handle, "f0r_update2");
+      if (!f0r_update2) {
+          fprintf(stderr, "Error: Cannot load f0r_update2 for mixer plugin\n");
+          if (input_buffer) free(input_buffer);
+          if (input_buffer2) free(input_buffer2);
+          if (input_buffer3) free(input_buffer3);
+          free(output_buffer);
+          f0r_destruct(instance);
+          f0r_deinit();
+          dlclose(dl_handle);
+          return 1;
+      }
+  }
+
   // Test the plugin with different parameter values
   for (int frame = 0; frame < frames; frame++) {
 #if defined(GUI)
-      // Generate animated test pattern for this frame
-      generate_animated_test_pattern(input_buffer, frame_width, frame_height, frame, pi.color_model);
+      // Generate animated test patterns for this frame
+      if (input_buffer)
+          generate_animated_test_pattern(input_buffer, frame_width, frame_height, frame, pi.color_model);
+      if (input_buffer2)
+          generate_animated_test_pattern(input_buffer2, frame_width, frame_height, frame + 10, pi.color_model);
+      if (input_buffer3)
+          generate_animated_test_pattern(input_buffer3, frame_width, frame_height, frame + 20, pi.color_model);
 #else
-      generate_test_pattern(input_buffer, frame_width, frame_height, pi.color_model);
+      if (input_buffer)
+          generate_test_pattern(input_buffer, frame_width, frame_height, pi.color_model, 0);
+      if (input_buffer2)
+          generate_test_pattern(input_buffer2, frame_width, frame_height, pi.color_model, 1);
+      if (input_buffer3)
+          generate_test_pattern(input_buffer3, frame_width, frame_height, pi.color_model, 2);
 #endif
 
       // Update parameters if the plugin has any
@@ -376,8 +433,29 @@ int main(int argc, char* argv[]) {
           test_parameters(instance, f0r_set_param_value, f0r_get_param_info, pi.num_params, frame);
       }
 
-      // Apply filter to test pattern
-      f0r_update(instance, (double)frame / (double)fps, (const uint32_t*)input_buffer, output_buffer);
+      // Apply plugin based on type
+      double time = (double)frame / (double)fps;
+
+      switch (pi.plugin_type) {
+          case F0R_PLUGIN_TYPE_SOURCE:
+              f0r_update(instance, time, NULL, output_buffer);
+              break;
+          case F0R_PLUGIN_TYPE_FILTER:
+              f0r_update(instance, time, (const uint32_t*)input_buffer, output_buffer);
+              break;
+          case F0R_PLUGIN_TYPE_MIXER2:
+              f0r_update2(instance, time, (const uint32_t*)input_buffer,
+                         (const uint32_t*)input_buffer2, NULL, output_buffer);
+              break;
+          case F0R_PLUGIN_TYPE_MIXER3:
+              f0r_update2(instance, time, (const uint32_t*)input_buffer,
+                         (const uint32_t*)input_buffer2, (const uint32_t*)input_buffer3,
+                         output_buffer);
+              break;
+          default:
+              fprintf(stderr, "Unknown plugin type: %d\n", pi.plugin_type);
+              break;
+      }
 
 #if defined(__linux__) && defined(GUI)
       if (graphical && display) {
@@ -416,13 +494,24 @@ int main(int argc, char* argv[]) {
 #endif
 
   if(debug) {
-    printf("Test completed successfully. Plugin: %s\n", pi.name);
+    const char *plugin_type_name = "unknown";
+    switch (pi.plugin_type) {
+        case F0R_PLUGIN_TYPE_SOURCE: plugin_type_name = "source"; break;
+        case F0R_PLUGIN_TYPE_FILTER: plugin_type_name = "filter"; break;
+        case F0R_PLUGIN_TYPE_MIXER2: plugin_type_name = "mixer2"; break;
+        case F0R_PLUGIN_TYPE_MIXER3: plugin_type_name = "mixer3"; break;
+    }
+    printf("Test completed successfully. Plugin: %s (type: %s)\n", pi.name, plugin_type_name);
     printf("Tested %d frames with %d parameters\n", frames, pi.num_params);
-    printf("Input: %dx%d test pattern\n", frame_width, frame_height);
+    if (pi.plugin_type != F0R_PLUGIN_TYPE_SOURCE) {
+        printf("Input: %dx%d test pattern(s)\n", frame_width, frame_height);
+    }
     printf("Output: %dx%d processed frames\n", frame_width, frame_height);
   }
 
-  free(input_buffer);
+  if (input_buffer) free(input_buffer);
+  if (input_buffer2) free(input_buffer2);
+  if (input_buffer3) free(input_buffer3);
   free(output_buffer);
 
   f0r_destruct(instance);
