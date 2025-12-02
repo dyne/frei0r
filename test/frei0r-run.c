@@ -49,7 +49,7 @@ typedef void (*f0r_get_param_value_f)(f0r_instance_t instance, f0r_param_t param
 
 
 // Generate a simple color bar test pattern
-void generate_test_pattern(uint32_t* frame, int width, int height) {
+void generate_test_pattern(uint32_t* frame, int width, int height, int color_model) {
     // Create color bars: red, green, blue, white, black, cyan, magenta, yellow
     int bar_width = width / 8;
 
@@ -110,7 +110,11 @@ void generate_test_pattern(uint32_t* frame, int width, int height) {
                 b = b * 0.2;
             }
 
-            frame[y * width + x] = (a << 24) | (b << 16) | (g << 8) | r;
+            if (color_model == F0R_COLOR_MODEL_BGRA8888) {
+                frame[y * width + x] = (a << 24) | (r << 16) | (g << 8) | b;
+            } else {
+                frame[y * width + x] = (a << 24) | (b << 16) | (g << 8) | r;
+            }
         }
     }
 }
@@ -303,12 +307,6 @@ int main(int argc, char* argv[]) {
 	dlclose(dl_handle);
 	exit(0);
   }
-  if( pi.color_model != F0R_COLOR_MODEL_RGBA8888 ) {
-	fprintf(stderr,"Filter color model not supported: %s\n",frei0r_color_model);
-	f0r_deinit();
-	dlclose(dl_handle);
-	exit(0);
-  }
 
   instance = f0r_construct(frame_width, frame_height);
 
@@ -319,9 +317,9 @@ int main(int argc, char* argv[]) {
 
 #if defined(GUI)
   // Generate initial test pattern
-  generate_animated_test_pattern(input_buffer, frame_width, frame_height, 0);
+  generate_animated_test_pattern(input_buffer, frame_width, frame_height, 0, pi.color_model);
 #else
-  generate_test_pattern(input_buffer, frame_width, frame_height);
+  generate_test_pattern(input_buffer, frame_width, frame_height, pi.color_model);
 #endif
 
 #if defined(__linux__) && defined(GUI)
@@ -360,9 +358,9 @@ int main(int argc, char* argv[]) {
   for (int frame = 0; frame < frames; frame++) {
 #if defined(GUI)
       // Generate animated test pattern for this frame
-      generate_animated_test_pattern(input_buffer, frame_width, frame_height, frame);
+      generate_animated_test_pattern(input_buffer, frame_width, frame_height, frame, pi.color_model);
 #else
-      generate_test_pattern(input_buffer, frame_width, frame_height);
+      generate_test_pattern(input_buffer, frame_width, frame_height, pi.color_model);
 #endif
 
       // Update parameters if the plugin has any
