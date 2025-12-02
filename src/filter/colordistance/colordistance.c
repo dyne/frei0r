@@ -135,8 +135,7 @@ void f0r_update(f0r_instance_t instance, double time,
 		l = (int)rint( sqrtf( powf( r1 - r2, 2 ) + powf( g1 - g2, 2 ) + powf( b1 - b2, 2 ) ) * SCALE_FACTOR );
 
 		// Clamp result to valid range
-		if (l < 0) l = 0;
-		if (l > 255) l = 255;
+		l = CLAMP(l, 0, 255);
 
 		*dst++ = (unsigned char) (l);
 		*dst++ = (unsigned char) (l);

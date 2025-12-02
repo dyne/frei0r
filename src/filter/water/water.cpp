@@ -141,11 +141,11 @@ public:
 
   ~Water() {
     delete geo;
-    if (Height[0]) free(Height[0]);
-    if (Height[1]) free(Height[1]);
-    if (BkGdImagePre) free(BkGdImagePre);
-    if (BkGdImage) free(BkGdImage);
-    if (BkGdImagePost) free(BkGdImagePost);
+    free(Height[0]);
+    free(Height[1]);
+    free(BkGdImagePre);
+    free(BkGdImage);
+    free(BkGdImagePost);
   }
 
   virtual void update(double time,

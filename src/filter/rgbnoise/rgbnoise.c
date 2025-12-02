@@ -3,7 +3,7 @@
  * It contains code from plug-ins/common/noise-rgb.c, see that for copyrights.
  *
  * rgbnoise.c
- * Copyright 2012 Janne Liljeblad 
+ * Copyright 2012 Janne Liljeblad
  *
  * This file is a Frei0r plugin.
  *
@@ -29,12 +29,14 @@
 #include "frei0r.h"
 #include "frei0r/math.h"
 
+#define MY_MAX_RAND 32767 // assume RAND_MAX to be at least this big.
+
 typedef struct rgbnoise_instance
 {
   unsigned int width;
   unsigned int height;
   double noise;
-  double gaussian_lookup[32767];
+  double gaussian_lookup[MY_MAX_RAND];
   int table_inited;
   int next_gaussian_index;
   int last_in_range;
@@ -52,9 +54,9 @@ void f0r_get_plugin_info(f0r_plugin_info_t* rgbnoiseInfo)
   rgbnoiseInfo->plugin_type = F0R_PLUGIN_TYPE_FILTER;
   rgbnoiseInfo->color_model = F0R_COLOR_MODEL_RGBA8888;
   rgbnoiseInfo->frei0r_version = FREI0R_MAJOR_VERSION;
-  rgbnoiseInfo->major_version = 0; 
-  rgbnoiseInfo->minor_version = 9; 
-  rgbnoiseInfo->num_params =  1; 
+  rgbnoiseInfo->major_version = 0;
+  rgbnoiseInfo->minor_version = 9;
+  rgbnoiseInfo->num_params =  1;
   rgbnoiseInfo->explanation = "Adds RGB noise to image.";
 }
 
@@ -77,7 +79,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->noise = 0.2;
   inst->table_inited = 0;
   inst->next_gaussian_index = 0;
-  inst->last_in_range = 32766;
+  inst->last_in_range = MY_MAX_RAND;
   return (f0r_instance_t)inst;
 }
 
@@ -86,7 +88,7 @@ void f0r_destruct(f0r_instance_t instance)
   free(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
+void f0r_set_param_value(f0r_instance_t instance,
 			 f0r_param_t param, int param_index)
 {
 	rgbnoise_instance_t* inst = (rgbnoise_instance_t*)instance;
@@ -100,9 +102,9 @@ void f0r_set_param_value(f0r_instance_t instance,
 
 void f0r_get_param_value(f0r_instance_t instance,
 			 f0r_param_t param, int param_index)
-{ 
+{
 	rgbnoise_instance_t* inst = (rgbnoise_instance_t*)instance;
-	switch (param_index) 
+	switch (param_index)
   {
 		case 0:
 			*((double*)param) = inst->noise;
@@ -137,8 +139,8 @@ static inline double gauss()
 static void create_new_lookup_range(rgbnoise_instance_t* inst)
 {
     int first, last, tmp;
-    first = rand() % (32767 - 1);
-    last = rand() % (32767 - 1);
+    first = rand() % (MY_MAX_RAND - 1);
+    last = rand() % (MY_MAX_RAND - 1);
     if (first > last)
     {
       tmp = last;
@@ -185,13 +187,13 @@ void rgb_noise(f0r_instance_t instance, double time,
   if (inst->table_inited == 0)
   {
     int i;
-    for( i = 0; i < 32767; i++)
+    for( i = 0; i < MY_MAX_RAND; i++)
     {
       inst->gaussian_lookup[i] = gauss() * 127.0;
     }
     inst->table_inited = 1;
     inst->next_gaussian_index = 0;
-    inst->last_in_range = 32766;
+    inst->last_in_range = MY_MAX_RAND;
   }
 
   unsigned char* dst = (unsigned char*)outframe;
@@ -218,4 +220,3 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   rgb_noise(instance, time, inframe, outframe);
 }
-
