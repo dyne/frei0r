@@ -878,7 +878,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		break;
 	case 2:		//Mask type (list)
 		tmpch = (*(f0r_param_string*)parm);
-		if (strcmp(p->liststr, tmpch)) {
+		if (tmpch && strcmp(p->liststr, tmpch)) {
 			p->liststr = realloc( p->liststr, strlen(tmpch) + 1 );
 			strcpy( p->liststr, tmpch );
 		}
@@ -910,7 +910,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		break;
 	case 7:		//Operation 1 (list)
 		tmpch = (*(f0r_param_string*)parm);
-		if (strcmp(p->liststr, tmpch)) {
+		if (tmpch && strcmp(p->liststr, tmpch)) {
 			p->liststr = realloc( p->liststr, strlen(tmpch) + 1 );
 			strcpy( p->liststr, tmpch );
 		}
@@ -927,7 +927,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		break;
 	case 9:		//Operation 2 (list)
 		tmpch = (*(f0r_param_string*)parm);
-		if (strcmp(p->liststr, tmpch)) {
+		if (tmpch && strcmp(p->liststr, tmpch)) {
 			p->liststr = realloc( p->liststr, strlen(tmpch) + 1 );
 			strcpy( p->liststr, tmpch );
 		}
