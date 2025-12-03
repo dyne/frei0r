@@ -1,4 +1,4 @@
-[![Frei0r logo](https://github.com/dyne/frei0r/raw/gh_pages/pics/frei0r.png)](https://frei0r.dyne.org)
+[![Frei0r logo](https://frei0r.dyne.org/pics/fla_name_lb.webp)](https://frei0r.dyne.org)
 
 <img src="https://files.dyne.org/software_by_dyne.png" width="300">
 
