@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "frei0r.h"
 #include "frei0r/math.h"
 
@@ -73,6 +74,9 @@ void color_halftone(f0r_instance_t instance, double time,
 
   int width = inst->width;
   int height =  inst->height;
+
+  // Copy input to output to preserve alpha channel
+  memcpy(outframe, inframe, width * height * sizeof(uint32_t));
 
   double dotRadius = inst->dot_radius * 9.99;
   dotRadius = ceil(dotRadius);
