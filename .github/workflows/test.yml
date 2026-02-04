@@ -22,14 +22,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  # reuse:
-  #   name: 🚨 REUSE Compliance
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: fsfe/reuse-action@v1
-
   c-lint:
     name: 🚨 C lint
     runs-on: ubuntu-latest

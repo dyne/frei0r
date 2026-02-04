@@ -1,0 +1,117 @@
+name: 📜 Conventional Commits (PR)
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+      - '*.md'
+    branches:
+      - master
+      - release/**
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  conventional-commits:
+    name: 📜 Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔎 Check PR commit messages follow Conventional Commits
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            const marker = "<!-- conventional-commits-check -->";
+
+            // Conventional Commits v1.0.0 summary line regex
+            const re = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?(!)?:\s\S.+/;
+
+            const commits = await github.paginate(
+              github.rest.pulls.listCommits,
+              { owner, repo, pull_number, per_page: 100 }
+            );
+
+            const invalid = [];
+            for (const c of commits) {
+              const summary = c.commit.message.split("\n")[0];
+              if (!re.test(summary)) {
+                invalid.push({
+                  sha: c.sha.substring(0, 7),
+                  message: summary,
+                });
+              }
+            }
+
+            // Find existing bot comment (if any)
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: pull_number }
+            );
+
+            const existing = comments.find(
+              c => c.user?.type === "Bot" && c.body?.includes(marker)
+            );
+
+            if (invalid.length > 0) {
+              const body =
+                `${marker}
+            ### ❌ Conventional Commits check failed
+
+            One or more commit messages in this PR do **not** follow the
+            [Conventional Commits v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+
+            **Invalid commits:**
+            ${invalid.map(i => `- \`${i.sha}\` — ${i.message}`).join("\n")}
+
+            **Expected format**
+            \`\`\`
+            type(scope?)!?: subject
+            \`\`\`
+
+            **Examples**
+            - \`feat: add user login\`
+            - \`fix(api): handle null response\`
+            - \`chore!: drop node 16 support\`
+
+            Please fix the commit messages (e.g. via \`git rebase -i\`) and push again.`;
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  body,
+                });
+              }
+
+              core.setFailed(
+                `${invalid.length} commit(s) do not follow Conventional Commits`
+              );
+            } else {
+              // If previously failed, clean up the comment
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                  body: `${marker}
+            ### ✅ Conventional Commits check passed
+
+            All commit messages in this PR now follow the Conventional Commits specification. 🎉`,
+                });
+              }
+
+              core.info(`All ${commits.length} commit(s) follow Conventional Commits.`);
+            }
