@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   conventional-commits:
-    name: 📜 Parse PR commits
+    name: 📜 Conventional Commits
     runs-on: ubuntu-latest
     steps:
       - name: 🔎 Check PR commit messages follow Conventional Commits
