@@ -207,7 +207,9 @@ void f0r_update(f0r_instance_t instance, double time,
 
             // First make a blue layer shifted back
             if (((int)x >= (int)inst->shiftX) &&
-                ((int)y >= (int)inst->shiftY))
+                ((int)y >= (int)inst->shiftY) &&
+                ((x - inst->shiftX) < inst->width) &&
+                ((y - inst->shiftY) < inst->height))
             {
                 rgbsplit0r_extract_color((uint32_t *)(src +
                     (x - inst->shiftX) +
