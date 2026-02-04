@@ -1,4 +1,4 @@
-name: 010-Test
+name: 🧪 Test
 
 on:
   push:
@@ -22,20 +22,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  # reuse:
-  #   name: 🚨 REUSE Compliance
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: fsfe/reuse-action@v1
-
   c-lint:
     name: 🚨 C lint
     runs-on: ubuntu-latest
     if: "!contains(github.event.pull_request.labels.*.name, 'skip-lint')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: reviewdog/action-cpplint@master
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,7 +67,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: install dependencies
         run: |
           sudo apt-get update -qy
@@ -91,7 +83,7 @@ jobs:
         run: |
           cd test && make
       - name: ${{ matrix.compiler }} upload plugin analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-plugin-analysis
           path: test/*.json
