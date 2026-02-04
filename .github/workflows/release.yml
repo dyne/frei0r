@@ -18,19 +18,17 @@ jobs:
     name: 🤖 Semantic release
     runs-on: ubuntu-latest
     if: "!contains(github.event.pull_request.labels.*.name, 'skip-release')"
-    # if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     outputs:
       release: ${{ steps.tag_release.outputs.release }}
       version: ${{ steps.tag_release.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: latest
       - name: Install semantic-release
         run: |
-          npm i npx
           npm i semantic-release/changelog
       - name: Tag release
         id: tag_release
@@ -51,7 +49,7 @@ jobs:
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: apt install deps
         run: |
           sudo apt-get update -y -q
@@ -62,22 +60,22 @@ jobs:
           cmake -G "Ninja" ../
           ninja
       - name: Upload linux filter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-linux-filter
           path: build/src/filter/**/*.so
       - name: Upload linux mixer2
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-linux-mixer2
           path: build/src/mixer2/**/*.so
       - name: Upload linux mixer3
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-linux-mixer3
           path: build/src/mixer3/**/*.so
       - name: Upload linux generator
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-linux-generator
           path: build/src/generator/**/*.so
@@ -88,10 +86,10 @@ jobs:
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ilammy/msvc-dev-cmd@v1
       - name: choco install deps
-        uses: crazy-max/ghaction-chocolatey@v2
+        uses: crazy-max/ghaction-chocolatey@v3
         with:
           args: install libopencv-dev
       - name: Build using nmake
@@ -100,22 +98,22 @@ jobs:
           cmake -G "NMake Makefiles" ../
           nmake
       - name: Upload win64 filter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-win64-filter
           path: build/src/filter/**/*.dll
       - name: Upload win64 mixer2
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-win64-mixer2
           path: build/src/mixer2/**/*.dll
       - name: Upload win64 mixer3
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-win64-mixer3
           path: build/src/mixer3/**/*.dll
       - name: Upload win64 generator
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-win64-generator
           path: build/src/generator/**/*.dll
@@ -126,7 +124,7 @@ jobs:
     needs: [semantic-release]
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Update Homebrew
         run: |
           brew update
@@ -140,22 +138,22 @@ jobs:
           cmake -G "Ninja" ../
           ninja
       - name: Upload osx filter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-osx-filter
           path: build/src/filter/**/*.so
       - name: Upload osx mixer2
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-osx-mixer2
           path: build/src/mixer2/**/*.so
       - name: Upload osx mixer3
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-osx-mixer3
           path: build/src/mixer3/**/*.so
       - name: Upload osx generator
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-osx-generator
           path: build/src/generator/**/*.so
@@ -166,9 +164,9 @@ jobs:
     if: ${{ needs.semantic-release.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: download binary artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: |
             frei0r-bin
@@ -219,7 +217,7 @@ jobs:
           sha256sum *.zip *.tar.gz > SHA256SUMS.txt
 
       - name: release all archives
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             *.zip
