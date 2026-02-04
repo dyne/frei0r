@@ -1,4 +1,4 @@
-name: 020-Release
+name: 📢 Release
 
 on:
   workflow_run:
