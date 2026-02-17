@@ -9,14 +9,13 @@ on:
       - master
       - release/**
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   conventional-commits:
     name: 📜 Parse PR commits
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: 🔎 Check PR commit messages follow Conventional Commits
         uses: actions/github-script@v8
