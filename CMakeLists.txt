@@ -11,15 +11,18 @@ option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
 option (WITHOUT_FACERECOGNITION "Disable facedetect plugin to avoid protobuf conflicts" OFF)
 
 if (NOT WITHOUT_OPENCV)
-  find_package (OpenCV)
+  find_package (OpenCV REQUIRED)
 endif ()
 
-find_package (Cairo)
+option (WITHOUT_CAIRO "Disable plugins dependent upon gavl" OFF)
+if (NOT WITHOUT_CAIRO)
+  find_package (Cairo REQUIRED)
+endif ()
 
 include(FindPkgConfig)
 option (WITHOUT_GAVL "Disable plugins dependent upon gavl" OFF)
 if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
-  pkg_check_modules(GAVL gavl)
+  pkg_check_modules(GAVL REQUIRED gavl)
 endif ()
 
 include_directories (AFTER include)
