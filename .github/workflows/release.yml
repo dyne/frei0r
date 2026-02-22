@@ -3,7 +3,7 @@ name: 📢 Release
 on:
   workflow_run:
     workflows:
-      - 010-Test
+      - 🧪 Test
     types: [completed]
     branches:
       - master
