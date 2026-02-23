@@ -95,7 +95,7 @@ jobs:
       - name: Build using nmake
         run: |
           mkdir build && cd build
-          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 ../
+          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 ../
           nmake
       - name: Upload win64 filter
         uses: actions/upload-artifact@v6
@@ -135,7 +135,7 @@ jobs:
       - name: Build using ninja
         run: |
           mkdir build && cd build
-          cmake -G "Ninja" ../
+          cmake -G "Ninja"  -D WITHOUT_OPENCV=1 -D WITHOUT_GAVL=1 ../
           ninja
       - name: Upload osx filter
         uses: actions/upload-artifact@v6
