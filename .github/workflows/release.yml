@@ -95,7 +95,7 @@ jobs:
       - name: Build using nmake
         run: |
           mkdir build && cd build
-          cmake -G "NMake Makefiles" ../
+          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 ../
           nmake
       - name: Upload win64 filter
         uses: actions/upload-artifact@v6
