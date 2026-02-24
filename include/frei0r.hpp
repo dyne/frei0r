@@ -91,12 +91,15 @@ namespace frei0r
       param_ptrs.push_back(&p_loc);
       s_params.push_back(param_info(name,desc,F0R_PARAM_STRING));
     }
-    
-    
+
+
     void get_param_value(f0r_param_t param, int param_index)
     {
+      if (!param || param_index < 0 || param_index >= (int)param_ptrs.size())
+        return;
+
       void* ptr = param_ptrs[param_index];
-      
+
       switch (s_params[param_index].m_type)
 	{
 	case F0R_PARAM_BOOL :
@@ -125,8 +128,11 @@ namespace frei0r
 
     void set_param_value(f0r_param_t param, int param_index)
     {
+      if (!param || param_index < 0 || param_index >= (int)param_ptrs.size())
+        return;
+
       void* ptr = param_ptrs[param_index];
-      
+
       switch (s_params[param_index].m_type)
 	{
 	case F0R_PARAM_BOOL :
@@ -146,13 +152,16 @@ namespace frei0r
 	    =  *static_cast<f0r_param_position*>(param);
 	    break;
 	case F0R_PARAM_STRING:
-	    *static_cast<std::string*>(ptr)
-	      = *static_cast<f0r_param_string*>(param);
+	{
+	    f0r_param_string str = *static_cast<f0r_param_string*>(param);
+	    if (str != NULL)
+	        *static_cast<std::string*>(ptr) = str;
 	    break;
 	}
-      
+	}
+
     }
-      
+
     virtual void update(double time,
               uint32_t* out,
               const uint32_t* in1,
@@ -297,6 +306,9 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
+  if (!info || param_index < 0 || param_index >= (int)frei0r::s_params.size())
+    return;
+
   info->name=frei0r::s_params[param_index].m_name.c_str();
   info->type=frei0r::s_params[param_index].m_type;
   info->explanation=frei0r::s_params[param_index].m_desc.c_str();
@@ -316,16 +328,18 @@ void f0r_destruct(f0r_instance_t instance)
   delete static_cast<frei0r::fx*>(instance);
 }
 
-void f0r_set_param_value(f0r_instance_t instance, 
+void f0r_set_param_value(f0r_instance_t instance,
 			 f0r_param_t param, int param_index)
 {
-  static_cast<frei0r::fx*>(instance)->set_param_value(param, param_index);
+  if (instance)
+    static_cast<frei0r::fx*>(instance)->set_param_value(param, param_index);
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
 			 f0r_param_t param, int param_index)
 {
-  static_cast<frei0r::fx*>(instance)->get_param_value(param, param_index);
+  if (instance)
+    static_cast<frei0r::fx*>(instance)->get_param_value(param, param_index);
 }
 
 void f0r_update2(f0r_instance_t instance, double time,

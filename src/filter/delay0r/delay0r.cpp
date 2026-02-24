@@ -16,7 +16,7 @@ public:
   
   ~delay0r()
   {
-    for (std::list< std::pair< double, unsigned int* > >::iterator i=buffer.begin(); i != buffer.end(); ++i)
+    for (std::list< std::pair< double, unsigned int* > >::iterator i=buffer.begin(); i != buffer.end(); )
     {
        delete[] i->second;
        i=buffer.erase(i);
@@ -29,7 +29,7 @@ public:
   {
     unsigned int* reusable = 0;
     // remove old frames
-    for (std::list< std::pair< double, unsigned int* > >::iterator i=buffer.begin(); i != buffer.end(); ++i)
+    for (std::list< std::pair< double, unsigned int* > >::iterator i=buffer.begin(); i != buffer.end(); )
       {
 	if (i->first < (time - delay) || i->first >= time)
 	  {
@@ -40,6 +40,10 @@ public:
 	      reusable = i->second;
 
 	    i=buffer.erase(i);
+	  }
+	else
+	  {
+	    ++i;
 	  }
       }
     
