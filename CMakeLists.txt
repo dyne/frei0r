@@ -36,6 +36,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 set (LIBDIR "${CMAKE_INSTALL_LIBDIR}/frei0r-1")
 set (FREI0R_DEF "${CMAKE_SOURCE_DIR}/msvc/frei0r_1_0.def")
 set (FREI0R_1_1_DEF "${CMAKE_SOURCE_DIR}/msvc/frei0r_1_1.def")
+set (FREI0R_1_2_DEF "${CMAKE_SOURCE_DIR}/msvc/frei0r_1_2.def")
 
 # --- custom targets: ---
 INCLUDE( cmake/modules/TargetDistclean.cmake OPTIONAL)
