@@ -39,6 +39,7 @@ typedef struct vertigo_instance
   uint32_t *current_buffer, *alt_buffer;
   
   uint32_t *buffer;
+  uint8_t is_buffer_init;
   int dx, dy;
   int sx, sy;
   
@@ -186,8 +187,15 @@ void f0r_update(f0r_instance_t instance, double time,
 
   double vx, vy;
   double dizz;
-  
+
   dizz = sin(inst->phase) * 10 + sin(inst->phase*1.9+5) * 5;
+
+  if (!inst->is_buffer_init)
+  {
+    memcpy(inst->buffer, inframe, inst->pixels * sizeof(uint32_t));
+    memcpy(&inst->buffer[inst->pixels], inframe, inst->pixels * sizeof(uint32_t));
+    inst->is_buffer_init = 1;
+  }
 
   if(w > h) 
   {
