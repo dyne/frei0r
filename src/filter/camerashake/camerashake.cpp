@@ -20,9 +20,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+<<<<<<< HEAD
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
 #endif
+=======
+>>>>>>> 8efd251 (feat: add camera shake filter)
 #include <math.h>
 
 extern "C" {
@@ -190,4 +193,8 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8efd251 (feat: add camera shake filter)
