@@ -22,6 +22,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  # reuse:
+  #   name: 🚨 REUSE Compliance
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - uses: fsfe/reuse-action@v1
+
   c-lint:
     name: 🚨 C lint
     runs-on: ubuntu-latest
@@ -68,22 +76,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: install dependencies
-        run: |
-          sudo apt-get update -qy
-          sudo apt-get install --no-install-recommends -y ${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev
+      - uses: hendrikmuhs/ccache-action@v1.2
+      - name: Cache APT packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: "${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev"
       - name: ${{ matrix.compiler }} initialize cmake build
         run: |
           mkdir -p build && cd build
-          cmake -G "Ninja" ../
+          cmake -G "Ninja" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
       - name: ${{ matrix.compiler }} run ninja build
         run: |
           cd build && ninja
       - name: ${{ matrix.compiler }} analyze plugins
         run: |
-          cd test && make
-      - name: ${{ matrix.compiler }} upload plugin analysis
-        uses: actions/upload-artifact@v6
-        with:
-          name: release-plugin-analysis
-          path: test/*.json
+          cd test && make frei0r-asan && make check
