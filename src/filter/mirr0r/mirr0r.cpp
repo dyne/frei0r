@@ -17,9 +17,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _USE_MATH_DEFINES
 #include "frei0r.hpp"
 #include <cairo.h>
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 class Mirr0r : public frei0r::filter {
