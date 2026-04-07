@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
   static f0r_set_param_value_f f0r_set_param_value;
   static f0r_get_param_value_f f0r_get_param_value;
 
-  const char *usage = "Usage: frei0r-test [-tdg] [-f frames] -p <frei0r_plugin_file>\n"
+  const char *usage = "Usage: frei0r-run [-tdg] [-f frames] -p <frei0r_plugin_file>\n"
                       "  -d         debug mode\n"
                       "  -g         graphical display mode (Linux/WSL)\n"
                       "  -f frames  number of frames to process (default: 100)\n"
