@@ -331,7 +331,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 	  break;
 	case 3:
 	  inst->pointNumber = floor(*((f0r_param_double *)param) * 10);
-	  if (inst->pointNumber > 5) inst->pointNumber = 5;
+	  inst->pointNumber = MIN(inst->pointNumber, 5);
 	  break;
         case 4:
           inst->formula = *((f0r_param_double *)param);
