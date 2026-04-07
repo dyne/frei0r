@@ -1,4 +1,5 @@
 #include <random>
+#include <cstdint>
 
 struct pixshift0r
 {
@@ -14,7 +15,7 @@ struct pixshift0r
 
     std::mt19937 m_rng;
 
-    std::uniform_int_distribution<long long int> m_shift_rng;
+    std::uniform_int_distribution<int64_t> m_shift_rng;
     std::uniform_int_distribution<unsigned int> m_block_height_rng;
 
     pixshift0r(unsigned int width, unsigned int height)
@@ -37,7 +38,7 @@ struct pixshift0r
             if (block_height == 0)
                 block_height = 1;
 
-            long long shift = m_shift_intensity ? m_shift_rng(m_rng) : 0;
+            int64_t shift = m_shift_intensity ? m_shift_rng(m_rng) : 0;
 
             for (unsigned int j = 0; j < block_height; ++j)
             {
@@ -87,7 +88,7 @@ struct pixshift0r
     {
         this->m_shift_intensity = shift_intensity;
 
-        long long intensity = static_cast<long long>(shift_intensity);
+        int64_t intensity = static_cast<int64_t>(shift_intensity);
 
         auto rng_params = decltype(this->m_shift_rng)::param_type(-intensity, intensity);
 
