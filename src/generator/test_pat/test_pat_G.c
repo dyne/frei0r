@@ -158,8 +158,8 @@ int ox,oy;
 if (size<1) size=1;
 kx=size; ky=size;
 kx=kx/ar;		//kao aspect!=1  (anamorph)
-if (kx<1) kx=1;
-if (ky<1) ky=1;
+kx = MAX(kx, 1);
+ky = MAX(ky, 1);
 
 black=0;
 white=255;
