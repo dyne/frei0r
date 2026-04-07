@@ -23,6 +23,7 @@
  *
  */
 #include "kaleid0sc0pe.h"
+#include "frei0r/math.h"
 #include <memory>
 #include <cstring>
 #ifndef NO_FUTURE
@@ -445,12 +446,9 @@ void Kaleid0sc0pe::process_block(Block* block)
             std::int32_t* sx = reinterpret_cast<std::int32_t*>(&source_xi);
             std::int32_t* sy = reinterpret_cast<std::int32_t*>(&source_yi);
             
-            // Clamp coordinates to valid range
             for (int i = 0; i < 4; ++i) {
-                if (sx[i] < 0) sx[i] = 0;
-                if (sx[i] >= static_cast<std::int32_t>(m_width)) sx[i] = m_width - 1;
-                if (sy[i] < 0) sy[i] = 0;
-                if (sy[i] >= static_cast<std::int32_t>(m_height)) sy[i] = m_height - 1;
+                sx[i] = CLAMP(sx[i], 0, static_cast<std::int32_t>(m_width) - 1);
+                sy[i] = CLAMP(sy[i], 0, static_cast<std::int32_t>(m_height) - 1);
             }
             
             std::memcpy(out, lookup(block->in_frame, sx[0], sy[0]), m_pixel_size);
@@ -520,11 +518,8 @@ void Kaleid0sc0pe::process_block(Block *block)
                     } else if (source_y > m_height - 10e-4f) {
                         source_y = m_height - (source_y - m_height + 10e-4f);
                     }
-                    // Clamp to valid range
-                    if (source_x < 0) source_x = 0;
-                    if (source_x >= m_width) source_x = m_width - 1;
-                    if (source_y < 0) source_y = 0;
-                    if (source_y >= m_height) source_y = m_height - 1;
+                    source_x = CLAMP(source_x, 0.0f, static_cast<float>(m_width - 1));
+                    source_y = CLAMP(source_y, 0.0f, static_cast<float>(m_height - 1));
                     std::memcpy(out, lookup(block->in_frame, static_cast<std::uint32_t>(source_x), static_cast<std::uint32_t>(source_y)), m_pixel_size);
                 } else {
                     process_bg(source_x, source_y, block->in_frame, out);
