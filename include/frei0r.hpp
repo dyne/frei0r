@@ -154,7 +154,7 @@ namespace frei0r
 	case F0R_PARAM_STRING:
 	{
 	    f0r_param_string str = *static_cast<f0r_param_string*>(param);
-	    if (str != NULL)
+	    if (str)
 	        *static_cast<std::string*>(ptr) = str;
 	    break;
 	}
@@ -361,4 +361,3 @@ void f0r_update(f0r_instance_t instance,
 {
   f0r_update2(instance, time, inframe, 0, 0, outframe);
 }
-
