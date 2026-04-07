@@ -46,6 +46,7 @@ DV legality etc.
 #include <math.h>
 
 #include "frei0r.h"
+#include "frei0r/math.h"
 
 
 //----------------------------------------------------------
