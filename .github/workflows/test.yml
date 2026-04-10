@@ -76,18 +76,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: hendrikmuhs/ccache-action@v1.2
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: "${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev"
+      - name: Detect new plugins
+        id: detect
+        if: github.event_name == 'pull_request'
+        run: |
+          .github/scripts/detect-new-plugins.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+      - name: Print CI mode
+        run: |
+          echo "mode=${{ steps.detect.outputs.mode || 'full' }}"
+          echo "reason=${{ steps.detect.outputs.reason || 'push event uses the full suite' }}"
       - name: ${{ matrix.compiler }} initialize cmake build
         run: |
           mkdir -p build && cd build
           cmake -G "Ninja" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
       - name: ${{ matrix.compiler }} run ninja build
+        if: github.event_name != 'pull_request' || steps.detect.outputs.mode != 'targeted'
         run: |
           cd build && ninja
+      - name: ${{ matrix.compiler }} build new plugins
+        if: github.event_name == 'pull_request' && steps.detect.outputs.mode == 'targeted'
+        run: |
+          cd build
+          cmake --build . --target ${{ steps.detect.outputs.targets }}
       - name: ${{ matrix.compiler }} analyze plugins
+        if: github.event_name != 'pull_request' || steps.detect.outputs.mode != 'targeted'
         run: |
           cd test && make frei0r-asan && make check
+      - name: ${{ matrix.compiler }} analyze new plugins
+        if: github.event_name == 'pull_request' && steps.detect.outputs.mode == 'targeted'
+        run: |
+          cd test
+          make frei0r-asan
+          for plugin in ${{ steps.detect.outputs.plugin_paths }}; do
+            ./frei0r-run -d -p "../$plugin"
+          done
