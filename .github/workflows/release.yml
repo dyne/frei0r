@@ -21,6 +21,7 @@ jobs:
     outputs:
       release: ${{ steps.tag_release.outputs.release }}
       version: ${{ steps.tag_release.outputs.version }}
+      tag: ${{ steps.tag_release.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
       - name: Setup Node.js
@@ -40,7 +41,7 @@ jobs:
             echo "release=False" >> $GITHUB_OUTPUT
           else
             echo "release=True" >> $GITHUB_OUTPUT
-            awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
+            awk '/Published release/ { printf("version=%s\ntag=v%s\n",$8,$8) }' semantic-release.log >> $GITHUB_OUTPUT
           fi
 
   linux-build:
@@ -57,7 +58,7 @@ jobs:
       - name: Build using cmake+ninja
         run: |
           mkdir build && cd build
-          cmake -G "Ninja" ../
+          cmake -G "Ninja" -D FREI0R_VERSION=${{ needs.semantic-release.outputs.version }} ../
           ninja
       - name: Upload linux filter
         uses: actions/upload-artifact@v6
@@ -79,6 +80,11 @@ jobs:
         with:
           name: release-linux-generator
           path: build/src/generator/**/*.so
+      - name: Upload linux pkg-config
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-linux-pkgconfig
+          path: build/frei0r.pc
 
   win-build:
     name: 🪟 win64 build
@@ -95,7 +101,7 @@ jobs:
       - name: Build using nmake
         run: |
           mkdir build && cd build
-          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 ../
+          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 -D FREI0R_VERSION=${{ needs.semantic-release.outputs.version }} ../
           nmake
       - name: Upload win64 filter
         uses: actions/upload-artifact@v6
@@ -117,6 +123,11 @@ jobs:
         with:
           name: release-win64-generator
           path: build/src/generator/**/*.dll
+      - name: Upload win64 pkg-config
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-win64-pkgconfig
+          path: build/frei0r.pc
 
   osx-build:
     name: 🍏 osx build
@@ -135,7 +146,7 @@ jobs:
       - name: Build using ninja
         run: |
           mkdir build && cd build
-          cmake -G "Ninja"  -D WITHOUT_OPENCV=1 -D WITHOUT_GAVL=1 ../
+          cmake -G "Ninja" -D WITHOUT_OPENCV=1 -D WITHOUT_GAVL=1 -D FREI0R_VERSION=${{ needs.semantic-release.outputs.version }} ../
           ninja
       - name: Upload osx filter
         uses: actions/upload-artifact@v6
@@ -157,6 +168,11 @@ jobs:
         with:
           name: release-osx-generator
           path: build/src/generator/**/*.so
+      - name: Upload osx pkg-config
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-osx-pkgconfig
+          path: build/frei0r.pc
 
   draft-binary-release:
     name: 📦 Pack release
@@ -183,6 +199,7 @@ jobs:
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
+          cp frei0r-bin/release-win64-pkgconfig/frei0r.pc $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
@@ -197,6 +214,7 @@ jobs:
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
+          cp frei0r-bin/release-osx-pkgconfig/frei0r.pc $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
@@ -211,6 +229,7 @@ jobs:
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
+          cp frei0r-bin/release-linux-pkgconfig/frei0r.pc $dst/
           echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
           tar cvfz $dst.tar.gz $dst
 
@@ -223,7 +242,7 @@ jobs:
             *.zip
             *.tar.gz
             SHA256SUMS.txt
-          tag_name: ${{ needs.semantic-release.outputs.version }}
+          tag_name: ${{ needs.semantic-release.outputs.tag }}
           draft: true
           prerelease: false
           fail_on_unmatched_files: true

@@ -2,8 +2,16 @@ cmake_minimum_required (VERSION 3.12)
 
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
-project (frei0r)
-set (VERSION 2.5.1)
+set (FREI0R_VERSION "3.0.0" CACHE STRING "Project version in SemVer format")
+if (DEFINED ENV{FREI0R_VERSION} AND NOT "$ENV{FREI0R_VERSION}" STREQUAL "")
+  set (FREI0R_VERSION "$ENV{FREI0R_VERSION}")
+endif ()
+string (REGEX REPLACE "^v" "" FREI0R_VERSION "${FREI0R_VERSION}")
+if (NOT FREI0R_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+  message (FATAL_ERROR "FREI0R_VERSION must be a SemVer string like 3.0.0")
+endif ()
+
+project (frei0r VERSION ${FREI0R_VERSION})
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED True)
 
