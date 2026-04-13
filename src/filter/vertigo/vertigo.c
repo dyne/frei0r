@@ -243,7 +243,7 @@ void f0r_update(f0r_instance_t instance, double time,
     {
       i = (oy>>16)*w + (ox>>16);
       if(i<0) i = 0;
-      if(i>=inst->pixels) i = inst->pixels;
+      if(i>=inst->pixels) i = inst->pixels - 1;
       v = inst->current_buffer[i] & 0xfcfcff;
       alpha = *src & 0xff000000;
       v = (v * 3) + ((*src++) & 0xfcfcff);
