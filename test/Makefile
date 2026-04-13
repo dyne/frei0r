@@ -20,41 +20,41 @@ all: frei0r-meta frei0r-asan
 	@echo "scan-meta      :: scan all plugins and produce metadata"
 
 frei0r-run: frei0r-run.c
-	$(info Build frei0r plugin test run utility)
+	@printf 'Build frei0r plugin test run utility\n'
 	$(CXX) $(CI_OPT_FLAGS) -I../include -o frei0r-run frei0r-run.c -ldl
 
 frei0r-asan: frei0r-run.c
-	$(info Build frei0r plugin test run utility)
+	@printf 'Build frei0r plugin test run utility\n'
 	$(CXX) $(DEBUG_FLAGS) -I../include -o frei0r-run frei0r-run.c -ldl
 
 frei0r-gui: frei0r-run.c test-pattern.c test-pattern.h
-	$(info Build frei0r plugin test run utility)
+	@printf 'Build frei0r plugin test run utility\n'
 	$(CXX) $(CI_OPT_FLAGS) -I../include -o frei0r-run frei0r-run.c test-pattern.c -ldl -lm -lX11 -DGUI
 
 check: frei0r-run
-	@$(if $(wildcard ${PLUGINDIR}),,>&2 echo "Scan dir not found: ${PLUGINDIR}" && exit 1)
-	@find $(PLUGINDIR) -type f -name '*.so' | \
+	@if [ ! -d "${PLUGINDIR}" ]; then printf 'Scan dir not found: %s\n' "${PLUGINDIR}" >&2; exit 1; fi
+	@find "${PLUGINDIR}" -type f -name '*.so' | \
 		while IFS= read -r f; do \
 		./frei0r-run -d -p "$$f" || break; done
 
 frei0r-meta: frei0r-meta.c
-	$(info Build frei0r meta-data parsing utility)
+	@printf 'Build frei0r meta-data parsing utility\n'
 	${CC} -o frei0r-meta -ggdb frei0r-meta.c ${INCLUDES}
 
 scan-meta: frei0r-meta
-	@$(if $(wildcard ${PLUGINDIR}),,>&2 echo "Scan dir not found: ${PLUGINDIR}" && exit 1)
+	@if [ ! -d "${PLUGINDIR}" ]; then printf 'Scan dir not found: %s\n' "${PLUGINDIR}" >&2; exit 1; fi
 	@find ${PLUGINDIR} -type f -name '*.so' -exec ./frei0r-meta {} \; > tmp.json
 	@echo "[" > frei0r-plugin-list.json
 	@head -n -1 tmp.json >> frei0r-plugin-list.json
 	@echo "}\n]" >> frei0r-plugin-list.json
 	@rm tmp.json
-	$(info frei0r-plugin-list.json)
+	@printf 'frei0r-plugin-list.json\n'
 
 
 
 generate-metadata: EXTENSION ?= so
 generate-metadata:
-	@$(if $(wildcard ${PLUGINDIR}),,>&2 echo "Scan dir not found: ${PLUGINDIR}" && exit 1)
+	@if [ ! -d "${PLUGINDIR}" ]; then printf 'Scan dir not found: %s\n' "${PLUGINDIR}" >&2; exit 1; fi
 	sh extract-plugin-info.sh ${EXTENSION} ${PLUGINDIR}
 
 clean:
