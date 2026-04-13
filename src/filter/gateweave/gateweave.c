@@ -149,7 +149,9 @@ static inline void gateweave_shift_picture(const uint32_t* in, uint32_t* out, do
     uint32_t v = 0;
     for(unsigned int i = 0; i < w * h; i++)
     {
-        if(!(i + shift_component_x < 0 || i + shift_component_x >= w * h || i + shift_component_x + shift_component_y < 0 || i + shift_component_x + shift_component_y >= w * h))
+        if(i + shift_component_x >= 0 && i + shift_component_x < w * h &&
+          i + shift_component_y >= 0 && i + shift_component_y < w * h &&
+          i + shift_component_x + shift_component_y >= 0 && i + shift_component_x + shift_component_y < w * h)
         {
             if(larger_x_comp)
             {
