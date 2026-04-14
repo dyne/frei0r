@@ -17,6 +17,9 @@ set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 include(GNUInstallDirs)
 
+set(CMAKE_CTEST_ARGUMENTS "--verbose")
+include(CTest)
+
 option (WITHOUT_OPENCV "Disable plugins dependent upon OpenCV" OFF)
 option (WITHOUT_FACERECOGNITION "Disable facedetect plugin to avoid protobuf conflicts" OFF)
 
@@ -57,6 +60,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLU
 # add_subdirectory (doc)
 
 add_subdirectory (src)
+add_subdirectory (test)
 
 # Generate frei0r.pc and install it.
 set (prefix "${CMAKE_INSTALL_PREFIX}")
