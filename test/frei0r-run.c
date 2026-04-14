@@ -29,7 +29,7 @@
 #include <frei0r.h>
 #include "test-pattern.h"
 
-#if defined(__linux__) && defined(GUI)
+#if defined(__unix__) && defined(GUI)
 #pragma message "Compiling GUI test"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -226,11 +226,7 @@ int main(int argc, char* argv[]) {
   }
 
   int opt;
-#if defined(GUI)
-  int graphical = 1;
-#else
   int graphical = 0;
-#endif
   int debug = 0;
   int frames = 100; // Number of frames to test
   char plugin_file[512];
@@ -360,7 +356,7 @@ int main(int argc, char* argv[]) {
       generate_test_pattern(input_buffer3, frame_width, frame_height, pi.color_model, 2);
 #endif
 
-#if defined(__linux__) && defined(GUI)
+#if defined(__unix__) && defined(GUI)
   Display *display = NULL;
   Window window;
   GC gc;
@@ -457,7 +453,7 @@ int main(int argc, char* argv[]) {
               break;
       }
 
-#if defined(__linux__) && defined(GUI)
+#if defined(__unix__) && defined(GUI)
       if (graphical && display) {
           ximage->data = (char*)output_buffer;
           XPutImage(display, window, gc, ximage, 0, 0, 0, 0, frame_width, frame_height);
@@ -483,7 +479,7 @@ int main(int argc, char* argv[]) {
       }
   }
 
-#if defined(__linux__) && defined(GUI)
+#if defined(__unix__) && defined(GUI)
   if (graphical && display) {
       ximage->data = NULL; // Prevent XDestroyImage from freeing our buffer
       XDestroyImage(ximage);

@@ -110,12 +110,10 @@ jobs:
       - name: ${{ matrix.compiler }} analyze plugins
         if: github.event_name != 'pull_request' || steps.detect.outputs.mode != 'targeted'
         run: |
-          cd test && make frei0r-asan && make check
+          make test
       - name: ${{ matrix.compiler }} analyze new plugins
         if: github.event_name == 'pull_request' && steps.detect.outputs.mode == 'targeted'
         run: |
-          cd test
-          make frei0r-asan
           for plugin in ${{ steps.detect.outputs.plugin_paths }}; do
             ./frei0r-run -d -p "../$plugin"
           done
