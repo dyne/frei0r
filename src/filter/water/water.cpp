@@ -428,7 +428,7 @@ void Water::DrawWater(int page,uint32_t* out) {
       dx = ptr[offset] - ptr[offset+1];
       dy = ptr[offset] - ptr[offset+geo->w];
       newoffset = offset + geo->w*(dy>>3) + (dx>>3);
-      if (newoffset < maxoffset) {
+      if (newoffset >= 0 && newoffset < maxoffset) {
         out[offset] = BkGdImage[newoffset];
       }
 
@@ -436,7 +436,7 @@ void Water::DrawWater(int page,uint32_t* out) {
       dx = ptr[offset] - ptr[offset+1];
       dy = ptr[offset] - ptr[offset+geo->w];
       newoffset = offset + geo->w*(dy>>3) + (dx>>3);
-      if (newoffset < maxoffset) {
+      if (newoffset >= 0 && newoffset < maxoffset) {
         out[offset] = BkGdImage[newoffset];
       }
     }
