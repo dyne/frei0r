@@ -49,20 +49,20 @@ extern "C" {
     }
 
 void f0r_get_param_info(f0r_param_info_t* info, int param_index) {
-        if (param_index == 0) { info->name = "amplitude_x"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 1) { info->name = "amplitude_y"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 2) { info->name = "rotation"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 3) { info->name = "zoom"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 4) { info->name = "speed"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 5) { info->name = "opacity"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 6) { info->name = "blur"; info->type = F0R_PARAM_DOUBLE; }
-        else if (param_index == 7) { info->name = "bg_color"; info->type = F0R_PARAM_COLOR; }
+        if (param_index == 0) { info->name = "amplitude_x"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 1) { info->name = "amplitude_y"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 2) { info->name = "rotation"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 3) { info->name = "zoom"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 4) { info->name = "speed"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 5) { info->name = "opacity"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 6) { info->name = "blur"; info->type = F0R_PARAM_DOUBLE; info->explanation = nullptr; }
+        else if (param_index == 7) { info->name = "bg_color"; info->type = F0R_PARAM_COLOR; info->explanation = nullptr; }
     }
 
     f0r_instance_t f0r_construct(unsigned int width, unsigned int height) {
         CameraShakeInstance* inst = new CameraShakeInstance();
-        inst->amp_x = 50.0; inst->amp_y = 50.0; inst->rotation = 10.0;
-        inst->zoom = 100.0; inst->speed = 50.0; inst->opacity = 100.0; inst->blur = 0.0;
+        inst->amp_x = 50.0; inst->amp_y = 50.0; inst->rotation = 0.1;
+        inst->zoom = 100.0; inst->speed = 0.5; inst->opacity = 1.0; inst->blur = 0.0;
         inst->bg_r = 0.0f; inst->bg_g = 0.0f; inst->bg_b = 0.0f;
         inst->width = width; inst->height = height;
         return (f0r_instance_t)inst;
@@ -73,10 +73,10 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index) {
     void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_index) {
         CameraShakeInstance* inst = (CameraShakeInstance*)instance;
         double val = *((double*)param);
-        if (param_index == 0) inst->amp_x = val;
-        else if (param_index == 1) inst->amp_y = val;
+        if (param_index == 0) inst->amp_x = val * 0.5 * inst->width;
+        else if (param_index == 1) inst->amp_y = val * 0.5 * inst->height;
         else if (param_index == 2) inst->rotation = val;
-        else if (param_index == 3) inst->zoom = val;
+        else if (param_index == 3) inst->zoom = val * 500.0;
         else if (param_index == 4) inst->speed = val;
         else if (param_index == 5) inst->opacity = val;
         else if (param_index == 6) inst->blur = val;
@@ -88,10 +88,10 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index) {
 
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index) {
         CameraShakeInstance* inst = (CameraShakeInstance*)instance;
-        if (param_index == 0) *((double*)param) = inst->amp_x;
-        else if (param_index == 1) *((double*)param) = inst->amp_y;
+        if (param_index == 0) *((double*)param) = inst->amp_x / inst->width / 2.0;
+        else if (param_index == 1) *((double*)param) = inst->amp_y / inst->height / 2.0;
         else if (param_index == 2) *((double*)param) = inst->rotation;
-        else if (param_index == 3) *((double*)param) = inst->zoom;
+        else if (param_index == 3) *((double*)param) = inst->zoom / 500.0;
         else if (param_index == 4) *((double*)param) = inst->speed;
         else if (param_index == 5) *((double*)param) = inst->opacity;
         else if (param_index == 6) *((double*)param) = inst->blur;
@@ -106,7 +106,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         int w = inst->width;
         int h = inst->height;
 
-        double speed_factor = inst->speed;
+        double speed_factor = inst->speed * 100.0;
         
         // 1. Zoom (0 to 500) mapped to scale (0.001 to 5.0)
         double scale = inst->zoom / 100.0;
@@ -117,14 +117,14 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         double shake_y = sin(time * speed_factor * 0.89) * cos(time * speed_factor * 1.1) * inst->amp_y;
 
         // 3. Rotation
-        double max_angle = (inst->rotation / 100.0) * (M_PI / 4.0); // Maximum 45 degree
+        double max_angle = inst->rotation * (M_PI / 4.0); // Maximum 45 degree
         double theta = sin(time * speed_factor * 1.15) * max_angle;
         double cos_t = cos(-theta);
         double sin_t = sin(-theta);
 
         // 4. Blur and Opacity Parameters
-        int blur_radius = (int)(inst->blur / 5.0); // Range of 0 to 20 pixels radius
-        double alpha_mult = inst->opacity / 100.0;
+        int blur_radius = (int)(20 * inst->blur); // Range of 0 to 20 pixels radius
+        double alpha_mult = inst->opacity;
 
         double cx = w / 2.0;
         double cy = h / 2.0;
