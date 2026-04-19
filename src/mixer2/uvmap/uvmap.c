@@ -109,8 +109,8 @@ void f0r_update2(f0r_instance_t instance,
 			fy = ((float)tmpc[1]) / 255.0;
 			fy = 1.0 - fy;
 
-			px = lrintf( w * fx );
-			py = lrintf( h * fy );
+			px = lrintf( (w - 1) * fx );
+			py = lrintf( (h - 1) * fy );
 			if ( tmpc[2] > 128 ) {
 				*dst++ = src[px+w*py];
 			} else {
