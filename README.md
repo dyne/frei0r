@@ -63,6 +63,22 @@ Frei0r can be built on GNU/Linux, M$/Windows and Apple/OSX platforms, possibly i
 
 For details see the [BUILD](/BUILD.md) file.
 
+### Quick build and test
+
+```sh
+cmake -S . -B build -G Ninja
+cmake --build build
+cd test && make frei0r-asan && make check
+```
+
+### Metadata scan utility
+
+The metadata scanner binary is `test/frei0r-meta` (previously `frei0r-info`):
+
+```sh
+cd test && make frei0r-meta && make scan-meta
+```
+
 ### MS / Windows
 
 We distribute official builds of frei0r plugins as .dll for the Win64 platform from the releases page.
@@ -86,7 +102,7 @@ Binary packages are maintained on various distributions, but they may not be com
 
 A [frei0r Brew formula](https://formulae.brew.sh/formula/frei0r) is available.
 
-Official builds of frei0r plugins as .dlsym for the Apple/OSX platform will be soon included in the releases page.
+Official macOS release artifacts are distributed from the releases page.
 
 # Documentation 
 
@@ -159,5 +175,4 @@ We also have an (old) mailing list open to [subscription](https://mailinglists.d
 Frei0r is the result of a collective effort in coordination with several software developers meeting to find a common standard for video effect plugins to be used among their applications.
 
 For a full list of contributors and the project history, see the file [AUTHORS](/AUTHORS), the [ChangeLog](/ChangeLog) and the project web page: https://frei0r.dyne.org
-
 

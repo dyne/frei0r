@@ -23,6 +23,7 @@
  *
  */
 #include "kaleid0sc0pe.h"
+#include "frei0r/math.h"
 #include <memory>
 #include <cstring>
 #ifndef NO_FUTURE
@@ -439,11 +440,17 @@ void Kaleid0sc0pe::process_block(Block* block)
             __m128 ge_height = _mm_cmpge_ps(source_y, m_sse_height);
             source_y = _mm_or_ps(_mm_and_ps(_mm_sub_ps(m_sse_height, _mm_sub_ps(source_y, m_sse_height)), ge_height), _mm_andnot_ps(ge_height,source_y));
 
-            __m128i source_xi = _mm_cvttps_epi32(_mm_min_ps(source_x, _mm_sub_ps(m_sse_width, m_sse_ps_1)));
-            __m128i source_yi = _mm_cvttps_epi32(_mm_min_ps(source_y, _mm_sub_ps(m_sse_height, m_sse_ps_1)));
+            __m128i source_xi = _mm_cvttps_epi32(_mm_min_ps(_mm_max_ps(source_x, _mm_setzero_ps()), _mm_sub_ps(m_sse_width, m_sse_ps_1)));
+            __m128i source_yi = _mm_cvttps_epi32(_mm_min_ps(_mm_max_ps(source_y, _mm_setzero_ps()), _mm_sub_ps(m_sse_height, m_sse_ps_1)));
 
             std::int32_t* sx = reinterpret_cast<std::int32_t*>(&source_xi);
             std::int32_t* sy = reinterpret_cast<std::int32_t*>(&source_yi);
+            
+            for (int i = 0; i < 4; ++i) {
+                sx[i] = CLAMP(sx[i], 0, static_cast<std::int32_t>(m_width) - 1);
+                sy[i] = CLAMP(sy[i], 0, static_cast<std::int32_t>(m_height) - 1);
+            }
+            
             std::memcpy(out, lookup(block->in_frame, sx[0], sy[0]), m_pixel_size);
             out += m_pixel_size;
             std::memcpy(out, lookup(block->in_frame, sx[1], sy[1]), m_pixel_size);
@@ -511,6 +518,8 @@ void Kaleid0sc0pe::process_block(Block *block)
                     } else if (source_y > m_height - 10e-4f) {
                         source_y = m_height - (source_y - m_height + 10e-4f);
                     }
+                    source_x = CLAMP(source_x, 0.0f, static_cast<float>(m_width - 1));
+                    source_y = CLAMP(source_y, 0.0f, static_cast<float>(m_height - 1));
                     std::memcpy(out, lookup(block->in_frame, static_cast<std::uint32_t>(source_x), static_cast<std::uint32_t>(source_y)), m_pixel_size);
                 } else {
                     process_bg(source_x, source_y, block->in_frame, out);

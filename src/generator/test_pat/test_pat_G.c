@@ -46,6 +46,7 @@ DV legality etc.
 #include <math.h>
 
 #include "frei0r.h"
+#include "frei0r/math.h"
 
 
 //----------------------------------------------------------
@@ -158,6 +159,8 @@ int ox,oy;
 if (size<1) size=1;
 kx=size; ky=size;
 kx=kx/ar;		//kao aspect!=1  (anamorph)
+kx = MAX(kx, 1);
+ky = MAX(ky, 1);
 
 black=0;
 white=255;

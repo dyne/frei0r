@@ -14,13 +14,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  semantic-release:
-    name: 🤖 Semantic release
+  release-plan:
+    name: 🤖 Plan release
     runs-on: ubuntu-latest
-    if: "!contains(github.event.pull_request.labels.*.name, 'skip-release')"
+    if: github.event.workflow_run.conclusion == 'success'
     outputs:
-      release: ${{ steps.tag_release.outputs.release }}
-      version: ${{ steps.tag_release.outputs.version }}
+      release: ${{ steps.plan_release.outputs.release }}
+      version: ${{ steps.plan_release.outputs.version }}
+      tag: ${{ steps.plan_release.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
       - name: Setup Node.js
@@ -30,34 +31,35 @@ jobs:
       - name: Install semantic-release
         run: |
           npm i semantic-release/changelog
-      - name: Tag release
-        id: tag_release
+      - name: Plan release
+        id: plan_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx semantic-release | tee semantic-release.log
-          if [[ `git tag --points-at HEAD` == "" ]]; then
-            echo "release=False" >> $GITHUB_OUTPUT
+          npx semantic-release --dry-run | tee semantic-release.log
+          version=$(awk '/The next release version is/ { print $NF }' semantic-release.log | tail -n1)
+          if [[ -z "$version" ]]; then
+            echo "release=False" >> "$GITHUB_OUTPUT"
           else
-            echo "release=True" >> $GITHUB_OUTPUT
-            awk '/Published release/ { printf("version=v%s\n",$8) }' semantic-release.log >> $GITHUB_OUTPUT
+            echo "release=True" >> "$GITHUB_OUTPUT"
+            printf 'version=%s\ntag=v%s\n' "$version" "$version" >> "$GITHUB_OUTPUT"
           fi
 
   linux-build:
     name: 🐧 linux build
     runs-on: ubuntu-latest
-    needs: [semantic-release]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    needs: [release-plan]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v6
       - name: apt install deps
         run: |
           sudo apt-get update -y -q
-          sudo apt-get install -y -q --no-install-recommends cmake ninja-build libopencv-dev libgavl-dev libfreetype-dev libcairo-dev
+          sudo apt-get install -y -q --no-install-recommends cmake ninja-build libopencv-dev libgavl-dev libfreetype-dev libcairo2-dev
       - name: Build using cmake+ninja
         run: |
           mkdir build && cd build
-          cmake -G "Ninja" ../
+          cmake -G "Ninja" -D FREI0R_VERSION=${{ needs.release-plan.outputs.version }} ../
           ninja
       - name: Upload linux filter
         uses: actions/upload-artifact@v6
@@ -79,12 +81,17 @@ jobs:
         with:
           name: release-linux-generator
           path: build/src/generator/**/*.so
+      - name: Upload linux pkg-config
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-linux-pkgconfig
+          path: build/frei0r.pc
 
   win-build:
     name: 🪟 win64 build
     runs-on: windows-latest
-    needs: [semantic-release]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    needs: [release-plan]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v6
       - uses: ilammy/msvc-dev-cmd@v1
@@ -95,7 +102,7 @@ jobs:
       - name: Build using nmake
         run: |
           mkdir build && cd build
-          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 ../
+          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 -D FREI0R_VERSION=${{ needs.release-plan.outputs.version }} ../
           nmake
       - name: Upload win64 filter
         uses: actions/upload-artifact@v6
@@ -117,12 +124,17 @@ jobs:
         with:
           name: release-win64-generator
           path: build/src/generator/**/*.dll
+      - name: Upload win64 pkg-config
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-win64-pkgconfig
+          path: build/frei0r.pc
 
   osx-build:
     name: 🍏 osx build
     runs-on: macos-latest
-    needs: [semantic-release]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    needs: [release-plan]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
     steps:
       - uses: actions/checkout@v6
       - name: Update Homebrew
@@ -135,7 +147,7 @@ jobs:
       - name: Build using ninja
         run: |
           mkdir build && cd build
-          cmake -G "Ninja"  -D WITHOUT_OPENCV=1 -D WITHOUT_GAVL=1 ../
+          cmake -G "Ninja" -D WITHOUT_OPENCV=1 -D WITHOUT_GAVL=1 -D FREI0R_VERSION=${{ needs.release-plan.outputs.version }} ../
           ninja
       - name: Upload osx filter
         uses: actions/upload-artifact@v6
@@ -157,11 +169,43 @@ jobs:
         with:
           name: release-osx-generator
           path: build/src/generator/**/*.so
+      - name: Upload osx pkg-config
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-osx-pkgconfig
+          path: build/frei0r.pc
+
+  publish-release:
+    name: 🚀 Publish release
+    runs-on: ubuntu-latest
+    needs: [release-plan, win-build, osx-build, linux-build]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
+    outputs:
+      version: ${{ steps.publish_release.outputs.version }}
+      tag: ${{ steps.publish_release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+      - name: Install semantic-release
+        run: |
+          npm i semantic-release/changelog
+      - name: Publish release
+        id: publish_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release
+          printf 'version=%s\ntag=%s\n' \
+            "${{ needs.release-plan.outputs.version }}" \
+            "${{ needs.release-plan.outputs.tag }}" >> "$GITHUB_OUTPUT"
 
   draft-binary-release:
     name: 📦 Pack release
-    needs: [semantic-release, win-build, osx-build, linux-build]
-    if: ${{ needs.semantic-release.outputs.release == 'True' }}
+    needs: [release-plan, publish-release, win-build, osx-build, linux-build]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -172,7 +216,7 @@ jobs:
             frei0r-bin
       - name: create compressed archives
         run: |
-          dst=frei0r-${{ needs.semantic-release.outputs.version }}_win64
+          dst=frei0r-${{ needs.publish-release.outputs.version }}_win64
           mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
           find frei0r-bin/release-win64-filter    -type f -name '*.dll' -exec cp {} $dst/filter    \;
           find frei0r-bin/release-win64-generator -type f -name '*.dll' -exec cp {} $dst/generator \;
@@ -183,10 +227,11 @@ jobs:
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
-          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
+          cp frei0r-bin/release-win64-pkgconfig/frei0r.pc $dst/
+          echo "${{ needs.publish-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
-          dst=frei0r-${{ needs.semantic-release.outputs.version }}_osx
+          dst=frei0r-${{ needs.publish-release.outputs.version }}_osx
           mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
           find frei0r-bin/release-osx-filter    -type f -name '*.so' -exec cp {} $dst/filter    \;
           find frei0r-bin/release-osx-generator -type f -name '*.so' -exec cp {} $dst/generator \;
@@ -197,10 +242,11 @@ jobs:
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
-          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
+          cp frei0r-bin/release-osx-pkgconfig/frei0r.pc $dst/
+          echo "${{ needs.publish-release.outputs.version }}" > $dst/VERSION.txt
           zip -r -9 $dst.zip $dst
 
-          dst=frei0r-${{ needs.semantic-release.outputs.version }}_linux
+          dst=frei0r-${{ needs.publish-release.outputs.version }}_linux
           mkdir -p $dst/filter $dst/generator $dst/mixer2 $dst/mixer3
           find frei0r-bin/release-linux-filter    -type f -name '*.so' -exec cp {} $dst/filter    \;
           find frei0r-bin/release-linux-generator -type f -name '*.so' -exec cp {} $dst/generator \;
@@ -211,7 +257,8 @@ jobs:
           cp ChangeLog $dst/ChangeLog.txt
           cp AUTHORS.md   $dst/AUTHORS.txt
           cp include/frei0r.h include/frei0r.hpp $dst/
-          echo "${{ needs.semantic-release.outputs.version }}" > $dst/VERSION.txt
+          cp frei0r-bin/release-linux-pkgconfig/frei0r.pc $dst/
+          echo "${{ needs.publish-release.outputs.version }}" > $dst/VERSION.txt
           tar cvfz $dst.tar.gz $dst
 
           sha256sum *.zip *.tar.gz > SHA256SUMS.txt
@@ -223,7 +270,7 @@ jobs:
             *.zip
             *.tar.gz
             SHA256SUMS.txt
-          tag_name: ${{ needs.semantic-release.outputs.version }}
+          tag_name: ${{ needs.publish-release.outputs.tag }}
           draft: true
           prerelease: false
           fail_on_unmatched_files: true
