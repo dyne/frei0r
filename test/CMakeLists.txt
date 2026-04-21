@@ -10,8 +10,13 @@ if(TEST_ASAN)
   target_compile_options(frei0r-run PUBLIC
     -O0 -g -ggdb -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope)
   target_link_options(frei0r-run PUBLIC
-    -undefined dynamic_lookup
+    -fsanitize=address -fsanitize-recover=address
   )
+  if(APPLE)
+    target_link_options(frei0r-run PUBLIC
+      -undefined dynamic_lookup
+    )
+  endif()
 endif()
 
 if(TEST_GUI)
@@ -49,4 +54,3 @@ set(EXTENSION "so")
 add_custom_target(generate-metadata
   COMMAND sh ${CMAKE_SOURCE_DIR}/test/extract-plugin-info.sh ${EXTENSION} "${CMAKE_BINARY_DIR}/src"
 )
-
