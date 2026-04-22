@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
   snprintf(path, 255,"%s/%s",dir,file);
   // fprintf(stderr,"%s %s\n",argv[0], file);
   // load shared library
-  dl_handle = dlopen(path, RTLD_NOW|RTLD_LOCAL|RTLD_NODELETE);
+  dl_handle = dlopen(path, RTLD_NOW|RTLD_LOCAL);
   if(!dl_handle) {
   fprintf(stderr,"error: %s\n",dlerror());
   exit(1);
