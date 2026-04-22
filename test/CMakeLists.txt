@@ -4,7 +4,14 @@ option(TEST_GUI "Run tests in gui mode" OFF)
 add_executable(frei0r-run test-pattern.c frei0r-run.c)
 add_executable(frei0r-meta frei0r-meta.c)
 
-target_link_libraries(frei0r-run m ${CMAKE_DL_LIBS})
+if(WIN32)
+  find_package(dlfcn-win32 REQUIRED)
+  target_link_libraries(frei0r-run PRIVATE dlfcn-win32::dl)
+  target_link_libraries(frei0r-meta PRIVATE dlfcn-win32::dl)
+else()
+  target_link_libraries(frei0r-run PRIVATE m dl)
+  target_link_libraries(frei0r-meta PRIVATE m dl)
+endif()
 
 if(TEST_ASAN)
   target_compile_options(frei0r-run PUBLIC
