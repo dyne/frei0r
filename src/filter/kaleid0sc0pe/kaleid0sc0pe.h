@@ -35,7 +35,7 @@
 #ifdef __SSE2__
 #undef __SSE2__
 #endif
-#else
+#elif !defined(__SSE2__)
 // set sse2 flag on windows
 #if _M_IX86_FP == 2 || _M_X64 == 100
 #ifndef _M_ARM
