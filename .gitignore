@@ -40,3 +40,4 @@ doc/html
 /.vs/
 CMakeSettings.json
 .vscode
+CMakeCache.txt
