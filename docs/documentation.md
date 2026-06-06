@@ -37,11 +37,15 @@ These links accompany
 
 | Resource | Kind | Context |
 | --- | --- | --- |
+| [Liquidsoap video documentation](https://www.liquidsoap.info/doc-dev/video.html) | Current documentation | Use with the article's Anonymizer example; the original 2.0.6 tutorial URL is no longer available |
 | [Liquidsoap - Anonymizer](https://www.youtube.com/watch?v=E7Fb0wV3h5Q) | Demonstration | A video anonymizer built with Liquidsoap and frei0r |
 | [Liquidsoap video / OSC integration](https://www.youtube.com/watch?v=EX1PTjiuuXY) | Demonstration | Programmable video controlled over OSC |
 | [Kdenlive 0.9.6 + Frei0r 14 Plugins](https://www.youtube.com/watch?v=xcFFo_bqg_4) | Historical tutorial | An older Kdenlive interface showing a range of effects |
 | [frei0r demo](https://www.youtube.com/watch?v=yYB3rcfWpfw) | Demonstration | A short tour of visual effects |
 | [The Art of the Algorithms](https://www.youtube.com/watch?v=5MexnBunH_g) | Historical context | Documentary on the demoscene culture behind many visual techniques |
+
+Videos are linked rather than embedded so visiting this site does not
+automatically contact YouTube.
 
 For questions about adapting old examples to current software, join
 [the frei0r discussion](https://t.me/frei0r).
