@@ -40,3 +40,7 @@ doc/html
 /.vs/
 CMakeSettings.json
 .vscode
+docs/node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/public/codedoc/
