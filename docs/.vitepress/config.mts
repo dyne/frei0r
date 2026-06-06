@@ -8,6 +8,14 @@ export default defineConfig({
   lang: 'en-US',
   base,
   cleanUrls: true,
+  srcExclude: [
+    'dyne-vitepress/**',
+    'content-sources.md',
+    'software-sources.md',
+    'public-urls.md',
+    'README.md',
+    'DEPLOYMENT.md'
+  ],
   ignoreDeadLinks: [/^\/codedoc\/html\//],
   sitemap: {
     hostname: 'https://frei0r.dyne.org'
