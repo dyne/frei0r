@@ -41,7 +41,7 @@
  * @section sec_changes Changes
  *
  * @subsection sec_changes_1_1_1_2 From frei0r 1.1 to frei0r 1.2
- *   - make <vendor> in plugin path optional
+ *   - make \<vendor\> in plugin path optional
  *   - added section on FREI0R_PATH environment variable
  *   - added requirement to initialize all parameters in f0r_construct()
  *
@@ -83,8 +83,8 @@
  * - /usr/local/lib/frei0r-1/gephex/coma/invert0r.so
  * - /home/martin/.frei0r-1/lib/martin/test.so
  *
- * Like in these examples plugins should be placed in "vendor" subdirs
- * to reduce name clashes. However, <vendor> is optional and may be left blank.
+ * Like in these examples plugins should be placed in \<vendor\> subdirs
+ * to reduce name clashes. However, \<vendor\> is optional and may be left blank.
  *
  * @subsection sec_order Plugin Loading Order
  *
@@ -117,7 +117,7 @@
  * the platform running and adjust the parsed char accordingly, for
  * example:
  *
- * FREI0R_PATH=C:\Program Files\frei0r-1;%%PROGRAMFILES%\frei0r-1
+ * FREI0R_PATH="C:\Program Files\frei0r-1;%%PROGRAMFILES%\frei0r-1"
  *
  */
 
