@@ -7,6 +7,7 @@
     "docs:api": "node scripts/build-api.mjs",
     "build": "npm run docs:api && npm run build:site",
     "build:site": "vitepress build",
+    "check": "node scripts/check-site.mjs",
     "preview": "vitepress preview"
   },
   "devDependencies": {
