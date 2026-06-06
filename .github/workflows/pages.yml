@@ -1,0 +1,58 @@
+name: Website
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/**'
+      - 'include/**'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'docs/**'
+      - 'include/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build website
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends doxygen graphviz
+
+      - name: Install website dependencies
+        working-directory: docs
+        run: npm ci
+
+      - name: Build website and API reference
+        working-directory: docs
+        run: npm run build
+
+      - name: Check website artifact
+        run: |
+          test -f docs/.vitepress/dist/index.html
+          test -f docs/.vitepress/dist/codedoc/html/index.html
