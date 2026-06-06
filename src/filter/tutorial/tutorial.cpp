@@ -32,8 +32,8 @@
 /**
 This is a sample filter for easy copy/pasting.
 
-The CMakeLists.txt needs to be adjusted as well (both in this directory and in the parent directory).
-Also, don't forget src/Makefile.am.
+The CMakeLists.txt needs to be adjusted as well, both in this directory and in
+the parent filter directory.
 */
 
 class Tutorial : public frei0r::filter
