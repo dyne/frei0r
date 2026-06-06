@@ -8,6 +8,7 @@ export default defineConfig({
   lang: 'en-US',
   base,
   cleanUrls: true,
+  ignoreDeadLinks: [/^\/codedoc\/html\//],
   sitemap: {
     hostname: 'https://frei0r.dyne.org'
   },
