@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vitepress dev",
-    "build": "vitepress build",
+    "docs:api": "node scripts/build-api.mjs",
+    "build": "npm run docs:api && npm run build:site",
+    "build:site": "vitepress build",
     "preview": "vitepress preview"
   },
   "devDependencies": {
