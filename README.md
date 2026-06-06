@@ -10,7 +10,7 @@
 
 The frei0r project is a collection of free and open source video effects plugins that can be used with a variety of video editing and processing software.
 
-[For an extensive introduction to frei0r please read this story.](https://jaromil.medium.com/frei0r-the-free-and-open-source-video-effect-preservation-project-604134dde8b3?source=friends_link&sk=c83a054b979d421279f5fc3d2ea1acd8)
+[For an extensive introduction to frei0r, read the project story on Dyne.org.](https://news.dyne.org/frei0r-the-free-and-open-source-video-effect-preservation-project/)
 
 The frei0r project welcomes contributions by people who are passionate about video effects, its collection consists of more than 100 plugins made to work on any target platform (GNU/Linux, Apple/OSX and MS/Win) without the need for special video hardware. These plugins can be used to add a wide range of effects to video, such as color correction, blurring, and distortion.
 
@@ -107,7 +107,7 @@ Official macOS release artifacts are distributed from the releases page.
 # Documentation 
 
 
-If you are new to frei0r (but not to programming) the best thing is probably to have a look at the [frei0r header](/include/frei0r.h), which is quite simple and well documented. The [doxyfied documentation](https://frei0r.dyne.org/codedoc/html) is also available for browsing online.
+If you are new to frei0r, start with the [project documentation](https://frei0r.dyne.org/documentation). The [frei0r header](/include/frei0r.h) is the API specification, and the [generated API reference](https://frei0r.dyne.org/codedoc/html/) is available for browsing online.
 
 
 ## C++ Filter example 
