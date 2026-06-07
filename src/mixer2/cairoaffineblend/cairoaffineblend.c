@@ -134,8 +134,11 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->mix = 1.0;
 
 	const char* blend_val = NORMAL;
-  inst->blend_mode  = (char*) malloc (strlen(blend_val) + 1 );
-	strcpy (inst->blend_mode, blend_val);
+  {
+    size_t blen = strlen(blend_val) + 1;
+    inst->blend_mode = (char*) malloc(blen);
+    memcpy(inst->blend_mode, blend_val, blen);
+  }
 
   return (f0r_instance_t)inst;
 }
@@ -173,8 +176,14 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
       break;
 		case 6:
 			sval = (*(char**)param);
-			inst->blend_mode = (char*)realloc (inst->blend_mode, strlen(sval) + 1);
-			strcpy (inst->blend_mode, sval);
+			{
+				size_t slen = strlen(sval) + 1;
+				char *new_mode = (char*)realloc(inst->blend_mode, slen);
+				if (new_mode) {
+					inst->blend_mode = new_mode;
+					memcpy(inst->blend_mode, sval, slen);
+				}
+			}
       break;
 		case 7:
 			inst->anchor_x = *((double*)param);
