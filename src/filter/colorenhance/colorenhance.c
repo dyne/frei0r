@@ -157,7 +157,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
     }
 }
 
-void f0r_update(f0r_instance_t instance, double, const uint32_t* inframe, uint32_t* outframe) 
+void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
     colorenhance_t* inst = (colorenhance_t*)instance;
     const uint8_t* input = (const uint8_t*)inframe;
