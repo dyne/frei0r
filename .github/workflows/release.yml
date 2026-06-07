@@ -102,7 +102,7 @@ jobs:
       - name: Build using nmake
         run: |
           mkdir build && cd build
-          cmake -G "NMake Makefiles" -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 -D FREI0R_VERSION=${{ needs.release-plan.outputs.version }} ../
+          cmake -G "NMake Makefiles" -D BUILD_TESTING=OFF -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1 -D FREI0R_VERSION=${{ needs.release-plan.outputs.version }} ../
           nmake
       - name: Upload win64 filter
         uses: actions/upload-artifact@v6

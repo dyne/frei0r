@@ -60,7 +60,9 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLU
 # add_subdirectory (doc)
 
 add_subdirectory (src)
-add_subdirectory (test)
+if (BUILD_TESTING)
+  add_subdirectory (test)
+endif ()
 
 # Generate frei0r.pc and install it.
 set (prefix "${CMAKE_INSTALL_PREFIX}")
