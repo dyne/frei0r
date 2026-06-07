@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitepress'
 
-const base = process.env.BASE_PATH ?? '/'
+const base = process.env.BASE_PATH ?? '/frei0r/'
 
 export default defineConfig({
   title: 'frei0r',
@@ -18,17 +18,17 @@ export default defineConfig({
   ],
   ignoreDeadLinks: [/^\/codedoc\/html\//],
   sitemap: {
-    hostname: 'https://frei0r.dyne.org'
+    hostname: 'https://dyne.org'
   },
   head: [
     ['link', { rel: 'icon', href: `${base}favicon.png` }],
-    ['link', { rel: 'canonical', href: 'https://frei0r.dyne.org/' }],
+    ['link', { rel: 'canonical', href: 'https://dyne.org/frei0r/' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'frei0r' }],
     ['meta', { property: 'og:title', content: 'frei0r - free video effects' }],
     ['meta', { property: 'og:description', content: 'A minimalistic API and portable collection of free and open source video effects.' }],
-    ['meta', { property: 'og:url', content: 'https://frei0r.dyne.org/' }],
-    ['meta', { property: 'og:image', content: 'https://frei0r.dyne.org/pics/frei0r.png' }],
+    ['meta', { property: 'og:url', content: 'https://dyne.org/frei0r/' }],
+    ['meta', { property: 'og:image', content: 'https://dyne.org/frei0r/pics/frei0r.png' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
   ],
   appearance: true,

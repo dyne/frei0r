@@ -56,8 +56,8 @@ To test operation below a path prefix:
 BASE_PATH=/frei0r/ npm run build:site
 ```
 
-Production uses `/` because the custom domain is
-`https://frei0r.dyne.org`.
+Production currently uses `/frei0r/` because the site is published below
+`https://dyne.org/`.
 
 ## Content policy
 

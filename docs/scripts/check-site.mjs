@@ -4,6 +4,10 @@ import { fileURLToPath } from 'node:url'
 
 const docsDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputDirectory = join(docsDirectory, '.vitepress', 'dist')
+const basePath = process.env.BASE_PATH ?? '/frei0r/'
+const normalizedBasePath = basePath === '/'
+  ? ''
+  : `/${basePath.replace(/^\/+|\/+$/g, '')}`
 
 if (!existsSync(join(outputDirectory, 'index.html'))) {
   throw new Error('Build the website before running the checker.')
@@ -31,10 +35,16 @@ function localCandidates(sourceFile, value) {
     return []
   }
 
+  const withoutBase = normalizedBasePath && withoutFragment.startsWith(`${normalizedBasePath}/`)
+    ? `/${withoutFragment.slice(normalizedBasePath.length + 1)}`
+    : withoutFragment === normalizedBasePath
+      ? '/'
+      : withoutFragment
+
   const base = withoutFragment.startsWith('/')
     ? outputDirectory
     : dirname(sourceFile)
-  const target = resolve(base, withoutFragment.replace(/^\/+/, ''))
+  const target = resolve(base, withoutBase.replace(/^\/+/, ''))
 
   return [target, `${target}.html`, join(target, 'index.html')]
 }
