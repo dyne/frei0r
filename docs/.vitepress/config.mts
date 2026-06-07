@@ -9,7 +9,6 @@ export default defineConfig({
   base,
   cleanUrls: true,
   srcExclude: [
-    'dyne-vitepress/**',
     'content-sources.md',
     'software-sources.md',
     'public-urls.md',

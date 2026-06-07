@@ -1,7 +1,7 @@
 # frei0r website maintenance
 
-The website uses the Dyne-styled VitePress scaffold in `dyne-vitepress/` and
-publishes generated Doxygen documentation in the same artifact.
+The website uses the Dyne-styled VitePress files in this directory and publishes
+generated Doxygen documentation in the same artifact.
 
 ## Requirements
 
@@ -83,6 +83,6 @@ verification.
 
 ## Template
 
-`dyne-vitepress/template/` is the source scaffold. The website adapts its
-`.vitepress` theme and public Dyne assets. Do not edit the template when a
-change belongs only to frei0r.
+The reusable Dyne theme and public assets live directly under `docs/.vitepress/`
+and `docs/public/`. Do not reintroduce a nested scaffold copy unless the parent
+site generator requires it again.
