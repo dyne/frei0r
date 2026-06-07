@@ -1,7 +1,7 @@
 # Public URL compatibility
 
-The canonical website origin is <https://frei0r.dyne.org>. The production
-VitePress base is `/`; preview builds may set `BASE_PATH`.
+The canonical public path is <https://dyne.org/frei0r/>. The production
+VitePress base is `/frei0r/`; preview builds may set `BASE_PATH`.
 
 Last reviewed against `origin/gh_pages`: 2026-06-06.
 
@@ -9,14 +9,15 @@ Last reviewed against `origin/gh_pages`: 2026-06-06.
 
 | URL | Source in the new site | Reason |
 | --- | --- | --- |
-| `/` | `docs/index.md` | Canonical project landing page |
-| `/codedoc/html/` | Generated from `docs/Doxyfile` | Existing public API reference |
-| `/pics/fla_name_lb.webp` | `docs/public/pics/fla_name_lb.webp` | Existing frei0r wordmark URL |
-| `/pics/frei0r.png` | `docs/public/pics/frei0r.png` | Existing social preview URL |
-| `/frei0r-all.webm` | `docs/public/frei0r-all.webm` | Existing plugin demonstration |
+| `/frei0r/` | `docs/index.md` | Canonical project landing page |
+| `/frei0r/codedoc/html/` | Generated from `docs/Doxyfile` | Existing public API reference |
+| `/frei0r/pics/fla_name_lb.webp` | `docs/public/pics/fla_name_lb.webp` | Existing frei0r wordmark URL |
+| `/frei0r/pics/frei0r.png` | `docs/public/pics/frei0r.png` | Existing social preview URL |
+| `/frei0r/frei0r-all.webm` | `docs/public/frei0r-all.webm` | Existing plugin demonstration |
 
 The Doxygen build should preserve commonly linked generated files such as
-`/codedoc/html/frei0r_8h.html` and `/codedoc/html/frei0r_8h_source.html`.
+`/frei0r/codedoc/html/frei0r_8h.html` and
+`/frei0r/codedoc/html/frei0r_8h_source.html`.
 Generated filenames are not manually maintained; `include/frei0r.h` and the
 Doxygen version determine them.
 
@@ -35,10 +36,10 @@ build from the current API header.
 
 - Public Markdown links should be base-aware. Use relative links for VitePress
   pages and `withBase()` when custom components need a public asset URL.
-- Canonical and social metadata use `https://frei0r.dyne.org`.
+- Canonical and social metadata use `https://dyne.org/frei0r/`.
 - Repository source links use `https://github.com/dyne/frei0r`.
 - Do not link the old `gh_pages` branch as the current site.
-- Keep `/codedoc/html/` available even though `/api` provides the reader-facing
+- Keep `/frei0r/codedoc/html/` available even though `/api` provides the reader-facing
   introduction.
 
 ## Cutover checks
@@ -49,4 +50,4 @@ After deployment, request every retained URL over HTTPS and verify:
 2. Assets have the expected media type.
 3. VitePress page links stay on the configured base.
 4. The Doxygen index and header pages load their own CSS, JavaScript, and images.
-5. `frei0r.dyne.org` remains the canonical host.
+5. `dyne.org/frei0r/` remains the canonical public path.
