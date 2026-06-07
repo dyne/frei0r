@@ -17,12 +17,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
 #endif
+#include <math.h>
 
 extern "C" {
     #include <frei0r.h>
