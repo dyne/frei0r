@@ -30,6 +30,17 @@ jobs:
   #     - uses: actions/checkout@v6
   #     - uses: fsfe/reuse-action@v1
 
+  windows-build:
+    name: 🪟 win64 build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build using nmake
+        run: |
+          cmake -S . -B build -G "NMake Makefiles" -D BUILD_TESTING=OFF -D WITHOUT_OPENCV=1 -D WITHOUT_CAIRO=1 -D WITHOUT_GAVL=1
+          cmake --build build
+
   c-lint:
     name: 🚨 C lint
     runs-on: ubuntu-latest
