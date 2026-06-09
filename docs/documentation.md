@@ -17,7 +17,7 @@ Choose the path that matches what you want to do.
   is the C++ convenience wrapper.
 - [`src/filter/tutorial`](https://github.com/dyne/frei0r/tree/master/src/filter/tutorial)
   is the in-tree example.
-- [Generated API documentation](/codedoc/html/) provides a browsable rendering.
+- [Generated API reference](/codedoc/html/) provides a browsable rendering.
 
 ## Tutorials and demonstrations
 
