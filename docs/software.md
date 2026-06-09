@@ -55,5 +55,5 @@ header. A host discovers shared libraries, reads plugin metadata, constructs an
 instance and calls the update function appropriate to the plugin type.
 
 - [Read the API overview](/api)
-- [Browse generated API documentation](/codedoc/html/)
+- [Browse generated API documentation](https://dyne.org/frei0r/codedoc/html/)
 - [Discuss integrations](https://t.me/frei0r)
