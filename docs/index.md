@@ -95,5 +95,6 @@ The following rapid demonstration contains flashing and high-contrast imagery.
 - [Use frei0r from an application or FFmpeg](/using-frei0r)
 - [Develop and contribute a plugin](/develop-plugin)
 - [Browse the API documentation](/api)
+- [Browse the generated API reference](/codedoc/html/)
 - [Discuss the project on Telegram](https://t.me/frei0r)
 - [Report issues and send patches on GitHub](https://github.com/dyne/frei0r)
