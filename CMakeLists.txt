@@ -27,7 +27,7 @@ if (NOT WITHOUT_OPENCV)
   find_package (OpenCV REQUIRED)
 endif ()
 
-option (WITHOUT_CAIRO "Disable plugins dependent upon gavl" OFF)
+option (WITHOUT_CAIRO "Disable plugins dependent upon Cairo" OFF)
 if (NOT WITHOUT_CAIRO)
   find_package (Cairo REQUIRED)
 endif ()
