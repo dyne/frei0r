@@ -186,7 +186,8 @@ static void tint_sse41(const uint32_t* inframe, uint32_t* outframe, size_t len,
   tmp0 = _mm_mul_ps(cdelta, sse_amount),
   tmp1 = _mm_mul_ps(_mm_mul_ps(sse_amount, _mm_set1_ps(255.0)), cmin);
 
-  __m128 p, p0, p1, p2, p3, luma;
+  __m128i p;
+  __m128 p0, p1, p2, p3, luma;
 
   // Process pixels in groups of 4
   for (size_t i = 0; i < len; i++)
@@ -203,14 +204,20 @@ static void tint_sse41(const uint32_t* inframe, uint32_t* outframe, size_t len,
     #define tint(v) \
       luma = _mm_dp_ps((v), weights, 0x7F); \
       v = _mm_add_ps(_mm_mul_ps(comp_amount, (v)), \
-                     _mm_add_ps(_mm_mul_ps(luma, tmp0), tmp1)); \
-      v = _mm_cvtps_epi32(v)
+                     _mm_add_ps(_mm_mul_ps(luma, tmp0), tmp1));
 
     tint(p0); tint(p1); tint(p2); tint(p3);
 
+    /* Convert from float to int */
+    __m128i pi0, pi1, pi2, pi3;
+    pi0 = _mm_cvtps_epi32(p0);
+    pi1 = _mm_cvtps_epi32(p1);
+    pi2 = _mm_cvtps_epi32(p2);
+    pi3 = _mm_cvtps_epi32(p3);
+
     /* Gather the processed pixels */
-    p = _mm_packus_epi16(_mm_packus_epi32(p0, p1),
-                         _mm_packus_epi32(p2, p3));
+    p = _mm_packus_epi16(_mm_packus_epi32(pi0, pi1),
+                         _mm_packus_epi32(pi2, pi3));
 
     _mm_storeu_si128((__m128i*)(outframe + i * 4), p);
   }
