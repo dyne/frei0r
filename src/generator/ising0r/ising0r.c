@@ -249,7 +249,7 @@ static void do_step(struct IsingField* f, uint32_t bf[3])
   int ysize = f->ysize;
 
   // start on second pixel of the second line (f->s[1][1]):
-  char* current = f->s + xsize + 1;
+  int8_t* current = f->s + xsize + 1;
 
   for (y = ysize-2; y > 0; --y)
     {
