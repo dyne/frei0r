@@ -59,17 +59,23 @@ extern "C" {
 #endif
 
 /* NOTE: this library does not use the alpha channel at all */
-#define CRT_PIX_FORMAT_RGB  0  /* 3 bytes per pixel [R,G,B,R,G,B,R,G,B...] */
-#define CRT_PIX_FORMAT_BGR  1  /* 3 bytes per pixel [B,G,R,B,G,R,B,G,R...] */
-#define CRT_PIX_FORMAT_ARGB 2  /* 4 bytes per pixel [A,R,G,B,A,R,G,B...]   */
-#define CRT_PIX_FORMAT_RGBA 3  /* 4 bytes per pixel [R,G,B,A,R,G,B,A...]   */
-#define CRT_PIX_FORMAT_ABGR 4  /* 4 bytes per pixel [A,B,G,R,A,B,G,R...]   */
-#define CRT_PIX_FORMAT_BGRA 5  /* 4 bytes per pixel [B,G,R,A,B,G,R,A...]   */
+#define CRT_BPP 4          /* 4 bytes per pixel [R,G,B,A,R,G,B,A...]   */
 
 /* do bloom emulation (side effect: makes screen have black borders) */
 #define CRT_DO_BLOOM    0  /* does not work for NES */
 #define CRT_DO_VSYNC    1  /* look for VSYNC */
 #define CRT_DO_HSYNC    1  /* look for HSYNC */
+
+/* common monitor settings */
+#define CRT_HUE         0     
+#define CRT_BRIGHTNESS  10
+#define CRT_CONTRAST    180
+#define CRT_SATURATION  10
+#define CRT_BLACK_PT    0
+#define CRT_WHITE_PT    100
+
+#define CRT_BLEND       0   /* blend new field onto previous image */
+#define CRT_V_FAC       0   /* factor to stretch img vertically onto the output img */
 
 struct CRT {
     signed char analog[CRT_INPUT_SIZE];
@@ -79,12 +85,8 @@ struct CRT {
     int out_format; /* output pixel format (one of the CRT_PIX_FORMATs) */
     unsigned char *out; /* output image */
 
-    int hue, brightness, contrast, saturation; /* common monitor settings */
-    int black_point, white_point; /* user-adjustable */
     int scanlines; /* leave gaps between lines if necessary */
-    int blend; /* blend new field onto previous image */
     int progressive; /* render both fields, interlaced, onto single image (requires calling crt_demodulate twice per frame)*/
-    unsigned v_fac; /* factor to stretch img vertically onto the output img */
 
     /* internal data */
     int ccf[CRT_CC_VPER][CRT_CC_SAMPLES]; /* faster color carrier convergence */
@@ -98,15 +100,14 @@ struct CRT {
  *   f   - format of the output image
  *   out - pointer to output image data
  */
-extern void crt_init(struct CRT *v, int w, int h, int f, unsigned char *out);
+extern void crt_init(struct CRT *v, int w, int h, unsigned char *out);
 
 /* Updates the output image parameters
  *   w   - width of the output image
  *   h   - height of the output image
- *   f   - format of the output image
  *   out - pointer to output image data
  */
-extern void crt_resize(struct CRT *v, int w, int h, int f, unsigned char *out);
+extern void crt_resize(struct CRT *v, int w, int h, unsigned char *out);
 
 /* Resets the CRT settings back to their defaults */
 extern void crt_reset(struct CRT *v);

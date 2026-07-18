@@ -60,22 +60,6 @@ crt_sincos14(int *s, int *c, int n)
     }
 }
 
-extern int
-crt_bpp4fmt(int format)
-{
-    switch (format) {
-        case CRT_PIX_FORMAT_RGB:
-        case CRT_PIX_FORMAT_BGR:
-            return 3;
-        case CRT_PIX_FORMAT_ARGB:
-        case CRT_PIX_FORMAT_RGBA:
-        case CRT_PIX_FORMAT_ABGR:
-        case CRT_PIX_FORMAT_BGRA:
-            return 4;
-        default:
-            return 0;
-    }
-}
 
 /*****************************************************************************/
 /********************************* FILTERS ***********************************/
@@ -239,32 +223,25 @@ eqf(struct EQF *f, int s)
 /*****************************************************************************/
 
 extern void
-crt_resize(struct CRT *v, int w, int h, int f, unsigned char *out)
+crt_resize(struct CRT *v, int w, int h, unsigned char *out)
 {
     v->outw = w;
     v->outh = h;
-    v->out_format = f;
     v->out = out;
 }
 
 extern void
 crt_reset(struct CRT *v)
 {
-    v->hue = 0;
-    v->saturation = 10;
-    v->brightness = 0;
-    v->contrast = 180;
-    v->black_point = 0;
-    v->white_point = 100;
     v->hsync = 0;
     v->vsync = 0;
 }
 
 extern void
-crt_init(struct CRT *v, int w, int h, int f, unsigned char *out)
+crt_init(struct CRT *v, int w, int h, unsigned char *out)
 {
     memset(v, 0, sizeof(struct CRT));
-    crt_resize(v, w, h, f, out);
+    crt_resize(v, w, h, out);
     crt_reset(v);
     v->rn = 194;
 
@@ -302,20 +279,14 @@ crt_demodulate(struct CRT *v, int noise)
     int *ccr; /* color carrier signal */
     int huesn, huecs;
     int xnudge = -3, ynudge = 3;
-    int bright = v->brightness - (BLACK_LEVEL + v->black_point);
-    int bpp, pitch;
+    int bright = CRT_BRIGHTNESS - (BLACK_LEVEL + CRT_BLACK_PT);
+    int pitch = v->outw * CRT_BPP;
 #if CRT_DO_BLOOM
     int prev_e; /* filtered beam energy per scan line */
     int max_e; /* approx maximum energy in a scan line */
 #endif
 
-    bpp = crt_bpp4fmt(v->out_format);
-    if (bpp == 0) {
-        return;
-    }
-    pitch = v->outw * bpp;
-
-    crt_sincos14(&huesn, &huecs, ((v->hue % 360) + 33) * 8192 / 180);
+    crt_sincos14(&huesn, &huecs, ((CRT_HUE % 360) + 33) * 8192 / 180);
     huesn >>= 11; /* make 4-bit */
     huecs >>= 11;
 
@@ -426,8 +397,8 @@ vsync_found:
         int line_w;
 #endif
 
-        beg = (line - CRT_TOP + 0) * (v->outh + v->v_fac) / CRT_LINES + field;
-        end = (line - CRT_TOP + 1) * (v->outh + v->v_fac) / CRT_LINES + field;
+        beg = (line - CRT_TOP + 0) * (v->outh + CRT_V_FAC) / CRT_LINES + field;
+        end = (line - CRT_TOP + 1) * (v->outh + CRT_V_FAC) / CRT_LINES + field;
 
         if (beg >= v->outh) { continue; }
         if (end > v->outh) { end = v->outh; }
@@ -474,15 +445,15 @@ vsync_found:
         dci = ccr[(phasealign + 1) & 3] - ccr[(phasealign + 3) & 3];
         dcq = ccr[(phasealign + 2) & 3] - ccr[(phasealign + 0) & 3];
 
-        wave[0] = ((dci * huecs - dcq * huesn) >> 4) * v->saturation;
-        wave[1] = ((dcq * huecs + dci * huesn) >> 4) * v->saturation;
+        wave[0] = ((dci * huecs - dcq * huesn) >> 4) * CRT_SATURATION;
+        wave[1] = ((dcq * huecs + dci * huesn) >> 4) * CRT_SATURATION;
         wave[2] = -wave[0];
         wave[3] = -wave[1];
 #elif (CRT_CC_SAMPLES == 5)
         {
             int dciA, dciB;
             int dcqA, dcqB;
-            int ang = (v->hue % 360);
+            int ang = (CRT_HUE % 360);
             int off180 = CRT_CC_SAMPLES / 2;
             int off90 = CRT_CC_SAMPLES / 4;
             int peakA = phasealign + off90;
@@ -501,10 +472,10 @@ vsync_found:
             for (i = 0; i < CRT_CC_SAMPLES; i++) {
                 int sn, cs;
                 crt_sincos14(&sn, &cs, ang * 8192 / 180);
-                waveI[i] = ((dci * cs + dcq * sn) >> 15) * v->saturation;
+                waveI[i] = ((dci * cs + dcq * sn) >> 15) * CRT_SATURATION;
                 /* Q is offset by 90 */
                 crt_sincos14(&sn, &cs, (ang + 90) * 8192 / 180);
-                waveQ[i] = ((dci * cs + dcq * sn) >> 15) * v->saturation;
+                waveQ[i] = ((dci * cs + dcq * sn) >> 15) * CRT_SATURATION;
                 ang += (360 / CRT_CC_SAMPLES);
             }
         }
@@ -571,9 +542,9 @@ vsync_found:
             q = ((yiqA->q * L) >> 14) + ((yiqB->q * R) >> 14);
 
             /* YIQ to RGB */
-            r = (((y + 3879 * i + 2556 * q) >> 12) * v->contrast) >> 8;
-            g = (((y - 1126 * i - 2605 * q) >> 12) * v->contrast) >> 8;
-            b = (((y - 4530 * i + 7021 * q) >> 12) * v->contrast) >> 8;
+            r = (((y + 3879 * i + 2556 * q) >> 12) * CRT_CONTRAST) >> 8;
+            g = (((y - 1126 * i - 2605 * q) >> 12) * CRT_CONTRAST) >> 8;
+            b = (((y - 4530 * i + 7021 * q) >> 12) * CRT_CONTRAST) >> 8;
 
             if (r < 0) r = 0;
             if (g < 0) g = 0;
@@ -582,81 +553,22 @@ vsync_found:
             if (g > 255) g = 255;
             if (b > 255) b = 255;
 
-            if (v->blend) {
+#if CRT_BLEND
                 aa = (r << 16 | g << 8 | b);
-
-                switch (v->out_format) {
-                    case CRT_PIX_FORMAT_RGB:
-                    case CRT_PIX_FORMAT_RGBA:
-                        bb = cL[0] << 16 | cL[1] << 8 | cL[2];
-                        break;
-                    case CRT_PIX_FORMAT_BGR:
-                    case CRT_PIX_FORMAT_BGRA:
-                        bb = cL[2] << 16 | cL[1] << 8 | cL[0];
-                        break;
-                    case CRT_PIX_FORMAT_ARGB:
-                        bb = cL[1] << 16 | cL[2] << 8 | cL[3];
-                        break;
-                    case CRT_PIX_FORMAT_ABGR:
-                        bb = cL[3] << 16 | cL[2] << 8 | cL[1];
-                        break;
-                    default:
-                        bb = 0;
-                        break;
-                }
-
+                bb = cL[0] << 16 | cL[1] << 8 | cL[2];
+                        
                 /* blend with previous color there */
                 bb = (((aa & 0xfefeff) >> 1) + ((bb & 0xfefeff) >> 1));
-            } else {
+#else
                 bb = (r << 16 | g << 8 | b);
-            }
+#endif
 
-            switch (v->out_format) {
-                case CRT_PIX_FORMAT_RGB:
-                    cL[0] = bb >> 16 & 0xff;
-                    cL[1] = bb >>  8 & 0xff;
-                    cL[2] = bb >>  0 & 0xff;
-                    break;
+            cL[0] = bb >> 16 & 0xff;
+            cL[1] = bb >>  8 & 0xff;
+            cL[2] = bb >>  0 & 0xff;
+            cL[3] = 0xff;
 
-                case CRT_PIX_FORMAT_RGBA:
-                    cL[0] = bb >> 16 & 0xff;
-                    cL[1] = bb >>  8 & 0xff;
-                    cL[2] = bb >>  0 & 0xff;
-                    cL[3] = 0xff;
-                    break;
-
-                case CRT_PIX_FORMAT_BGR:
-                    cL[0] = bb >>  0 & 0xff;
-                    cL[1] = bb >>  8 & 0xff;
-                    cL[2] = bb >> 16 & 0xff;
-                    break;
-
-                case CRT_PIX_FORMAT_BGRA:
-                    cL[0] = bb >>  0 & 0xff;
-                    cL[1] = bb >>  8 & 0xff;
-                    cL[2] = bb >> 16 & 0xff;
-                    cL[3] = 0xff;
-                    break;
-
-                case CRT_PIX_FORMAT_ARGB:
-                    cL[0] = 0xff;
-                    cL[1] = bb >> 16 & 0xff;
-                    cL[2] = bb >>  8 & 0xff;
-                    cL[3] = bb >>  0 & 0xff;
-                    break;
-
-                case CRT_PIX_FORMAT_ABGR:
-                    cL[0] = 0xff;
-                    cL[1] = bb >>  0 & 0xff;
-                    cL[2] = bb >>  8 & 0xff;
-                    cL[3] = bb >> 16 & 0xff;
-                    break;
-
-                default:
-                    break;
-            }
-
-            cL += bpp;
+            cL += CRT_BPP;
         }
 
         /* duplicate extra lines */

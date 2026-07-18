@@ -80,25 +80,19 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->width = width;
     inst->height = height;
 
-    inst->ntsc.format = CRT_PIX_FORMAT_RGBA;    
     inst->ntsc.w = width;
     inst->ntsc.h = height;
-    inst->ntsc.raw = 0;
     inst->ntsc.field = 0;
     inst->ntsc.frame = 0;
-    inst->ntsc.as_color = 1;
-    inst->ntsc.hue = 0;
-    inst->ntsc.xoffset = 0;
-    inst->ntsc.yoffset = 0;
     inst->ntsc.iirs_initialized = 0;
     
     inst->noise = 0;
     inst->field = 0;
 
-    crt_init(&(inst->crt), width, height, CRT_PIX_FORMAT_RGBA, NULL);
-    inst->crt.blend = 0;
+    crt_init(&(inst->crt), width, height, NULL);
     inst->crt.scanlines = 0;
     inst->crt.progressive = 0;
+    
 
     
     return (f0r_instance_t)inst;
@@ -144,7 +138,6 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         break;
     }
 }
-
 
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {    
