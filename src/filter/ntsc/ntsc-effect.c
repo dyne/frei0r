@@ -21,7 +21,6 @@ typedef struct ntsc_instance
 
     int noise;
     int field;
-    int progressive;
 
 } ntsc_instance_t;
 
@@ -94,13 +93,12 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->ntsc.iirs_initialized = 0;
     
     inst->noise = 0;
-    inst->progressive = 0;
     inst->field = 0;
 
     crt_init(&(inst->crt), width, height, CRT_PIX_FORMAT_RGBA, NULL);
     inst->crt.blend = 0;
     inst->crt.scanlines = 0;
-    
+    inst->crt.progressive = 0;
 
     
     return (f0r_instance_t)inst;
@@ -122,7 +120,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         inst->noise = *((double*)param) * 200;
         break;
     case 1:
-        inst->progressive = (*((double*)param) >= 0.5);
+        inst->crt.progressive = (*((double*)param) >= 0.5);
         break;
     case 2:
         inst->crt.scanlines = (*((double*)param) >= 0.5);
@@ -139,7 +137,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
         *((double*)param) = (inst->noise / 200);
         break;
     case 1:
-        *((double*)param) = (inst->progressive ? 1.0 : 0.0);
+        *((double*)param) = (inst->crt.progressive ? 1.0 : 0.0);
         break;
     case 2:
         *((double*)param) = (inst->crt.scanlines ? 1.0 : 0.0);
@@ -154,12 +152,11 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
     
     // clear the output frame
     memset(outframe, 0, inst->width * inst->height * sizeof(uint32_t));
-    inst->crt.blend = 0;
     
     // set everything up for the simulation
     inst->crt.out = (char*)outframe;
     inst->ntsc.data = (const char*)inframe;
-
+    
 _render_field:
     inst->ntsc.field = inst->field & 1;
 
@@ -175,13 +172,7 @@ _render_field:
     inst->field ^= 1;
     // if we are in progressive mode, we render both fields onto the frame.
     // in interlaced mode, we will hit the opposite field on the next frame.
-    if(inst->field && inst->progressive)
-    {
-        // if we are not leaving scanlines blank, we will want to blend the frames in progressive mode
-        if(!inst->crt.scanlines)
-        {
-            inst->crt.blend = 1;
-        }
+    if (inst->field && inst->crt.progressive) {
         goto _render_field;
     }
 }
