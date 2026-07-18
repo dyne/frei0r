@@ -82,7 +82,6 @@ struct CRT {
     signed char inp[CRT_INPUT_SIZE]; /* CRT input, can be noisy */
 
     int outw, outh; /* output width/height */
-    int out_format; /* output pixel format (one of the CRT_PIX_FORMATs) */
     unsigned char *out; /* output image */
 
     int scanlines; /* leave gaps between lines if necessary */
