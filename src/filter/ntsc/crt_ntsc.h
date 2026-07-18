@@ -108,17 +108,17 @@ extern "C" {
 #define BLANK_LEVEL      0
 #define SYNC_LEVEL      -40
 
+#define NTSC_RAW         0   /* 0 = scale image to fit monitor, 1 = don't scale */
+#define NTSC_AS_COLOR    1   /* 0 = monochrome, 1 = full color */
+#define NTSC_HUE         0   /* 0-359 */
+#define NTSC_X_OFFSET    0   /* x offset in sample space. 0 is minimum value */
+#define NTSC_Y_OFFSET    0   /* y offset in # of lines. 0 is minimum value */
+
 struct NTSC_SETTINGS {
     const unsigned char *data; /* image data */
-    int format;     /* pix format (one of the CRT_PIX_FORMATs in crt_core.h) */
     int w, h;       /* width and height of image */
-    int raw;        /* 0 = scale image to fit monitor, 1 = don't scale */
-    int as_color;   /* 0 = monochrome, 1 = full color */
     int field;      /* 0 = even, 1 = odd */
     int frame;      /* 0 = even, 1 = odd */
-    int hue;        /* 0-359 */
-    int xoffset;    /* x offset in sample space. 0 is minimum value */
-    int yoffset;    /* y offset in # of lines. 0 is minimum value */
     /* make sure your NTSC_SETTINGS struct is zeroed out before you do anything */
     int iirs_initialized; /* internal state */
 };

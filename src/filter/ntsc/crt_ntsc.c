@@ -137,7 +137,6 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
     int ccburst[CRT_CC_SAMPLES]; /* color phase for burst */
     int sn, cs, n, ph;
     int inv_phase = 0;
-    int bpp;
 
     if (!s->iirs_initialized) {
         init_iir(&iirY, L_FREQ, Y_FREQ);
@@ -146,7 +145,7 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
         s->iirs_initialized = 1;
     }
 #if CRT_DO_BLOOM
-    if (s->raw) {
+#if NTSC_RAW
         destw = s->w;
         desth = s->h;
         if (destw > ((AV_LEN * 55500) >> 16)) {
@@ -155,12 +154,12 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
         if (desth > ((CRT_LINES * 63500) >> 16)) {
             desth = ((CRT_LINES * 63500) >> 16);
         }
-    } else {
+#else
         destw = (AV_LEN * 55500) >> 16;
         desth = (CRT_LINES * 63500) >> 16;
-    }
+#endif
 #else
-    if (s->raw) {
+#if NTSC_RAW
         destw = s->w;
         desth = s->h;
         if (destw > AV_LEN) {
@@ -169,11 +168,11 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
         if (desth > ((CRT_LINES * 64500) >> 16)) {
             desth = ((CRT_LINES * 64500) >> 16);
         }
-    }
 #endif
-    if (s->as_color) {
+#endif
+#if NTSC_AS_COLOR
         for (x = 0; x < CRT_CC_SAMPLES; x++) {
-            n = s->hue + x * (360 / CRT_CC_SAMPLES);
+            n = NTSC_HUE + x * (360 / CRT_CC_SAMPLES);
             crt_sincos14(&sn, &cs, (n + 33) * 8192 / 180);
             ccburst[x] = sn >> 10;
             crt_sincos14(&sn, &cs, n * 8192 / 180);
@@ -181,18 +180,14 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
             crt_sincos14(&sn, &cs, (n - 90) * 8192 / 180);
             ccmodQ[x] = sn >> 10;
         }
-    } else {
+#else
         memset(ccburst, 0, sizeof(ccburst));
         memset(ccmodI, 0, sizeof(ccmodI));
         memset(ccmodQ, 0, sizeof(ccmodQ));
-    }
+#endif
     
-    bpp = crt_bpp4fmt(s->format);
-    if (bpp == 0) {
-        return; /* just to be safe */
-    }
-    xo = AV_BEG  + s->xoffset + (AV_LEN    - destw) / 2;
-    yo = CRT_TOP + s->yoffset + (CRT_LINES - desth) / 2;
+    xo = AV_BEG  + NTSC_X_OFFSET + (AV_LEN    - destw) / 2;
+    yo = CRT_TOP + NTSC_Y_OFFSET + (CRT_LINES - desth) / 2;
     
     s->field &= 1;
     s->frame &= 1;
@@ -275,47 +270,24 @@ crt_modulate(struct CRT *v, struct NTSC_SETTINGS *s)
             int ire; /* composite signal */
             int xoff;
             
-            pix = s->data + ((((x * s->w) / destw) + sy) * bpp);
-            switch (s->format) {
-                case CRT_PIX_FORMAT_RGB:
-                case CRT_PIX_FORMAT_RGBA:
-                    rA = pix[0];
-                    gA = pix[1];
-                    bA = pix[2];
-                    break;
-                case CRT_PIX_FORMAT_BGR: 
-                case CRT_PIX_FORMAT_BGRA:
-                    rA = pix[2];
-                    gA = pix[1];
-                    bA = pix[0];
-                    break;
-                case CRT_PIX_FORMAT_ARGB:
-                    rA = pix[1];
-                    gA = pix[2];
-                    bA = pix[3];
-                    break;
-                case CRT_PIX_FORMAT_ABGR:
-                    rA = pix[3];
-                    gA = pix[2];
-                    bA = pix[1];
-                    break;
-                default:
-                    rA = gA = bA = 0;
-                    break;
-            }
+            pix = s->data + ((((x * s->w) / destw) + sy) * CRT_BPP);
+            
+            rA = pix[0];
+            gA = pix[1];
+            bA = pix[2];
 
             /* RGB to YIQ */
             fy = (19595 * rA + 38470 * gA +  7471 * bA) >> 14;
             fi = (39059 * rA - 18022 * gA - 21103 * bA) >> 14;
             fq = (13894 * rA - 34275 * gA + 20382 * bA) >> 14;
-            ire = BLACK_LEVEL + v->black_point;
+            ire = BLACK_LEVEL + CRT_BLACK_PT;
             
             xoff = (x + xo) % CRT_CC_SAMPLES;
             /* bandlimit Y,I,Q */
             fy = iirf(&iirY, fy);
             fi = iirf(&iirI, fi) * ph * ccmodI[xoff] >> 4;
             fq = iirf(&iirQ, fq) * ph * ccmodQ[xoff] >> 4;
-            ire += (fy + fi + fq) * (WHITE_LEVEL * v->white_point / 100) >> 10;
+            ire += (fy + fi + fq) * (WHITE_LEVEL * CRT_WHITE_PT / 100) >> 10;
             if (ire < 0)   ire = 0;
             if (ire > 110) ire = 110;
 
