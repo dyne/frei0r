@@ -83,6 +83,7 @@ struct CRT {
     int black_point, white_point; /* user-adjustable */
     int scanlines; /* leave gaps between lines if necessary */
     int blend; /* blend new field onto previous image */
+    int progressive; /* render both fields, interlaced, onto single image (requires calling crt_demodulate twice per frame)*/
     unsigned v_fac; /* factor to stretch img vertically onto the output img */
 
     /* internal data */
