@@ -407,6 +407,7 @@ vsync_found:
     field = (field * (ratio / 2));
 
     for (line = CRT_TOP; line < CRT_BOT; line++) {
+        int field_gap;
         unsigned pos, ln, scanR;
         int scanL, dx;
         int L, R;
@@ -659,7 +660,12 @@ vsync_found:
         }
 
         /* duplicate extra lines */
-        for (s = beg + 1; s < (end - v->scanlines); s++) {
+        if (v->progressive) {
+            field_gap = field + v->scanlines;
+        } else {
+            field_gap = v->scanlines;
+        }
+        for (s = beg + 1; s < (end - field_gap); s++) {
             memcpy(v->out + s * pitch, v->out + (s - 1) * pitch, pitch);
         }
     }
