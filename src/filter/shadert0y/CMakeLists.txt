@@ -1,10 +1,12 @@
 find_package(OpenGL REQUIRED)
-find_package(EGL REQUIRED)
+
+include(FindPkgConfig)
+pkg_check_modules(EGL REQUIRED egl)
 
 set (SOURCES shadert0y.cpp)
 set (TARGET shadert0y)
 
-include_directories(${OPENGL_INCLUDE_DIR} ${EGL_INCLUDE_DIR})
+include_directories(${OPENGL_INCLUDE_DIR} ${EGL_INCLUDE_DIRS})
 
 add_library (${TARGET} MODULE ${SOURCES})
 
