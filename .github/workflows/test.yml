@@ -90,10 +90,13 @@ jobs:
         with:
           fetch-depth: 0
       - uses: hendrikmuhs/ccache-action@v1.2
-      - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: "${{ matrix.compiler }} cmake ninja-build libfreetype-dev libopencv-dev libcairo2-dev libgavl-dev"
+      - name: Install APT packages
+        run: |
+          sudo apt-get update -qy
+          sudo apt-get install --no-install-recommends -y \
+          "${{ matrix.compiler }}" \
+          cmake ninja-build libfreetype-dev libopencv-dev \
+          libcairo2-dev libgavl-dev
       - name: Detect new plugins
         id: detect
         if: github.event_name == 'pull_request'
