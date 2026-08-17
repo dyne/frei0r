@@ -48,6 +48,8 @@ foreach(tdir ${TDIRS})
   foreach(dir ${DIRS})
     get_directory_property(targets DIRECTORY "${dir}" BUILDSYSTEM_TARGETS)
     foreach(target ${targets})
+      # Targeted plugin builds must also produce the runner used to inspect them.
+      add_dependencies(${target} frei0r-run)
       add_test(
         NAME "${target}"
         COMMAND "${CMAKE_BINARY_DIR}/test/frei0r-run" ${TESTFLAGS} -p "$<TARGET_FILE:${target}>"
