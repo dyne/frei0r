@@ -82,7 +82,9 @@ jobs:
     if: "!contains(github.event.pull_request.labels.*.name, 'skip-test')"
     strategy:
       matrix:
-        compiler: [clang-14]
+        include:
+          - compiler: clang-14
+            cxx_compiler: clang++-14
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -111,7 +113,12 @@ jobs:
       - name: ${{ matrix.compiler }} initialize cmake build
         run: |
           mkdir -p build && cd build
-          cmake -G "Ninja" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
+          cmake -G "Ninja" \
+            -DCMAKE_C_COMPILER="${{ matrix.compiler }}" \
+            -DCMAKE_CXX_COMPILER="${{ matrix.cxx_compiler }}" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            ..
       - name: ${{ matrix.compiler }} run ninja build
         if: github.event_name != 'pull_request' || steps.detect.outputs.mode != 'targeted'
         run: |
