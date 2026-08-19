@@ -1,0 +1,6 @@
+Shadert0y
+
+A filter plugin that runs Shadertoy GLSL shaders inside Kdenlive, or other MLT-based hosts.
+The shader is rendered offscreen using EGL + OpenGL 3.3 core, then written back to the host video frame.
+
+Written by YousufPro67 (aka HyperDev), aug 2026, and released under GNU GPL v2
