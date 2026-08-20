@@ -20,7 +20,7 @@
 #include "frei0r.hpp"
 #include <cairo.h>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 class Shake0scillate : public frei0r::filter {
 
