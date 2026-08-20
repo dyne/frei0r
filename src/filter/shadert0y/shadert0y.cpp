@@ -384,7 +384,7 @@ struct ShaderInstance {
     double speed = 1.0;
     bool flipVideoY = false;
 
-    unsigned long frameCounter = 0;
+    uint64_t frameCounter = 0;
     double lastTimelineTime = 0.0;
 
     double mouseX = 0.5;
