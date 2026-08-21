@@ -77,7 +77,7 @@ jobs:
             "
 
   test-suite:
-    name: 🔬 test
+    name: 🔬 test (${{ matrix.compiler }})
     needs: [c-lint]
     if: "!contains(github.event.pull_request.labels.*.name, 'skip-test')"
     strategy:
