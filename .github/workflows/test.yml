@@ -98,7 +98,7 @@ jobs:
           sudo apt-get install --no-install-recommends -y \
           "${{ matrix.compiler }}" \
           cmake ninja-build libfreetype-dev libopencv-dev \
-          libcairo2-dev libgavl-dev
+          libcairo2-dev libgavl-dev libgl-dev libegl-dev
       - name: Detect new plugins
         id: detect
         if: github.event_name == 'pull_request'
@@ -131,7 +131,7 @@ jobs:
       - name: ${{ matrix.compiler }} analyze plugins
         if: github.event_name != 'pull_request' || steps.detect.outputs.mode != 'targeted'
         run: |
-          make test
+          ctest --test-dir build --output-on-failure --parallel 4
       - name: ${{ matrix.compiler }} analyze new plugins
         if: github.event_name == 'pull_request' && steps.detect.outputs.mode == 'targeted'
         run: |
