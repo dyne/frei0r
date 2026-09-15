@@ -17,6 +17,7 @@ if (${Cairo_FOUND})
 endif (${Cairo_FOUND})
 
 add_subdirectory (3dflippo)
+add_subdirectory (3dperspective)
 add_subdirectory (aech0r)
 add_subdirectory (alpha0ps)
 add_subdirectory (autothresh0ld)
