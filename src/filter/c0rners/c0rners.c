@@ -824,43 +824,67 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 	{
 	case 0:		//X coordinate of corner 1
 		tmpf=*(double*)parm;
-		if (tmpf!=p->x1) chg=1;
-		p->x1=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->x1) chg=1;
+			p->x1=new_value;
+		}
 		break;
 	case 1:		//Y coordinate of corner 1
 		tmpf=*(double*)parm;
-		if (tmpf!=p->y1) chg=1;
-		p->y1=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->y1) chg=1;
+			p->y1=new_value;
+		}
 		break;
 	case 2:		//X coordinate of corner 2
 		tmpf=*(double*)parm;
-		if (tmpf!=p->x2) chg=1;
-		p->x2=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->x2) chg=1;
+			p->x2=new_value;
+		}
 		break;
 	case 3:		//Y coordinate of corner 2
 		tmpf=*(double*)parm;
-		if (tmpf!=p->y2) chg=1;
-		p->y2=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->y2) chg=1;
+			p->y2=new_value;
+		}
 		break;
 	case 4:		//X coordinate of corner 3
 		tmpf=*(double*)parm;
-		if (tmpf!=p->x3) chg=1;
-		p->x3=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->x3) chg=1;
+			p->x3=new_value;
+		}
 		break;
 	case 5:		//Y coordinate of corner 3
 		tmpf=*(double*)parm;
-		if (tmpf!=p->y3) chg=1;
-		p->y3=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->y3) chg=1;
+			p->y3=new_value;
+		}
 		break;
 	case 6:		//X coordinate of corner 4
 		tmpf=*(double*)parm;
-		if (tmpf!=p->x4) chg=1;
-		p->x4=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->x4) chg=1;
+			p->x4=new_value;
+		}
 		break;
 	case 7:		//Y coordinate of corner 4
 		tmpf=*(double*)parm;
-		if (tmpf!=p->y4) chg=1;
-		p->y4=tmpf;
+		{
+			float new_value = (float)tmpf;
+			if (new_value != p->y4) chg=1;
+			p->y4=new_value;
+		}
 		break;
 	case 8:		//Enable stretching
 		tmpf=map_value_forward(*((double*)parm), 0.0, 1.0);//BOOL!!
@@ -879,8 +903,14 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		break;
 	case 11:		//Interpolation
 		tmpf=map_value_forward(*((double*)parm), 0.0, 6.999);
-		if (p->intp != tmpf) chg=1;
-		p->intp=tmpf;
+		{
+			int new_intp = (int)tmpf;
+			if (p->intp != new_intp)
+			{
+				p->intp = new_intp;
+				p->interp = set_intp(*p);
+			}
+		}
 		break;
 	case 12:		//Transparent Background
 		tmpf=map_value_forward(*((double*)parm), 0.0, 1.0);//BOOL!!
