@@ -760,8 +760,17 @@ int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, unsigned cha
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
 int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, unsigned char *v)
 {
-	int i,j,m,b,n;
-	float pp,p[16],wx[16],wy[16],xx,xxx,x1;
+	/* c0rners Lanczos RGBA combined optimization
+	 *
+	 * Same 16x16 Lanczos kernel, same weight calculation, same tap count.
+	 * The only structural change is that RGBA channels are accumulated
+	 * together so we traverse each source neighbourhood once instead of
+	 * four separate times.
+	 */
+	int i,j,m,n;
+	float p0[16],p1[16],p2[16],p3[16];
+	float wx[16],wy[16],xx,xxx,x1;
+	float pp0,pp1,pp2,pp3;
 	float PI=3.141592654;
 
 #ifdef TEST_XY_LIMITS
@@ -771,7 +780,7 @@ int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, unsigned c
 	m=(int)ceilf(x)-8; if (m<0) m=0; if ((m+17)>w) m=w-16;
 	n=(int)ceilf(y)-8; if (n<0) n=0; if ((n+17)>h) n=h-16;
 
-	//najprej po y
+	/* Same Y weights as original. */
 	xx=y-n;
 	for (i=7;i>=0;i--)
 	{
@@ -782,7 +791,8 @@ int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, unsigned c
 		wy[8+i]=(x1!=0)?(sin(x1)/(x1))*(sin(x1*0.125)/(x1*0.125)):1.0;
 		xx=xx-1.0;
 	}
-	//se po x
+
+	/* Same X weights as original. */
 	xx=x-m;
 	for (i=7;i>=0;i--)
 	{
@@ -794,26 +804,68 @@ int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, unsigned c
 		xx=xx-1.0;
 	}
 
-	for (b=0;b<4;b++)
+	/*
+	 * Original code performed this complete 16x16 traversal once for
+	 * each channel. Traverse it once and accumulate all four channels.
+	 *
+	 * For each individual channel, j is still accumulated in exactly
+	 * the same order as before.
+	 */
+	for (i=0;i<16;i++)
 	{
-		for (i=0;i<16;i++)
+		p0[i]=0.0;
+		p1[i]=0.0;
+		p2[i]=0.0;
+		p3[i]=0.0;
+
+		for (j=0;j<16;j++)
 		{
-			p[i]=0.0;
-			for (j=0;j<16;j++)
-			{
-				p[i]=p[i]+wy[j]*sl[4*((j+n)*w+i+m)+b];
-			}
+			const unsigned char *src =
+				&sl[4*((j+n)*w+i+m)];
+			float wyj=wy[j];
+
+			p0[i]=p0[i]+wyj*src[0];
+			p1[i]=p1[i]+wyj*src[1];
+			p2[i]=p2[i]+wyj*src[2];
+			p3[i]=p3[i]+wyj*src[3];
 		}
-
-		pp=0.0;
-		for (i=0;i<16;i++)
-			pp=pp+wx[i]*p[i];
-
-		if (pp<0.0) pp=0.0;
-		if (pp>256.0) pp=255.0;
-
-		v[b]=pp;
 	}
+
+	pp0=0.0;
+	pp1=0.0;
+	pp2=0.0;
+	pp3=0.0;
+
+	/*
+	 * Same horizontal accumulation order as the original implementation,
+	 * but all four channels are done together.
+	 */
+	for (i=0;i<16;i++)
+	{
+		float wxi=wx[i];
+
+		pp0=pp0+wxi*p0[i];
+		pp1=pp1+wxi*p1[i];
+		pp2=pp2+wxi*p2[i];
+		pp3=pp3+wxi*p3[i];
+	}
+
+	if (pp0<0.0) pp0=0.0;
+	if (pp0>256.0) pp0=255.0;
+
+	if (pp1<0.0) pp1=0.0;
+	if (pp1>256.0) pp1=255.0;
+
+	if (pp2<0.0) pp2=0.0;
+	if (pp2>256.0) pp2=255.0;
+
+	if (pp3<0.0) pp3=0.0;
+	if (pp3>256.0) pp3=255.0;
+
+	v[0]=pp0;
+	v[1]=pp1;
+	v[2]=pp2;
+	v[3]=pp3;
 
 	return 0;
 }
