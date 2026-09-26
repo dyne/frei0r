@@ -1,48 +1,80 @@
 name: 📢 Release
 
 on:
-  workflow_run:
-    workflows:
-      - 🧪 Test
-    types: [completed]
-    branches:
-      - master
-      - release/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release-plan:
     name: 🤖 Plan release
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
     outputs:
       release: ${{ steps.plan_release.outputs.release }}
       version: ${{ steps.plan_release.outputs.version }}
       tag: ${{ steps.plan_release.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: latest
       - name: Install semantic-release
         run: |
-          npm i semantic-release/changelog
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/changelog \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator
       - name: Plan release
         id: plan_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NO_COLOR: 1
         run: |
-          npx semantic-release --dry-run | tee semantic-release.log
+          set -Eeuo pipefail
+
+          previous_tag=$(git describe --tags --abbrev=0 \
+            --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
+
+          npx semantic-release --dry-run 2>&1 | tee semantic-release.log
           version=$(awk '/The next release version is/ { print $NF }' semantic-release.log | tail -n1)
+
           if [[ -z "$version" ]]; then
             echo "release=False" >> "$GITHUB_OUTPUT"
+            {
+              echo "### No release planned"
+              echo
+              echo "No release-producing Conventional Commits were found since \`${previous_tag:-the beginning of history}\`."
+            } >> "$GITHUB_STEP_SUMMARY"
           else
+            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid semantic-release version: $version" >&2
+              exit 1
+            fi
+
+            if [[ -n "$previous_tag" ]]; then
+              commit_count=$(git rev-list --count "${previous_tag}..HEAD")
+            else
+              commit_count=$(git rev-list --count HEAD)
+            fi
+
             echo "release=True" >> "$GITHUB_OUTPUT"
             printf 'version=%s\ntag=v%s\n' "$version" "$version" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Release plan"
+              echo
+              echo "- Previous release: \`${previous_tag:-none}\`"
+              echo "- Conventional Commits analyzed: \`$commit_count\`"
+              echo "- Next release: \`v$version\`"
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   linux-build:
@@ -61,6 +93,8 @@ jobs:
           mkdir build && cd build
           cmake -G "Ninja" -D FREI0R_VERSION=${{ needs.release-plan.outputs.version }} ../
           ninja
+      - name: Test release build
+        run: ctest --test-dir build --output-on-failure
       - name: Upload linux filter
         uses: actions/upload-artifact@v6
         with:
@@ -185,22 +219,40 @@ jobs:
       tag: ${{ steps.publish_release.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: latest
       - name: Install semantic-release
         run: |
-          npm i semantic-release/changelog
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/changelog \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator
       - name: Publish release
         id: publish_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.release-plan.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.release-plan.outputs.version }}
         run: |
+          set -Eeuo pipefail
+
           npx semantic-release
+
+          tag_commit=$(git rev-parse "${RELEASE_TAG}^{commit}")
+          head_commit=$(git rev-parse HEAD)
+          if [[ "$tag_commit" != "$head_commit" ]]; then
+            echo "$RELEASE_TAG does not point to the release commit" >&2
+            exit 1
+          fi
+
           printf 'version=%s\ntag=%s\n' \
-            "${{ needs.release-plan.outputs.version }}" \
-            "${{ needs.release-plan.outputs.tag }}" >> "$GITHUB_OUTPUT"
+            "$RELEASE_VERSION" \
+            "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
   publish-binary-release:
     name: 📦 Pack release

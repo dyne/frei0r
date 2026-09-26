@@ -47,7 +47,8 @@ Some applications using frei0r, sorted in order of most recent activity
 
 # Downloads
 
-Stable frei0r releases are built automatically and made available on
+Stable frei0r releases are built by the manually triggered release workflow
+and made available on
 
 ## https://github.com/dyne/frei0r/releases
 
