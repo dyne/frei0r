@@ -599,13 +599,13 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 		*((double*)param)=map_value_backward(p->din, 0.0, 1.0);//BOOL!!
 		break;
 	case 2:
-		*((double*)param)=map_value_backward(p->op, 0.0, 6.9999);
+		*((double*)param)=map_value_backward(p->op, 0.0, 7.9999);
 		break;
 	case 3:
 		*((double*)param)=p->thr;
 		break;
 	case 4:
-		*((double*)param)=map_value_backward(p->sga, 0.0, 2.9999);
+		*((double*)param)=map_value_backward(p->sga, 0.0, 4.9999);
 		break;
 	case 5:
 		*((double*)param)=map_value_backward(p->inv, 0.0, 1.0);//BOOL!!

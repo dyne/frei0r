@@ -337,7 +337,8 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
     {
     case 0:
         //		*((double*)param)=map_value_backward(p->am, 0.5, 100.0);
-        *((double*)param)=map_value_backward_log(p->am, 0.5, 100.0);
+        *((double*)param)=p->am == 0.0f ? 0.0 :
+                          map_value_backward_log(p->am, 0.5, 100.0);
         break;
     case 1:
         *((double*)param)=map_value_backward(p->ty, 0.0, 2.9999);

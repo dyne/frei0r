@@ -83,7 +83,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* nois0rInfo)
   nois0rInfo->name           = "Ising0r";
   nois0rInfo->author         = "Gephex crew";
   nois0rInfo->plugin_type    = F0R_PLUGIN_TYPE_SOURCE;
-  nois0rInfo->color_model    = F0R_COLOR_MODEL_PACKED32;
+  nois0rInfo->color_model    = F0R_COLOR_MODEL_RGBA8888;
   nois0rInfo->frei0r_version = FREI0R_MAJOR_VERSION;
   nois0rInfo->major_version  = 0;
   nois0rInfo->minor_version  = 9;
@@ -277,13 +277,16 @@ static void copy_field(const struct IsingField* f, uint32_t* framebuffer)
 {
   int i;
   char* s = f->s;
-  uint32_t* fr = framebuffer;
+  unsigned char* fr = (unsigned char*)framebuffer;
 
   for (i = (f->xsize)*(f->ysize)-1; i >= 0; --i)
     {
-      *(fr++) = *(s++);	  
+      unsigned char value = *(s++) > 0 ? 255 : 0;
+      *(fr++) = value;
+      *(fr++) = value;
+      *(fr++) = value;
+      *(fr++) = 255;
     }
 }
 
 //-------------------------------------------------------------------------
-

@@ -681,7 +681,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
       *p = map_value_backward(inst->thav, 0.0, 1.0);
       break;
     case 3:	//fullscreen (BOOL)
-      *p = map_value_backward_log(inst->fs, 0.0, 1.0);
+      *p = map_value_backward(inst->fs, 0.0, 1.0);
       break;
     }
 }

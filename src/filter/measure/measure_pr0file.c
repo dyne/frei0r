@@ -971,10 +971,10 @@ switch(param_index)
 		*((double*)param)=map_value_backward(p->chn, 0.0, 7.9999);
 		break;
 	case 5:
-		*((double*)param)=map_value_backward(p->m1, 0.0, p->p->n);
+		*((double*)param)=map_value_backward(p->m1, -1.0, p->p->n);
 		break;
 	case 6:
-		*((double*)param)=map_value_backward(p->m2, 0.0, p->p->n);
+		*((double*)param)=map_value_backward(p->m2, -1.0, p->p->n);
 		break;
 	case 7:
                 *((double*)param)=map_value_backward(p->rt, 0.0, 1.0);//BOOL!!

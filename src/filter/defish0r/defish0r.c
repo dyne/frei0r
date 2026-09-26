@@ -749,7 +749,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		*((double*)parm)=map_value_backward((float)p->lbox, 0.0f, 1.0f); //BOOL!!
 		break;
 	case 9:	//stretch/upscale fix
-		*((double*)parm)=map_value_backward_log(p->stretch, -0.2f, 0.2f);
+		*((double*)parm)=map_value_backward(p->stretch, -0.2f, 0.2f);
 		break;
 	case 10:	//Y scale
 		*((double*)parm)=map_value_backward(p->yScale, 1.5f, 0.5f);

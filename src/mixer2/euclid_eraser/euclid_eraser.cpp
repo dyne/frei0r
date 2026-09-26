@@ -34,6 +34,7 @@
 
 #define NBYTES 4 
 #define CHANNELS 3 // Actually 4; 0-3
+#define MAX_RGB_DISTANCE 441.6729559300637
 
 double euclidDistance(uint8_t x_r, uint8_t x_g, uint8_t x_b,
 		      uint8_t y_r, uint8_t y_g, uint8_t y_b)
@@ -59,7 +60,7 @@ class euclid_eraser : public frei0r::mixer2
 public:
   euclid_eraser(unsigned int width, unsigned int height)
   {
-    threshold = 5.6;      // Default distance threshold value
+    threshold = 5.6 / MAX_RGB_DISTANCE;
     register_param(threshold, "threshold", "Matching Threshold");
   }
   
@@ -91,7 +92,7 @@ public:
 	e_dist=euclidDistance(src1[0],src1[1],src1[2],
 			      src2[0],src2[1],src2[2]);
 	
-	if (e_dist <=  euclid_eraser::threshold) {
+    if (e_dist <= euclid_eraser::threshold * MAX_RGB_DISTANCE) {
 	    // Make alpha channel for pixel fully transparent
 	    dst[3]=0;
 	  }
@@ -116,4 +117,3 @@ frei0r::construct<euclid_eraser> plugin("euclid_eraser",
         "Erik H. Beck",
         0,1,
         F0R_COLOR_MODEL_RGBA8888);
-

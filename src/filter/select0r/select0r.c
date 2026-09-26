@@ -904,7 +904,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 		*((double*)param)=map_value_backward(p->sshape, 0.0, 2.9999);
 		break;
 	case 8:
-		*((double*)param)=map_value_backward(p->soft, 0.0, 3.9999);
+		*((double*)param)=map_value_backward(p->soft, 0.0, 4.9999);
 		break;
 	case 9:
 		*((double*)param)=map_value_backward(p->op, 0.0, 4.9999);
