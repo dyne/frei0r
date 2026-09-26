@@ -637,7 +637,11 @@ void f0r_set_param_value(f0r_instance_t instance,
 				double sR  = inst->color.r /t;
 				double sG  = inst->color.g /t;
 				double sB  = inst->color.b /t;
-				double mRB = sR/sB;
+				double mRB;
+
+				if (sR <= 0.0 || sG <= 0.0 || sB <= 0.0)
+					break;
+				mRB = sR/sB;
 				
 				for (;r - l > 1 ; m = (l + r)/2) {
 					if (bbWB[m][0] / bbWB[m][2] > mRB)
@@ -657,7 +661,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 			double g = *((double*)param);
 			// convert frei0r range to natural range [1.0, 2.5]
 			g = 1.0 + (2.5 - 1.0) * g;
-			if (g != 1.2) {
+			if (g != inst->green) {
 				inst->green = g;
 				setRGBmult(inst);
 			}
@@ -700,4 +704,3 @@ void f0r_update(f0r_instance_t instance, double time,
 		*dst++ = *src++;  // copy alpha
 	}
 }
-

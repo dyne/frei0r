@@ -28,8 +28,8 @@ typedef struct rgbsplit0r_instance
 {
     unsigned int width;
     unsigned int height;
-    unsigned int shiftX;
-    unsigned int shiftY;
+    int shiftX;
+    int shiftY;
 
 } rgbsplit0r_instance_t;
 
@@ -139,7 +139,7 @@ void f0r_set_param_value(f0r_instance_t instance,
             else
                 shiftY = 0;
 
-            inst->shiftY = (unsigned int)shiftY;
+            inst->shiftY = (int)shiftY;
             break;
         }
 
@@ -154,7 +154,7 @@ void f0r_set_param_value(f0r_instance_t instance,
             else
                 shiftX = 0;
 
-            inst->shiftX = (unsigned int)shiftX;
+            inst->shiftX = (int)shiftX;
             break;
         }
     }
@@ -173,7 +173,8 @@ void f0r_get_param_value(f0r_instance_t instance,
         {
             // convert plugin's param to frei0r range
             if (inst->height > 0)
-                *((double*)param) = (inst->shiftY) / (inst->height / 8) + 0.5;
+                *((double*)param) = (double)inst->shiftY /
+                                   ((double)inst->height / 8.0) + 0.5;
             else
                 *((double*)param) = 0.5;
             break;
@@ -183,7 +184,8 @@ void f0r_get_param_value(f0r_instance_t instance,
         {
             // convert plugin's param to frei0r range
             if (inst->width > 0)
-                *((double*)param) = (inst->shiftX) / (inst->width / 8) + 0.5;
+                *((double*)param) = (double)inst->shiftX /
+                                   ((double)inst->width / 8.0) + 0.5;
             else
                 *((double*)param) = 0.5;
             break;
@@ -198,32 +200,33 @@ void f0r_update(f0r_instance_t instance, double time,
 {
     assert(instance);
     rgbsplit0r_instance_t* inst = (rgbsplit0r_instance_t*)instance;
-    unsigned int x, y;
+    int x, y;
 
-    for (y = 0; y < inst->height; y++)
-        for (x = 0; x < inst->width; x++)
+    for (y = 0; y < (int)inst->height; y++)
+        for (x = 0; x < (int)inst->width; x++)
         {
             uint32_t pxR = 0, pxG = 0, pxB = 0;
 
+            int blue_x = x - inst->shiftX;
+            int blue_y = y - inst->shiftY;
+            int red_x = x + inst->shiftX;
+            int red_y = y + inst->shiftY;
+
             // First make a blue layer shifted back
-            if (((int)x >= (int)inst->shiftX) &&
-                ((int)y >= (int)inst->shiftY) &&
-                ((x - inst->shiftX) < inst->width) &&
-                ((y - inst->shiftY) < inst->height))
+            if (blue_x >= 0 && blue_y >= 0 &&
+                blue_x < (int)inst->width && blue_y < (int)inst->height)
             {
                 rgbsplit0r_extract_color((uint32_t *)(src +
-                    (x - inst->shiftX) +
-                    (y - inst->shiftY)*inst->width),
+                    blue_x + blue_y * inst->width),
                     &pxB, 2);
             }
 
             // The red layer is shifted forward
-            if ((x + inst->shiftX < inst->width) &&
-                (y + inst->shiftY < inst->height))
+            if (red_x >= 0 && red_y >= 0 &&
+                red_x < (int)inst->width && red_y < (int)inst->height)
             {
                 rgbsplit0r_extract_color((uint32_t *)(src +
-                    (x + inst->shiftX) +
-                    (y + inst->shiftY)*inst->width),
+                    red_x + red_y * inst->width),
                     &pxR, 0);
             }
 
