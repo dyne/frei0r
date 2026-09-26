@@ -40,10 +40,28 @@ cmake -S . -B build -G 'Ninja'
 cmake -S . -B build -G 'NMake Makefiles'
 ```
 
-Top-level shorthand targets are available through `GNUmakefile`:
+With CMake 3.20 or newer, the build variants can also be selected through
+presets. Each preset uses a separate directory under `build/`, so switching
+compilers or generators does not reuse an incompatible CMake cache.
+
+List the available presets:
 ```
-make release-gcc-ninja
-make debug-gcc
+cmake --list-presets
+```
+
+Configure and build a preset:
+```
+cmake --preset release-gcc-ninja
+cmake --build --preset release-gcc-ninja
+```
+
+The available variants are `release-gcc`, `release-gcc-ninja`,
+`release-clang`, `release-clang-ninja`, `debug-gcc`, and
+`debug-clang-ninja`. The debug presets enable AddressSanitizer.
+
+Install a configured preset build with CMake's standard install command:
+```
+cmake --install build/release-gcc-ninja
 ```
 
 Runtime test utilities:
