@@ -22,6 +22,8 @@
 #include <libgen.h>
 #include <dlfcn.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -49,6 +51,280 @@ typedef void (*f0r_update2_f)(f0r_instance_t instance, double time,
 typedef void (*f0r_destruct_f)(f0r_instance_t instance);
 typedef void (*f0r_set_param_value_f)(f0r_instance_t instance, f0r_param_t param, int param_index);
 typedef void (*f0r_get_param_value_f)(f0r_instance_t instance, f0r_param_t param, int param_index);
+
+#define FRAME_ALIGNMENT 16
+#define FRAME_GUARD_SIZE 64
+#define FRAME_GUARD_VALUE 0xa5
+
+typedef struct guarded_frame {
+    unsigned char *storage;
+    uint32_t *pixels;
+    size_t bytes;
+} guarded_frame_t;
+
+static int allocate_frame(guarded_frame_t *frame, size_t bytes)
+{
+    uintptr_t aligned;
+    size_t allocation_size = bytes + 2 * FRAME_GUARD_SIZE + FRAME_ALIGNMENT - 1;
+
+    frame->storage = (unsigned char *)malloc(allocation_size);
+    if (!frame->storage) return 0;
+    aligned = ((uintptr_t)frame->storage + FRAME_GUARD_SIZE +
+               FRAME_ALIGNMENT - 1) & ~(uintptr_t)(FRAME_ALIGNMENT - 1);
+    frame->pixels = (uint32_t *)aligned;
+    frame->bytes = bytes;
+    memset((unsigned char *)frame->pixels - FRAME_GUARD_SIZE,
+           FRAME_GUARD_VALUE, FRAME_GUARD_SIZE);
+    memset(frame->pixels, 0, bytes);
+    memset((unsigned char *)frame->pixels + bytes,
+           FRAME_GUARD_VALUE, FRAME_GUARD_SIZE);
+    return 1;
+}
+
+static void free_frame(guarded_frame_t *frame)
+{
+    free(frame->storage);
+    memset(frame, 0, sizeof(*frame));
+}
+
+static int frame_guards_valid(const guarded_frame_t *frame)
+{
+    const unsigned char *before;
+    const unsigned char *after;
+
+    if (!frame->pixels) return 1;
+    before = (const unsigned char *)frame->pixels - FRAME_GUARD_SIZE;
+    after = (const unsigned char *)frame->pixels + frame->bytes;
+    for (size_t i = 0; i < FRAME_GUARD_SIZE; i++) {
+        if (before[i] != FRAME_GUARD_VALUE || after[i] != FRAME_GUARD_VALUE)
+            return 0;
+    }
+    return 1;
+}
+
+static uint64_t frame_checksum(const uint32_t *pixels, size_t bytes)
+{
+    const unsigned char *data = (const unsigned char *)pixels;
+    uint64_t hash = UINT64_C(1469598103934665603);
+
+    for (size_t i = 0; i < bytes; i++) {
+        hash ^= data[i];
+        hash *= UINT64_C(1099511628211);
+    }
+    return hash;
+}
+
+static int contract_error(const char *plugin, int param_index, const char *format, ...)
+{
+    va_list args;
+
+    if (param_index >= 0) {
+        fprintf(stderr, "API contract violation in %s parameter %d: ",
+                plugin ? plugin : "<unknown>", param_index);
+    } else {
+        fprintf(stderr, "API contract violation in %s: ",
+                plugin ? plugin : "<unknown>");
+    }
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fputc('\n', stderr);
+    return 1;
+}
+
+static int valid_utf8(const char *string)
+{
+    const unsigned char *s = (const unsigned char *)string;
+
+    if (!s) return 0;
+    while (*s) {
+        if (*s <= 0x7f) {
+            s++;
+        } else if (*s >= 0xc2 && *s <= 0xdf &&
+                   s[1] >= 0x80 && s[1] <= 0xbf) {
+            s += 2;
+        } else if (*s == 0xe0 &&
+                   s[1] >= 0xa0 && s[1] <= 0xbf &&
+                   s[2] >= 0x80 && s[2] <= 0xbf) {
+            s += 3;
+        } else if (((*s >= 0xe1 && *s <= 0xec) ||
+                    (*s >= 0xee && *s <= 0xef)) &&
+                   s[1] >= 0x80 && s[1] <= 0xbf &&
+                   s[2] >= 0x80 && s[2] <= 0xbf) {
+            s += 3;
+        } else if (*s == 0xed &&
+                   s[1] >= 0x80 && s[1] <= 0x9f &&
+                   s[2] >= 0x80 && s[2] <= 0xbf) {
+            s += 3;
+        } else if (*s == 0xf0 &&
+                   s[1] >= 0x90 && s[1] <= 0xbf &&
+                   s[2] >= 0x80 && s[2] <= 0xbf &&
+                   s[3] >= 0x80 && s[3] <= 0xbf) {
+            s += 4;
+        } else if (*s >= 0xf1 && *s <= 0xf3 &&
+                   s[1] >= 0x80 && s[1] <= 0xbf &&
+                   s[2] >= 0x80 && s[2] <= 0xbf &&
+                   s[3] >= 0x80 && s[3] <= 0xbf) {
+            s += 4;
+        } else if (*s == 0xf4 &&
+                   s[1] >= 0x80 && s[1] <= 0x8f &&
+                   s[2] >= 0x80 && s[2] <= 0xbf &&
+                   s[3] >= 0x80 && s[3] <= 0xbf) {
+            s += 4;
+        } else {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int unit_value(double value)
+{
+    return isfinite(value) && value >= 0.0 && value <= 1.0;
+}
+
+static char *duplicate_string(const char *string)
+{
+    size_t size = strlen(string) + 1;
+    char *copy = (char *)malloc(size);
+
+    if (copy) memcpy(copy, string, size);
+    return copy;
+}
+
+static int validate_plugin_info(const f0r_plugin_info_t *info)
+{
+    int errors = 0;
+    const char *name = info->name ? info->name : "<unknown>";
+
+    if (!valid_utf8(info->name))
+        errors += contract_error(name, -1, "name must be non-null UTF-8");
+    if (!valid_utf8(info->author))
+        errors += contract_error(name, -1, "author must be non-null UTF-8");
+    if (info->explanation && !valid_utf8(info->explanation))
+        errors += contract_error(name, -1, "explanation must be UTF-8 when present");
+    if (info->plugin_type < F0R_PLUGIN_TYPE_FILTER ||
+        info->plugin_type > F0R_PLUGIN_TYPE_MIXER3)
+        errors += contract_error(name, -1, "unknown plugin type");
+    if (info->color_model < F0R_COLOR_MODEL_BGRA8888 ||
+        info->color_model > F0R_COLOR_MODEL_PACKED32)
+        errors += contract_error(name, -1, "unknown color model");
+    if (info->plugin_type == F0R_PLUGIN_TYPE_SOURCE &&
+        info->color_model == F0R_COLOR_MODEL_PACKED32)
+        errors += contract_error(name, -1, "source plugins cannot use PACKED32");
+    if (info->frei0r_version <= 0 || info->frei0r_version > FREI0R_MAJOR_VERSION)
+        errors += contract_error(name, -1, "unsupported frei0r API version");
+    if (info->major_version < 0 || info->minor_version < 0)
+        errors += contract_error(name, -1, "plugin version components cannot be negative");
+    if (info->num_params < 0)
+        errors += contract_error(name, -1, "parameter count cannot be negative");
+    return errors;
+}
+
+static int validate_param_info(const char *plugin, const f0r_param_info_t *info,
+                               int param_index)
+{
+    int errors = 0;
+
+    if (!valid_utf8(info->name))
+        errors += contract_error(plugin, param_index, "name must be non-null UTF-8");
+    if (info->explanation && !valid_utf8(info->explanation))
+        errors += contract_error(plugin, param_index,
+                                 "explanation must be UTF-8 when present");
+    if (info->type < F0R_PARAM_BOOL || info->type > F0R_PARAM_STRING)
+        errors += contract_error(plugin, param_index, "unknown parameter type");
+    return errors;
+}
+
+static int validate_parameter_value(const char *plugin, f0r_instance_t instance,
+                                    f0r_set_param_value_f set_value,
+                                    f0r_get_param_value_f get_value,
+                                    const f0r_param_info_t *info, int param_index,
+                                    int round_trip)
+{
+    int errors = 0;
+
+    switch (info->type) {
+        case F0R_PARAM_BOOL:
+        case F0R_PARAM_DOUBLE: {
+            double first = NAN;
+            double second = NAN;
+            get_value(instance, &first, param_index);
+            if (!unit_value(first))
+                return contract_error(plugin, param_index,
+                                      "value %.17g must be finite and in [0, 1]", first);
+            if (!round_trip) break;
+            set_value(instance, &first, param_index);
+            get_value(instance, &second, param_index);
+            if (!unit_value(second))
+                errors += contract_error(plugin, param_index,
+                                         "round-tripped value %.17g left [0, 1]", second);
+            break;
+        }
+        case F0R_PARAM_COLOR: {
+            f0r_param_color_t first = {NAN, NAN, NAN};
+            f0r_param_color_t second = {NAN, NAN, NAN};
+            get_value(instance, &first, param_index);
+            if (!unit_value(first.r) || !unit_value(first.g) || !unit_value(first.b))
+                return contract_error(plugin, param_index,
+                                      "color components must be finite and in [0, 1]");
+            if (!round_trip) break;
+            set_value(instance, &first, param_index);
+            get_value(instance, &second, param_index);
+            if (!unit_value(second.r) || !unit_value(second.g) || !unit_value(second.b))
+                errors += contract_error(plugin, param_index,
+                                         "round-tripped color left [0, 1]");
+            break;
+        }
+        case F0R_PARAM_POSITION: {
+            f0r_param_position_t first = {NAN, NAN};
+            f0r_param_position_t second = {NAN, NAN};
+            get_value(instance, &first, param_index);
+            if (!unit_value(first.x) || !unit_value(first.y))
+                return contract_error(plugin, param_index,
+                                      "position components must be finite and in [0, 1]");
+            if (!round_trip) break;
+            set_value(instance, &first, param_index);
+            get_value(instance, &second, param_index);
+            if (!unit_value(second.x) || !unit_value(second.y))
+                errors += contract_error(plugin, param_index,
+                                         "round-tripped position left [0, 1]");
+            break;
+        }
+        case F0R_PARAM_STRING: {
+            char *first = NULL;
+            char *second = NULL;
+            char *copy;
+            char *expected;
+            get_value(instance, &first, param_index);
+            if (!valid_utf8(first))
+                return contract_error(plugin, param_index,
+                                      "string value must be non-null UTF-8");
+            if (!round_trip) break;
+            copy = duplicate_string(first);
+            expected = duplicate_string(first);
+            if (!copy || !expected) {
+                free(copy);
+                free(expected);
+                return contract_error(plugin, param_index,
+                                      "could not allocate round-trip string");
+            }
+            set_value(instance, &copy, param_index);
+            if (copy[0]) copy[0] ^= 1;
+            get_value(instance, &second, param_index);
+            if (!valid_utf8(second))
+                errors += contract_error(plugin, param_index,
+                                         "round-tripped string must be non-null UTF-8");
+            else if (strcmp(expected, second) != 0)
+                errors += contract_error(plugin, param_index,
+                                         "setter did not retain an independent string copy");
+            free(copy);
+            free(expected);
+            break;
+        }
+    }
+    return errors;
+}
 
 
 // Generate a simple color bar test pattern
@@ -214,6 +490,7 @@ int main(int argc, char* argv[]) {
   static f0r_destruct_f f0r_destruct;
   static f0r_set_param_value_f f0r_set_param_value;
   static f0r_get_param_value_f f0r_get_param_value;
+  int contract_errors = 0;
 
   const char *usage = "Usage: frei0r-run [-tdg] [-f frames] -p <frei0r_plugin_file>\n"
                       "  -d         debug mode\n"
@@ -280,10 +557,50 @@ int main(int argc, char* argv[]) {
   f0r_set_param_value = (f0r_set_param_value_f) dlsym(dl_handle,"f0r_set_param_value");
   f0r_get_param_value = (f0r_get_param_value_f) dlsym(dl_handle,"f0r_get_param_value");
 
+  int missing_entry_points = 0;
+  if (!f0r_init)
+    missing_entry_points += contract_error(file, -1, "missing f0r_init");
+  if (!f0r_deinit)
+    missing_entry_points += contract_error(file, -1, "missing f0r_deinit");
+  if (!f0r_get_plugin_info)
+    missing_entry_points += contract_error(file, -1, "missing f0r_get_plugin_info");
+  if (!f0r_get_param_info)
+    missing_entry_points += contract_error(file, -1, "missing f0r_get_param_info");
+  if (!f0r_construct)
+    missing_entry_points += contract_error(file, -1, "missing f0r_construct");
+  if (!f0r_destruct)
+    missing_entry_points += contract_error(file, -1, "missing f0r_destruct");
+  if (!f0r_set_param_value)
+    missing_entry_points += contract_error(file, -1, "missing f0r_set_param_value");
+  if (!f0r_get_param_value)
+    missing_entry_points += contract_error(file, -1, "missing f0r_get_param_value");
+  if (missing_entry_points) {
+    dlclose(dl_handle);
+    return 1;
+  }
+
   // always initialize plugin first
   f0r_init();
   // get info about plugin
   f0r_get_plugin_info(&pi);
+  contract_errors += validate_plugin_info(&pi);
+  if (contract_errors) {
+    f0r_deinit();
+    dlclose(dl_handle);
+    return 1;
+  }
+
+  for (int i = 0; i < pi.num_params; i++) {
+    memset(&param, 0, sizeof(param));
+    f0r_get_param_info(&param, i);
+    contract_errors += validate_param_info(pi.name, &param, i);
+  }
+  if (contract_errors) {
+    f0r_deinit();
+    dlclose(dl_handle);
+    return 1;
+  }
+
   const char *frei0r_color_model = (pi.color_model == F0R_COLOR_MODEL_BGRA8888 ? "bgra8888" :
   pi.color_model == F0R_COLOR_MODEL_RGBA8888 ? "rgba8888" :
   pi.color_model == F0R_COLOR_MODEL_PACKED32 ? "packed32" : "unknown");
@@ -309,7 +626,7 @@ int main(int argc, char* argv[]) {
           param.type == F0R_PARAM_POSITION ? "position" :
           param.type == F0R_PARAM_STRING ? "string" : "unknown";
         fprintf(stderr,"  {\"name\":\"%s\",\"type\":\"%s\",\"explanation\":\"%s\"}",
-                param.name, param_type, param.explanation);
+                param.name, param_type, param.explanation ? param.explanation : "");
         if (i < pi.num_params - 1) fprintf(stderr,",\n");
       }
       fprintf(stderr,"\n ]\n");
@@ -318,26 +635,65 @@ int main(int argc, char* argv[]) {
   }
 
   instance = f0r_construct(frame_width, frame_height);
+  if (!instance) {
+    contract_error(pi.name, -1, "construction failed for valid frame dimensions");
+    f0r_deinit();
+    dlclose(dl_handle);
+    return 1;
+  }
 
+  for (int i = 0; i < pi.num_params; i++) {
+    memset(&param, 0, sizeof(param));
+    f0r_get_param_info(&param, i);
+    contract_errors += validate_parameter_value(pi.name, instance,
+                                                f0r_set_param_value,
+                                                f0r_get_param_value,
+                                                &param, i, 1);
+  }
+
+  guarded_frame_t input_frame = {0};
+  guarded_frame_t input_frame2 = {0};
+  guarded_frame_t input_frame3 = {0};
+  guarded_frame_t output_frame = {0};
+  size_t frame_bytes = (size_t)frame_width * frame_height * sizeof(uint32_t);
   uint32_t *input_buffer = NULL;
   uint32_t *input_buffer2 = NULL;
   uint32_t *input_buffer3 = NULL;
-  uint32_t *output_buffer;
+  uint32_t *output_buffer = NULL;
+  int buffers_ok = 1;
 
   // Allocate buffers based on plugin type
   if (pi.plugin_type == F0R_PLUGIN_TYPE_FILTER) {
-      input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+      buffers_ok = allocate_frame(&input_frame, frame_bytes);
+      input_buffer = input_frame.pixels;
   } else if (pi.plugin_type == F0R_PLUGIN_TYPE_MIXER2) {
-      input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
-      input_buffer2 = (uint32_t*)calloc(4, frame_width * frame_height);
+      buffers_ok = allocate_frame(&input_frame, frame_bytes) &&
+                   allocate_frame(&input_frame2, frame_bytes);
+      input_buffer = input_frame.pixels;
+      input_buffer2 = input_frame2.pixels;
   } else if (pi.plugin_type == F0R_PLUGIN_TYPE_MIXER3) {
-      input_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
-      input_buffer2 = (uint32_t*)calloc(4, frame_width * frame_height);
-      input_buffer3 = (uint32_t*)calloc(4, frame_width * frame_height);
+      buffers_ok = allocate_frame(&input_frame, frame_bytes) &&
+                   allocate_frame(&input_frame2, frame_bytes) &&
+                   allocate_frame(&input_frame3, frame_bytes);
+      input_buffer = input_frame.pixels;
+      input_buffer2 = input_frame2.pixels;
+      input_buffer3 = input_frame3.pixels;
   }
   // SOURCE type needs no input buffer
 
-  output_buffer = (uint32_t*)calloc(4, frame_width * frame_height);
+  buffers_ok = buffers_ok && allocate_frame(&output_frame, frame_bytes);
+  output_buffer = output_frame.pixels;
+  if (!buffers_ok) {
+      contract_error(pi.name, -1, "could not allocate aligned frame buffers");
+      free_frame(&input_frame);
+      free_frame(&input_frame2);
+      free_frame(&input_frame3);
+      free_frame(&output_frame);
+      f0r_destruct(instance);
+      f0r_deinit();
+      dlclose(dl_handle);
+      return 1;
+  }
 
 #if defined(GUI)
   // Generate initial test patterns
@@ -394,19 +750,31 @@ int main(int argc, char* argv[]) {
       f0r_update2 = (f0r_update2_f)dlsym(dl_handle, "f0r_update2");
       if (!f0r_update2) {
           fprintf(stderr, "Error: Cannot load f0r_update2 for mixer plugin\n");
-          if (input_buffer) free(input_buffer);
-          if (input_buffer2) free(input_buffer2);
-          if (input_buffer3) free(input_buffer3);
-          free(output_buffer);
+          free_frame(&input_frame);
+          free_frame(&input_frame2);
+          free_frame(&input_frame3);
+          free_frame(&output_frame);
           f0r_destruct(instance);
           f0r_deinit();
           dlclose(dl_handle);
           return 1;
       }
+  } else if (!f0r_update) {
+      fprintf(stderr, "API contract violation in %s: missing f0r_update\n", pi.name);
+      free_frame(&input_frame);
+      free_frame(&output_frame);
+      f0r_destruct(instance);
+      f0r_deinit();
+      dlclose(dl_handle);
+      return 1;
   }
 
   // Test the plugin with different parameter values
   for (int frame = 0; frame < frames; frame++) {
+      int verify_inputs = frame == 0 || frame == frames / 2 || frame == frames - 1;
+      uint64_t input_checksum = 0;
+      uint64_t input_checksum2 = 0;
+      uint64_t input_checksum3 = 0;
 #if defined(GUI)
       // Generate animated test patterns for this frame
       if (input_buffer)
@@ -427,10 +795,24 @@ int main(int argc, char* argv[]) {
       // Update parameters if the plugin has any
       if (pi.num_params > 0 && f0r_set_param_value) {
           test_parameters(instance, f0r_set_param_value, f0r_get_param_info, pi.num_params, frame);
+          for (int i = 0; i < pi.num_params; i++) {
+              memset(&param, 0, sizeof(param));
+              f0r_get_param_info(&param, i);
+              contract_errors += validate_parameter_value(pi.name, instance,
+                                                          f0r_set_param_value,
+                                                          f0r_get_param_value,
+                                                          &param, i, 0);
+          }
       }
 
       // Apply plugin based on type
       double time = (double)frame / (double)fps;
+      if (verify_inputs && input_buffer)
+          input_checksum = frame_checksum(input_buffer, frame_bytes);
+      if (verify_inputs && input_buffer2)
+          input_checksum2 = frame_checksum(input_buffer2, frame_bytes);
+      if (verify_inputs && input_buffer3)
+          input_checksum3 = frame_checksum(input_buffer3, frame_bytes);
 
       switch (pi.plugin_type) {
           case F0R_PLUGIN_TYPE_SOURCE:
@@ -452,6 +834,21 @@ int main(int argc, char* argv[]) {
               fprintf(stderr, "Unknown plugin type: %d\n", pi.plugin_type);
               break;
       }
+
+      if (verify_inputs && input_buffer &&
+          input_checksum != frame_checksum(input_buffer, frame_bytes))
+          contract_errors += contract_error(pi.name, -1, "modified input frame 1");
+      if (verify_inputs && input_buffer2 &&
+          input_checksum2 != frame_checksum(input_buffer2, frame_bytes))
+          contract_errors += contract_error(pi.name, -1, "modified input frame 2");
+      if (verify_inputs && input_buffer3 &&
+          input_checksum3 != frame_checksum(input_buffer3, frame_bytes))
+          contract_errors += contract_error(pi.name, -1, "modified input frame 3");
+      if (!frame_guards_valid(&input_frame) ||
+          !frame_guards_valid(&input_frame2) ||
+          !frame_guards_valid(&input_frame3) ||
+          !frame_guards_valid(&output_frame))
+          contract_errors += contract_error(pi.name, -1, "wrote outside a frame buffer");
 
 #if defined(__unix__) && defined(GUI)
       if (graphical && display) {
@@ -497,7 +894,9 @@ int main(int argc, char* argv[]) {
         case F0R_PLUGIN_TYPE_MIXER2: plugin_type_name = "mixer2"; break;
         case F0R_PLUGIN_TYPE_MIXER3: plugin_type_name = "mixer3"; break;
     }
-    printf("Test completed successfully. Plugin: %s (type: %s)\n", pi.name, plugin_type_name);
+    printf("Test completed %s. Plugin: %s (type: %s)\n",
+           contract_errors ? "with API contract violations" : "successfully",
+           pi.name, plugin_type_name);
     printf("Tested %d frames with %d parameters\n", frames, pi.num_params);
     if (pi.plugin_type != F0R_PLUGIN_TYPE_SOURCE) {
         printf("Input: %dx%d test pattern(s)\n", frame_width, frame_height);
@@ -505,15 +904,15 @@ int main(int argc, char* argv[]) {
     printf("Output: %dx%d processed frames\n", frame_width, frame_height);
   }
 
-  if (input_buffer) free(input_buffer);
-  if (input_buffer2) free(input_buffer2);
-  if (input_buffer3) free(input_buffer3);
-  free(output_buffer);
+  free_frame(&input_frame);
+  free_frame(&input_frame2);
+  free_frame(&input_frame3);
+  free_frame(&output_frame);
 
   f0r_destruct(instance);
   f0r_deinit();
 
   dlclose(dl_handle);
 
-  return 0;
+  return contract_errors ? 1 : 0;
 }
