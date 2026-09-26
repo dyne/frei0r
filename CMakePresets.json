@@ -1,0 +1,113 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "gcc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "clang",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "release",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "debug-asan",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS_DEBUG": "-ggdb -fno-omit-frame-pointer -fsanitize=address",
+        "CMAKE_CXX_FLAGS_DEBUG": "-ggdb -fno-omit-frame-pointer -fsanitize=address"
+      }
+    },
+    {
+      "name": "makefiles",
+      "hidden": true,
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "ninja",
+      "hidden": true,
+      "generator": "Ninja"
+    },
+    {
+      "name": "release-gcc",
+      "displayName": "Release with GCC and Make",
+      "inherits": ["base", "release", "gcc", "makefiles"]
+    },
+    {
+      "name": "release-gcc-ninja",
+      "displayName": "Release with GCC and Ninja",
+      "inherits": ["base", "release", "gcc", "ninja"]
+    },
+    {
+      "name": "release-clang",
+      "displayName": "Release with Clang and Make",
+      "inherits": ["base", "release", "clang", "makefiles"]
+    },
+    {
+      "name": "release-clang-ninja",
+      "displayName": "Release with Clang and Ninja",
+      "inherits": ["base", "release", "clang", "ninja"]
+    },
+    {
+      "name": "debug-gcc",
+      "displayName": "Debug with AddressSanitizer, GCC, and Make",
+      "inherits": ["base", "debug-asan", "gcc", "makefiles"]
+    },
+    {
+      "name": "debug-clang-ninja",
+      "displayName": "Debug with AddressSanitizer, Clang, and Ninja",
+      "inherits": ["base", "debug-asan", "clang", "ninja"]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release-gcc",
+      "configurePreset": "release-gcc"
+    },
+    {
+      "name": "release-gcc-ninja",
+      "configurePreset": "release-gcc-ninja"
+    },
+    {
+      "name": "release-clang",
+      "configurePreset": "release-clang"
+    },
+    {
+      "name": "release-clang-ninja",
+      "configurePreset": "release-clang-ninja"
+    },
+    {
+      "name": "debug-gcc",
+      "configurePreset": "debug-gcc"
+    },
+    {
+      "name": "debug-clang-ninja",
+      "configurePreset": "debug-clang-ninja"
+    }
+  ]
+}
