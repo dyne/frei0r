@@ -212,6 +212,25 @@
 #include <inttypes.h>
 
 /**
+ * Marks the frei0r entry points for export when building a plugin.
+ *
+ * Define FREI0R_PLUGIN when compiling a plugin on Windows. Hosts do not need
+ * to define it. On other supported compilers the API remains public even when
+ * a third-party plugin uses hidden symbol visibility.
+ */
+#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(FREI0R_PLUGIN)
+#define FREI0R_PUBLIC __declspec(dllexport)
+#else
+#define FREI0R_PUBLIC
+#endif
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#define FREI0R_PUBLIC __attribute__((visibility("default")))
+#else
+#define FREI0R_PUBLIC
+#endif
+
+/**
  * The frei0r API major version
  */
 #define FREI0R_MAJOR_VERSION 1
@@ -227,13 +246,13 @@
  * f0r_init() is called once when the plugin is loaded by the application.
  * \see f0r_deinit
  */
-int f0r_init(void);
+FREI0R_PUBLIC int f0r_init(void);
 
 /**
  * f0r_deinit is called once when the plugin is unloaded by the application.
  * \see f0r_init
  */
-void f0r_deinit(void);
+FREI0R_PUBLIC void f0r_deinit(void);
 
 //---------------------------------------------------------------------------
 
@@ -360,7 +379,7 @@ typedef struct f0r_plugin_info
  *
  * \param info Pointer to an info struct allocated by the application.
  */
-void f0r_get_plugin_info(f0r_plugin_info_t* info);
+FREI0R_PUBLIC void f0r_get_plugin_info(f0r_plugin_info_t* info);
 
 //---------------------------------------------------------------------------
 
@@ -460,7 +479,7 @@ typedef struct f0r_param_info
  * \param param_index the index of the parameter to be queried (from 0 to
  *   num_params-1)
  */
-void f0r_get_param_info(f0r_param_info_t* info, int param_index);
+FREI0R_PUBLIC void f0r_get_param_info(f0r_param_info_t* info, int param_index);
 
 //---------------------------------------------------------------------------
 
@@ -483,7 +502,7 @@ typedef void* f0r_instance_t;
  *
  * \see f0r_destruct
  */
-f0r_instance_t f0r_construct(unsigned int width, unsigned int height);
+FREI0R_PUBLIC f0r_instance_t f0r_construct(unsigned int width, unsigned int height);
 
 /**
  * Destroys an effect instance.
@@ -492,7 +511,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height);
  *
  * \see f0r_construct
  */
-void f0r_destruct(f0r_instance_t instance);
+FREI0R_PUBLIC void f0r_destruct(f0r_instance_t instance);
 
 //---------------------------------------------------------------------------
 
@@ -525,8 +544,8 @@ typedef void* f0r_param_t;
  *
  * \see f0r_get_param_value
  */
-void f0r_set_param_value(f0r_instance_t instance, 
-			 f0r_param_t param, int param_index);
+FREI0R_PUBLIC void f0r_set_param_value(f0r_instance_t instance,
+			       f0r_param_t param, int param_index);
 
 /**
  * This function allows the application to query the parameter values of an
@@ -545,8 +564,8 @@ void f0r_set_param_value(f0r_instance_t instance,
  *
   * \see f0r_set_param_value
  */
-void f0r_get_param_value(f0r_instance_t instance,
-			 f0r_param_t param, int param_index);
+FREI0R_PUBLIC void f0r_get_param_value(f0r_instance_t instance,
+			       f0r_param_t param, int param_index);
 
 //---------------------------------------------------------------------------
 
@@ -575,8 +594,8 @@ void f0r_get_param_value(f0r_instance_t instance,
  *
  * \see f0r_update2
  */
-void f0r_update(f0r_instance_t instance, 
-		double time, const uint32_t* inframe, uint32_t* outframe);
+FREI0R_PUBLIC void f0r_update(f0r_instance_t instance,
+		      double time, const uint32_t* inframe, uint32_t* outframe);
 
 //---------------------------------------------------------------------------
 
@@ -601,12 +620,12 @@ void f0r_update(f0r_instance_t instance,
  *
  * \see f0r_update
  */
-void f0r_update2(f0r_instance_t instance,
-		 double time,
-		 const uint32_t* inframe1,
-		 const uint32_t* inframe2,
-		 const uint32_t* inframe3,
-		 uint32_t* outframe);
+FREI0R_PUBLIC void f0r_update2(f0r_instance_t instance,
+		       double time,
+		       const uint32_t* inframe1,
+		       const uint32_t* inframe2,
+		       const uint32_t* inframe3,
+		       uint32_t* outframe);
 //---------------------------------------------------------------------------
 
 #endif
