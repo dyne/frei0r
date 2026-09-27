@@ -216,8 +216,10 @@
  *
  * Define FREI0R_PLUGIN when compiling a plugin on Windows. Hosts do not need
  * to define it. On other supported compilers the API remains public even when
- * a third-party plugin uses hidden symbol visibility.
+ * a third-party plugin uses hidden symbol visibility. Build systems may define
+ * FREI0R_PUBLIC themselves when embedding plugins into another library.
  */
+#ifndef FREI0R_PUBLIC
 #if defined(_WIN32) || defined(__CYGWIN__)
 #if defined(FREI0R_PLUGIN)
 #define FREI0R_PUBLIC __declspec(dllexport)
@@ -228,6 +230,7 @@
 #define FREI0R_PUBLIC __attribute__((visibility("default")))
 #else
 #define FREI0R_PUBLIC
+#endif
 #endif
 
 /**
