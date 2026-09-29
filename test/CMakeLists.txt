@@ -4,6 +4,71 @@ option(TEST_GUI "Run tests in gui mode" OFF)
 add_executable(frei0r-run test-pattern.c frei0r-run.c)
 add_executable(frei0r-meta frei0r-meta.c)
 
+# This intentionally compiles two plugins with private entry point names so
+# that the archive/registry path can be exercised without changing the ABI of
+# the ordinary MODULE targets.
+add_library(runtime-smoke-brightness OBJECT
+  ${CMAKE_SOURCE_DIR}/src/filter/brightness/brightness.c
+)
+target_compile_definitions(runtime-smoke-brightness PRIVATE
+  f0r_init=brightness_f0r_init
+  f0r_deinit=brightness_f0r_deinit
+  f0r_get_plugin_info=brightness_f0r_get_plugin_info
+  f0r_get_param_info=brightness_f0r_get_param_info
+  f0r_construct=brightness_f0r_construct
+  f0r_destruct=brightness_f0r_destruct
+  f0r_set_param_value=brightness_f0r_set_param_value
+  f0r_get_param_value=brightness_f0r_get_param_value
+  f0r_update=brightness_f0r_update
+)
+
+add_library(runtime-smoke-invert0r OBJECT
+  ${CMAKE_SOURCE_DIR}/src/filter/invert0r/invert0r.c
+)
+target_compile_definitions(runtime-smoke-invert0r PRIVATE
+  f0r_init=invert0r_f0r_init
+  f0r_deinit=invert0r_f0r_deinit
+  f0r_get_plugin_info=invert0r_f0r_get_plugin_info
+  f0r_get_param_info=invert0r_f0r_get_param_info
+  f0r_construct=invert0r_f0r_construct
+  f0r_destruct=invert0r_f0r_destruct
+  f0r_set_param_value=invert0r_f0r_set_param_value
+  f0r_get_param_value=invert0r_f0r_get_param_value
+  f0r_update=invert0r_f0r_update
+)
+
+add_library(runtime-smoke-plugins STATIC
+  $<TARGET_OBJECTS:runtime-smoke-brightness>
+  $<TARGET_OBJECTS:runtime-smoke-invert0r>
+)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+  option(FREI0R_RUNTIME_SMOKE_GC "Enable section garbage collection for the WASI smoke module" OFF)
+  add_executable(runtime-smoke-wasi runtime-smoke.c runtime-smoke-registry.c)
+  target_compile_definitions(runtime-smoke-wasi PRIVATE RUNTIME_SMOKE_NO_MAIN)
+  target_link_libraries(runtime-smoke-wasi PRIVATE runtime-smoke-plugins)
+  set_target_properties(runtime-smoke-wasi PROPERTIES SUFFIX ".wasm")
+  set_property(TARGET runtime-smoke-wasi APPEND_STRING PROPERTY LINK_FLAGS
+    " -nostartfiles -Wl,--no-entry -Wl,--export=runtime_smoke_run")
+  if(FREI0R_RUNTIME_SMOKE_GC)
+    set_property(TARGET runtime-smoke-wasi APPEND_STRING PROPERTY LINK_FLAGS
+      " -Wl,--gc-sections")
+  endif()
+elseif(EMSCRIPTEN)
+  add_executable(runtime-smoke-emscripten runtime-smoke.c runtime-smoke-registry.c)
+  target_compile_definitions(runtime-smoke-emscripten PRIVATE RUNTIME_SMOKE_NO_MAIN)
+  target_link_libraries(runtime-smoke-emscripten PRIVATE runtime-smoke-plugins)
+  set_property(TARGET runtime-smoke-emscripten APPEND_STRING PROPERTY LINK_FLAGS
+    " --no-entry -sMODULARIZE=1 -sEXPORT_NAME=createRuntimeSmoke -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_runtime_smoke_run']")
+else()
+  option(FREI0R_RUNTIME_SMOKE_TEST "Register the native archive smoke test with CTest" OFF)
+  add_executable(runtime-smoke runtime-smoke.c runtime-smoke-registry.c)
+  target_link_libraries(runtime-smoke PRIVATE runtime-smoke-plugins)
+  if(FREI0R_RUNTIME_SMOKE_TEST)
+    add_test(NAME runtime-smoke COMMAND runtime-smoke)
+  endif()
+endif()
+
 if(WIN32)
   find_package(dlfcn-win32 REQUIRED)
   target_link_libraries(frei0r-run PRIVATE dlfcn-win32::dl)
