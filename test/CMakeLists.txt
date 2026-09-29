@@ -46,6 +46,32 @@ add_library(bundle-prototype-plugins STATIC
   $<TARGET_OBJECTS:bundle-prototype-addition-descriptor>
 )
 
+frei0r_bundle_add_symbol_collision_audit(
+  NAME bundle-prototype-symbol-collisions
+  TARGETS runtime-smoke-brightness runtime-smoke-invert0r bundle-prototype-addition
+)
+
+add_library(symbol-collision-fixture-a OBJECT symbol-collision-fixture-a.c)
+add_library(symbol-collision-fixture-b OBJECT symbol-collision-fixture-b.c)
+add_custom_target(bundle-symbol-collision-fixture-objects ALL
+  DEPENDS symbol-collision-fixture-a symbol-collision-fixture-b)
+set(symbol_collision_fixture_manifests
+  "symbol-collision-fixture-a=${CMAKE_CURRENT_BINARY_DIR}/symbol-audit/fixture-a.objects"
+  "symbol-collision-fixture-b=${CMAKE_CURRENT_BINARY_DIR}/symbol-audit/fixture-b.objects")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/symbol-audit/fixture-a.objects"
+  CONTENT "$<JOIN:$<TARGET_OBJECTS:symbol-collision-fixture-a>,\n>")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/symbol-audit/fixture-b.objects"
+  CONTENT "$<JOIN:$<TARGET_OBJECTS:symbol-collision-fixture-b>,\n>")
+string(REPLACE ";" "," symbol_collision_fixture_manifest_argument
+  "${symbol_collision_fixture_manifests}")
+add_test(NAME bundle-symbol-collision-fixture
+  COMMAND ${CMAKE_COMMAND}
+    -DAUDIT_SCRIPT=${CMAKE_SOURCE_DIR}/cmake/Frei0rBundleSymbolAudit.cmake
+    -DNM=${CMAKE_NM}
+    -DMANIFESTS=${symbol_collision_fixture_manifest_argument}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/check-symbol-collision-fixture.cmake
+)
+
 add_library(runtime-smoke-registry OBJECT runtime-smoke-registry.c)
 
 add_library(bundle-prototype-registry OBJECT bundle-prototype-registry.c)
@@ -99,10 +125,64 @@ add_test(NAME bundle-default-off
     -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-default-off.cmake
 )
 
+foreach(profile core all)
+  set(profile_arguments
+    -DEXPECT_CLASSIFICATION_COUNT=159
+    "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
+  if(profile STREQUAL "all")
+    list(APPEND profile_arguments -DNATIVE_DEPS=ON)
+    list(REMOVE_ITEM profile_arguments -DEXPECT_CLASSIFICATION_COUNT=159)
+    list(APPEND profile_arguments -DEXPECT_CLASSIFICATION_COUNT=170)
+    list(REMOVE_ITEM profile_arguments "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
+    list(APPEND profile_arguments
+      "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
+    list(APPEND profile_arguments -DEXPECT_TARGETS=cairoimagegrid,rgbparade)
+  endif()
+  add_test(NAME bundle-profile-${profile}
+    COMMAND ${CMAKE_COMMAND}
+      -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/bundle-profile-${profile}
+      -DPROFILE=${profile}
+      ${profile_arguments}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile.cmake
+  )
+endforeach()
+add_test(NAME bundle-profile-explicit
+  COMMAND ${CMAKE_COMMAND}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/bundle-profile-explicit
+    -DPROFILE=core
+    -DPLUGINS=brightness,cairoimagegrid
+    -DNATIVE_DEPS=ON
+    -DEXPECT_TARGETS=brightness,cairoimagegrid
+    -DEXPECT_CLASSIFICATION_COUNT=170
+    "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile.cmake
+)
+add_test(NAME bundle-profile-missing-dependency
+  COMMAND ${CMAKE_COMMAND}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/bundle-profile-missing-dependency
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile-missing-dependency.cmake
+)
+
 if(TARGET frei0r-bundle)
   add_executable(bundle-native-consumer bundle-native-consumer.c)
   target_link_libraries(bundle-native-consumer PRIVATE frei0r-bundle)
   add_test(NAME bundle-native-consumer COMMAND bundle-native-consumer)
+
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    add_executable(bundle-native-consumer-gc bundle-native-consumer.c)
+    target_compile_options(bundle-native-consumer-gc PRIVATE
+      -ffunction-sections -fdata-sections)
+    target_link_options(bundle-native-consumer-gc PRIVATE -Wl,--gc-sections)
+    target_link_libraries(bundle-native-consumer-gc PRIVATE frei0r-bundle)
+    add_test(NAME bundle-native-consumer-gc COMMAND bundle-native-consumer-gc)
+  endif()
+
+  add_executable(bundle-registry-contract bundle-registry-contract.c)
+  target_link_libraries(bundle-registry-contract PRIVATE frei0r-bundle)
+  add_test(NAME bundle-registry-contract COMMAND bundle-registry-contract)
 
   add_test(NAME frei0r-bundle-shared-exports
     COMMAND ${CMAKE_COMMAND}

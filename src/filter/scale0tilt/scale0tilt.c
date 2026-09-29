@@ -38,7 +38,7 @@ typedef struct scale0tilt_instance {
 	gavl_video_frame_t* padded;
 } scale0tilt_instance_t;
 
-void update_scaler( scale0tilt_instance_t* inst )
+static void update_scaler( scale0tilt_instance_t* inst )
 {
 	float dst_x, dst_y, dst_w, dst_h;
 	float src_x, src_y, src_w, src_h;
@@ -305,4 +305,3 @@ void f0r_update(f0r_instance_t instance, double time,
 		gavl_video_scaler_scale( inst->video_scaler, frame_src, inst->frame_dst );
 	}
 }
-

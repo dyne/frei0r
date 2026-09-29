@@ -92,7 +92,7 @@ _PS_CONST( tancof_p5, 3.33331568548E-1 );
 
 _PS_CONST( tancot_eps, 1.0e-4 );
 
-v4sf tancot_ps( v4sf x, int cotFlag )
+static inline v4sf tancot_ps( v4sf x, int cotFlag )
 {
 	v4sf xmm1, xmm2 = _mm_setzero_ps(), xmm3, sign_bit, y;
 
@@ -177,9 +177,9 @@ v4sf tancot_ps( v4sf x, int cotFlag )
 	return y;
 }
 
-v4sf tan_ps( v4sf x ) { return tancot_ps( x, 0 ); }
+static inline v4sf tan_ps( v4sf x ) { return tancot_ps( x, 0 ); }
 
-v4sf cot_ps( v4sf x ) { return tancot_ps( x, 1 ); }
+static inline v4sf cot_ps( v4sf x ) { return tancot_ps( x, 1 ); }
 
 _PS_CONST( atanrange_hi, 2.414213562373095 );
 _PS_CONST( atanrange_lo, 0.4142135623730950 );
@@ -194,7 +194,7 @@ _PS_CONST( atancof_p1, 1.38776856032E-1 );
 _PS_CONST( atancof_p2, 1.99777106478E-1 );
 _PS_CONST( atancof_p3, 3.33329491539E-1 );
 
-v4sf atan_ps( v4sf x )
+static inline v4sf atan_ps( v4sf x )
 {
 	v4sf sign_bit, y;
 
@@ -257,7 +257,7 @@ v4sf atan_ps( v4sf x )
 	return y;
 }
 
-v4sf atan2_ps( v4sf y, v4sf x )
+static inline v4sf atan2_ps( v4sf y, v4sf x )
 {
 	v4sf x_eq_0 = _mm_cmpeq_ps( x, *(v4sf*)_ps_0 );
 	v4sf x_gt_0 = _mm_cmpgt_ps( x, *(v4sf*)_ps_0 );
@@ -306,13 +306,13 @@ v4sf atan2_ps( v4sf y, v4sf x )
 }
 
 /* for convenience of calling simd sqrt */
-float sqrt_ps( float x )
+static inline float sqrt_ps( float x )
 {
 	v4sf sse_value = _mm_set_ps1( x );
 	sse_value = _mm_sqrt_ps( sse_value );
 	return _mm_cvtss_f32( sse_value );
 }
-float rsqrt_ps( float x )
+static inline float rsqrt_ps( float x )
 {
 	v4sf sse_value = _mm_set_ps1( x );
 	sse_value = _mm_rsqrt_ps( sse_value );
@@ -320,7 +320,7 @@ float rsqrt_ps( float x )
 }
 
 /* atan2 implementation using atan, used as a reference to implement atan2_ps */
-float atan2_ref( float y, float x )
+static inline float atan2_ref( float y, float x )
 {
 	if( x == 0.0f ) {
 		if( y == 0.0f ) {

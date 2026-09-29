@@ -177,7 +177,7 @@ int f0r_init()
   return 1;
 }
 
-void rgb_noise(f0r_instance_t instance, double time,
+static void rgb_noise(f0r_instance_t instance, double time,
 		const uint32_t* inframe, uint32_t* outframe)
 {
   rgbnoise_instance_t* inst = (rgbnoise_instance_t*)instance;

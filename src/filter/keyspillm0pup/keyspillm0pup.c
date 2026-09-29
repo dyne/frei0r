@@ -39,7 +39,7 @@ Copyright (C) 2012  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <assert.h>
 #include <string.h>
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct
 {
@@ -50,7 +50,7 @@ typedef struct
 } float_rgba;
 
 //----------------------------------------------------
-void RGBA8888_2_float(const uint32_t* in, float_rgba *out, int w, int h)
+static void RGBA8888_2_float(const uint32_t* in, float_rgba *out, int w, int h)
 {
 	uint8_t *cin;
 	int i;
@@ -68,7 +68,7 @@ void RGBA8888_2_float(const uint32_t* in, float_rgba *out, int w, int h)
 }
 
 //------------------------------------------------------------------
-void float_2_RGBA8888(const float_rgba *in, uint32_t* out, int w, int h)
+static void float_2_RGBA8888(const float_rgba *in, uint32_t* out, int w, int h)
 {
 	uint8_t *cout;
 	int i;
@@ -86,7 +86,7 @@ void float_2_RGBA8888(const float_rgba *in, uint32_t* out, int w, int h)
 
 //------------------------------------------------
 //color coeffs according to rec 601 or rec 701
-void cocos(int cm, float *kr, float *kg, float *kb)
+static void cocos(int cm, float *kr, float *kg, float *kb)
 {
 	*kr=0.30; *kg=0.59; *kb=0.11;	//da compiler ne jamra
 	switch (cm)
@@ -115,7 +115,7 @@ void cocos(int cm, float *kr, float *kg, float *kb)
 //*mask=float maska [0...1]
 //k=key
 //am=amount  [0...1]
-void clean_rad_m(float_rgba *s, int w, int h, float_rgba k, float *mask, float am)
+static void clean_rad_m(float_rgba *s, int w, int h, float_rgba k, float *mask, float am)
 {
 	int i;
 	float aa,min;
@@ -143,7 +143,7 @@ void clean_rad_m(float_rgba *s, int w, int h, float_rgba k, float *mask, float a
 //*mask=float maska [0...1]
 //k=key
 //am=amount  [0...1]
-void clean_tgt_m(float_rgba *s, int w, int h, float_rgba k, float *mask, float am, float_rgba tgt)
+static void clean_tgt_m(float_rgba *s, int w, int h, float_rgba k, float *mask, float am, float_rgba tgt)
 {
 	int i;
 	float a,aa,min;
@@ -170,7 +170,7 @@ void clean_tgt_m(float_rgba *s, int w, int h, float_rgba k, float *mask, float a
 
 //----------------------------------------------------------
 //desaturate colors according to mask
-void desat_m(float_rgba *s, int w, int h, float *mask, float des, int cm)
+static void desat_m(float_rgba *s, int w, int h, float *mask, float des, int cm)
 {
 	float a,y,cr,cb,kr,kg,kb,ikg;
 	int i;
@@ -208,7 +208,7 @@ void desat_m(float_rgba *s, int w, int h, float *mask, float des, int cm)
 
 //----------------------------------------------------------
 //adjust luma according to mask
-void luma_m(float_rgba *s, int w, int h, float *mask, float lad, int cm)
+static void luma_m(float_rgba *s, int w, int h, float *mask, float lad, int cm)
 {
 	float a,m,mm,y,cr,cb,kr,kg,kb,ikg;
 	int i;
@@ -252,7 +252,7 @@ void luma_m(float_rgba *s, int w, int h, float *mask, float lad, int cm)
 //loops rearanged for more locality (better cache hit ratio)
 //outer (vertical) loop 2x unroll to break dependency chain
 //simplified indexes
-void fibe1o_f(float *s, int w, int h, float a, int ec)
+static void fibe1o_f(float *s, int w, int h, float a, int ec)
 {
 	int i,j;
 	float b,g,g4,avg,avg1,cr,g4a,g4b;
@@ -430,7 +430,7 @@ void fibe1o_f(float *s, int w, int h, float a, int ec)
 //mask based on euclidean RGB distance  (alpha independent)
 //mask values [0...1]
 //fo=1 foreground only (alpha>0.005)
-void rgb_mask(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, float p, int fo)
+static void rgb_mask(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, float p, int fo)
 {
 	int i;
 	float dr,dg,db,d,ip,tr,a,de;
@@ -464,7 +464,7 @@ void rgb_mask(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, f
 //mask based on hue difference   (alpha independent)
 //mask values [0...1]
 //fo=1 foreground only (alpha>0.005)
-void hue_mask(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, float p, int fo)
+static void hue_mask(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, float p, int fo)
 {
 	int i;
 	float d,ip,tr,a;
@@ -508,7 +508,7 @@ void hue_mask(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, f
 
 //----------------------------------------------------------
 //mask values [0...1]
-void edge_mask(float_rgba *s, int w, int h, float *mask, float wd, int io)
+static void edge_mask(float_rgba *s, int w, int h, float *mask, float wd, int io)
 {
 	int i;
 	float a;
@@ -546,7 +546,7 @@ void edge_mask(float_rgba *s, int w, int h, float *mask, float wd, int io)
 //partially transparent areas
 //useful as additional clean after key or edge
 //amp=amplify mask for lower transparencies [0...1]
-void trans_mask(float_rgba *s, int w, int h, float *mask, float amp)
+static void trans_mask(float_rgba *s, int w, int h, float *mask, float amp)
 {
 	int i;
 	float ia;
@@ -561,7 +561,7 @@ void trans_mask(float_rgba *s, int w, int h, float *mask, float amp)
 
 //------------------------------------------------
 //gate the mask based on similarity of hue to key
-void hue_gate(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, float p)
+static void hue_gate(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, float p)
 {
 	float k32,ka,kb,kh,ipi2,a,b,hh,d,aa,ip;
 	int i;
@@ -596,7 +596,7 @@ void hue_gate(float_rgba *s, int w, int h, float *mask, float_rgba k, float t, f
 //------------------------------------------------
 //reduce the mask based on a saturation threshold
 //intensity normalized saturation
-void sat_thres(float_rgba *s, int w, int h, float *mask,  float th)
+static void sat_thres(float_rgba *s, int w, int h, float *mask,  float th)
 {
 	float k32,ipi2,a,b,ip,sa;
 	float t1,t2;
@@ -625,7 +625,7 @@ void sat_thres(float_rgba *s, int w, int h, float *mask,  float th)
 }
 
 //--------------------------------------------------
-void copy_mask_i(float_rgba *sl, int w, int h, float *mask)
+static void copy_mask_i(float_rgba *sl, int w, int h, float *mask)
 {
 	int i;
 	
@@ -639,7 +639,7 @@ void copy_mask_i(float_rgba *sl, int w, int h, float *mask)
 }
 
 //--------------------------------------------------
-void copy_mask_a(float_rgba *sl, int w, int h, float *mask)
+static void copy_mask_a(float_rgba *sl, int w, int h, float *mask)
 {
 	int i;
 	
@@ -685,14 +685,14 @@ typedef struct
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 	return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 	return (v-min)/(max-min);
 }

@@ -77,7 +77,7 @@ ML3DEX:		multilevel spatio-temporal, see [1]
 //cross5	packed char RGB image (uint32_t)
 //vs = input image
 //is = output image
-void cross5(const uint32_t *vs, int w, int h, uint32_t *is)
+static void cross5(const uint32_t *vs, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t m[8];
@@ -98,7 +98,7 @@ for (i=1;i<h-1;i++)
 //square 3x3		packed char RGB image (uint32_t)
 //vs = input image
 //is = output image
-void sq3x3(const uint32_t *vs, int w, int h, uint32_t *is)
+static void sq3x3(const uint32_t *vs, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t m[16];
@@ -120,7 +120,7 @@ for (i=1;i<h-1;i++)
 //bilevel		packed char RGB image (uint32_t)
 //vs = input image
 //is = output image
-void bilevel(const uint32_t *vs, int w, int h, uint32_t *is)
+static void bilevel(const uint32_t *vs, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t m[8],mm[4];
@@ -146,7 +146,7 @@ for (i=1;i<h-1;i++)
 //diamond 3x3		packed char RGB image (uint32_t)
 //vs = input image
 //is = output image
-void dia3x3(const uint32_t *vs, int w, int h, uint32_t *is)
+static void dia3x3(const uint32_t *vs, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t m[16];
@@ -169,7 +169,7 @@ for (i=2;i<h-2;i++)
 //square 5x5		packed char RGB image (uint32_t)
 //vs = input image
 //is = output image
-void sq5x5(const uint32_t *vs, int w, int h, uint32_t *is)
+static void sq5x5(const uint32_t *vs, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t m[32];
@@ -196,7 +196,7 @@ for (i=2;i<h-2;i++)
 
 //--------------------------------------------------------
 //temporal 3 frames
-void temp3(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
+static void temp3(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
 {
 int i;
 uint32_t m[32];
@@ -211,7 +211,7 @@ for (i=0;i<w*h;i++)
 
 //--------------------------------------------------------
 //temporal 5 frames
-void temp5(uint32_t *s1, uint32_t *s2, uint32_t *s3, uint32_t *s4, uint32_t *s5, int w, int h, uint32_t *is)
+static void temp5(uint32_t *s1, uint32_t *s2, uint32_t *s3, uint32_t *s4, uint32_t *s5, int w, int h, uint32_t *is)
 {
 int i;
 uint32_t m[32];
@@ -229,7 +229,7 @@ for (i=0;i<w*h;i++)
 //Arce BI	packed char RGB image (uint32_t)
 //s1,s2,s3 = previous, current, next frame
 //is = output image
-void ArceBI(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
+static void ArceBI(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t mm[8],m[16];
@@ -274,7 +274,7 @@ for (i=1;i<h-1;i++)
 //Arp ML3D	packed char RGB image (uint32_t)
 //s1,s2,s3 = previous, current, next frame
 //is = output image
-void ml3d(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
+static void ml3d(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t mm[8],m[16];
@@ -304,7 +304,7 @@ for (i=1;i<h-1;i++)
 //Kokaram ML3Dex	packed char RGB image (uint32_t)
 //s1,s2,s3 = previous, current, next frame
 //is = output image
-void ml3dex(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
+static void ml3dex(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
 {
 int i,j,p;
 uint32_t mm[8],m[16];
@@ -373,14 +373,14 @@ char *liststr;
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -600,4 +600,3 @@ for (i = 3; i < 4 * in->w * in->h; i += 4)
 	cout[i]=cin[i];
 
 }
-

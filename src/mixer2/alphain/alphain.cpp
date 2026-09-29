@@ -65,9 +65,8 @@ public:
 };
 
 
-frei0r::construct<alphain> plugin("alphain",
+static frei0r::construct<alphain> plugin("alphain",
                                   "the alpha IN operation",
                                   "Jean-Sebastien Senecal",
                                   0,2,
                                   F0R_COLOR_MODEL_RGBA8888);
-

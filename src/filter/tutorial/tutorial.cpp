@@ -173,7 +173,7 @@ private:
 
 
 
-frei0r::construct<Tutorial> plugin("Tutorial filter",
+static frei0r::construct<Tutorial> plugin("Tutorial filter",
                 "This is an example filter, kind of a quick howto showing how to add a frei0r filter.",
                 "Your Name",
                 0,2,

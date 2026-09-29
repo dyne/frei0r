@@ -60,7 +60,7 @@ static inline unsigned char CLAMP0255(int32_t a)
 
 #ifndef MAX255
 //! Limit a (0->511) int to 255.
-uint8_t MAX255(uint32_t a) { return (uint8_t) (a | ((a & 256) - ((a & 256) >> 8))); }
+static inline uint8_t MAX255(uint32_t a) { return (uint8_t) (a | ((a & 256) - ((a & 256) >> 8))); }
 #endif
 
 #ifndef MIN

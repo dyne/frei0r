@@ -214,7 +214,7 @@ void f0r_update(f0r_instance_t instance, double time,
 	}
 }
 
-uint32_t interpolate_pixel( uint8_t* frame, int w, int h, double x, double y ) {
+static uint32_t interpolate_pixel( uint8_t* frame, int w, int h, double x, double y ) {
 /*
 	+--+--+
 	|  |  |
@@ -246,4 +246,3 @@ uint8_t color1_a = (uint8_t)( xoff * frame[i+3] + ( 1.0 - xoff ) * frame[i+3] );
 
 return 0;
 }
-

@@ -33,14 +33,18 @@ if (NOT WITHOUT_CAIRO)
 endif ()
 
 include(FindPkgConfig)
+find_package(Threads REQUIRED)
 option (WITHOUT_GAVL "Disable plugins dependent upon gavl" OFF)
 if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
   pkg_check_modules(GAVL REQUIRED gavl)
 endif ()
 
 option(FREI0R_BUILD_BUNDLE "Build the experimental static frei0r bundle" OFF)
+set(FREI0R_BUNDLE_PROFILE "core" CACHE STRING
+    "Bundle profile to resolve when FREI0R_BUNDLE_PLUGINS is empty")
+set_property(CACHE FREI0R_BUNDLE_PROFILE PROPERTY STRINGS core all)
 set(FREI0R_BUNDLE_PLUGINS "" CACHE STRING
-    "Semicolon-separated bundle-eligible plugin target names")
+    "Semicolon-separated bundle target names; overrides FREI0R_BUNDLE_PROFILE")
 
 include(${CMAKE_SOURCE_DIR}/cmake/Frei0rBundlePlugin.cmake)
 
@@ -66,7 +70,19 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLU
 # add_subdirectory (doc)
 
 add_subdirectory (src)
+set(FREI0R_BUNDLE_OPENCV_TARGETS facebl0r facedetect)
+set(FREI0R_BUNDLE_CAIRO_TARGETS cairoimagegrid cairogradient mirr0r shake0scillate cairoaffineblend cairoblend)
+set(FREI0R_BUNDLE_GAVL_TARGETS rgbparade scale0tilt vectorscope)
+set(FREI0R_BUNDLE_OPENGL_TARGETS shadert0y)
+set(FREI0R_BUNDLE_DYNAMIC_LOADING_TARGETS colgate ndvi)
+frei0r_bundle_classify_legacy_modules("${CMAKE_SOURCE_DIR}/src")
+frei0r_bundle_promote_core_modules("${CMAKE_SOURCE_DIR}/src")
 frei0r_finalize_bundle()
+set_property(GLOBAL PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS "")
+frei0r_bundle_collect_classifications("${CMAKE_SOURCE_DIR}/src")
+get_property(FREI0R_BUNDLE_CLASSIFICATIONS GLOBAL PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS)
+set(FREI0R_BUNDLE_CLASSIFICATIONS "${FREI0R_BUNDLE_CLASSIFICATIONS}" CACHE INTERNAL
+    "Auditable target/profile/reason classification for bundle selection" FORCE)
 if (BUILD_TESTING)
   add_subdirectory (test)
 endif ()

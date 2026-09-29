@@ -83,9 +83,8 @@ private:
 };
 
 
-frei0r::construct<blend> plugin("blend",
+static frei0r::construct<blend> plugin("blend",
                                 "Perform a blend operation between two sources",
                                 "Jean-Sebastien Senecal",
                                 0,2,
                                 F0R_COLOR_MODEL_RGBA8888);
-

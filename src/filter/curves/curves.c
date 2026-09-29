@@ -78,7 +78,7 @@ typedef struct curves_instance
 // r,g,b values are from 0 to 255
 // h = [0,360], s = [0,1], v = [0,1]
 //              if s == 0, then h = -1 (undefined)
-void RGBtoHSV(double r, double g, double b, double *h, double *s, double *v)
+static void RGBtoHSV(double r, double g, double b, double *h, double *s, double *v)
 {
     double min = MIN3(r, g, b);
     double max = MAX3(r, g, b);
@@ -109,7 +109,7 @@ void RGBtoHSV(double r, double g, double b, double *h, double *s, double *v)
 
 // r,g,b values are from 0 to 1
 // h = [0,360], s = [0,1], v = [0,1]
-void HSVtoRGB(double *r, double *g, double *b, double h, double s, double v)
+static void HSVtoRGB(double *r, double *g, double *b, double h, double s, double v)
 {
     if (s == 0) {
         // achromatic (grey)
@@ -163,10 +163,10 @@ void HSVtoRGB(double *r, double *g, double *b, double h, double s, double v)
     }
 }
 
-void updateBsplineMap(f0r_instance_t instance);
-void updateCsplineMap(f0r_instance_t instance);
+static void updateBsplineMap(f0r_instance_t instance);
+static void updateCsplineMap(f0r_instance_t instance);
 
-char **param_names = NULL;
+static char **param_names = NULL;
 int f0r_init()
 {
   param_names = (char**)calloc(10, sizeof(char *));
@@ -198,7 +198,7 @@ void f0r_get_plugin_info(f0r_plugin_info_t* curves_info)
   curves_info->explanation = "Adjust luminance or color channel intensity with curve level mapping";
 }
 
-char *get_param_name(int param_index) {
+static char *get_param_name(int param_index) {
   return param_names[param_index];
 }
 
@@ -387,7 +387,7 @@ void f0r_get_param_value(f0r_instance_t instance,
   }
 }
 
-double* gaussSLESolve(size_t size, double* A) {
+static double* gaussSLESolve(size_t size, double* A) {
 	int extSize = size + 1;
 	//direct way: transform matrix A to triangular form
 	for(int row = 0; row < size; row++) {
@@ -425,7 +425,7 @@ double* gaussSLESolve(size_t size, double* A) {
 
 
 
-double* calcSplineCoeffs(double* points, size_t pointsSize) {
+static double* calcSplineCoeffs(double* points, size_t pointsSize) {
 	double* coeffs = NULL;
 	int size = pointsSize;
 	int mxSize = size > 3?4:size;
@@ -494,7 +494,7 @@ double* calcSplineCoeffs(double* points, size_t pointsSize) {
 	return coeffs;
 }
 
-double spline(double x, double* points, size_t pointSize, double* coeffs) {
+static double spline(double x, double* points, size_t pointSize, double* coeffs) {
 	int size = pointSize;
 	if (size == 2) {
 		return coeffs[0] * x + coeffs[1];
@@ -525,7 +525,7 @@ double spline(double x, double* points, size_t pointSize, double* coeffs) {
     return -1.0;
 }
 
-void swap(double *points, int i, int j) {
+static void swap(double *points, int i, int j) {
   int offsetX = i * 2, offsetY = j * 2;
   double tempX = points[offsetX], tempY = points[offsetX + 1];
   points[offsetX] = points[offsetY];
@@ -540,7 +540,7 @@ void swap(double *points, int i, int j) {
  * \param t "time" in the range 0-1
  * \param points points[0] = point1, point[1] = handle1, point[2] = handle2, point[3] = point2
  */
-position pointOnBezier(double t, position points[4])
+static position pointOnBezier(double t, position points[4])
 {
     position pos;
 
@@ -569,7 +569,7 @@ position pointOnBezier(double t, position points[4])
  * \param tokens pointer to array of strings, will be filled with sub-strings
  * \return Number of sub-strings
  */
-int tokenise(char *string, const char *delimiter, char ***tokens)
+static int tokenise(char *string, const char *delimiter, char ***tokens)
 {
     int count = 0;
     char *input = strdup(string);
@@ -588,7 +588,7 @@ int tokenise(char *string, const char *delimiter, char ***tokens)
 /**
  * Updates the color map according to the bézier spline described in the "Bézier spline" parameter.
  */
-void updateBsplineMap(f0r_instance_t instance)
+static void updateBsplineMap(f0r_instance_t instance)
 {
     assert(instance);
     curves_instance_t* inst = (curves_instance_t*)instance;
@@ -713,7 +713,7 @@ void updateBsplineMap(f0r_instance_t instance)
 /**
  * Updates the color map according to the cubic spline described in the "Curve Point" parameter.
  */
-void updateCsplineMap(f0r_instance_t instance)
+static void updateCsplineMap(f0r_instance_t instance)
 {
     assert(instance);
     curves_instance_t* inst = (curves_instance_t*)instance;
@@ -929,7 +929,10 @@ void f0r_update(f0r_instance_t instance, double time,
 	int stride = inst->width;
 	dst = (unsigned char*)outframe;
 	float lineWidth = scale / 254.;
-	int cellSize = floor(lineWidth * 32);
+	/* At small valid frame sizes the legacy grid spacing rounded to zero,
+	 * making the modulo tests below trap. */
+	int cellSize = (int)floor(lineWidth * 32);
+	if (cellSize < 1) cellSize = 1;
 	//filling up background and drawing grid
 	for(i = 0; i < scale; i++) {
 	  if (i % cellSize > lineWidth) //point doesn't aly on the grid

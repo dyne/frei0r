@@ -175,4 +175,4 @@ private:
     std::unique_ptr<libkaleid0sc0pe::IKaleid0sc0pe> m_kaleid0sc0pe;
 };
 
-frei0r::construct<kaleid0sc0pe> plugin("Kaleid0sc0pe", "Applies a kaleid0sc0pe effect", "Brendan Hack", 1, 1, F0R_COLOR_MODEL_RGBA8888);
+static frei0r::construct<kaleid0sc0pe> plugin("Kaleid0sc0pe", "Applies a kaleid0sc0pe effect", "Brendan Hack", 1, 1, F0R_COLOR_MODEL_RGBA8888);

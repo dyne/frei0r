@@ -28,10 +28,10 @@ typedef struct distorter_instance
 } distorter_instance_t;
 
 //const double AMPLTUDE_SCALE = 10.0;
-const double FREQUENCY_SCALE = 200.0;
-const double SPEED_SCALE = 2.0;
+static const double FREQUENCY_SCALE = 200.0;
+static const double SPEED_SCALE = 2.0;
 
-void interpolateGrid(grid_point_t* grid, unsigned int w, unsigned int h,
+static void interpolateGrid(grid_point_t* grid, unsigned int w, unsigned int h,
 		     const uint32_t* src, uint32_t* dst);
 
 int f0r_init()
@@ -201,7 +201,7 @@ void f0r_update(f0r_instance_t instance, double time,
   interpolateGrid(inst->grid, w, h, inframe, outframe);
 }
 
-void interpolateGrid(grid_point_t* grid, unsigned int w, unsigned int h,
+static void interpolateGrid(grid_point_t* grid, unsigned int w, unsigned int h,
 		     const uint32_t* src, uint32_t* dst)
 {
   unsigned int x, y, block_x, block_y;

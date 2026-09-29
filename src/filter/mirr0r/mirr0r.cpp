@@ -22,6 +22,8 @@
 #include <cairo.h>
 #include <cmath>
 
+namespace {
+
 class Mirr0r : public frei0r::filter {
 
 private:
@@ -127,7 +129,9 @@ public:
     }
 };
 
-frei0r::construct<Mirr0r> plugin(
+} // namespace
+
+static frei0r::construct<Mirr0r> plugin(
     "Mirr0r", 
     "Repeats and flips the input image when it goes out of bounds, allowing for adjustable offset, zoom and rotation. A versatile tool for creative video effects.",
     "Johann JEG",

@@ -65,9 +65,8 @@ public:
 };
 
 
-frei0r::construct<sobel> plugin("Sobel",
+static frei0r::construct<sobel> plugin("Sobel",
                                 "Sobel filter",
                                 "Jean-Sebastien Senecal (Drone)",
                                 0,2,
                                 F0R_COLOR_MODEL_RGBA8888);
-

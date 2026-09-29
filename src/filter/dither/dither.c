@@ -29,33 +29,33 @@
 #include "frei0r.h"
 #include "frei0r/math.h"
 
-int ditherMagic2x2Matrix[] = {
+static int ditherMagic2x2Matrix[] = {
 	 	 0, 2,
 	 	 3, 1
 	};
 
-int ditherMagic4x4Matrix[] = {
+static int ditherMagic4x4Matrix[] = {
 	 	 0, 14,  3, 13,
 		11,  5,  8,  6,
 		12,  2, 15,  1,
 		 7,  9,  4, 10
 	};
 
-int ditherOrdered4x4Matrix[] = {
+static int ditherOrdered4x4Matrix[] = {
 	 	 0,  8,  2, 10,
 		12,  4, 14,  6,
 		 3, 11,  1,  9,
 		15,  7, 13,  5
 	};
 
-int ditherLines4x4Matrix[] = {
+static int ditherLines4x4Matrix[] = {
 	 	 0,  1,  2,  3,
 		 4,  5,  6,  7,
 		 8,  9, 10, 11,
 		12, 13, 14, 15
 	};
 
-int dither90Halftone6x6Matrix[] = {
+static int dither90Halftone6x6Matrix[] = {
 	 	29, 18, 12, 19, 30, 34,
 		17,  7,  4,  8, 20, 28,
 		11,  3,  0,  1,  9, 27,
@@ -64,7 +64,7 @@ int dither90Halftone6x6Matrix[] = {
 		33, 25, 24, 23, 33, 36
 	};
 
-int ditherOrdered6x6Matrix[] = {
+static int ditherOrdered6x6Matrix[] = {
 		 1, 59, 15, 55,  2, 56, 12, 52,
 		33, 17, 47, 31, 34, 18, 44, 28,
 		 9, 49,  5, 63, 10, 50,  6, 60,
@@ -75,7 +75,7 @@ int ditherOrdered6x6Matrix[] = {
 		43, 27, 39, 23, 40, 24, 36, 20 
 	};
 
-int ditherOrdered8x8Matrix[] = {
+static int ditherOrdered8x8Matrix[] = {
 		  1,235, 59,219, 15,231, 55,215,  2,232, 56,216, 12,228, 52,212,
 		129, 65,187,123,143, 79,183,119,130, 66,184,120,140, 76,180,116,
 		 33,193, 17,251, 47,207, 31,247, 34,194, 18,248, 44,204, 28,244,
@@ -93,7 +93,7 @@ int ditherOrdered8x8Matrix[] = {
 		 43,203, 27,243, 39,199, 23,253, 40,200, 24,240, 36,196, 20,254,
 		171,107,155, 91,167,103,151, 87,168,104,152, 88,164,100,148, 84 };
 
-int ditherCluster3Matrix[] = {
+static int ditherCluster3Matrix[] = {
 		 9,11,10, 8, 6, 7,
 		12,17,16, 5, 0, 1,
 		13,14,15, 4, 3, 2,
@@ -101,7 +101,7 @@ int ditherCluster3Matrix[] = {
 		 5, 0, 1,12,17,16,
 		 4, 3, 2,13,14,15 };
 
-int ditherCluster4Matrix[] = {
+static int ditherCluster4Matrix[] = {
 		18,20,19,16,13,11,12,15,
 		27,28,29,22, 4, 3, 2, 9,
 		26,31,30,21, 5, 0, 1,10,
@@ -111,7 +111,7 @@ int ditherCluster4Matrix[] = {
 		 5, 0, 1,10,26,31,30,21,
 		 8, 6, 7,14,23,25,24,17 };
 
-int ditherCluster8Matrix[] = {
+static int ditherCluster8Matrix[] = {
 		 64, 69, 77, 87, 86, 76, 68, 67, 63, 58, 50, 40, 41, 51, 59, 60,
 		 70, 94,100,109,108, 99, 93, 75, 57, 33, 27, 18, 19, 28, 34, 52,
 		 78,101,114,116,115,112, 98, 83, 49, 26, 13, 11, 12, 15, 29, 44,
@@ -129,8 +129,8 @@ int ditherCluster8Matrix[] = {
 		 56, 32, 24, 23, 22, 31, 35, 53, 71, 95,103,104,105, 96, 92, 74,
 		 62, 55, 47, 37, 36, 46, 54, 61, 65, 72, 80, 90, 91, 81, 73, 66 };
 
-int matrixSizes[] = {4, 16, 16, 16, 36, 64, 256, 36, 64, 256};
-int* matrixes[] = {ditherMagic2x2Matrix, ditherMagic4x4Matrix, ditherOrdered4x4Matrix, 
+static int matrixSizes[] = {4, 16, 16, 16, 36, 64, 256, 36, 64, 256};
+static int* matrixes[] = {ditherMagic2x2Matrix, ditherMagic4x4Matrix, ditherOrdered4x4Matrix,
                   ditherLines4x4Matrix, dither90Halftone6x6Matrix, ditherOrdered6x6Matrix, 
                   ditherOrdered8x8Matrix, ditherCluster3Matrix, ditherCluster4Matrix, ditherCluster8Matrix};
 
@@ -300,5 +300,3 @@ void f0r_update(f0r_instance_t instance, double time,
 
   free(map);
 }
-
-

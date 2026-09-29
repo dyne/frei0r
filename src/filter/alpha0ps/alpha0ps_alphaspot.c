@@ -53,7 +53,7 @@ typedef struct
 
 //----------------------------------------------------------
 //general (rotated) rectangle with soft border
-void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+static void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d,db,st,ct,g,is1,is2;
@@ -89,7 +89,7 @@ void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
 
 //----------------------------------------------------------
 //general (rotated) ellipse with soft border
-void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+static void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d,db,st,ct,is1,is2,g;
@@ -124,7 +124,7 @@ void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
 
 //----------------------------------------------------------
 //general (rotated) triangle with soft border
-void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+static void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d3,d4,d,st,ct,is1,is2,k5,lim,db,g;
@@ -169,7 +169,7 @@ void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
 
 //----------------------------------------------------------
 //general (rotated) diamond shape with soft border
-void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
+static void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
     float d1,d2,d,db,st,ct,is1,is2,g;
@@ -201,7 +201,7 @@ void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, fl
 }
 
 //-----------------------------------------------------
-void draw(inst *in)
+static void draw(inst *in)
 {
     switch (in->shp)
     {
@@ -224,14 +224,14 @@ void draw(inst *in)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
     return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
     return (v-min)/(max-min);
 }

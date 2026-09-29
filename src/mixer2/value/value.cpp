@@ -83,9 +83,8 @@ public:
 };
 
 
-frei0r::construct<value> plugin("value",
+static frei0r::construct<value> plugin("value",
                                 "Perform a conversion to value only of the source input1 using the value of input2.",
                                 "Jean-Sebastien Senecal",
                                 0,2,
                                 F0R_COLOR_MODEL_RGBA8888);
-

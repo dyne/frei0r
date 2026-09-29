@@ -67,9 +67,8 @@ public:
 };
 
 
-frei0r::construct<alphaatop> plugin("alphaatop",
+static frei0r::construct<alphaatop> plugin("alphaatop",
                                     "the alpha ATOP operation",
                                     "Jean-Sebastien Senecal",
                                     0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
-

@@ -29,7 +29,7 @@
 #include "frei0r.h"
 #include "frei0r/cairo.h"
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct cairo_affineblend_instance
 {
@@ -230,7 +230,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
   }
 }
 
-void draw_composite(cairo_affineblend_instance_t* inst, unsigned char* out, unsigned char* dst, unsigned char* src, double time)
+static void draw_composite(cairo_affineblend_instance_t* inst, unsigned char* out, unsigned char* dst, unsigned char* src, double time)
 {
   int w = inst->width;
   int h = inst->height;

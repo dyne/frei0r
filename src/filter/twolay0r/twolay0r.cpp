@@ -97,8 +97,7 @@ public:
 };
 
 
-frei0r::construct<twolay0r> plugin("Twolay0r",
+static frei0r::construct<twolay0r> plugin("Twolay0r",
 				  "dynamic thresholding",
 				  "Martin Bayer",
 				  0,2);
-

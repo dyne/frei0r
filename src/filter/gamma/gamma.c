@@ -35,7 +35,7 @@ typedef struct gamma_instance
 } gamma_instance_t;
 
 /* Updates the look-up-table. */
-void update_lut(gamma_instance_t *inst)
+static void update_lut(gamma_instance_t *inst)
 {
   int i;
   unsigned char *lut = inst->lut;
@@ -147,4 +147,3 @@ void f0r_update(f0r_instance_t instance, double time,
     *dst++ = *src++;// copy alpha
   }
 }
-

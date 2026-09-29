@@ -285,7 +285,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 }
 
 /* RGB to YCbCr range 0-255 */
-YCbCr_t rgb_to_YCbCr(rgb_t rgb)
+static YCbCr_t rgb_to_YCbCr(rgb_t rgb)
 {
 	YCbCr_t dest;
 	dest.Y = (float)((0.299 * (float)rgb.red + 0.587 * (float)rgb.green + 0.114 * (float)rgb.blue));
@@ -391,4 +391,3 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	}
 	free(scope);
 }
-

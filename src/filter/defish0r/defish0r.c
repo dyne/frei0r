@@ -35,10 +35,10 @@
 #include "interp.h"
 
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 //add simplified 'Elestic Scale' to fix superview
-float stretchWidth(int width, int widthCentre, float currentXPos, float stretchFactor)
+static float stretchWidth(int width, int widthCentre, float currentXPos, float stretchFactor)
 {
 	double ratio, lowerWeight = 0.0, higherWeight = 0.0, linearRatio;
 	unsigned int lengthSection;
@@ -73,7 +73,7 @@ float stretchWidth(int width, int widthCentre, float currentXPos, float stretchF
 //---------------------------------------------------------
 //	r = 0...1    izhod = 0...maxr
 //ta funkcija da popacenje v odvisnosti od r
-float fish(int n, float r, float f)
+static float fish(int n, float r, float f)
 {
 	float rr,ff;
 
@@ -112,7 +112,7 @@ float fish(int n, float r, float f)
 //---------------------------------------------------------
 //ta funkcija da popacenje v odvisnosti od r
 //	r = 0...1    izhod = 0...1
-float defish(int n, float r, float f, float mr)
+static float defish(int n, float r, float f, float mr)
 {
 	float rr;
 
@@ -148,7 +148,7 @@ float defish(int n, float r, float f, float mr)
 //scal = scaling factor
 //pari, paro = pixel aspect ratio (input / output)
 //dx, dy   offset on input (for non-cosited chroma subsampling)
-void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
+static void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
 	, float stretchFactor, float yScale)
 {
 	float rmax,maxr,r,kot,x,y,imax;
@@ -215,7 +215,7 @@ void fishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float p
 //lbox = letterbox
 //stretch = dynamic stretch, convert between 4:3 and 16:9
 //yScale = -0.5.. 0.5 change aspect ratio on y access only
-void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
+static void defishmap(int wi, int hi, int wo, int ho, int n, float f, float scal, float pari, float paro, float dx, float dy, float *map
 	, int lbox, float stretchFactor, float yScale)
 {
 	float rmax,maxr,r,kot,x,y,imax;
@@ -336,7 +336,7 @@ typedef struct
 
 
 //-------------------------------------------------------
-interpp set_intp(param p)
+static interpp set_intp(param p)
 {
 	switch (p.intp)	//katero interpolacijo bo uporabil
 	{
@@ -353,7 +353,7 @@ interpp set_intp(param p)
 }
 
 //--------------------------------------------------------
-void make_map(param p)
+static void make_map(param p)
 {
 	float rmax,maxr,imax,fscal,dscal;
 
@@ -537,7 +537,7 @@ void f0r_destruct(f0r_instance_t instance)
 
 //----------------------------------------------------
 //not used in frei0r plugin
-void change_param(param *p, int w, int h, float f, int dir, int type, int scal, int intp)
+static void change_param(param *p, int w, int h, float f, int dir, int type, int scal, int intp)
 {
 	p->f=f;
 	p->dir=dir;
@@ -558,7 +558,7 @@ void change_param(param *p, int w, int h, float f, int dir, int type, int scal, 
 }
 
 //-----------------------------------------------------
-void print_param(param p)
+static void print_param(param p)
 		//not used in frei0r plugin
 {
 	printf("Param: w=%d h=%d f=%f dir=%d",p.w, p.h, p.f, p.dir);
@@ -569,7 +569,7 @@ void print_param(param p)
 //------------------------------------------------------
 //computes x to the power p
 //only for positive x
-float pwr(float x, float p)
+static float pwr(float x, float p)
 {
 	if (x<=0) return 0;
 	//printf("exp(%f)=%f\n",x,expf(p*logf(x)));
@@ -579,7 +579,7 @@ float pwr(float x, float p)
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 	float sr,k;
 
@@ -591,7 +591,7 @@ float map_value_forward_log(double v, float min, float max)
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
 	float sr,k;
 
@@ -602,14 +602,14 @@ double map_value_backward_log(float v, float min, float max)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 	return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 	return (v-min)/(max-min);
 }

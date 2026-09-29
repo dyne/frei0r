@@ -76,9 +76,8 @@ public:
 };
 
 
-frei0r::construct<lighten> plugin("lighten",
+static frei0r::construct<lighten> plugin("lighten",
                                   "Perform a lighten operation between two sources (maximum value of both sources).",
                                   "Jean-Sebastien Senecal",
                                   0,2,
                                   F0R_COLOR_MODEL_RGBA8888);
-

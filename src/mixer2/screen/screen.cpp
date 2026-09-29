@@ -69,9 +69,8 @@ public:
 };
 
 
-frei0r::construct<screen> plugin("screen",
+static frei0r::construct<screen> plugin("screen",
                                  "Perform an RGB[A] screen operation between the pixel sources, using the generalised algorithm: D = 255 - (255 - A) * (255 - B)",
                                  "Jean-Sebastien Senecal",
                                  0,2,
                                  F0R_COLOR_MODEL_RGBA8888);
-

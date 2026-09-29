@@ -247,7 +247,7 @@ private:
 
 
 
-frei0r::construct<D90StairsteppingFix> plugin("Nikon D90 Stairstepping fix",
+static frei0r::construct<D90StairsteppingFix> plugin("Nikon D90 Stairstepping fix",
                 "Removes the Stairstepping from Nikon D90 videos (720p only) by interpolation",
                 "Simon A. Eugster (Granjow)",
                 0,2,

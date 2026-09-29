@@ -60,7 +60,7 @@
 *
 * Sets cairo context to use the defined blend mode for all paint operations.
 */
-void frei0r_cairo_set_operator(cairo_t *cr, char *op)
+static inline void frei0r_cairo_set_operator(cairo_t *cr, char *op)
 {
   // Validate inputs
   if (!cr || !op) {
@@ -161,7 +161,7 @@ void frei0r_cairo_set_operator(cairo_t *cr, char *op)
 * Switches red and blue channels to get correct color on little endian machines. 
 * This method only works correctly on little endian machines.
 */
-void frei0r_cairo_set_rgba_LITTLE_ENDIAN(cairo_t* cr, double red, double green, double blue, double alpha)
+static inline void frei0r_cairo_set_rgba_LITTLE_ENDIAN(cairo_t* cr, double red, double green, double blue, double alpha)
 {
   cairo_set_source_rgba (cr, blue, green, red, alpha);
 }
@@ -177,7 +177,7 @@ void frei0r_cairo_set_rgba_LITTLE_ENDIAN(cairo_t* cr, double red, double green, 
 * Switches red and blue channels to get correct color on little endian machines. 
 * This method only works correctly on little endian machines.
 */
-void frei0r_cairo_set_rgb_LITTLE_ENDIAN(cairo_t* cr, double red, double green, double blue)
+static inline void frei0r_cairo_set_rgb_LITTLE_ENDIAN(cairo_t* cr, double red, double green, double blue)
 {
   cairo_set_source_rgb (cr, blue, green, red);
 }
@@ -195,7 +195,7 @@ void frei0r_cairo_set_rgb_LITTLE_ENDIAN(cairo_t* cr, double red, double green, d
 * Switches red and blue channels to get correct color on little endian machines. 
 * This method only works correctly on little endian machines.
 */
-void freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN(cairo_pattern_t *pat, double offset, 
+static inline void freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN(cairo_pattern_t *pat, double offset,
                                                     double red, double green, double blue, double alpha)
 {                               
   cairo_pattern_add_color_stop_rgba (pat, offset, blue, green, red, alpha);
@@ -210,7 +210,7 @@ void freior_cairo_set_color_stop_rgba_LITTLE_ENDIAN(cairo_pattern_t *pat, double
 *
 * Returns: position in pixels
 */ 
-double frei0r_cairo_get_pixel_position (double norm_pos, int dim)
+static inline double frei0r_cairo_get_pixel_position (double norm_pos, int dim)
 {
   double pos_o = -(dim * 2.0);
   return pos_o + norm_pos * dim * 5.0;  
@@ -224,7 +224,7 @@ double frei0r_cairo_get_pixel_position (double norm_pos, int dim)
 *
 * Returns: scale
 */ 
-double frei0r_cairo_get_scale (double norm_scale)
+static inline double frei0r_cairo_get_scale (double norm_scale)
 {
   return norm_scale * 5.0;
 }
@@ -237,7 +237,7 @@ double frei0r_cairo_get_scale (double norm_scale)
  * \param alpha if >= 0, the alpha channel will be set to this value
  * \see frei0r_cairo_unpremultiply_rgba
  */
-void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
+static inline void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
 {
   // Validate inputs
   if (!rgba || pixels <= 0) {
@@ -266,7 +266,7 @@ void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
  * \param pixels the size of the image buffer in number of pixels
  * \see frei0r_cairo_premultiply_rgba
  */
-void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
+static inline void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
 {
   // Validate inputs
   if (!rgba || pixels <= 0) {
@@ -296,7 +296,7 @@ void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pixels)
  * This is the same as frei0r_cairo_premultiply_rgba but it writes the
  * output to a different buffer.
  */
-void frei0r_cairo_premultiply_rgba2 (unsigned char *in, unsigned char *out,
+static inline void frei0r_cairo_premultiply_rgba2 (unsigned char *in, unsigned char *out,
                                      int pixels, int alpha)
 {
   // Validate inputs

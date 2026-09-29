@@ -37,10 +37,10 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include "font2.h"
 #include "measure.h"
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 //---------------------------------------------------------------
-void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
+static void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -57,7 +57,7 @@ for (i=zy;i<ky;i++)
 
 //---------------------------------------------------------------
 //d=dim value   0.0=black   1.0=no dimming
-void darken_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float d)
+static void darken_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float d)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -77,7 +77,7 @@ for (i=zy;i<ky;i++)
 
 //--------------------------------------------------------
 //uses a 8x16 font from a .xbm image 32 char wide x 3 char high
-void draw_char(float_rgba *sl, int w, int h, int x, int y, unsigned char c, float_rgba col)
+static void draw_char(float_rgba *sl, int w, int h, int x, int y, unsigned char c, float_rgba col)
 {
 int i,j,z;
 
@@ -97,7 +97,7 @@ for (i=0;i<16;i++)
 }
 
 //-----------------------------------------------------------
-void draw_string(float_rgba *sl, int w, int h, int x, int y, char *c, float_rgba col)
+static void draw_string(float_rgba *sl, int w, int h, int x, int y, char *c, float_rgba col)
 {
 int i;
 
@@ -148,7 +148,7 @@ sprintf(s,"%s",ss);
 //draws a simple line (no antialiasing)
 //xz,yz=start point
 //xk,yk=end point
-void draw_line(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, float_rgba c)
+static void draw_line(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, float_rgba c)
 {
 int x,y,d,i;
 
@@ -165,7 +165,7 @@ for (i=0;i<d;i++)
 
 //-------------------------------------------------------------
 //mark position of the profile on the image
-void pmarker(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, int sir, float_rgba c, float m1, float m2)
+static void pmarker(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, int sir, float_rgba c, float m1, float m2)
 {
 float dx,dy,dd;
 float s2,s3,xm,ym;
@@ -210,7 +210,7 @@ if (m2>0.0)
 
 //--------------------------------------------------------
 //select one of 8 colors for the crosshair
-float_rgba mcolor(int c)
+static float_rgba mcolor(int c)
 {
 float_rgba wh={1.0,1.0,1.0,1.0};
 float_rgba ye={1.0,1.0,0.0,1.0};
@@ -237,7 +237,7 @@ switch (c)
 
 //--------------------------------------------------------
 //graph p[], p[]+ofs should be between 0.0 and 1.0
-void draw_trace(float_rgba *s, int w, int h, int x0, int y0, int vx, int vy, float p[], int n, float ofs, float_rgba c)
+static void draw_trace(float_rgba *s, int w, int h, int x0, int y0, int vx, int vy, float p[], int n, float ofs, float_rgba c)
 {
 int i,x,y,xs,ys;
 
@@ -261,7 +261,7 @@ for (i=0;i<n;i++)
 //dit=what data to display (display items flags)
 //m1,m2 marker positions as indexes into p.x arrays
 //output is written into string *str
-void izpis(profdata p, char *str, int m, int u, int m1, int m2, int dit)
+static void izpis(profdata p, char *str, int m, int u, int m1, int m2, int dit)
 {
 int i;
 char fs[256],frs[16];
@@ -385,7 +385,7 @@ if ((dit&0x00000100)!=0)	//MAX of profile
 //dit=display items flags
 //cc=crosshair color [0...7]
 //cm=0 rec 601, cm=1 rec 709
-void prof(float_rgba *s, int w, int h, int *poz, int x, int y, float tilt, int len, int sir, int m, int u, int as, int m1, int m2, int dit, int cc, int cm, profdata *p)
+static void prof(float_rgba *s, int w, int h, int *poz, int x, int y, float tilt, int len, int sir, int m, int u, int as, int m1, int m2, int dit, int cc, int cm, profdata *p)
 {
 int x0,y0,vx,vy;
 int xz,xk,yz,yk;	//zacetna in koncna tocka
@@ -524,7 +524,7 @@ switch (m>>24)	//which channel data under the scope
 //-----------------------------------------------------
 //converts the internal RGBA float image into
 //Frei0r rgba8888 color
-void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
+static void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
 {
 int i;
 uint32_t p;
@@ -542,7 +542,7 @@ for (i=0;i<w*h;i++)
 //-----------------------------------------------------
 //converts the Frei0r rgba8888 color image into
 //internal float RGBA
-void color2floatrgba(const uint32_t* inframe, float_rgba *sl, int w , int h)
+static void color2floatrgba(const uint32_t* inframe, float_rgba *sl, int w , int h)
 {
 int i;
 
@@ -557,14 +557,14 @@ for (i=0;i<w*h;i++)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -832,8 +832,10 @@ switch(param_index)
 		if (tmpf != p->tilt) chg=1;
 		p->tilt=tmpf;
 		break;
-	case 3:		//length
-                tmpi=map_value_forward(*((double*)parm), 20.0, sqrtf(p->w*p->w+p->h*p->h));
+	case 3:		//length: retain the historical lower bound where it fits.
+                tmpi=map_value_forward(*((double*)parm),
+                    fminf(20.0f, sqrtf(p->w*p->w+p->h*p->h) / 2.0f),
+                    sqrtf(p->w*p->w+p->h*p->h));
 		if (tmpi != p->len) chg=1;
 		p->len=tmpi;
 		break;
@@ -965,7 +967,9 @@ switch(param_index)
 		*((double*)param)=map_value_backward(p->tilt, -PI/2.0, PI/2.0);
 		break;
 	case 3:
-		*((double*)param)=map_value_backward(p->len, 20.0, sqrtf(p->w*p->w+p->h*p->h));
+		*((double*)param)=map_value_backward(p->len,
+                    fminf(20.0f, sqrtf(p->w*p->w+p->h*p->h) / 2.0f),
+                    sqrtf(p->w*p->w+p->h*p->h));
 		break;
 	case 4:
 		*((double*)param)=map_value_backward(p->chn, 0.0, 7.9999);

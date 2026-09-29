@@ -69,9 +69,8 @@ public:
 };
 
 
-frei0r::construct<difference> plugin("difference",
+static frei0r::construct<difference> plugin("difference",
                                      "Perform an RGB[A] difference operation between the pixel sources.",
                                      "Jean-Sebastien Senecal",
                                      0,2,
                                      F0R_COLOR_MODEL_RGBA8888);
-

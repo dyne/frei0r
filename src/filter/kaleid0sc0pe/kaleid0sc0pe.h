@@ -25,6 +25,11 @@
 #ifndef SRC_FILTER_KALEID0SC0PE_KALEID0SC0PE_H_
 #define SRC_FILTER_KALEID0SC0PE_KALEID0SC0PE_H_ 1
 
+#ifdef FREI0R_BUNDLE_PLUGIN_TOKEN
+/* This private interface spans api.cpp and kaleid0sc0pe.cpp. */
+#define libkaleid0sc0pe f0r_bundle_kaleid0sc0pe
+#endif
+
 #include "ikaleid0sc0pe.h"
 
 #include <vector>

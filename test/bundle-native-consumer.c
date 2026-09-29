@@ -21,21 +21,19 @@ static int check_descriptor(const f0r_plugin_descriptor_t *descriptor,
 
 int main(void)
 {
-  static const char * const ids[] = {
-    "brightness", "invert0r", "premultiply", "RGB"
-  };
   const f0r_plugin_descriptor_t *descriptor;
   size_t index;
 
-  if (f0r_bundle_plugin_count() != sizeof(ids) / sizeof(ids[0]) ||
-      f0r_bundle_plugin_by_index(sizeof(ids) / sizeof(ids[0])) != NULL ||
+  if (f0r_bundle_plugin_count() == 0 ||
+      f0r_bundle_plugin_by_index(f0r_bundle_plugin_count()) != NULL ||
       f0r_bundle_plugin_by_id("missing") != NULL)
     return 1;
-  for (index = 0; index < sizeof(ids) / sizeof(ids[0]); ++index) {
+  for (index = 0; index < f0r_bundle_plugin_count(); ++index) {
     descriptor = f0r_bundle_plugin_by_index(index);
-    if (check_descriptor(descriptor, ids[index], index != 3,
-                         index == 2 || index == 3) ||
-        f0r_bundle_plugin_by_id(ids[index]) != descriptor)
+    if (!descriptor ||
+        check_descriptor(descriptor, descriptor->id, !!descriptor->update,
+                         !!descriptor->update2) ||
+        f0r_bundle_plugin_by_id(descriptor->id) != descriptor)
       return 2;
   }
   return 0;

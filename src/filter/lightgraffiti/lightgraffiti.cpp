@@ -1065,7 +1065,7 @@ private:
 
 
 
-frei0r::construct<LightGraffiti> plugin("Light Graffiti",
+static frei0r::construct<LightGraffiti> plugin("Light Graffiti",
                 "Creates light graffitis from a video by keeping the brightest spots.",
                 "Simon A. Eugster (Granjow)",
                 0,3,

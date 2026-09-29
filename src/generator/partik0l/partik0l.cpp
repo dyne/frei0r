@@ -46,6 +46,8 @@
 
 #define PRIMES 11
 
+namespace {
+
 class Partik0l: public frei0r::source {
 public:
 
@@ -181,6 +183,12 @@ void Partik0l::update(double time,
 
 
   memset(out,0,size);
+
+  /* The legacy blob rasterizer assumes a 16-pixel footprint.  A source is
+   * still valid at 8x8, where an empty frame is preferable to writing past
+   * the caller's output buffer. */
+  if (w < blob_size || h < blob_size)
+    return;
 
   blossom(out);
 
@@ -367,7 +375,9 @@ bool Partik0l::keypress(int key) {
   return(true);
 }
 */  
-frei0r::construct<Partik0l> plugin("Partik0l",
+} // namespace
+
+static frei0r::construct<Partik0l> plugin("Partik0l",
 				 "Particles generated on prime number sinusoidal blossoming",
 				 "Jaromil",
 				 0,3);

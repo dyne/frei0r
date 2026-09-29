@@ -36,7 +36,7 @@
 #define CHANNELS 3 // Actually 4; 0-3
 #define MAX_RGB_DISTANCE 441.6729559300637
 
-double euclidDistance(uint8_t x_r, uint8_t x_g, uint8_t x_b,
+static double euclidDistance(uint8_t x_r, uint8_t x_g, uint8_t x_b,
 		      uint8_t y_r, uint8_t y_g, uint8_t y_b)
    {
    //calculating color channel differences for next steps
@@ -112,7 +112,7 @@ private:
 
 };
 
-frei0r::construct<euclid_eraser> plugin("euclid_eraser",
+static frei0r::construct<euclid_eraser> plugin("euclid_eraser",
 	"Erasing backgrounds with euclidean distance",
         "Erik H. Beck",
         0,1,

@@ -365,7 +365,7 @@ static void ctmf_helper(
  *                      For example, a 512 kB L2 cache would have
  *                      memsize=512*1024 initially.
  */
-void ctmf(
+static void ctmf(
         const unsigned char* const src, unsigned char* const dst,
         const int width, const int height,
         const int src_step, const int dst_step,

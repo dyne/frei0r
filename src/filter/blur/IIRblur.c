@@ -37,7 +37,7 @@ Copyright (C) 2011  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <inttypes.h>
 #include <string.h>
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct
 {
@@ -76,7 +76,7 @@ typedef struct
 //Aitken-Neville interpolacija iz 4 tock (tretjega reda)
 //t = stevilo tock v arrayu
 //array xt naj bo v rastocem zaporedju, lahko neekvidistanten
-float AitNev3(int t, float xt[], float yt[], float x)
+static float AitNev3(int t, float xt[], float yt[], float x)
 {
     float p[10];
     int i,j,m;
@@ -113,14 +113,14 @@ float AitNev3(int t, float xt[], float yt[], float x)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
     return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
     return (v-min)/(max-min);
 }
@@ -128,7 +128,7 @@ double map_value_backward(float v, float min, float max)
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
     float sr,k;
 
@@ -140,7 +140,7 @@ float map_value_forward_log(double v, float min, float max)
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
     float sr,k;
 

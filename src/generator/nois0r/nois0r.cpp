@@ -57,8 +57,7 @@ public:
 };
 
 
-frei0r::construct<nois0r> plugin("Nois0r",
+static frei0r::construct<nois0r> plugin("Nois0r",
 				   "Generates white noise images",
 				   "Martin Bayer",
 				   0,3);
-

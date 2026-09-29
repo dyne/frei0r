@@ -28,7 +28,7 @@
 #define PAD (40)
 
 class FaceDetect;
-frei0r::construct<FaceDetect> plugin("opencvfacedetect",
+static frei0r::construct<FaceDetect> plugin("opencvfacedetect",
 				  "detect faces and draw shapes on them",
 				  "binarymillenium, ddennedy",
 				  2,0, F0R_COLOR_MODEL_PACKED32);

@@ -121,7 +121,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 	}
 }
 
-void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsigned char* src)
+static void draw_grid(cairo_imagegrid_instance_t* inst, unsigned char* dst, const unsigned char* src)
 {
   int x, y;
   int w = inst->width;
@@ -188,4 +188,3 @@ void f0r_update(f0r_instance_t instance, double time,
 
   draw_grid(inst, dst, src);
 }
-

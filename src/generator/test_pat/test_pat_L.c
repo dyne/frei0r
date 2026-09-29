@@ -51,11 +51,11 @@ needs to care about color models, endianness, DV legality etc.
 #include "frei0r.h"
 
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 
 //----------------------------------------------------------
-void draw_rectangle(float *sl, int w, int h, int x, int y, int wr, int hr, float gray)
+static void draw_rectangle(float *sl, int w, int h, int x, int y, int wr, int hr, float gray)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -73,7 +73,7 @@ for (i=zy;i<ky;i++)
 //----------------------------------------------------------
 //rectangle with gray gradient
 //dir:  0=left to right, 1=top to bottom, 2=r to l, 3=b to t
-void draw_gradient(float *sl, int w, int h, int x, int y, int wr, int hr, float gray1, float gray2, int dir)
+static void draw_gradient(float *sl, int w, int h, int x, int y, int wr, int hr, float gray1, float gray2, int dir)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -134,7 +134,7 @@ switch (dir)
 
 //-----------------------------------------------------------
 //pocasna za velike kroge.....
-void draw_circle(float *sl, int w, int h, float ar, int x, int y, int rn, int rz, float gray)
+static void draw_circle(float *sl, int w, int h, float ar, int x, int y, int rn, int rz, float gray)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -159,7 +159,7 @@ for (i=zy;i<ky;i++)
 //draw one numerical digit, 7-segment style
 //v=size in x direction (in y it is 2*v)
 //d= number [0...9]
-void disp7s(float *sl, int w, int h, int x, int y, int v, int d, float gray)
+static void disp7s(float *sl, int w, int h, int x, int y, int v, int d, float gray)
 {
 char seg[10]={0xEE,0x24,0xBA,0xB6,0x74,0xD6,0xDE,0xA4,0xFE,0xF6};
 
@@ -179,7 +179,7 @@ if ((seg[d]&2)!=0) draw_rectangle(sl,w,h,x,y,v,1,gray);
 //v=size
 //n=number
 //f=format (as in printf)
-void dispF(float *sl, int w, int h, int x, int y, int v, float n, char *f, float gray)
+static void dispF(float *sl, int w, int h, int x, int y, int v, float n, char *f, float gray)
 {
 char str[64];
 int i;
@@ -199,7 +199,7 @@ while (str[i]!=0)
 
 //----------------------------------------------------------
 //gray staircase
-void stopnice(float *sl, int w, int h)
+static void stopnice(float *sl, int w, int h)
 {
 int j,n;
 float s;
@@ -215,7 +215,7 @@ for (j=0;j<n;j++)
 
 //----------------------------------------------------------
 //gray staircase with contrast check
-void stopnice_k(float *sl, int w, int h)
+static void stopnice_k(float *sl, int w, int h)
 {
 int j,n,w1,h1;
 float s,s1,s2;
@@ -258,7 +258,7 @@ float s,s1,s2;
 
 //-----------------------------------------------------
 //gray gradient
-void sivi_klin(float *sl, int w, int h)
+static void sivi_klin(float *sl, int w, int h)
 {
 draw_rectangle(sl,w,h, 0, 0, w/7, h, 0.5);
 draw_rectangle(sl,w,h, 6*w/7, 0, w/7, h, 0.5);
@@ -267,7 +267,7 @@ draw_gradient(sl,w,h, w/8, 0, 3*w/4, h, 0.0, 1.0, 0);
 
 //----------------------------------------------------
 //256 grays
-void sivine256(float *sl, int w, int h)
+static void sivine256(float *sl, int w, int h)
 {
 int i,j,w1,h1;
 float s;
@@ -285,7 +285,7 @@ for (i=0;i<16;i++)
 
 //------------------------------------------------------
 //contrast bands
-void trakovi(float *sl, int w, int h)
+static void trakovi(float *sl, int w, int h)
 {
 int i,h1;
 
@@ -315,7 +315,7 @@ for (i=0;i<4;i++)
 }
 
 //----------------------------------------------------------
-void gamatest(float *sl, int w, int h)
+static void gamatest(float *sl, int w, int h)
 {
 int i,s,x,y;
 float g;
@@ -356,7 +356,7 @@ for (i=1;i<11;i++)
 }
 
 //--------------------------------------------------
-void ortikon(float *sl, int w, int h)
+static void ortikon(float *sl, int w, int h)
 {
 int i;
 float s1,s2;
@@ -392,7 +392,7 @@ for (i=h/4;i<h;i=i+h/4.5)
 //Frei0r rgba8888 color
 //ch selects the channel   0=all  1=R  2=G  3=B
 //sets alpha to opaque
-void float2color(float *sl, uint32_t* outframe, int w , int h, int ch)
+static void float2color(float *sl, uint32_t* outframe, int w , int h, int ch)
 {
 int i,ri,gi,bi;
 uint32_t p;
@@ -484,14 +484,14 @@ switch (ch)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -499,7 +499,7 @@ return (v-min)/(max-min);
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 float sr,k;
 
@@ -511,7 +511,7 @@ return sr*expf(k*(v-0.5));
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
 float sr,k;
 

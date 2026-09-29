@@ -301,7 +301,7 @@ inline void aech0r::trace_add(uint32_t* out, const uint32_t* in) {
 
 #endif // __SSE2__
 
-frei0r::construct<aech0r> plugin("aech0r",
+static frei0r::construct<aech0r> plugin("aech0r",
 									"analog video echo",
 									"d-j-a-y & vloop",
 									0,1);

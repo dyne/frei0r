@@ -70,9 +70,8 @@ public:
 
 };
 
-frei0r::construct<dodge> plugin("dodge",
+static frei0r::construct<dodge> plugin("dodge",
                                 "Perform an RGB[A] dodge operation between the pixel sources, using the generalised algorithm: D = saturation of 255 or (A * 256) / (256 - B)",
                                 "Jean-Sebastien Senecal",
                                 0,3,
                                 F0R_COLOR_MODEL_RGBA8888);
-

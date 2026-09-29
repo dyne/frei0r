@@ -7,12 +7,12 @@
 
 #define EDGEAVG 8
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 //---------------------------------------------------------
 //koeficienti za biquad lowpass  iz f in q
 // f v Nyquistih    0.0 < f < 0.5
-void calcab_lp1(float f, float q, float *a0, float *a1, float *a2, float *b0, float *b1, float *b2)
+static void calcab_lp1(float f, float q, float *a0, float *a1, float *a2, float *b0, float *b1, float *b2)
 {
 float a,b;
 
@@ -31,7 +31,7 @@ b=cosf(PI*f);
 //kompenzacija na desni
 //c=0.0 "odziv na zacetno stanje" (zunaj crno)
 //gain ni kompenziran
-void rep(float v1, float v2, float c, float *i1, float *i2, int n,  float a1, float a2)
+static void rep(float v1, float v2, float c, float *i1, float *i2, int n,  float a1, float a2)
 {
 int i;
 float lb[8192];
@@ -59,7 +59,7 @@ for (i=n-3;i>=0;i--)
 // rep za navzgor racuna iz ze procesiranih
 // (fibe-2 ga racuna iz deviskih)
 
-void fibe2o_f(float s[], int w, int h, float a1, float a2,  float rd1, float rd2, float rs1, float rs2, float rc1, float rc2, int ec)
+static void fibe2o_f(float s[], int w, int h, float a1, float a2,  float rd1, float rd2, float rs1, float rs2, float rc1, float rc2, int ec)
 {
 float cr,g,g4,avg,gavg,avgg,iavg;
 float rep1,rep2;

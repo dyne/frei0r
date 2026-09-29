@@ -42,7 +42,7 @@ typedef struct sigmoidal_instance
   uint8_t lut[256];
 } sigmoidal_instance_t;
 
-void gen_sigmoid_lut (uint8_t *const lut, const float base, const float sharpness)
+static void gen_sigmoid_lut (uint8_t *const lut, const float base, const float sharpness)
 {
   float k = expf(sharpness * 5.0) / 255.0;
   float b = (base - 0.5) * 63.0;
@@ -51,7 +51,7 @@ void gen_sigmoid_lut (uint8_t *const lut, const float base, const float sharpnes
     lut[i] = CLAMP (255.0 / (1.0 + expf(-k * (i - b - 127.0))), 0, 255.0);
 }
 
-void sigmoidal_transfer(f0r_instance_t instance, double time,
+static void sigmoidal_transfer(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
   assert(instance);
@@ -173,4 +173,3 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   sigmoidal_transfer(instance, time, inframe, outframe);
 }
-

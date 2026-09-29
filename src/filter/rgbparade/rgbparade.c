@@ -245,7 +245,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 	}
 }
 
-void draw_grid(unsigned char* scope, double width, double height)
+static void draw_grid(unsigned char* scope, double width, double height)
 {
 	double i, j;
 	long offset;
@@ -375,4 +375,3 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
 	}
 	free(parade);
 }
-

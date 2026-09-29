@@ -164,7 +164,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
   }
 }
 
-void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned char* src, double time)
+static void draw_composite(cairo_blend_instance_t* inst, unsigned char* out, unsigned char* src, double time)
 {
   int w = inst->width;
   int h = inst->height;
@@ -251,4 +251,3 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   draw_composite (inst, out, src, time);
   frei0r_cairo_unpremultiply_rgba (out, pixels);
 }
-

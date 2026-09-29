@@ -25,7 +25,7 @@
 
 #include "frei0r.h"
 
-void green_limited_by_blue(unsigned int len, const uint32_t* inframe, uint32_t* outframe)
+static void green_limited_by_blue(unsigned int len, const uint32_t* inframe, uint32_t* outframe)
 {
 
   unsigned char* dst = (unsigned char*)outframe;
@@ -56,7 +56,7 @@ void green_limited_by_blue(unsigned int len, const uint32_t* inframe, uint32_t* 
   }
 }
 
-void blue_limited_by_green(unsigned int len, const uint32_t* inframe, uint32_t* outframe)
+static void blue_limited_by_green(unsigned int len, const uint32_t* inframe, uint32_t* outframe)
 {
 
   unsigned char* dst = (unsigned char*)outframe;
@@ -187,4 +187,3 @@ void f0r_update(f0r_instance_t instance, double time,
     green_limited_by_blue(len, inframe, outframe);
   }
 }
-

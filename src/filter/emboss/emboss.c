@@ -29,8 +29,8 @@
 #include "frei0r.h"
 #include "frei0r/math.h"
 
-double PI = 3.14159; 
-double pixelScale = 255.9;
+static const double PI = 3.14159;
+static double pixelScale = 255.9;
 
 typedef struct emboss_instance
 {
@@ -231,4 +231,3 @@ void f0r_update(f0r_instance_t instance, double time,
   free(alphaVals);
   free(bumpPixels);
 }
-

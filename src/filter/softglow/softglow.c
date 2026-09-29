@@ -35,7 +35,7 @@
 #define NBYTES 4
 #define ALPHA 3
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct softglow_instance
 {
@@ -50,7 +50,7 @@ typedef struct softglow_instance
 	uint32_t* blurred;
 } softglow_instance_t;
 
-void overlay(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsigned int len)
+static void overlay(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsigned int len)
 {
     unsigned char* src1 = (unsigned char*)source1;
     unsigned char* src2 = (unsigned char*)source2;
@@ -73,7 +73,7 @@ void overlay(const uint32_t* source1, const uint32_t* source2, uint32_t* out, un
     }
 }
 
-void screen(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsigned int len)
+static void screen(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsigned int len)
 {
     unsigned char* src1 = (unsigned char*)source1;
     unsigned char* src2 = (unsigned char*)source2;
@@ -94,7 +94,7 @@ void screen(const uint32_t* source1, const uint32_t* source2, uint32_t* out, uns
       }
 }
 
-void add(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsigned int len)
+static void add(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsigned int len)
 {
     unsigned char* src1 = (unsigned char*)source1;
     unsigned char* src2 = (unsigned char*)source2;
@@ -118,7 +118,7 @@ void add(const uint32_t* source1, const uint32_t* source2, uint32_t* out, unsign
       }
   }
 
-int
+static int
 gimp_rgb_to_l_int (int red,
                    int green,
                    int blue)
@@ -301,7 +301,4 @@ void f0r_update(f0r_instance_t instance, double time,
   else
     add(inst->blurred, inframe, outframe, inst->width * inst->height);
 }
-
-
-
 

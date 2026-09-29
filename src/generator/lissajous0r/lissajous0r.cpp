@@ -71,8 +71,7 @@ private:
 };
 
 
-frei0r::construct<lissajous0r> plugin("Lissajous0r",
+static frei0r::construct<lissajous0r> plugin("Lissajous0r",
 				   "Generates Lissajous0r images",
 				   "Martin Bayer",
 				   0,3);
-

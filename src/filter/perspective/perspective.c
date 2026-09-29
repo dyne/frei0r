@@ -21,24 +21,24 @@
 #include "frei0r.h"
 
 
-void sub_vec2( f0r_param_position_t* r, f0r_param_position_t* a, f0r_param_position_t* b ) 
+static void sub_vec2( f0r_param_position_t* r, f0r_param_position_t* a, f0r_param_position_t* b )
 {
 	r->x = a->x - b->x;
 	r->y = a->y - b->y;
 }
-void add_vec2( f0r_param_position_t* r, f0r_param_position_t* a, f0r_param_position_t* b ) 
+static void add_vec2( f0r_param_position_t* r, f0r_param_position_t* a, f0r_param_position_t* b )
 {
 	r->x = a->x + b->x;
 	r->y = a->y + b->y;
 }
 
-void mul_vec2( f0r_param_position_t* r, f0r_param_position_t* a, double scalar )
+static void mul_vec2( f0r_param_position_t* r, f0r_param_position_t* a, double scalar )
 {
 	r->x = a->x * scalar;
 	r->y = a->y * scalar;
 }
 
-void get_pixel_position( f0r_param_position_t* r, f0r_param_position_t* t, f0r_param_position_t* b, f0r_param_position_t* tl, f0r_param_position_t* bl,f0r_param_position_t* in )
+static void get_pixel_position( f0r_param_position_t* r, f0r_param_position_t* t, f0r_param_position_t* b, f0r_param_position_t* tl, f0r_param_position_t* bl,f0r_param_position_t* in )
 {
 	f0r_param_position_t t_x;
 	f0r_param_position_t b_x;
@@ -220,4 +220,3 @@ void f0r_update(f0r_instance_t instance, double time,
 	}
 
 }
-
