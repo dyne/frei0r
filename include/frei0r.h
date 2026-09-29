@@ -211,6 +211,40 @@
 
 #include <inttypes.h>
 
+/*
+ * Bundle builds give every plugin a private, token-prefixed copy of the
+ * frei0r entry points.  Ordinary module builds leave these names untouched.
+ * CMake validates that FREI0R_BUNDLE_PLUGIN_TOKEN is a C identifier before
+ * adding it to a bundle target.
+ */
+#ifdef FREI0R_BUNDLE_PLUGIN_TOKEN
+#define F0R_BUNDLE_CONCAT_INNER(left, right) left##right
+#define F0R_BUNDLE_CONCAT(left, right) F0R_BUNDLE_CONCAT_INNER(left, right)
+#define F0R_BUNDLE_ENTRY(name) \
+  F0R_BUNDLE_CONCAT(FREI0R_BUNDLE_PLUGIN_TOKEN, F0R_BUNDLE_CONCAT(_, name))
+
+#define f0r_init F0R_BUNDLE_ENTRY(f0r_init)
+#define f0r_deinit F0R_BUNDLE_ENTRY(f0r_deinit)
+#define f0r_get_plugin_info F0R_BUNDLE_ENTRY(f0r_get_plugin_info)
+#define f0r_get_param_info F0R_BUNDLE_ENTRY(f0r_get_param_info)
+#define f0r_construct F0R_BUNDLE_ENTRY(f0r_construct)
+#define f0r_destruct F0R_BUNDLE_ENTRY(f0r_destruct)
+#define f0r_set_param_value F0R_BUNDLE_ENTRY(f0r_set_param_value)
+#define f0r_get_param_value F0R_BUNDLE_ENTRY(f0r_get_param_value)
+#define f0r_update F0R_BUNDLE_ENTRY(f0r_update)
+#define f0r_update2 F0R_BUNDLE_ENTRY(f0r_update2)
+
+/* Bundle objects are linked into one library, never loaded as modules. */
+#undef FREI0R_PUBLIC
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define FREI0R_PUBLIC
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#define FREI0R_PUBLIC __attribute__((visibility("hidden")))
+#else
+#define FREI0R_PUBLIC
+#endif
+#endif
+
 /**
  * Marks the frei0r entry points for export when building a plugin.
  *

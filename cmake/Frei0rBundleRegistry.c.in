@@ -1,0 +1,35 @@
+#include <string.h>
+
+#include "frei0r/bundle.h"
+
+@FREI0R_BUNDLE_REGISTRY_DECLARATIONS@
+static const f0r_plugin_descriptor_t * const f0r_bundle_descriptors[] = {
+@FREI0R_BUNDLE_REGISTRY_ENTRIES@};
+
+size_t f0r_bundle_plugin_count(void)
+{
+  return sizeof(f0r_bundle_descriptors) / sizeof(f0r_bundle_descriptors[0]);
+}
+
+const f0r_plugin_descriptor_t *f0r_bundle_plugin_by_index(size_t index)
+{
+  if (index >= f0r_bundle_plugin_count())
+    return NULL;
+  return f0r_bundle_descriptors[index];
+}
+
+const f0r_plugin_descriptor_t *f0r_bundle_plugin_by_id(const char *id)
+{
+  size_t index;
+  const f0r_plugin_descriptor_t *match = NULL;
+
+  if (!id)
+    return NULL;
+  for (index = 0; index < f0r_bundle_plugin_count(); ++index)
+    if (strcmp(id, f0r_bundle_descriptors[index]->id) == 0) {
+      if (match)
+        return NULL;
+      match = f0r_bundle_descriptors[index];
+    }
+  return match;
+}

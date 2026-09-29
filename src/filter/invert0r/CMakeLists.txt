@@ -1,11 +1,5 @@
-set (SOURCES invert0r.c)
-set (TARGET invert0r)
-
-if (MSVC)
-  set (SOURCES ${SOURCES} ${FREI0R_DEF})
-endif (MSVC)
-
-add_library (${TARGET}  MODULE ${SOURCES})
-set_target_properties (${TARGET} PROPERTIES PREFIX "")
-
-install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})
+frei0r_add_plugin(
+  NAME invert0r KIND FILTER SOURCES invert0r.c
+  BUNDLE_ID invert0r UPDATE TRUE UPDATE2 FALSE BUNDLE_ELIGIBLE
+  MSVC_DEFINITION ${FREI0R_DEF}
+)
