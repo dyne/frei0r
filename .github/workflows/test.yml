@@ -147,7 +147,8 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update -qy
-          sudo apt-get install --no-install-recommends -y cmake ninja-build
+          sudo apt-get install --no-install-recommends -y \
+            cmake ninja-build pkg-config libgl-dev libegl1-mesa-dev
       - name: Configure core bundle
         run: |
           cmake -S . -B build -G Ninja \
@@ -174,7 +175,7 @@ jobs:
       - id: wasi-sdk
         uses: bytecodealliance/setup-wasi-sdk-action@v1
         with:
-          version: '24'
+          version: '29'
           install-path: ${{ runner.temp }}/wasi-sdk
       - name: Configure core bundle
         run: |
