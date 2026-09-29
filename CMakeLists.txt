@@ -46,6 +46,35 @@ set_property(CACHE FREI0R_BUNDLE_PROFILE PROPERTY STRINGS core all)
 set(FREI0R_BUNDLE_PLUGINS "" CACHE STRING
     "Semicolon-separated bundle target names; overrides FREI0R_BUNDLE_PROFILE")
 
+# WebAssembly bundles start from an explicitly scalar, single-threaded profile.
+# The native MODULE targets retain their existing platform-specific settings;
+# these options affect only the separately compiled bundle objects.
+set(_frei0r_wasm_target OFF)
+if(CMAKE_SYSTEM_NAME STREQUAL "WASI" OR EMSCRIPTEN)
+  set(_frei0r_wasm_target ON)
+endif()
+option(FREI0R_BUNDLE_WASM_BASELINE
+  "Build bundle objects with the portable scalar, single-threaded Wasm baseline"
+  ${_frei0r_wasm_target})
+option(FREI0R_BUNDLE_WASM_SIMD
+  "Build a separate experimental Wasm SIMD bundle profile" OFF)
+option(FREI0R_BUNDLE_WASM_PTHREADS
+  "Build a separate experimental Wasm pthread bundle profile" OFF)
+if((FREI0R_BUNDLE_WASM_BASELINE OR FREI0R_BUNDLE_WASM_SIMD OR
+    FREI0R_BUNDLE_WASM_PTHREADS) AND NOT _frei0r_wasm_target)
+  message(FATAL_ERROR "FREI0R_BUNDLE_WASM_* options require a WASI or Emscripten target")
+endif()
+if(FREI0R_BUNDLE_WASM_BASELINE AND
+   (FREI0R_BUNDLE_WASM_SIMD OR FREI0R_BUNDLE_WASM_PTHREADS))
+  message(FATAL_ERROR "the scalar Wasm baseline cannot be combined with SIMD or pthread profiles")
+endif()
+if(FREI0R_BUNDLE_WASM_SIMD AND FREI0R_BUNDLE_WASM_PTHREADS)
+  message(FATAL_ERROR "Wasm SIMD and pthread profiles must be configured separately")
+endif()
+if(FREI0R_BUNDLE_WASM_BASELINE)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
 include(${CMAKE_SOURCE_DIR}/cmake/Frei0rBundlePlugin.cmake)
 
 include_directories (AFTER include)
