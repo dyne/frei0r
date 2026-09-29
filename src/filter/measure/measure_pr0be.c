@@ -35,7 +35,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include "font2.h"
 #include "measure.h"
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 //---------------------------------------------------------------
 static inline void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
@@ -55,7 +55,7 @@ for (i=zy;i<ky;i++)
 
 //---------------------------------------------------------------
 //d=dim value   0.0=black   1.0=no dimming
-void darken_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float d)
+static void darken_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float d)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -75,7 +75,7 @@ for (i=zy;i<ky;i++)
 
 //--------------------------------------------------------
 //uses a 8x16 font from a .xbm image 32 char wide x 3 char high
-void draw_char(float_rgba *sl, int w, int h, int x, int y, unsigned char c, float_rgba col)
+static void draw_char(float_rgba *sl, int w, int h, int x, int y, unsigned char c, float_rgba col)
 {
 int i,j,z;
 
@@ -95,7 +95,7 @@ for (i=0;i<16;i++)
 }
 
 //-----------------------------------------------------------
-void draw_string(float_rgba *sl, int w, int h, int x, int y, char *c, float_rgba col)
+static void draw_string(float_rgba *sl, int w, int h, int x, int y, char *c, float_rgba col)
 {
 int i;
 
@@ -110,7 +110,7 @@ while (c[i]!=0)
 //----------------------------------------------------------
 //marker   (crosshair)
 //v=size of cross legs
-void crosshair(float_rgba *s, int w, int h, int x, int y, int sx, int sy, int v)
+static void crosshair(float_rgba *s, int w, int h, int x, int y, int sx, int sy, int v)
 {
 float x1,y1;
 float_rgba white={1.0,1.0,1.0,1.0};
@@ -174,7 +174,7 @@ sprintf(s,"%s",ss);
 //u=units    0=0.0-1.0    1=0-255
 //m=sign  0=unsigned
 //mm=1  print min/max
-void izpis(char *str, char *lab, stat s, int u, int m, int mm)
+static void izpis(char *str, char *lab, stat s, int u, int m, int mm)
 {
 char fs[256],as[16],rs[16],ns[16],xs[16];
 
@@ -206,7 +206,7 @@ else
 
 //-----------------------------------------------------------
 //probe size markers in the magnifier display
-void sxmarkers(float_rgba *s, int w, int h, int x0, int y0, int np, int sx, int sy, int vp)
+static void sxmarkers(float_rgba *s, int w, int h, int x0, int y0, int np, int sx, int sy, int vp)
 {
 int np2,x,y,i,j;
 float_rgba white={1.0,1.0,1.0,1.0};
@@ -276,7 +276,7 @@ if (sy>np)
 //u=units    0=0.0-1.0    1=0-255
 //sha=1 show alpha
 //bw=1  big window
-void sonda(float_rgba *s, int w, int h, int x, int y, int sx, int sy, int *poz, int m, int u, int sha, int bw)
+static void sonda(float_rgba *s, int w, int h, int x, int y, int sx, int sy, int *poz, int m, int u, int sha, int bw)
 {
 int x0,y0,vx,vy,vp,np,np2,xn,yn;
 int i,j,xp,yp;
@@ -460,7 +460,7 @@ switch (m)
 //-----------------------------------------------------
 //converts the internal RGBA float image into
 //Frei0r rgba8888 color
-void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
+static void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
 {
 int i;
 uint32_t p;
@@ -478,7 +478,7 @@ for (i=0;i<w*h;i++)
 //-----------------------------------------------------
 //converts the Frei0r rgba8888 color image into
 //internal float RGBA
-void color2floatrgba(const uint32_t* inframe, float_rgba *sl, int w , int h)
+static void color2floatrgba(const uint32_t* inframe, float_rgba *sl, int w , int h)
 {
 int i;
 
@@ -493,14 +493,14 @@ for (i=0;i<w*h;i++)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }

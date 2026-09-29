@@ -91,8 +91,7 @@ public:
 };
 
 
-frei0r::construct<threelay0r> plugin("threelay0r",
+static frei0r::construct<threelay0r> plugin("threelay0r",
 									"dynamic 3 level thresholding",
 									"Hedde Bosman",
 									0,2);
-

@@ -22,6 +22,8 @@
 #include "frei0r.hpp"
 #include "frei0r/math.h"
 
+namespace {
+
 class TrackedObj {
 public:
   void update_hist();
@@ -83,7 +85,9 @@ private:
 };
 
 
-frei0r::construct<FaceBl0r> plugin("FaceBl0r",
+} // namespace
+
+static frei0r::construct<FaceBl0r> plugin("FaceBl0r",
 				  "automatic face blur",
 				  "ZioKernel, Biilly, Jilt, Jaromil, ddennedy",
 				  1,1, F0R_COLOR_MODEL_BGRA8888);

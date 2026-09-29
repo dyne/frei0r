@@ -74,8 +74,7 @@ public:
 };
 
 
-frei0r::construct<primaries> plugin("primaries",
+static frei0r::construct<primaries> plugin("primaries",
 									"Reduce image to primary colors",
 									"Hedde Bosman",
 									0,2);
-

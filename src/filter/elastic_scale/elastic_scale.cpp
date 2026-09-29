@@ -302,7 +302,7 @@ private:
 
 };
 
-frei0r::construct<ElasticScale> plugin("Elastic scale filter",
+static frei0r::construct<ElasticScale> plugin("Elastic scale filter",
                 "This is a frei0r filter which allows one to scale video footage non-linearly.",
                 "Matthias Schnoell",
                 0,2,

@@ -32,7 +32,7 @@ typedef struct mask0mate_instance {
 	f0r_instance_t* blur_instance;
 } mask0mate_instance_t;
 
-void update_mask( mask0mate_instance_t* i ){
+static void update_mask( mask0mate_instance_t* i ){
 	int l, r, t, b;
 	l = (int)( i->left * i->w );
 	r = (int)( i->w - ( i->right * i->w ) );
@@ -232,4 +232,3 @@ void f0r_update(f0r_instance_t instance, double time,
 	}
 
 }
-

@@ -71,9 +71,8 @@ public:
 };
 
 
-frei0r::construct<softlight> plugin("softlight",
+static frei0r::construct<softlight> plugin("softlight",
                                     "Perform an RGB[A] softlight operation between the pixel sources.",
                                     "Jean-Sebastien Senecal",
                                     0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
-

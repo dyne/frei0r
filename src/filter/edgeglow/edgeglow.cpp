@@ -181,9 +181,8 @@ public:
 };
 
 
-frei0r::construct<edgeglow> plugin("Edgeglow",
+static frei0r::construct<edgeglow> plugin("Edgeglow",
                                 "Edgeglow filter",
                                 "Salsaman",
                                 0,3,
                                 F0R_COLOR_MODEL_RGBA8888);
-

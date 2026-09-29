@@ -30,7 +30,7 @@
 #include "frei0r.h"
 #include "frei0r/math.h"
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct colorhalftone_instance
 {
@@ -67,7 +67,7 @@ static inline double smoothStep(double a, double b, double x)
 		x = (x - a) / (b - a);
 		return x*x * (3 - 2*x);
 }
-void color_halftone(f0r_instance_t instance, double time,
+static void color_halftone(f0r_instance_t instance, double time,
 		const uint32_t* inframe, uint32_t* outframe)
 {
   colorhalftone_instance_t* inst = (colorhalftone_instance_t*)instance;
@@ -272,4 +272,3 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   color_halftone(instance, time, inframe, outframe);
 }
-

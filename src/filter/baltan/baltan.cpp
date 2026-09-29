@@ -35,6 +35,8 @@
 #define STRIDE3 24 /* (STRIDE*3) */
 
 // freej compat facilitator
+namespace {
+
 typedef struct {
   int16_t w;
   int16_t h;
@@ -119,7 +121,9 @@ void Baltan::_init(int wdt, int hgt) {
   geo.size = geo.w*geo.h*(geo.bpp/8);
 }
 
-frei0r::construct<Baltan> plugin("Baltan",
+} // namespace
+
+static frei0r::construct<Baltan> plugin("Baltan",
 				  "delayed alpha smoothed blit of time",
 				  "Kentaro, Jaromil",
 				  3,1);

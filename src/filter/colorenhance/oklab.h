@@ -174,7 +174,7 @@ static oklab_t ciexyz_to_oklab(ciexyz_t u) {
     return v;
 }
 
-ciexyz_t oklab_to_ciexyz(oklab_t u/*, bool scale */)
+static inline ciexyz_t oklab_to_ciexyz(oklab_t u/*, bool scale */)
 {
     ciexyz_t v;
     float l, m, s;

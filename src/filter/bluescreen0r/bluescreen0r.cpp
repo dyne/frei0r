@@ -100,7 +100,7 @@ public:
 };
 
 
-frei0r::construct<bluescreen0r> plugin("bluescreen0r",
+static frei0r::construct<bluescreen0r> plugin("bluescreen0r",
 									   "Color to alpha (blit SRCALPHA)",
 									   "Hedde Bosman",
 									   0, 5,

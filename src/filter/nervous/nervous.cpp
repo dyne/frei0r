@@ -40,6 +40,8 @@
 #define PLANES 32
 
 // freej compat facilitator
+namespace {
+
 typedef struct {
   int16_t w;
   int16_t h;
@@ -144,7 +146,9 @@ void Nervous::update(double time,
 
 
 
-frei0r::construct<Nervous> plugin("Nervous",
+} // namespace
+
+static frei0r::construct<Nervous> plugin("Nervous",
 				"flushes frames in time in a nervous way",
 				"Tannenbaum, Kentaro, Jaromil",
 				3,1);

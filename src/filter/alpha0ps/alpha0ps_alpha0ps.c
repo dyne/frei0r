@@ -65,7 +65,7 @@ typedef struct
 
 
 //---------------------------------------------------
-void alphagray(inst *in, uint8_t *infr, uint8_t *oufr)
+static void alphagray(inst *in, uint8_t *infr, uint8_t *oufr)
 {
 	uint8_t s;
 	int i;
@@ -91,7 +91,7 @@ void alphagray(inst *in, uint8_t *infr, uint8_t *oufr)
 }
 
 //---------------------------------------------------
-void grayred(inst *in, uint8_t *infr, uint8_t *oufr)
+static void grayred(inst *in, uint8_t *infr, uint8_t *oufr)
 {
 	int i,rr;
 	uint8_t r,g,b,a,y;
@@ -131,7 +131,7 @@ void grayred(inst *in, uint8_t *infr, uint8_t *oufr)
 }
 
 //---------------------------------------------------
-void drawsel(inst *in, uint8_t *infr, uint8_t *oufr, int bg)
+static void drawsel(inst *in, uint8_t *infr, uint8_t *oufr, int bg)
 {
 	int i;
 	uint32_t bk;
@@ -193,7 +193,7 @@ void drawsel(inst *in, uint8_t *infr, uint8_t *oufr, int bg)
 
 //----------------------------------------------------------
 //shave based on average of 8 neighbors
-void shave_alpha(float *sl, float *ab, int w, int h)
+static void shave_alpha(float *sl, float *ab, int w, int h)
 {
 	int i,j,p;
 	float m;
@@ -215,7 +215,7 @@ void shave_alpha(float *sl, float *ab, int w, int h)
 
 
 //----------------------------------------------------------
-void grow_alpha(float *al, float *ab,
+static void grow_alpha(float *al, float *ab,
                 int w, int h, int mode)
 {
 	int i,j,p;
@@ -281,7 +281,7 @@ void grow_alpha(float *al, float *ab,
 }
 
 //----------------------------------------------------------
-void shrink_alpha(float *al, float *ab,
+static void shrink_alpha(float *al, float *ab,
                   int w, int h, int mode)
 {
 	int i,j,p;
@@ -347,7 +347,7 @@ void shrink_alpha(float *al, float *ab,
 }
 
 //---------------------------------------------------------
-void threshold_alpha(float *al, int w, int h, float thr, float hi, float lo)
+static void threshold_alpha(float *al, int w, int h, float thr, float hi, float lo)
 {
 	int i;
 	
@@ -356,7 +356,7 @@ void threshold_alpha(float *al, int w, int h, float thr, float hi, float lo)
 }
 
 //----------------------------------------------------------
-void blur_alpha(inst *in, float *falpha)
+static void blur_alpha(inst *in, float *falpha)
 {
 	int i;
 	
@@ -376,7 +376,7 @@ void blur_alpha(inst *in, float *falpha)
 //Aitken-Neville interpolacija iz 4 tock (tretjega reda)
 //t = stevilo tock v arrayu
 //array xt naj bo v rastocem zaporedju, lahko neekvidistanten
-float AitNev3(int t, float xt[], float yt[], float x)
+static float AitNev3(int t, float xt[], float yt[], float x)
 {
 	float p[10];
 	int i,j,m;
@@ -405,14 +405,14 @@ float AitNev3(int t, float xt[], float yt[], float x)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 	return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 	return (v-min)/(max-min);
 }

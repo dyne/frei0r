@@ -73,7 +73,7 @@ static inline unsigned int LowPassMul(unsigned int PrevMul, unsigned int CurrMul
     return CurrMul + Coef[d];
 }
 
-void deNoiseTemporal(
+static void deNoiseTemporal(
                     unsigned char *Frame,        // mpi->planes[x]
                     unsigned char *FrameDest,    // dmpi->planes[x]
                     unsigned short *FrameAnt,
@@ -95,7 +95,7 @@ void deNoiseTemporal(
     }
 }
 
-void deNoiseSpacial(
+static void deNoiseSpacial(
                     unsigned char *Frame,        // mpi->planes[x]
                     unsigned char *FrameDest,    // dmpi->planes[x]
                     unsigned int *LineAnt,       // vf->priv->Line (width bytes)
@@ -135,7 +135,7 @@ void deNoiseSpacial(
     }
 }
 
-void deNoise(unsigned char *Frame,        // mpi->planes[x]
+static void deNoise(unsigned char *Frame,        // mpi->planes[x]
                     unsigned char *FrameDest,    // dmpi->planes[x]
                     unsigned int *LineAnt,      // vf->priv->Line (width bytes)
 		    unsigned short **FrameAntPtr,
@@ -232,14 +232,14 @@ static void PrecalcCoefs(int *Ct, double Dist25)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -418,4 +418,3 @@ for (i=0;i<(in->w*in->h);i++)	//copy to packed, preserve alpha
 
 
 }
-

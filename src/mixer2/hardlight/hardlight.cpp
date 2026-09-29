@@ -78,9 +78,8 @@ public:
 };
 
 
-frei0r::construct<hardlight> plugin("hardlight",
+static frei0r::construct<hardlight> plugin("hardlight",
                                     "Perform an RGB[A] hardlight operation between the pixel sources",
                                     "Jean-Sebastien Senecal",
                                     0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
-

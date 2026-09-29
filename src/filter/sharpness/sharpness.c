@@ -74,7 +74,7 @@ Originally published Boston, Nov 98
 
 */
 
-void unsharp( uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int width, int height, FilterParam *fp ) {
+static void unsharp( uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int width, int height, FilterParam *fp ) {
 
     uint32_t **SC = fp->SC;
     uint32_t SR[MAX_MATRIX_SIZE-1], Tmp1, Tmp2;
@@ -136,14 +136,14 @@ void unsharp( uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int widt
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -330,4 +330,3 @@ for (i=0;i<(in->w*in->h);i++)	//copy to packed, preserve alpha
 
 
 }
-

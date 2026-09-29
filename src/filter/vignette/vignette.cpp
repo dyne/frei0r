@@ -170,7 +170,7 @@ private:
 
 
 
-frei0r::construct<Vignette> plugin("Vignette",
+static frei0r::construct<Vignette> plugin("Vignette",
                 "Lens vignetting effect, applies natural vignetting",
                 "Simon A. Eugster (Granjow)",
                 0,2,

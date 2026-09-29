@@ -224,7 +224,7 @@ void f0r_get_param_value(f0r_instance_t instance,
     }
 }
 
-float find_dist(int r1, int g1, int b1, int x1, int y1,
+static float find_dist(int r1, int g1, int b1, int x1, int y1,
                 int r2, int g2, int b2, int x2, int y2,
                 float max_space_dist, float dist_weight) //, float color_weight)
 {
@@ -324,4 +324,3 @@ void f0r_update(f0r_instance_t instance, double time,
     }
     //printf("\n");
 }
-

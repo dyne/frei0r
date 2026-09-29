@@ -288,7 +288,7 @@ private:
     float m_dispy = 0;
 };
 
-frei0r::construct<squigglevision> plugin(
+static frei0r::construct<squigglevision> plugin(
     "squigglevision",
     "Hand-drawn wobble via time-quantized noise displacement",
     "Gabriel Lobo (https://olobo.xyz)",

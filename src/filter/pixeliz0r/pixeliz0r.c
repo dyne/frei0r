@@ -70,7 +70,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
     pixelizer_instance_t* inst = (pixelizer_instance_t*)calloc(1, sizeof(*inst));
     inst->width = width; inst->height = height;
-    inst->block_size_x = 8; inst->block_size_y = 8;
+    /* Keep defaults representable by the normalized parameter range on
+     * small, but valid, frames. */
+    inst->block_size_x = MIN(8, 1 + width / 2);
+    inst->block_size_y = MIN(8, 1 + height / 2);
     return (f0r_instance_t)inst;
 }
 
@@ -242,4 +245,3 @@ static void fill_block(uint32_t* start, int bxsize, int bysize,
     }
 
 }
-

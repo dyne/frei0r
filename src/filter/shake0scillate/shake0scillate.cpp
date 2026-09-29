@@ -183,7 +183,7 @@ public:
     } 
 };
 
-frei0r::construct<Shake0scillate> plugin(
+static frei0r::construct<Shake0scillate> plugin(
     "Shake0scillate", 
     "Animate the input image with adjustable parameters such as amount, speed, rotation, scale and option to mirror the image if it goes outside the screen bounds.",
     "Johann JEG",

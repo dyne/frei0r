@@ -50,7 +50,7 @@ int op;
 
 //-----------------------------------------------------
 //RGBA8888 little endian
-void fill_grad(inst *in)
+static void fill_grad(inst *in)
 {
 int i,j;
 float st,ct,po,wd,d,a;
@@ -90,14 +90,14 @@ for (i=0;i<in->h;i++)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }

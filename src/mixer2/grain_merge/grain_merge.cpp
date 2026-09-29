@@ -71,9 +71,8 @@ public:
 };
 
 
-frei0r::construct<grain_merge> plugin("grain_merge",
+static frei0r::construct<grain_merge> plugin("grain_merge",
                                       "Perform an RGB[A] grain-merge operation between the pixel sources.",
                                       "Jean-Sebastien Senecal",
                                       0,2,
                                       F0R_COLOR_MODEL_RGBA8888);
-

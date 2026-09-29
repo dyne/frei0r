@@ -108,9 +108,8 @@ public:
 };
 
 
-frei0r::construct<equaliz0r> plugin("Equaliz0r",
+static frei0r::construct<equaliz0r> plugin("Equaliz0r",
                                     "Equalizes the intensity histograms",
                                     "Jean-Sebastien Senecal (Drone)",
                                     0,2,
                                     F0R_COLOR_MODEL_RGBA8888);
-

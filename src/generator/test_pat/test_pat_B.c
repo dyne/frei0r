@@ -49,7 +49,7 @@ needs to care about color models, endianness, DV legality etc.
 
 
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct
 	{
@@ -61,7 +61,7 @@ typedef struct
 
 
 //------------------------------------------------------------------
-void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
+static void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -78,7 +78,7 @@ for (i=zy;i<ky;i++)
 
 //-----------------------------------------------------------
 //pocasna za velike kroge.....
-void draw_circle(float_rgba *sl, int w, int h, float ar, int x, int y, int rn, int rz, float_rgba c)
+static void draw_circle(float_rgba *sl, int w, int h, float ar, int x, int y, int rn, int rz, float_rgba c)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -105,7 +105,7 @@ for (i=zy;i<ky;i++)
 //x,y = center
 //xb,yb = upper left corner of box
 //vx,vy = size of box
-void draw_boxed_circle(float_rgba *s, int w, int h, float x, float y, float r, float xb, float yb, float vx, float vy, float ar, float_rgba c)
+static void draw_boxed_circle(float_rgba *s, int w, int h, float x, float y, float r, float xb, float yb, float vx, float vy, float ar, float_rgba c)
 {
 int xz,yz,xk,yk;
 int i,j;
@@ -128,7 +128,7 @@ for (i=yz;i<yk;i++)
 //---------------------------------------------------------
 //draw an approximation of the Philips PM5544 test pattern
 //ar = pixel aspect ratio
-void draw_pm(float_rgba *s, int w, int h, float ar)
+static void draw_pm(float_rgba *s, int w, int h, float ar)
 {
 float_rgba c;
 int vky,vkx,nkx,x0,y0,x0d,y0d;
@@ -347,7 +347,7 @@ draw_boxed_circle(s,w,h, w/2.0,h/2.0,rk, w/2-0.5*vkx,y0+11*vky, vkx, 2*vky, ar,c
 //draw an approximation of the Telefunken FuBK test pattern
 //ar = pixel aspect ratio
 //simpl=1:  does not draw the circle and central vertical
-void draw_fu(float_rgba *s, int w, int h, float ar, int simpl)
+static void draw_fu(float_rgba *s, int w, int h, float ar, int simpl)
 {
 float_rgba c;
 int vky,vkx,nkx,x0,y0;
@@ -507,7 +507,7 @@ if (simpl==0)
 //simple color bars
 //m=modulation	0: 100%	  1: 95%   2: 75%
 //r=0	bars only	r=1 read area below ("PAL" color bars)
-void bars_simple(float_rgba *s, int w, int h, int m, int r)
+static void bars_simple(float_rgba *s, int w, int h, int m, int r)
 {
 float_rgba white,yellow,cyan,green,magenta,red,blue,black;
 int h1;
@@ -568,7 +568,7 @@ draw_rectangle(s,w,h,0,h1,w,h-h1,red);
 
 //----------------------------------------------------------
 //draws an approximation to the SMPTE color bars
-void bars_smpte(float_rgba *s, int w, int h)
+static void bars_smpte(float_rgba *s, int w, int h)
 {
 float_rgba c;
 
@@ -634,7 +634,7 @@ draw_rectangle(s,w,h,6*w/7,3*h/4,w/7+1,h/4+1,c);
 //converts the internal RGB float image into
 //Frei0r rgba8888 color
 //sets alpha to opaque
-void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
+static void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
 {
 int i;
 uint32_t p;
@@ -651,14 +651,14 @@ for (i=0;i<w*h;i++)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -666,7 +666,7 @@ return (v-min)/(max-min);
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 float sr,k;
 
@@ -678,7 +678,7 @@ return sr*expf(k*(v-0.5));
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
 float sr,k;
 

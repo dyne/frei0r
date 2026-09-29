@@ -38,7 +38,7 @@ Test patterns: cross sections of color spaces
 
 
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct
 	{
@@ -49,7 +49,7 @@ typedef struct
 	} float_rgba;
 
 //--------------------------------------------------------------
-void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
+static void draw_rectangle(float_rgba *s, int w, int h, float x, float y, float wr, float hr, float_rgba c)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -65,7 +65,7 @@ for (i=zy;i<ky;i++)
 }
 
 //-------------------------------------------------------
-int inside(float_rgba c)
+static int inside(float_rgba c)
 {
 if (c.r<0.0) return 0;
 if (c.r>1.0) return 0;
@@ -79,7 +79,7 @@ return 1;
 //-----------------------------------------------------------
 //os:   0=RG(B)   1=GB(R)   2=BR(G)
 //a:	value on third axis
-void risi_presek_rgb(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
+static void risi_presek_rgb(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -153,7 +153,7 @@ switch (os)
 //PAZI!!!!  ali so meje -0.5 do 0.5 za Pr in Pb prave?
 //os:   0=Y'Pr(Pb)   1=PrPb(Y)   2=PbY'(Pr)
 //a:	value on third axis
-void risi_presek_yprpb601(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
+static void risi_presek_yprpb601(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -236,7 +236,7 @@ switch (os)
 //PAZI!!!!  ali so meje -1.0 do 1.0 za aa in bb prave?
 //os:   0=AB(I)   1=BI(A)   2=IA(B)
 //a:	value on third axis
-void risi_presek_abi(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
+static void risi_presek_abi(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -321,7 +321,7 @@ switch (os)
 //-----------------------------------------------------------
 //os:   0=HC(I)   1=CI(H)   2=IH(C)
 //a:	value on third axis
-void risi_presek_hci(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
+static void risi_presek_hci(float_rgba *s, int w, int h, float x, float y, float wr, float hr, int os, float a)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -413,7 +413,7 @@ switch (os)
 //converts the internal RGB float image into
 //Frei0r rgba8888 color
 //sets alpha to opaque
-void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
+static void floatrgba2color(float_rgba *sl, uint32_t* outframe, int w , int h)
 {
 int i;
 uint32_t p;
@@ -430,14 +430,14 @@ for (i=0;i<w*h;i++)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -445,7 +445,7 @@ return (v-min)/(max-min);
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 float sr,k;
 
@@ -457,7 +457,7 @@ return sr*expf(k*(v-0.5));
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
 float sr,k;
 

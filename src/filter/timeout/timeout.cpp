@@ -127,7 +127,7 @@ private:
 
 
 
-frei0r::construct<Timeout> plugin("Timeout indicator",
+static frei0r::construct<Timeout> plugin("Timeout indicator",
                 "Timeout indicators e.g. for slides.",
                 "Simon A. Eugster",
                 0,2,

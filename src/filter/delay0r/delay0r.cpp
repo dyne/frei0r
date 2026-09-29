@@ -78,8 +78,7 @@ private:
 };
 
 
-frei0r::construct<delay0r> plugin("delay0r",
+static frei0r::construct<delay0r> plugin("delay0r",
 				  "video delay",
 				  "Martin Bayer",
 				  0,2);
-

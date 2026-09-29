@@ -46,6 +46,8 @@ typedef struct {
   uint8_t b;
 } Palette;
 
+namespace {
+
 class Plasma: public frei0r::source {
 
 public:
@@ -232,7 +234,9 @@ uint32_t Plasma::palette2rgb(uint8_t idx) {
   return rgba;
 }
 
-frei0r::construct<Plasma> plugin("Plasma",
+} // namespace
+
+static frei0r::construct<Plasma> plugin("Plasma",
 				   "Demo scene 8bit plasma",
 				   "Jaromil",
 				   0,3);

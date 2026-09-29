@@ -50,8 +50,7 @@ private:
 };
 
 
-frei0r::construct<onecol0r> plugin("onecol0r",
+static frei0r::construct<onecol0r> plugin("onecol0r",
 				   "image with just one color",
 				   "Martin Bayer",
 				   0,3);
-

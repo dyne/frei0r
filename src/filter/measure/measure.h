@@ -70,7 +70,7 @@ typedef struct		//profile data and statistics
 //w=width of image (stride)
 //x,y=position of the center of the group in pixels
 //sx,sy=size of the group in pixels
-void meri_y(float_rgba *s, stat *yy, int color, int x, int y, int w, int sx, int sy)
+static void meri_y(float_rgba *s, stat *yy, int color, int x, int y, int w, int sx, int sy)
 {
 float wr,wg,wb,luma,nf;
 int xp,yp;
@@ -116,7 +116,7 @@ yy->rms=sqrtf((yy->rms-nf*yy->avg*yy->avg)/nf);
 //w=width of image (stride)
 //x,y=position of the center of the group in pixels
 //sx,sy=size of the group in pixels
-void meri_rgb(float_rgba *s, stat *r, stat *g, stat *b, int x, int y, int w, int sx, int sy)
+static void meri_rgb(float_rgba *s, stat *r, stat *g, stat *b, int x, int y, int w, int sx, int sy)
 {
 float nf;
 int xp,yp;
@@ -168,7 +168,7 @@ b->rms=sqrtf((b->rms-nf*b->avg*b->avg)/nf);
 //w=width of image (stride)
 //x,y=position of the center of the group in pixels
 //sx,sy=size of the group in pixels
-void meri_a(float_rgba *s, stat *a, int x, int y, int w, int sx, int sy)
+static void meri_a(float_rgba *s, stat *a, int x, int y, int w, int sx, int sy)
 {
 float nf;
 int xp,yp;
@@ -205,7 +205,7 @@ a->rms=sqrtf((a->rms-nf*a->avg*a->avg)/nf);
 //w=width of image (stride)
 //x,y=position of the center of the group in pixels
 //sx,sy=size of the group in pixels
-void meri_uv(float_rgba *s, stat *u, stat *v, int color, int x, int y, int w, int sx, int sy)
+static void meri_uv(float_rgba *s, stat *u, stat *v, int color, int x, int y, int w, int sx, int sy)
 {
 float wr,wg,wb,uu,vv,nf;
 int xp,yp;
@@ -268,7 +268,7 @@ v->rms=sqrtf((v->rms-nf*v->avg*v->avg)/nf);
 //w,h=size of image
 //xz,yy,xk,yk=end points of the profile line
 //sir=width of profile in pixels (averaging)
-void meriprof(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, int sir, profdata *p)
+static void meriprof(float_rgba *s, int w, int h, int xz, int yz, int xk, int yk, int sir, profdata *p)
 {
 int x,y,d,i;
 float_rgba pix;
@@ -293,7 +293,7 @@ for (i=0;i<d;i++)
 
 //-----------------------------------------------------
 //c=0 rec 601      c=1 rec 709
-void prof_yuv(profdata *p, int color)
+static void prof_yuv(profdata *p, int color)
 {
 int i;
 float wr,wg,wb;
@@ -322,7 +322,7 @@ for (i=0;i<p->n;i++)
 //---------------------------------------------------------
 //calculates AVG, RMS, MIN, MAX
 //for r,g,b,a,y,u,v profiles
-void prof_stat(profdata *p)
+static void prof_stat(profdata *p)
 {
 int i;
 float nf;
@@ -395,4 +395,3 @@ p->sv.avg=p->sv.avg/nf;
 p->sv.rms=sqrtf((p->sv.rms-nf*p->sv.avg*p->sv.avg)/nf);
 
 }
-

@@ -39,6 +39,8 @@ if((*p = *p<<4)<0)>>n; \
 
 /* setup some data to identify the plugin */
 
+namespace {
+
 typedef struct {
   int16_t w;
   int16_t h;
@@ -178,7 +180,9 @@ long Cartoon::GetMaxContrast(int32_t *src,int x,int y) {
   return(max);
 }
 
-frei0r::construct<Cartoon> plugin("Cartoon",
+} // namespace
+
+static frei0r::construct<Cartoon> plugin("Cartoon",
 				  "Cartoonify video, do a form of edge detect",
 				  "Dries Pruimboom, Jaromil",
 				  2,2);

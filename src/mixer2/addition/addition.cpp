@@ -24,6 +24,8 @@
 #define NBYTES 4
 #define ALPHA 3
 
+namespace {
+
 class addition : public frei0r::mixer2
 {
 public:
@@ -72,9 +74,10 @@ private:
 
 uint8_t addition::add_lut[511];
 
-frei0r::construct<addition> plugin("addition",
+static frei0r::construct<addition> plugin("addition",
                                   "Perform an RGB[A] addition operation of the pixel sources.",
                                   "Jean-Sebastien Senecal",
                                   0,2,
                                   F0R_COLOR_MODEL_RGBA8888);
 
+}

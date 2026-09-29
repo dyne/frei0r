@@ -8,6 +8,17 @@ extern "C"
 #include <string>
 #include <iostream>
 
+#ifdef FREI0R_BUNDLE_PLUGIN_TOKEN
+/*
+ * The legacy C++ convenience API is header-only and carries registration
+ * state.  Give its namespace and registration object a plugin-specific name
+ * in a bundle so inline member functions cannot be coalesced across plugin
+ * objects and accidentally address another plugin's state.
+ */
+#define frei0r F0R_BUNDLE_ENTRY(frei0r)
+#define plugin F0R_BUNDLE_ENTRY(plugin)
+#endif
+
 
 namespace frei0r
 {

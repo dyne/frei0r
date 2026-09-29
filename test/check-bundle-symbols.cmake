@@ -16,3 +16,16 @@ foreach(symbol f0r_bundle_plugin_count f0r_bundle_plugin_by_index f0r_bundle_plu
     message(FATAL_ERROR "bundle did not export registry API ${symbol}")
   endif()
 endforeach()
+string(REPLACE "\n" ";" symbol_lines "${symbols}")
+foreach(line IN LISTS symbol_lines)
+  string(STRIP "${line}" line)
+  if(line STREQUAL "")
+    continue()
+  endif()
+  string(REGEX REPLACE "^.* " "" symbol "${line}")
+  if(NOT symbol STREQUAL "f0r_bundle_plugin_count" AND
+     NOT symbol STREQUAL "f0r_bundle_plugin_by_index" AND
+     NOT symbol STREQUAL "f0r_bundle_plugin_by_id")
+    message(FATAL_ERROR "bundle exported non-registry symbol: ${symbol}")
+  endif()
+endforeach()

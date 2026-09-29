@@ -43,8 +43,7 @@ private:
 };
 
 
-frei0r::construct<xfade0r> plugin("xfade0r",
+static frei0r::construct<xfade0r> plugin("xfade0r",
 				  "a simple xfader",
 				  "Martin Bayer",
 				  0,2);
-

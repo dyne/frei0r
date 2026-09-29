@@ -45,8 +45,7 @@ private:
 };
 
 
-frei0r::construct<nosync0r> plugin("nosync0r",
+static frei0r::construct<nosync0r> plugin("nosync0r",
 				   "broken tv",
 				   "Martin Bayer",
 				   0,2);
-

@@ -6,6 +6,42 @@ set(FREI0R_BUNDLE_PLUGIN_DESCRIPTOR_TEMPLATE
     "${CMAKE_CURRENT_LIST_DIR}/Frei0rBundlePluginDescriptor.c.in")
 set(FREI0R_BUNDLE_REGISTRY_TEMPLATE
     "${CMAKE_CURRENT_LIST_DIR}/Frei0rBundleRegistry.c.in")
+set(FREI0R_BUNDLE_SYMBOL_AUDIT_SCRIPT
+    "${CMAKE_CURRENT_LIST_DIR}/Frei0rBundleSymbolAudit.cmake")
+
+# Register a CTest audit for strong external implementation symbols emitted by
+# the selected object targets.  A manifest is generated at build time so the
+# audit follows the compiler's object-file layout without guessing paths.
+function(frei0r_bundle_add_symbol_collision_audit)
+  cmake_parse_arguments(ARG "" "NAME" "TARGETS" ${ARGN})
+  if(NOT ARG_NAME OR NOT ARG_TARGETS)
+    message(FATAL_ERROR
+      "frei0r_bundle_add_symbol_collision_audit requires NAME and TARGETS")
+  endif()
+  if(NOT BUILD_TESTING)
+    return()
+  endif()
+
+  set(manifests)
+  foreach(target IN LISTS ARG_TARGETS)
+    if(NOT TARGET ${target})
+      message(FATAL_ERROR "symbol audit target '${target}' does not exist")
+    endif()
+    set(manifest "${CMAKE_CURRENT_BINARY_DIR}/symbol-audit/${ARG_NAME}-${target}.objects")
+    file(GENERATE OUTPUT "${manifest}"
+      CONTENT "$<JOIN:$<TARGET_OBJECTS:${target}>,\n>")
+    list(APPEND manifests "${target}=${manifest}")
+  endforeach()
+
+  string(REPLACE ";" "," manifest_argument "${manifests}")
+  add_custom_target(${ARG_NAME}-objects ALL DEPENDS ${ARG_TARGETS})
+  add_test(NAME ${ARG_NAME}
+    COMMAND ${CMAKE_COMMAND}
+      -DNM=${CMAKE_NM}
+      -DMANIFESTS=${manifest_argument}
+      -P ${FREI0R_BUNDLE_SYMBOL_AUDIT_SCRIPT}
+  )
+endfunction()
 
 function(frei0r_bundle_sanitize_id input output)
   string(REGEX REPLACE "[^A-Za-z0-9_]" "_" sanitized "${input}")
@@ -88,8 +124,8 @@ endfunction()
 # separately compiled bundle object when explicitly selected.
 function(frei0r_add_plugin)
   cmake_parse_arguments(ARG "BUNDLE_ELIGIBLE"
-    "NAME;KIND;BUNDLE_ID;UPDATE;UPDATE2;MSVC_DEFINITION"
-    "SOURCES;COMPILE_DEFINITIONS;COMPILE_OPTIONS;LINK_LIBRARIES" ${ARGN})
+    "NAME;KIND;BUNDLE_ID;BUNDLE_PROFILE;BUNDLE_REASON;UPDATE;UPDATE2;MSVC_DEFINITION"
+    "SOURCES;COMPILE_DEFINITIONS;COMPILE_OPTIONS;LINK_LIBRARIES;BUNDLE_DEPENDENCIES" ${ARGN})
   foreach(required NAME KIND SOURCES)
     if(NOT ARG_${required})
       message(FATAL_ERROR "frei0r_add_plugin requires ${required}")
@@ -97,6 +133,12 @@ function(frei0r_add_plugin)
   endforeach()
   if(NOT ARG_BUNDLE_ID)
     set(ARG_BUNDLE_ID "${ARG_NAME}")
+  endif()
+  if(NOT ARG_BUNDLE_PROFILE)
+    set(ARG_BUNDLE_PROFILE core)
+  endif()
+  if(NOT ARG_BUNDLE_REASON)
+    set(ARG_BUNDLE_REASON "language runtime and math library only")
   endif()
 
   set(bundle_sources)
@@ -128,6 +170,9 @@ function(frei0r_add_plugin)
     FREI0R_PLUGIN_KIND "${ARG_KIND}"
     FREI0R_PLUGIN_BUNDLE_ID "${ARG_BUNDLE_ID}"
     FREI0R_PLUGIN_BUNDLE_ELIGIBLE "${ARG_BUNDLE_ELIGIBLE}"
+    FREI0R_PLUGIN_BUNDLE_PROFILE "${ARG_BUNDLE_PROFILE}"
+    FREI0R_PLUGIN_BUNDLE_REASON "${ARG_BUNDLE_REASON}"
+    FREI0R_PLUGIN_BUNDLE_DEPENDENCIES "${ARG_BUNDLE_DEPENDENCIES}"
     FREI0R_PLUGIN_SOURCES "${bundle_sources}"
     FREI0R_PLUGIN_UPDATE "${ARG_UPDATE}"
     FREI0R_PLUGIN_UPDATE2 "${ARG_UPDATE2}"
@@ -136,22 +181,256 @@ function(frei0r_add_plugin)
     FREI0R_PLUGIN_LINK_LIBRARIES "${ARG_LINK_LIBRARIES}"
   )
   set_property(GLOBAL APPEND PROPERTY FREI0R_PLUGIN_TARGETS ${ARG_NAME})
+  set_property(GLOBAL APPEND PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS
+    "${ARG_NAME}|${ARG_BUNDLE_PROFILE}|${ARG_BUNDLE_REASON}")
 endfunction()
 
-function(frei0r_finalize_bundle)
-  if(NOT FREI0R_BUILD_BUNDLE)
-    return()
-  endif()
-  if(NOT FREI0R_BUNDLE_PLUGINS)
-    message(FATAL_ERROR "FREI0R_BUILD_BUNDLE requires FREI0R_BUNDLE_PLUGINS")
+# Legacy MODULE declarations are retained for ordinary frei0r deployment, but
+# are still classified so profile resolution never silently omits a target.
+function(frei0r_bundle_classify_legacy_modules directory)
+  get_property(targets DIRECTORY "${directory}" PROPERTY BUILDSYSTEM_TARGETS)
+  foreach(target IN LISTS targets)
+    get_target_property(type ${target} TYPE)
+    if(NOT type STREQUAL "MODULE_LIBRARY")
+      continue()
+    endif()
+    get_target_property(profile ${target} FREI0R_PLUGIN_BUNDLE_PROFILE)
+    if(profile)
+      continue()
+    endif()
+    set(profile unsupported)
+    set(reason "legacy MODULE lacks bundle metadata and source-level collision audit")
+    if(target STREQUAL "facebl0r" OR target STREQUAL "facedetect")
+      set(profile optional-opencv)
+      set(reason "requires OpenCV")
+    elseif(target STREQUAL "cairoimagegrid" OR target STREQUAL "cairogradient" OR
+           target STREQUAL "mirr0r" OR target STREQUAL "shake0scillate" OR
+           target STREQUAL "cairoaffineblend" OR target STREQUAL "cairoblend")
+      set(profile optional-cairo)
+      set(reason "requires Cairo")
+    elseif(target STREQUAL "rgbparade" OR target STREQUAL "scale0tilt" OR
+           target STREQUAL "vectorscope")
+      set(profile optional-gavl)
+      set(reason "requires GAVL")
+    elseif(target STREQUAL "shadert0y")
+      set(profile optional-opengl-egl)
+      set(reason "requires OpenGL/EGL platform support")
+    elseif(target STREQUAL "colgate" OR target STREQUAL "ndvi")
+      set(profile unsupported-dynamic-loading)
+      set(reason "uses dynamic loading and is not portable to static hosts")
+    endif()
+    set_target_properties(${target} PROPERTIES
+      FREI0R_PLUGIN_BUNDLE_PROFILE "${profile}"
+      FREI0R_PLUGIN_BUNDLE_REASON "${reason}"
+      FREI0R_PLUGIN_BUNDLE_ELIGIBLE FALSE)
+    set_property(GLOBAL APPEND PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS
+      "${target}|${profile}|${reason}")
+  endforeach()
+  get_property(subdirectories DIRECTORY "${directory}" PROPERTY SUBDIRECTORIES)
+  foreach(subdirectory IN LISTS subdirectories)
+    frei0r_bundle_classify_legacy_modules("${subdirectory}")
+  endforeach()
+endfunction()
+
+# Promote classified portable MODULE targets into the same metadata contract as
+# explicitly declared plugins.  Their source paths and kind are properties of
+# the ordinary target, so this keeps MODULE behavior unchanged.
+function(frei0r_bundle_promote_core_modules directory)
+  get_property(targets DIRECTORY "${directory}" PROPERTY BUILDSYSTEM_TARGETS)
+  foreach(target IN LISTS targets)
+    get_target_property(type ${target} TYPE)
+    get_target_property(profile ${target} FREI0R_PLUGIN_BUNDLE_PROFILE)
+    get_target_property(reason ${target} FREI0R_PLUGIN_BUNDLE_REASON)
+    get_target_property(eligible ${target} FREI0R_PLUGIN_BUNDLE_ELIGIBLE)
+    if(NOT type STREQUAL "MODULE_LIBRARY" OR eligible OR
+       profile STREQUAL "unsupported-dynamic-loading")
+      continue()
+    endif()
+    get_target_property(sources ${target} SOURCES)
+    get_target_property(source_dir ${target} SOURCE_DIR)
+    set(absolute_sources)
+    foreach(source IN LISTS sources)
+      if(IS_ABSOLUTE "${source}")
+        list(APPEND absolute_sources "${source}")
+      else()
+        list(APPEND absolute_sources "${source_dir}/${source}")
+      endif()
+    endforeach()
+    set(update FALSE)
+    set(update2 FALSE)
+    foreach(source IN LISTS absolute_sources)
+      file(READ "${source}" source_contents)
+      if(source_contents MATCHES "f0r_update[ \\t\\r\\n]*\\(")
+        set(update TRUE)
+      endif()
+      if(source_contents MATCHES "f0r_update2[ \\t\\r\\n]*\\(")
+        set(update2 TRUE)
+      endif()
+    endforeach()
+    if(source_dir MATCHES "/generator/")
+      set(kind SOURCE)
+    elseif(source_dir MATCHES "/mixer3/")
+      set(kind MIXER3)
+    elseif(source_dir MATCHES "/mixer2/")
+      set(kind MIXER2)
+    else()
+      set(kind FILTER)
+    endif()
+    if(kind STREQUAL "FILTER" AND NOT update AND NOT update2)
+      set(update TRUE)
+    elseif(kind STREQUAL "SOURCE" AND NOT update AND NOT update2)
+      set(update TRUE)
+    elseif(kind STREQUAL "MIXER2" AND NOT update AND NOT update2)
+      set(update TRUE)
+      set(update2 TRUE)
+    elseif(kind STREQUAL "MIXER3" AND NOT update AND NOT update2)
+      set(update2 TRUE)
+    endif()
+    set(dependencies "")
+    if(profile STREQUAL "unsupported")
+      set(profile core)
+      set(reason "language runtime and math library only")
+    elseif(profile STREQUAL "optional-opencv")
+      set(dependencies OpenCV_FOUND)
+    elseif(profile STREQUAL "optional-cairo")
+      set(dependencies Cairo_FOUND)
+    elseif(profile STREQUAL "optional-gavl")
+      set(dependencies GAVL_FOUND)
+    elseif(profile STREQUAL "optional-opengl-egl")
+      set(dependencies OPENGL_TARGET EGL_FOUND)
+    else()
+      continue()
+    endif()
+    get_target_property(include_directories ${target} INCLUDE_DIRECTORIES)
+    get_target_property(link_libraries ${target} LINK_LIBRARIES)
+    get_target_property(compile_definitions ${target} COMPILE_DEFINITIONS)
+    get_target_property(compile_options ${target} COMPILE_OPTIONS)
+    set_target_properties(${target} PROPERTIES
+      FREI0R_PLUGIN_KIND "${kind}"
+      FREI0R_PLUGIN_BUNDLE_ID "${target}"
+      FREI0R_PLUGIN_BUNDLE_ELIGIBLE TRUE
+      FREI0R_PLUGIN_BUNDLE_PROFILE "${profile}"
+      FREI0R_PLUGIN_BUNDLE_REASON "${reason}"
+      FREI0R_PLUGIN_BUNDLE_DEPENDENCIES "${dependencies}"
+      FREI0R_PLUGIN_SOURCES "${absolute_sources}"
+      FREI0R_PLUGIN_UPDATE "${update}"
+      FREI0R_PLUGIN_UPDATE2 "${update2}"
+      FREI0R_PLUGIN_COMPILE_DEFINITIONS "${compile_definitions}"
+      FREI0R_PLUGIN_COMPILE_OPTIONS "${compile_options}"
+      FREI0R_PLUGIN_INCLUDE_DIRECTORIES "${include_directories}"
+      FREI0R_PLUGIN_LINK_LIBRARIES "${link_libraries}")
+    set_property(GLOBAL APPEND PROPERTY FREI0R_PLUGIN_TARGETS ${target})
+  endforeach()
+  get_property(subdirectories DIRECTORY "${directory}" PROPERTY SUBDIRECTORIES)
+  foreach(subdirectory IN LISTS subdirectories)
+    frei0r_bundle_promote_core_modules("${subdirectory}")
+  endforeach()
+endfunction()
+
+# Persist classifications only after promotion has established the final
+# metadata.  This prevents a stale pre-promotion "unsupported" record from
+# misrepresenting an eligible core or optional bundle target.
+function(frei0r_bundle_collect_module_targets directory output)
+  get_property(directory_targets DIRECTORY "${directory}" PROPERTY BUILDSYSTEM_TARGETS)
+  set(targets)
+  foreach(target IN LISTS directory_targets)
+    get_target_property(type ${target} TYPE)
+    if(type STREQUAL "MODULE_LIBRARY")
+      list(APPEND targets ${target})
+    endif()
+  endforeach()
+  get_property(subdirectories DIRECTORY "${directory}" PROPERTY SUBDIRECTORIES)
+  foreach(subdirectory IN LISTS subdirectories)
+    frei0r_bundle_collect_module_targets("${subdirectory}" child_targets)
+    list(APPEND targets ${child_targets})
+  endforeach()
+  set(${output} "${targets}" PARENT_SCOPE)
+endfunction()
+
+function(frei0r_bundle_collect_classifications directory)
+  get_property(targets GLOBAL PROPERTY FREI0R_PLUGIN_TARGETS)
+  frei0r_bundle_collect_module_targets("${directory}" module_targets)
+  list(APPEND targets ${module_targets})
+  list(REMOVE_DUPLICATES targets)
+  set(FREI0R_BUNDLE_CLASSIFICATION_TARGETS "${targets}" CACHE INTERNAL
+      "Targets considered by the final bundle classification" FORCE)
+  foreach(target IN LISTS targets)
+    get_target_property(profile ${target} FREI0R_PLUGIN_BUNDLE_PROFILE)
+    get_target_property(reason ${target} FREI0R_PLUGIN_BUNDLE_REASON)
+    if(NOT profile OR profile MATCHES "-NOTFOUND$")
+      if(target STREQUAL "facebl0r" OR target STREQUAL "facedetect")
+        set(profile optional-opencv)
+        set(reason "requires OpenCV")
+      elseif(target STREQUAL "cairoimagegrid" OR target STREQUAL "cairogradient" OR
+             target STREQUAL "mirr0r" OR target STREQUAL "shake0scillate" OR
+             target STREQUAL "cairoaffineblend" OR target STREQUAL "cairoblend")
+        set(profile optional-cairo)
+        set(reason "requires Cairo")
+      elseif(target STREQUAL "rgbparade" OR target STREQUAL "scale0tilt" OR
+             target STREQUAL "vectorscope")
+        set(profile optional-gavl)
+        set(reason "requires GAVL")
+      elseif(target STREQUAL "shadert0y")
+        set(profile optional-opengl-egl)
+        set(reason "requires OpenGL/EGL platform support")
+      elseif(target STREQUAL "colgate" OR target STREQUAL "ndvi")
+        set(profile unsupported-dynamic-loading)
+        set(reason "uses dynamic loading and is not portable to static hosts")
+      endif()
+    endif()
+    if(NOT "${profile}" STREQUAL "" AND NOT "${profile}" MATCHES "-NOTFOUND$" AND
+       NOT "${reason}" STREQUAL "" AND NOT "${reason}" MATCHES "-NOTFOUND$")
+      set_property(GLOBAL APPEND PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS
+        "${target}|${profile}|${reason}")
+    endif()
+  endforeach()
+endfunction()
+
+function(frei0r_bundle_dependencies_available output)
+  set(available TRUE)
+  foreach(dependency IN LISTS ARGN)
+    if(dependency STREQUAL "OPENGL_TARGET")
+      if(NOT TARGET OpenGL::GL)
+        set(available FALSE)
+      endif()
+    elseif(NOT ${dependency})
+      set(available FALSE)
+    endif()
+  endforeach()
+  set(${output} ${available} PARENT_SCOPE)
+endfunction()
+
+function(frei0r_bundle_resolve_targets output)
+  get_property(plugin_targets GLOBAL PROPERTY FREI0R_PLUGIN_TARGETS)
+  if(FREI0R_BUNDLE_PLUGINS)
+    set(requested ${FREI0R_BUNDLE_PLUGINS})
+  elseif(FREI0R_BUNDLE_PROFILE STREQUAL "core")
+    set(requested)
+    foreach(plugin IN LISTS plugin_targets)
+      get_target_property(profile ${plugin} FREI0R_PLUGIN_BUNDLE_PROFILE)
+      if(profile STREQUAL "core")
+        list(APPEND requested ${plugin})
+      endif()
+    endforeach()
+  elseif(FREI0R_BUNDLE_PROFILE STREQUAL "all")
+    set(requested)
+    foreach(plugin IN LISTS plugin_targets)
+      get_target_property(dependencies ${plugin} FREI0R_PLUGIN_BUNDLE_DEPENDENCIES)
+      frei0r_bundle_dependencies_available(available ${dependencies})
+      if(available)
+        list(APPEND requested ${plugin})
+      endif()
+    endforeach()
+  else()
+    message(FATAL_ERROR
+      "FREI0R_BUNDLE_PROFILE must be core or all, got '${FREI0R_BUNDLE_PROFILE}'")
   endif()
 
-  set(bundle_objects)
-  set(bundle_descriptor_objects)
-  set(bundle_registry_declarations)
-  set(bundle_registry_entries)
-  set(bundle_link_libraries)
-  foreach(plugin IN LISTS FREI0R_BUNDLE_PLUGINS)
+  if(NOT requested)
+    message(FATAL_ERROR "frei0r bundle profile '${FREI0R_BUNDLE_PROFILE}' resolved no targets")
+  endif()
+  list(REMOVE_DUPLICATES requested)
+  foreach(plugin IN LISTS requested)
     if(NOT TARGET ${plugin})
       message(FATAL_ERROR "FREI0R_BUNDLE_PLUGINS selects unknown plugin '${plugin}'")
     endif()
@@ -159,15 +438,45 @@ function(frei0r_finalize_bundle)
     if(NOT eligible)
       message(FATAL_ERROR "plugin '${plugin}' is not bundle eligible")
     endif()
+    get_target_property(dependencies ${plugin} FREI0R_PLUGIN_BUNDLE_DEPENDENCIES)
+    frei0r_bundle_dependencies_available(available ${dependencies})
+    if(NOT available)
+      message(FATAL_ERROR
+        "plugin '${plugin}' requires unavailable bundle dependency '${dependencies}'")
+    endif()
+  endforeach()
+  set(${output} "${requested}" PARENT_SCOPE)
+endfunction()
+
+function(frei0r_finalize_bundle)
+  if(NOT FREI0R_BUILD_BUNDLE)
+    return()
+  endif()
+  frei0r_bundle_resolve_targets(resolved_plugins)
+  set(FREI0R_BUNDLE_RESOLVED_TARGETS "${resolved_plugins}" CACHE INTERNAL
+      "Targets selected for the current frei0r bundle" FORCE)
+
+  set(bundle_objects)
+  set(bundle_object_targets)
+  set(bundle_descriptor_objects)
+  set(bundle_registry_declarations)
+  set(bundle_registry_entries)
+  set(bundle_link_libraries)
+  foreach(plugin IN LISTS resolved_plugins)
     get_target_property(sources ${plugin} FREI0R_PLUGIN_SOURCES)
     get_target_property(id ${plugin} FREI0R_PLUGIN_BUNDLE_ID)
     get_target_property(update ${plugin} FREI0R_PLUGIN_UPDATE)
     get_target_property(update2 ${plugin} FREI0R_PLUGIN_UPDATE2)
     get_target_property(compile_definitions ${plugin} FREI0R_PLUGIN_COMPILE_DEFINITIONS)
     get_target_property(compile_options ${plugin} FREI0R_PLUGIN_COMPILE_OPTIONS)
+    get_target_property(include_directories ${plugin} FREI0R_PLUGIN_INCLUDE_DIRECTORIES)
     get_target_property(link_libraries ${plugin} FREI0R_PLUGIN_LINK_LIBRARIES)
     set(object_target frei0r-bundle-object-${plugin})
     add_library(${object_target} OBJECT ${sources})
+    set_target_properties(${object_target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    if(include_directories)
+      target_include_directories(${object_target} PRIVATE ${include_directories})
+    endif()
     if(compile_definitions)
       target_compile_definitions(${object_target} PRIVATE ${compile_definitions})
     endif()
@@ -182,6 +491,7 @@ function(frei0r_finalize_bundle)
     set(symbol ${descriptor_target}_SYMBOL)
     set(symbol ${${symbol}})
     list(APPEND bundle_objects $<TARGET_OBJECTS:${object_target}>)
+    list(APPEND bundle_object_targets ${object_target})
     list(APPEND bundle_descriptor_objects $<TARGET_OBJECTS:${descriptor_target}>)
     string(APPEND bundle_registry_declarations
       "extern const f0r_plugin_descriptor_t ${symbol};\n")
@@ -212,11 +522,25 @@ function(frei0r_finalize_bundle)
   endif()
 
   if(BUILD_TESTING)
+    frei0r_bundle_add_symbol_collision_audit(
+      NAME frei0r-bundle-symbol-collisions TARGETS ${bundle_object_targets}
+    )
     add_library(frei0r-bundle-shared SHARED
       $<TARGET_OBJECTS:frei0r-bundle-registry>
       ${bundle_objects} ${bundle_descriptor_objects}
     )
-    set_target_properties(frei0r-bundle-shared PROPERTIES OUTPUT_NAME frei0r-bundle-test)
+    set_target_properties(frei0r-bundle-shared PROPERTIES
+      OUTPUT_NAME frei0r-bundle-test
+      C_VISIBILITY_PRESET hidden
+      CXX_VISIBILITY_PRESET hidden
+      VISIBILITY_INLINES_HIDDEN YES
+    )
+    if(UNIX AND NOT APPLE)
+      set(bundle_exports "${CMAKE_CURRENT_BINARY_DIR}/frei0r-bundle.exports")
+      file(WRITE "${bundle_exports}" "{ global: f0r_bundle_plugin_count; f0r_bundle_plugin_by_index; f0r_bundle_plugin_by_id; local: *; };\n")
+      target_link_options(frei0r-bundle-shared PRIVATE
+        "-Wl,--version-script=${bundle_exports}")
+    endif()
     if(bundle_link_libraries)
       target_link_libraries(frei0r-bundle-shared PRIVATE ${bundle_link_libraries})
     endif()

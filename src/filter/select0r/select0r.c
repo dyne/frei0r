@@ -49,7 +49,7 @@ typedef struct
 	float z;
 } triplet;
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 //-----------------------------------------------------------
 //inline functions for subspace metrics
@@ -199,7 +199,7 @@ static inline float slope(float a, float is)
 //thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
 //avoids switch () inside inner loop for speed - this means
 //a big, repetitive switch statement outside....
-void sel_rgb(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
+static void sel_rgb(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
 {
 	float kr,kg,kb,dd;
 	int i,s;
@@ -340,7 +340,7 @@ void sel_rgb(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet
 //thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
 //avoids switch () inside inner loop for speed - this means
 //a big, repetitive switch statement outside....
-void sel_abi(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
+static void sel_abi(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
 {
 	float ka,kb,ki,k32,dd;
 	int i,s;
@@ -498,7 +498,7 @@ void sel_abi(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet
 //thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
 //avoids switch () inside inner loop for speed - this means
 //a big, repetitive switch statement outside....
-void sel_hci(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
+static void sel_hci(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
 {
 	float ka,kb,ki,kh,kc,k32,dd;
 	int i,s;
@@ -670,14 +670,14 @@ typedef struct
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 	return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 	return (v-min)/(max-min);
 }

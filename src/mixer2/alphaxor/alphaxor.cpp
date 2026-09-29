@@ -67,9 +67,8 @@ public:
 };
 
 
-frei0r::construct<alphaxor> plugin("alphaxor",
+static frei0r::construct<alphaxor> plugin("alphaxor",
                                    "the alpha XOR operation",
                                    "Jean-Sebastien Senecal",
                                    0,2,
                                    F0R_COLOR_MODEL_RGBA8888);
-

@@ -19,6 +19,8 @@
 #include "frei0r.hpp"
 #include "frei0r/math.h"
 
+namespace {
+
 class Premultiply : public frei0r::filter
 {
 
@@ -77,8 +79,10 @@ private:
 
 };
 
-frei0r::construct<Premultiply> plugin("Premultiply or Unpremultiply",
+static frei0r::construct<Premultiply> plugin("Premultiply or Unpremultiply",
                 "Multiply (or divide) each color component by the pixel's alpha value",
                 "Dan Dennedy",
                 0, 2,
                 F0R_COLOR_MODEL_RGBA8888);
+
+}

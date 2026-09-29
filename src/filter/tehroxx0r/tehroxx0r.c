@@ -25,7 +25,7 @@ typedef struct teh_roxx0r
 
 
 // returns greatest common divisor of to int numbers
-int gcd(int a, int b);
+static int gcd(int a, int b);
 
 int f0r_init()
 {
@@ -218,7 +218,7 @@ void f0r_update(f0r_instance_t instance, double time,
 }
 
 // greatest common divisor. this will never become smaller than 8.
-int gcd(int a, int b)
+static int gcd(int a, int b)
 {
   if(b==0) return a;
   else return gcd(b, a%b);

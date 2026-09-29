@@ -37,7 +37,7 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 //------------------------------------------------------
 //computes x to the power p
 //only for positive x
-float pwr(float x, float p)
+static float pwr(float x, float p)
 {
 if (x<=0) return 0;
 return expf(p*logf(x));
@@ -46,7 +46,7 @@ return expf(p*logf(x));
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 float sr,k;
 
@@ -67,7 +67,7 @@ typedef struct
 //-------------------------------------------------------
 //  "Add constant"
 //norm=0 don't normalize    norm=1 do normalize
-void make_lut1(float r, float g, float b, lut_s *lut, int norm, int cm)
+static void make_lut1(float r, float g, float b, lut_s *lut, int norm, int cm)
 {
 int i;
 float rr,gg,bb,l;
@@ -122,7 +122,7 @@ for (i=0;i<256;i++)
 //-------------------------------------------------------
 //  "Change gamma"
 //norm=0 don't normalize    norm=1 do normalize
-void make_lut2(float r, float g, float b, lut_s *lut, int norm, int cm)
+static void make_lut2(float r, float g, float b, lut_s *lut, int norm, int cm)
 {
 int i;
 float rr,gg,bb,gama,l;
@@ -180,7 +180,7 @@ for (i=0;i<256;i++)
 //-------------------------------------------------------
 //  "Multiply"
 //norm=0 don't normalize    norm=1 do normalize
-void make_lut3(float r, float g, float b, lut_s *lut, int norm, int cm)
+static void make_lut3(float r, float g, float b, lut_s *lut, int norm, int cm)
 {
 int i;
 float rr,gg,bb,l;
@@ -234,7 +234,7 @@ for (i=0;i<256;i++)
 
 //----------------------------------------------------
 //F0R_COLOR_MODEL_RGBA8888  little endian
-void apply_lut(const uint32_t* inframe, uint32_t* outframe, int size, lut_s *lut, int ac)
+static void apply_lut(const uint32_t* inframe, uint32_t* outframe, int size, lut_s *lut, int ac)
 {
 int i;
 uint32_t r,g,b,a;
@@ -265,14 +265,14 @@ else		//alpha controlled
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }

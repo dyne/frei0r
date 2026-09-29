@@ -48,7 +48,7 @@ needs to care about color models, endianness, DV legality etc.
 
 
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct
 	{
@@ -60,7 +60,7 @@ typedef struct
 
 
 //----------------------------------------------------------
-void draw_rectangle(float *sl, int w, int h, int x, int y, int wr, int hr, float gray)
+static void draw_rectangle(float *sl, int w, int h, int x, int y, int wr, int hr, float gray)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -77,7 +77,7 @@ for (i=zy;i<ky;i++)
 
 //----------------------------------------------------
 //pravokotna pika
-void pika_p(float *sl, int w, int h, float size, float amp)
+static void pika_p(float *sl, int w, int h, float size, float amp)
 {
 int i;
 
@@ -88,7 +88,7 @@ draw_rectangle(sl, w, h, w/2-size/2, h/2-size/2, size, size, 0.5+amp/2.0);
 
 //----------------------------------------------------
 //okrogla pika  (raised cos)
-void pika_o(float *sl, int w, int h, float size, float amp)
+static void pika_o(float *sl, int w, int h, float size, float amp)
 {
 int i,j;
 float x,y,r,g;
@@ -110,7 +110,7 @@ for (i=0;i<size;i++)
 
 //----------------------------------------------------
 //crta pravokotna
-void crta_p(float *sl, int w, int h, float size, float amp, float tilt)
+static void crta_p(float *sl, int w, int h, float size, float amp, float tilt)
 {
 int i,j;
 float d,st,ct;
@@ -135,7 +135,7 @@ for (i=0;i<h;i++)
 
 //----------------------------------------------------
 //crta   raised cos
-void crta(float *sl, int w, int h, float size, float amp, float tilt)
+static void crta(float *sl, int w, int h, float size, float amp, float tilt)
 {
 int i,j;
 float d,st,ct,g;
@@ -163,7 +163,7 @@ for (i=0;i<h;i++)
 
 //----------------------------------------------------
 //crta step  raised cos, oz. pravokotna, ce das size=1
-void crta_s(float *sl, int w, int h, float size, float amp, float tilt)
+static void crta_s(float *sl, int w, int h, float size, float amp, float tilt)
 {
 int i,j;
 float d,st,ct,g;
@@ -194,7 +194,7 @@ for (i=0;i<h;i++)
 
 //----------------------------------------------------
 //crta step  linear ramp, oz. pravokotna, ce das size=1
-void crta_r(float *sl, int w, int h, float size, float amp, float tilt)
+static void crta_r(float *sl, int w, int h, float size, float amp, float tilt)
 {
 int i,j;
 float d,st,ct,g;
@@ -228,7 +228,7 @@ for (i=0;i<h;i++)
 //Frei0r rgba8888 color
 //ch selects the channel   0=all  1=R  2=G  3=B
 //sets alpha to opaque
-void float2color(float *sl, uint32_t* outframe, int w , int h, int ch)
+static void float2color(float *sl, uint32_t* outframe, int w , int h, int ch)
 {
 int i,ri,gi,bi;
 uint32_t p;
@@ -320,14 +320,14 @@ switch (ch)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -335,7 +335,7 @@ return (v-min)/(max-min);
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 float sr,k;
 
@@ -347,7 +347,7 @@ return sr*expf(k*(v-0.5));
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
 float sr,k;
 

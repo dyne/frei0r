@@ -43,6 +43,8 @@
 #define MODES 4
 
 // freej compat facilitator
+namespace {
+
 typedef struct {
   int16_t x; ///< x axis position coordinate
   int16_t y; ///< y axis position coordinate
@@ -287,7 +289,9 @@ int DelayGrab::isqrt(unsigned int x) {
 
 
 
-frei0r::construct<DelayGrab> plugin("Delaygrab",
+} // namespace
+
+static frei0r::construct<DelayGrab> plugin("Delaygrab",
 				  "delayed frame blitting mapped on a time bitmap",
 				  "Bill Spinhover, Andreas Schiffler, Jaromil",
 				  3,1);

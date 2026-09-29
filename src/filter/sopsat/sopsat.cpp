@@ -211,7 +211,7 @@ private:
 
 
 
-frei0r::construct<SOPSat> plugin("SOP/Sat",
+static frei0r::construct<SOPSat> plugin("SOP/Sat",
                 "Slope/Offset/Power and Saturation color corrections according to the ASC CDL (Color Decision List)",
                 "Simon A. Eugster (Granjow)",
                 0,3,

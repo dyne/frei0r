@@ -47,7 +47,7 @@ needs to care about color models, endianness, DV legality etc.
 
 
 
-double PI=3.14159265358979;
+static const double PI=3.14159265358979;
 
 typedef struct
 	{
@@ -59,7 +59,7 @@ typedef struct
 
 
 //----------------------------------------------------------
-void draw_rectangle(float *sl, int w, int h, int x, int y, int wr, int hr, float gray)
+static void draw_rectangle(float *sl, int w, int h, int x, int y, int wr, int hr, float gray)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -78,7 +78,7 @@ for (i=zy;i<ky;i++)
 //draw one numerical digit, 7-segment style
 //v=size in x direction (in y it is 2*v)
 //d= number [0...9]
-void disp7s(float *sl, int w, int h, int x, int y, int v, int d, float gray)
+static void disp7s(float *sl, int w, int h, int x, int y, int v, int d, float gray)
 {
 char seg[10]={0xEE,0x24,0xBA,0xB6,0x74,0xD6,0xDE,0xA4,0xFE,0xF6};
 
@@ -98,7 +98,7 @@ if ((seg[d]&0x02)!=0) draw_rectangle(sl,w,h,x  ,y,    v,1,gray);
 //v=size
 //n=number
 //f=format (as in printf, for example %5.1f)
-void dispF(float *sl, int w, int h, int x, int y, int v, float n, char *f, float gray)
+static void dispF(float *sl, int w, int h, int x, int y, int v, float n, char *f, float gray)
 {
 char str[64];
 int i;
@@ -123,7 +123,7 @@ while (str[i]!=0)
 //a = amplitude,     1.0=100% mod [0.0...1.0]
 //dir:		0=vertical  1=horizontal    sweep
 //linp:   0=linear frequency sweep   1=linear period sweep
-void draw_sweep_1(float *sl, int w, int h, int x, int y, int wr, int hr, float f1, float f2, float a, int dir, int linp)
+static void draw_sweep_1(float *sl, int w, int h, int x, int y, int wr, int hr, float f1, float f2, float a, int dir, int linp)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -190,7 +190,7 @@ else
 //a = amplitude,     1.0=100% mod [0.0...1.0]
 //dir:		0=vertical  1=horizontal    sweep
 //linp:   0=linear frequency sweep   1=linear period sweep
-void draw_sweep_2(float *sl, int w, int h, int x, int y, int wr, int hr, float f1, float f2, float a, int dir, int linp)
+static void draw_sweep_2(float *sl, int w, int h, int x, int y, int wr, int hr, float f1, float f2, float a, int dir, int linp)
 {
 int i,j;
 int zx,kx,zy,ky;
@@ -255,7 +255,7 @@ else
 //LPPH (lines per picture height) labels are in "TV lines",
 //not line pairs. Line pairs = TV lines / 2.0
 //lf* arrays determine where the labels will be drawn
-void sweep_v(float *sl, int w, int h, int a, float amp, int lps, float ar, float sf, float ef)
+static void sweep_v(float *sl, int w, int h, int a, float amp, int lps, float ar, float sf, float ef)
 {
 float xl,nf;
 float lf1[]={0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7}; //label lin f  nyq
@@ -343,7 +343,7 @@ else	//lin period sweep
 //LPPH (lines per picture height) labels are in "TV lines",
 //not line pairs. Line pairs = TV lines / 2.0
 //lf* arrays determine where the labels will be drawn
-void sweep_h(float *sl, int w, int h, int a, float amp, int lps, float ar, float sf, float ef)
+static void sweep_h(float *sl, int w, int h, int a, float amp, int lps, float ar, float sf, float ef)
 {
 float xl,nf;
 float lf1[]={0.05,0.2,0.3,0.4,0.5,0.6,0.7};	 //label lin f nyq
@@ -425,7 +425,7 @@ else	//lin period sweep
 //draws a "Siemens star" pattern
 //ar = pixel aspect ratio (not used currently)
 //np = numbers of periods around the circle
-void radials(float *sl, int w, int h, float a, float ar, float np)
+static void radials(float *sl, int w, int h, float a, float ar, float np)
 {
 float an,s,c,g,da,r,rmin,rmax;
 int x,y;
@@ -456,7 +456,7 @@ for (an=0.0; an<2.0*PI; an=an+da)
 //linp==1  lin period sweep
 //sf,ef		start,end freqs in Nyquists
 //ar = pixel aspect ratio (not used currently)
-void rings(float *sl, int w, int h, float a, float ar, int linp, float sf, float ef)
+static void rings(float *sl, int w, int h, float a, float ar, int linp, float sf, float ef)
 {
 float k,m,g,p,da,r,rmax;
 int x,y;
@@ -515,7 +515,7 @@ else
 //----------------------------------------------------------
 //fills frame with constant 2D spatial frequency
 //ar = pixel aspect ratio (not used currently)
-void diags(float *sl, int w, int h, float a, float ar, float fh, float fv)
+static void diags(float *sl, int w, int h, float a, float ar, float fh, float fv)
 {
 int x,y;
 float p1,p;
@@ -538,7 +538,7 @@ for (y=0;y<h;y++)
 //Nyquist blocks (horizontal, checkerboard and vertical)
 //  N and N/2 square wave
 //a = amplitude
-void nblocks(float *sl, int w, int h, float a)
+static void nblocks(float *sl, int w, int h, float a)
 {
 int x,y;
 float g1,g2;
@@ -568,7 +568,7 @@ for (y=4*h/7;y<6*h/7;y++)
 
 //---------------------------------------------------------
 //square wave bars at integer fractions of Nyquist
-void sqbars(float *sl, int w, int h, float a)
+static void sqbars(float *sl, int w, int h, float a)
 {
 int x,y;
 float g1,g2;
@@ -627,7 +627,7 @@ for (y=3*h/5;y<4*h/5;y++)
 //Frei0r rgba8888 color
 //ch selects the channel   0=all  1=R  2=G  3=B
 //sets alpha to opaque
-void float2color(float *sl, uint32_t* outframe, int w , int h, int ch)
+static void float2color(float *sl, uint32_t* outframe, int w , int h, int ch)
 {
 int i,ri,gi,bi;
 uint32_t p;
@@ -719,14 +719,14 @@ switch (ch)
 
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] linear
-float map_value_forward(double v, float min, float max)
+static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] linear
-double map_value_backward(float v, float min, float max)
+static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
@@ -734,7 +734,7 @@ return (v-min)/(max-min);
 //-----------------------------------------------------
 //stretch [0...1] to parameter range [min...max] logarithmic
 //min and max must be positive!
-float map_value_forward_log(double v, float min, float max)
+static float map_value_forward_log(double v, float min, float max)
 {
 float sr,k;
 
@@ -746,7 +746,7 @@ return sr*expf(k*(v-0.5));
 //-----------------------------------------------------
 //collapse from parameter range [min...max] to [0...1] logarithmic
 //min and max must be positive!
-double map_value_backward_log(float v, float min, float max)
+static double map_value_backward_log(float v, float min, float max)
 {
 float sr,k;
 

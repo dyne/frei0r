@@ -81,9 +81,8 @@ public:
 };
 
 
-frei0r::construct<saturation> plugin("saturation",
+static frei0r::construct<saturation> plugin("saturation",
                                      "Perform a conversion to saturation only of the source input1 using the saturation level of input2.",
                                      "Jean-Sebastien Senecal",
                                      0,2,
                                      F0R_COLOR_MODEL_RGBA8888);
-

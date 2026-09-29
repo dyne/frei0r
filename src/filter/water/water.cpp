@@ -60,6 +60,8 @@ typedef struct {
   uint32_t size;
 } ScreenGeometry;
 
+namespace {
+
 class Water: public frei0r::filter {
 public:
 
@@ -656,7 +658,9 @@ void Water::SineBlob(int x, int y, int radius, int height, int page) {
   }
 }
 
-frei0r::construct<Water> plugin("Water",
+} // namespace
+
+static frei0r::construct<Water> plugin("Water",
                 "water drops on a video surface",
                 "Jaromil",
                 4,0);
