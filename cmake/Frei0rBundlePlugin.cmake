@@ -577,24 +577,38 @@ function(frei0r_finalize_bundle)
     $<TARGET_OBJECTS:frei0r-bundle-registry>
     ${bundle_objects} ${bundle_descriptor_objects}
   )
-  set_target_properties(frei0r-bundle PROPERTIES OUTPUT_NAME frei0r)
+  list(REMOVE_DUPLICATES bundle_link_libraries)
+  list(FIND bundle_link_libraries "Threads::Threads" bundle_threads_index)
+  if(bundle_threads_index EQUAL -1)
+    set(FREI0R_BUNDLE_NEEDS_THREADS OFF CACHE INTERNAL
+        "Whether the selected bundle exports a Threads dependency" FORCE)
+  else()
+    set(FREI0R_BUNDLE_NEEDS_THREADS ON CACHE INTERNAL
+        "Whether the selected bundle exports a Threads dependency" FORCE)
+  endif()
+  set_target_properties(frei0r-bundle PROPERTIES
+    OUTPUT_NAME frei0r-bundle-static
+    EXPORT_NAME static
+  )
   target_include_directories(frei0r-bundle PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
   if(bundle_link_libraries)
-    target_link_libraries(frei0r-bundle PRIVATE ${bundle_link_libraries})
+    # Static archives do not carry their dependent libraries.  Keep the
+    # resolved plugin requirements on the public target so installed CMake
+    # consumers retain the required link order.
+    target_link_libraries(frei0r-bundle PUBLIC ${bundle_link_libraries})
   endif()
 
-  if(BUILD_TESTING)
-    frei0r_bundle_add_symbol_collision_audit(
-      NAME frei0r-bundle-symbol-collisions TARGETS ${bundle_object_targets}
-    )
+  if(NOT _frei0r_wasm_target OR BUILD_TESTING)
     add_library(frei0r-bundle-shared SHARED
       $<TARGET_OBJECTS:frei0r-bundle-registry>
       ${bundle_objects} ${bundle_descriptor_objects}
     )
     set_target_properties(frei0r-bundle-shared PROPERTIES
-      OUTPUT_NAME frei0r-bundle-test
+      OUTPUT_NAME frei0r-bundle
+      EXPORT_NAME shared
       C_VISIBILITY_PRESET hidden
       CXX_VISIBILITY_PRESET hidden
       VISIBILITY_INLINES_HIDDEN YES
@@ -608,5 +622,21 @@ function(frei0r_finalize_bundle)
     if(bundle_link_libraries)
       target_link_libraries(frei0r-bundle-shared PRIVATE ${bundle_link_libraries})
     endif()
+
+    if(NOT _frei0r_wasm_target)
+      install(TARGETS frei0r-bundle frei0r-bundle-shared
+        EXPORT Frei0rBundleTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      )
+    endif()
+  endif()
+
+  if(BUILD_TESTING)
+    frei0r_bundle_add_symbol_collision_audit(
+      NAME frei0r-bundle-symbol-collisions TARGETS ${bundle_object_targets}
+    )
   endif()
 endfunction()

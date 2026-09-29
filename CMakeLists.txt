@@ -16,6 +16,7 @@ set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 set(CMAKE_CTEST_ARGUMENTS "--verbose")
 include(CTest)
@@ -107,6 +108,32 @@ set(FREI0R_BUNDLE_DYNAMIC_LOADING_TARGETS colgate ndvi)
 frei0r_bundle_classify_legacy_modules("${CMAKE_SOURCE_DIR}/src")
 frei0r_bundle_promote_core_modules("${CMAKE_SOURCE_DIR}/src")
 frei0r_finalize_bundle()
+if(FREI0R_BUILD_BUNDLE AND NOT _frei0r_wasm_target)
+  set(FREI0R_BUNDLE_CONFIG_DEPENDENCIES)
+  if(FREI0R_BUNDLE_NEEDS_THREADS)
+    string(APPEND FREI0R_BUNDLE_CONFIG_DEPENDENCIES "find_dependency(Threads)\n")
+  endif()
+  configure_package_config_file(
+    "${CMAKE_SOURCE_DIR}/cmake/Frei0rBundleConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/Frei0rBundleConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Frei0rBundle"
+  )
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/Frei0rBundleConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion
+  )
+  install(EXPORT Frei0rBundleTargets
+    FILE Frei0rBundleTargets.cmake
+    NAMESPACE Frei0rBundle::
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Frei0rBundle"
+  )
+  install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/Frei0rBundleConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/Frei0rBundleConfigVersion.cmake"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Frei0rBundle"
+  )
+endif()
 set_property(GLOBAL PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS "")
 frei0r_bundle_collect_classifications("${CMAKE_SOURCE_DIR}/src")
 get_property(FREI0R_BUNDLE_CLASSIFICATIONS GLOBAL PROPERTY FREI0R_BUNDLE_CLASSIFICATIONS)
