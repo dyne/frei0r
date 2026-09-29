@@ -144,6 +144,23 @@ else
 sprintf(s,"%s",ss);
 }
 
+static void append_text(char *target, size_t target_size, const char *text)
+{
+size_t used=strlen(target);
+if (used<target_size)
+  snprintf(target+used,target_size-used,"%s",text);
+}
+
+static void append_number(char *target, size_t target_size, const char *prefix,
+                          float value, int precision, int sign)
+{
+char format[16], rendered[64];
+forstr(value,precision,sign,format);
+snprintf(rendered,sizeof(rendered),format,value);
+append_text(target,target_size,prefix);
+append_text(target,target_size,rendered);
+}
+
 //-------------------------------------------------------------
 //draws a simple line (no antialiasing)
 //xz,yz=start point
@@ -261,7 +278,7 @@ for (i=0;i<n;i++)
 //dit=what data to display (display items flags)
 //m1,m2 marker positions as indexes into p.x arrays
 //output is written into string *str
-static void izpis(profdata p, char *str, int m, int u, int m1, int m2, int dit)
+static void izpis(const profdata *p, char *str, int m, int u, int m1, int m2, int dit)
 {
 int i;
 char fs[256],frs[16];
@@ -274,39 +291,39 @@ switch (m>>24)	//select channel  (r,g,b....)  & copy data
   case 0:	//display nothing
     return;
   case 1:	//display R channel
-    data[0]=p.r[m1]; data[1]=p.r[m2]; data[2]=data[1]-data[0];
-    data[3]=p.sr.avg; data[4]=p.sr.rms; data[5]=p.sr.min;
-    data[6]=p.sr.max;
+    data[0]=p->r[m1]; data[1]=p->r[m2]; data[2]=data[1]-data[0];
+    data[3]=p->sr.avg; data[4]=p->sr.rms; data[5]=p->sr.min;
+    data[6]=p->sr.max;
     break;
   case 2:	//display G channel
-    data[0]=p.g[m1]; data[1]=p.g[m2]; data[2]=data[1]-data[0];
-    data[3]=p.sg.avg; data[4]=p.sg.rms; data[5]=p.sg.min;
-    data[6]=p.sg.max;
+    data[0]=p->g[m1]; data[1]=p->g[m2]; data[2]=data[1]-data[0];
+    data[3]=p->sg.avg; data[4]=p->sg.rms; data[5]=p->sg.min;
+    data[6]=p->sg.max;
     break;
   case 3:	//display B channel
-    data[0]=p.b[m1]; data[1]=p.b[m2]; data[2]=data[1]-data[0];
-    data[3]=p.sb.avg; data[4]=p.sb.rms; data[5]=p.sb.min;
-    data[6]=p.sb.max;
+    data[0]=p->b[m1]; data[1]=p->b[m2]; data[2]=data[1]-data[0];
+    data[3]=p->sb.avg; data[4]=p->sb.rms; data[5]=p->sb.min;
+    data[6]=p->sb.max;
     break;
   case 4:	//display Y channel
-    data[0]=p.y[m1]; data[1]=p.y[m2]; data[2]=data[1]-data[0];
-    data[3]=p.sy.avg; data[4]=p.sy.rms; data[5]=p.sy.min;
-    data[6]=p.sy.max;
+    data[0]=p->y[m1]; data[1]=p->y[m2]; data[2]=data[1]-data[0];
+    data[3]=p->sy.avg; data[4]=p->sy.rms; data[5]=p->sy.min;
+    data[6]=p->sy.max;
     break;
   case 5:	//display Pr channel
-    data[0]=p.u[m1]; data[1]=p.u[m2]; data[2]=data[1]-data[0];
-    data[3]=p.su.avg; data[4]=p.su.rms; data[5]=p.su.min;
-    data[6]=p.su.max;
+    data[0]=p->u[m1]; data[1]=p->u[m2]; data[2]=data[1]-data[0];
+    data[3]=p->su.avg; data[4]=p->su.rms; data[5]=p->su.min;
+    data[6]=p->su.max;
     break;
   case 6:	//display Pb channel
-    data[0]=p.v[m1]; data[1]=p.v[m2]; data[2]=data[1]-data[0];
-    data[3]=p.sv.avg; data[4]=p.sv.rms; data[5]=p.sv.min;
-    data[6]=p.sv.max;
+    data[0]=p->v[m1]; data[1]=p->v[m2]; data[2]=data[1]-data[0];
+    data[3]=p->sv.avg; data[4]=p->sv.rms; data[5]=p->sv.min;
+    data[6]=p->sv.max;
     break;
   case 7:	//display alpha channel
-    data[0]=p.a[m1]; data[1]=p.a[m2]; data[2]=data[1]-data[0];
-    data[3]=p.sa.avg; data[4]=p.sa.rms; data[5]=p.sa.min;
-    data[6]=p.sa.max;
+    data[0]=p->a[m1]; data[1]=p->a[m2]; data[2]=data[1]-data[0];
+    data[3]=p->sa.avg; data[4]=p->sa.rms; data[5]=p->sa.min;
+    data[6]=p->sa.max;
     break;
   default:
     break;
@@ -319,58 +336,44 @@ if ((dit&0x00000001)!=0)	//marker 1 value
   {
   if (m1>0)
     {
-    forstr(data[0],1-u,0,frs);
-    snprintf(fs,255,"%%s Mk1=%s", frs);
-    sprintf(str,fs,str,data[0]);
+    append_number(str,sizeof(fs)," Mk1=",data[0],1-u,0);
     }
   else
-    sprintf(str,"%s %s",str,"Mk1= -----");
+    append_text(str,sizeof(fs)," Mk1= -----");
   }
 if ((dit&0x00000004)!=0)	//marker 2 value
   {
   if (m2>0)
     {
-    forstr(data[1],1-u,0,frs);
-    snprintf(fs,255,"%%s Mk2=%s", frs);
-    sprintf(str,fs,str,data[1]);
+    append_number(str,sizeof(fs)," Mk2=",data[1],1-u,0);
     }
   else
-    sprintf(str,"%s %s",str,"Mk2= -----");
+    append_text(str,sizeof(fs)," Mk2= -----");
   }
 if ((dit&0x00000010)!=0)	//difference marker2-marker1
   {
   if ((m2>0)&&(m1>0))
     {
-    forstr(data[2],1-u,0,frs);
-    snprintf(fs,255,"%%s D=%s", frs);
-    sprintf(str,fs,str,data[2]);
+    append_number(str,sizeof(fs)," D=",data[2],1-u,0);
     }
   else
-    sprintf(str,"%s %s",str,"D= -----");
+    append_text(str,sizeof(fs)," D= -----");
   }
 if ((dit&0x00000020)!=0)	//average of profile
   {
-  forstr(data[3],1-u,0,frs);
-  snprintf(fs,255,"%%s Avg=%s", frs);
-  sprintf(str,fs,str,data[3]);
+  append_number(str,sizeof(fs)," Avg=",data[3],1-u,0);
   }
 if ((dit&0x00000040)!=0)	//RMS of profile
   {
-  forstr(data[4],1-u,0,frs);
-  snprintf(fs,255,"%%s RMS=%s", frs);
-  sprintf(str,fs,str,data[4]);
+  append_number(str,sizeof(fs)," RMS=",data[4],1-u,0);
   }
 if ((dit&0x00000080)!=0)	//MIN of profile
   {
-  forstr(data[5],1-u,0,frs);
-  snprintf(fs,255,"%%s Min=%s", frs);
-  sprintf(str,fs,str,data[5]);
+  append_number(str,sizeof(fs)," Min=",data[5],1-u,0);
   }
 if ((dit&0x00000100)!=0)	//MAX of profile
   {
-  forstr(data[6],1-u,0,frs);
-  snprintf(fs,255,"%%s Max=%s", frs);
-  sprintf(str,fs,str,data[6]);
+  append_number(str,sizeof(fs)," Max=",data[6],1-u,0);
   }
 }
 
@@ -475,7 +478,7 @@ draw_line(s, w, h, x0+49, y0+5, x0+49, y0+vy-35, gray);
 draw_line(s, w, h, x0+vx-5, y0+5, x0+vx-5, y0+vy-35, gray);
 
 //numeric display
-izpis(*p,string,m,u,m1,m2,dit);
+izpis(p,string,m,u,m1,m2,dit);
 sl=strlen(string);
 if (sl>((vx-55)/8))
   {

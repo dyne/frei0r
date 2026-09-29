@@ -72,6 +72,10 @@ typedef struct ising0r_instance
 
 int f0r_init()
 {
+  /* The generator state is file-local, so reset it when a host initializes
+   * this descriptor.  This gives fresh plugin lifecycles repeatable output
+   * without changing the sequence produced by an individual instance. */
+  rnd_lcg1_xn = 1;
   return 1;
 }
 

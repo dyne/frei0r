@@ -203,6 +203,7 @@ add_test(NAME bundle-api-cxx COMMAND bundle-api-cxx)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
   option(FREI0R_RUNTIME_SMOKE_GC "Enable section garbage collection for the WASI smoke module" OFF)
+  option(FREI0R_BUNDLE_WASI_GC "Enable section garbage collection for the WASI bundle runner" OFF)
   add_executable(runtime-smoke-wasi runtime-smoke.c
     $<TARGET_OBJECTS:runtime-smoke-registry>
   )
@@ -215,7 +216,42 @@ if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
     set_property(TARGET runtime-smoke-wasi APPEND_STRING PROPERTY LINK_FLAGS
       " -Wl,--gc-sections")
   endif()
+  add_executable(measure-pr0file-wasi
+    measure-pr0file-wasi.c
+    ${CMAKE_SOURCE_DIR}/src/filter/measure/measure_pr0file.c)
+  set_target_properties(measure-pr0file-wasi PROPERTIES SUFFIX ".wasm")
+  set_property(TARGET measure-pr0file-wasi APPEND_STRING PROPERTY LINK_FLAGS
+    " -nostartfiles -Wl,--no-entry -Wl,--initial-memory=8388608 -Wl,--export=measure_pr0file_wasi_run")
+  find_program(FREI0R_NODE_EXECUTABLE node)
+  if(FREI0R_NODE_EXECUTABLE)
+    add_test(NAME bundle-registry-wasi
+      COMMAND ${FREI0R_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run-bundle-registry-wasi.mjs
+        $<TARGET_FILE:bundle-registry-wasi>)
+    add_test(NAME bundle-wasi-consumer
+      COMMAND ${FREI0R_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run-wasi-command.mjs
+        $<TARGET_FILE:bundle-wasi-consumer>)
+    add_test(NAME measure-pr0file-wasi
+      COMMAND ${FREI0R_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run-wasi-function.mjs
+        $<TARGET_FILE:measure-pr0file-wasi> measure_pr0file_wasi_run)
+  endif()
+  add_executable(bundle-registry-wasi bundle-registry-wasi.c bundle-registry-contract.c)
+  target_compile_definitions(bundle-registry-wasi PRIVATE BUNDLE_REGISTRY_CONTRACT_NO_MAIN)
+  target_link_libraries(bundle-registry-wasi PRIVATE frei0r-bundle c++ c++abi)
+  set_target_properties(bundle-registry-wasi PROPERTIES SUFFIX ".wasm")
+  set_property(TARGET bundle-registry-wasi APPEND_STRING PROPERTY LINK_FLAGS
+    " -nostartfiles -Wl,--no-entry -Wl,--initial-memory=8388608 -Wl,--export-memory -Wl,--export=f0r_bundle_wasi_run -Wl,--export=f0r_bundle_wasi_output_digest -Wl,--export=f0r_bundle_wasi_failure_id -Wl,--export=f0r_bundle_wasi_failure_stage")
+  if(FREI0R_BUNDLE_WASI_GC)
+    set_property(TARGET bundle-registry-wasi APPEND_STRING PROPERTY LINK_FLAGS
+      " -Wl,--gc-sections")
+  endif()
+  add_executable(bundle-wasi-consumer bundle-native-consumer.c)
+  target_link_libraries(bundle-wasi-consumer PRIVATE frei0r-bundle)
+  set_target_properties(bundle-wasi-consumer PROPERTIES SUFFIX ".wasm")
 elseif(EMSCRIPTEN)
+  option(FREI0R_BUNDLE_EMSCRIPTEN_GC
+    "Enable section garbage collection for the Emscripten bundle runner" OFF)
+  set(FREI0R_BUNDLE_EMSCRIPTEN_SCALAR_REFERENCE "" CACHE FILEPATH
+    "Scalar Emscripten registry module used to compare an experimental profile")
   add_executable(runtime-smoke-emscripten runtime-smoke.c
     $<TARGET_OBJECTS:runtime-smoke-registry>
   )
@@ -223,6 +259,50 @@ elseif(EMSCRIPTEN)
   target_link_libraries(runtime-smoke-emscripten PRIVATE runtime-smoke-plugins)
   set_property(TARGET runtime-smoke-emscripten APPEND_STRING PROPERTY LINK_FLAGS
     " --no-entry -sMODULARIZE=1 -sEXPORT_NAME=createRuntimeSmoke -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_runtime_smoke_run']")
+  add_executable(bundle-registry-emscripten
+    bundle-registry-emscripten.c bundle-registry-contract.c)
+  target_compile_definitions(bundle-registry-emscripten PRIVATE
+    BUNDLE_REGISTRY_CONTRACT_NO_MAIN)
+  target_link_libraries(bundle-registry-emscripten PRIVATE frei0r-bundle)
+  set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
+    " --no-entry -sINITIAL_MEMORY=67108864 -sMODULARIZE=1 -sEXPORT_NAME=createBundleRegistry -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_f0r_bundle_emscripten_run','_f0r_bundle_emscripten_output_digest','_f0r_bundle_emscripten_output_count','_f0r_bundle_emscripten_output_digest_at','_f0r_bundle_emscripten_output_id_at','_f0r_bundle_emscripten_failure_id','_f0r_bundle_emscripten_failure_stage']")
+  if(FREI0R_BUNDLE_EMSCRIPTEN_GC)
+    set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
+      " -Wl,--gc-sections")
+  endif()
+  if(FREI0R_BUNDLE_WASM_PTHREADS)
+    set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
+      " -pthread -sUSE_PTHREADS=1 -sPTHREAD_POOL_SIZE=2")
+  elseif(FREI0R_BUNDLE_WASM_SIMD)
+    set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
+      " -msimd128")
+  endif()
+  add_executable(bundle-emscripten-consumer bundle-emscripten-consumer.c)
+  target_link_libraries(bundle-emscripten-consumer PRIVATE frei0r-bundle)
+  set_property(TARGET bundle-emscripten-consumer APPEND_STRING PROPERTY LINK_FLAGS
+    " --no-entry -sMODULARIZE=1 -sEXPORT_NAME=createBundleConsumer -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_f0r_bundle_emscripten_consumer_run']")
+  if(FREI0R_BUNDLE_EMSCRIPTEN_GC)
+    set_property(TARGET bundle-emscripten-consumer APPEND_STRING PROPERTY LINK_FLAGS
+      " -Wl,--gc-sections")
+  endif()
+  find_program(FREI0R_NODE_EXECUTABLE node)
+  if(FREI0R_NODE_EXECUTABLE)
+    add_test(NAME bundle-registry-emscripten
+      COMMAND ${FREI0R_NODE_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/run-bundle-registry-emscripten.mjs
+        $<TARGET_FILE:bundle-registry-emscripten>)
+    add_test(NAME bundle-emscripten-consumer
+      COMMAND ${FREI0R_NODE_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/run-bundle-emscripten-consumer.mjs
+        $<TARGET_FILE:bundle-emscripten-consumer>)
+    if(FREI0R_BUNDLE_EMSCRIPTEN_SCALAR_REFERENCE)
+      add_test(NAME bundle-emscripten-profile-parity
+        COMMAND ${FREI0R_NODE_EXECUTABLE}
+          ${CMAKE_CURRENT_SOURCE_DIR}/compare-bundle-emscripten-profiles.mjs
+          ${FREI0R_BUNDLE_EMSCRIPTEN_SCALAR_REFERENCE}
+          $<TARGET_FILE:bundle-registry-emscripten>)
+    endif()
+  endif()
 else()
   option(FREI0R_RUNTIME_SMOKE_TEST "Register the native archive smoke test with CTest" OFF)
   add_executable(runtime-smoke runtime-smoke.c
