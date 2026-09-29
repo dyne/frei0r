@@ -1,11 +1,5 @@
-set (SOURCES brightness.c)
-set (TARGET brightness)
-
-if (MSVC)
-  set (SOURCES ${SOURCES} ${FREI0R_DEF})
-endif (MSVC)
-
-add_library (${TARGET}  MODULE ${SOURCES})
-set_target_properties (${TARGET} PROPERTIES PREFIX "")
-
-install (TARGETS ${TARGET} LIBRARY DESTINATION ${LIBDIR})
+frei0r_add_plugin(
+  NAME brightness KIND FILTER SOURCES brightness.c
+  BUNDLE_ID brightness UPDATE TRUE UPDATE2 FALSE BUNDLE_ELIGIBLE
+  MSVC_DEFINITION ${FREI0R_DEF}
+)

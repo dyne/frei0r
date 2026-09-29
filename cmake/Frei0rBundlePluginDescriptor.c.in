@@ -1,0 +1,17 @@
+#include "frei0r/bundle.h"
+
+const f0r_plugin_descriptor_t @FREI0R_BUNDLE_DESCRIPTOR_SYMBOL@ = {
+  F0R_PLUGIN_DESCRIPTOR_SIZE,
+  F0R_PLUGIN_DESCRIPTOR_VERSION,
+  "@FREI0R_BUNDLE_DESCRIPTOR_ID@",
+  f0r_init,
+  f0r_deinit,
+  f0r_get_plugin_info,
+  f0r_get_param_info,
+  f0r_construct,
+  f0r_destruct,
+  f0r_set_param_value,
+  f0r_get_param_value,
+  @FREI0R_BUNDLE_DESCRIPTOR_UPDATE@,
+  @FREI0R_BUNDLE_DESCRIPTOR_UPDATE2@
+};

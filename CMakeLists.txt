@@ -38,6 +38,12 @@ if (PKG_CONFIG_FOUND AND NOT WITHOUT_GAVL)
   pkg_check_modules(GAVL REQUIRED gavl)
 endif ()
 
+option(FREI0R_BUILD_BUNDLE "Build the experimental static frei0r bundle" OFF)
+set(FREI0R_BUNDLE_PLUGINS "" CACHE STRING
+    "Semicolon-separated bundle-eligible plugin target names")
+
+include(${CMAKE_SOURCE_DIR}/cmake/Frei0rBundlePlugin.cmake)
+
 include_directories (AFTER include)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -60,6 +66,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLU
 # add_subdirectory (doc)
 
 add_subdirectory (src)
+frei0r_finalize_bundle()
 if (BUILD_TESTING)
   add_subdirectory (test)
 endif ()
