@@ -195,13 +195,13 @@ jobs:
   bundle-emscripten:
     name: 🌐 Emscripten bundle runtime
     runs-on: ubuntu-latest
-    env:
-      EM_CACHE: ${{ runner.temp }}/emscripten-cache
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+      - name: Set writable Emscripten cache
+        run: echo "EM_CACHE=$RUNNER_TEMP/emscripten-cache" >> "$GITHUB_ENV"
       - uses: emscripten-core/setup-emsdk@v15
         with:
           version: 4.0.1
