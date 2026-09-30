@@ -190,6 +190,23 @@ if(TARGET frei0r-bundle)
       -DNM=${CMAKE_NM}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-symbols.cmake
   )
+
+  if(NOT _frei0r_wasm_target)
+    add_test(NAME bundle-install-consumers
+      COMMAND ${CMAKE_COMMAND}
+        -DBUNDLE_BUILD_DIR=${CMAKE_BINARY_DIR}
+        -DCONSUMER_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/bundle-install-consumer
+        -DPREFIX=${CMAKE_CURRENT_BINARY_DIR}/bundle-install-prefix
+        -DINSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
+        -DSTATIC_LIBRARY_PREFIX=${CMAKE_STATIC_LIBRARY_PREFIX}
+        -DSTATIC_LIBRARY_SUFFIX=${CMAKE_STATIC_LIBRARY_SUFFIX}
+        -DSHARED_LIBRARY_PREFIX=${CMAKE_SHARED_LIBRARY_PREFIX}
+        -DSHARED_LIBRARY_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX}
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-install.cmake
+    )
+  endif()
 endif()
 
 add_executable(bundle-api-contract bundle-api-contract.c

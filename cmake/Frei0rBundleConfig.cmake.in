@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+@FREI0R_BUNDLE_CONFIG_DEPENDENCIES@
+
+include("${CMAKE_CURRENT_LIST_DIR}/Frei0rBundleTargets.cmake")
