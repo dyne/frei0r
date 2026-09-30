@@ -138,3 +138,87 @@ jobs:
           for plugin in ${{ steps.detect.outputs.plugin_paths }}; do
             build/test/frei0r-run -d -p "$plugin"
           done
+
+  bundle-native:
+    name: 📦 native bundle contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qy
+          sudo apt-get install --no-install-recommends -y \
+            cmake ninja-build pkg-config libgl-dev libegl1-mesa-dev
+      - name: Configure core bundle
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DFREI0R_BUILD_BUNDLE=ON \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+      - name: Build core bundle
+        run: cmake --build build --parallel 4
+      - name: Run native bundle contracts
+        run: |
+          ctest --test-dir build --output-on-failure --parallel 4 -R \
+            '^(frei0r-bundle-symbol-collisions|bundle-native-consumer|bundle-native-consumer-gc|bundle-registry-contract|frei0r-bundle-shared-exports|bundle-install-consumers)$'
+
+  bundle-wasi:
+    name: 🌐 WASI bundle runtime
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - id: wasi-sdk
+        uses: bytecodealliance/setup-wasi-sdk-action@v1
+        with:
+          version: '29'
+          install-path: ${{ runner.temp }}/wasi-sdk
+      - name: Configure core bundle
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.wasi-sdk.outputs.wasi-sdk-path }}/share/cmake/wasi-sdk-p1.cmake" \
+            -DFREI0R_BUILD_BUNDLE=ON \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+      - name: Build and run WASI bundle contracts
+        run: |
+          cmake --build build --parallel 4 --target \
+            bundle-registry-wasi bundle-wasi-consumer
+          ctest --test-dir build --output-on-failure -R \
+            '^(bundle-registry-wasi|bundle-wasi-consumer)$'
+
+  bundle-emscripten:
+    name: 🌐 Emscripten bundle runtime
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Set writable Emscripten cache
+        run: echo "EM_CACHE=$RUNNER_TEMP/emscripten-cache" >> "$GITHUB_ENV"
+      - uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 4.0.1
+          actions-cache-folder: emsdk-4.0.1
+      - name: Configure core bundle
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
+            -DFREI0R_BUILD_BUNDLE=ON \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+      - name: Build and run Emscripten bundle contracts
+        run: |
+          cmake --build build --parallel 4 --target \
+            bundle-registry-emscripten bundle-emscripten-consumer
+          ctest --test-dir build --output-on-failure -R \
+            '^(bundle-registry-emscripten|bundle-emscripten-consumer)$'

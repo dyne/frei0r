@@ -73,83 +73,132 @@ make frei0r-meta
 make scan-meta
 ```
 
-## Experimental archive-backed WebAssembly smoke test
+## Static plugin bundles
 
-The commands below exercise a small, test-only archive registry containing the
-dependency-free `brightness` and `invert0r` filters.  It is not yet a public
-bundle API or a replacement for normal frei0r plugin modules.  The smoke
-contract queries metadata and parameters, creates 8x8 instances, processes
-deterministic frames, and reports a nonzero plugin/stage status on failure.
+`FREI0R_BUILD_BUNDLE=ON` builds a registry-backed bundle in addition to the
+ordinary frei0r MODULE targets.  It does not change the normal plugin install
+directory or module ABI.  Native builds install `frei0r/bundle.h`, a static
+archive named `libfrei0r-bundle-static`, a shared library named
+`libfrei0r-bundle`, and a CMake package exposing `Frei0rBundle::static` and
+`Frei0rBundle::shared`.
 
-All commands use a new build directory.  They intentionally disable optional
-plugin dependencies because this experiment links only the two archive members.
-
-Native GCC uses CMake's selected host archiver:
+Build and install the default dependency-free `core` profile in fresh
+directories.  The source tree also configures `shadert0y`; on Ubuntu install
+`pkg-config`, `libgl-dev`, and `libegl1-mesa-dev` before configuring a native
+bundle build.
 
 ```
-cmake -S . -B build/runtime-smoke-native \
-  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON \
-  -DCMAKE_BUILD_TYPE=Release -DFREI0R_RUNTIME_SMOKE_TEST=ON
-cmake --build build/runtime-smoke-native --target runtime-smoke
-ctest --test-dir build/runtime-smoke-native --output-on-failure -R '^runtime-smoke$'
+cmake -S . -B build/bundle-native -G Ninja \
+  -DFREI0R_BUILD_BUNDLE=ON -DBUILD_TESTING=ON \
+  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON
+cmake --build build/bundle-native --parallel 4
+cmake --install build/bundle-native --prefix "$PWD/build/bundle-prefix"
+ctest --test-dir build/bundle-native --output-on-failure -R \
+  '^(frei0r-bundle-symbol-collisions|bundle-native-consumer|bundle-native-consumer-gc|bundle-registry-contract|frei0r-bundle-shared-exports|bundle-install-consumers)$'
 ```
 
-For WASI Preview 1, point `WASI_SDK` at a compatible SDK installation.  CMake
-selects its LLVM archiver (`llvm-ar`) for `libruntime-smoke-plugins.a`.  The
-resulting module has no command entry point; its only smoke function export is
-`runtime_smoke_run`.  The Node runner compiles the module, supplies only its
-declared WASI function imports, and invokes that export.
+The installed CMake targets encode the static archive's resolved link
+requirements and link order.  A standalone consumer must use the installed
+package rather than source-tree include or library paths.  The repository's
+independent C and C++ samples demonstrate both targets:
+
+```
+cmake -S test/bundle-install-consumer -B build/bundle-consumer \
+  -DCMAKE_PREFIX_PATH="$PWD/build/bundle-prefix"
+cmake --build build/bundle-consumer --parallel 4
+```
+
+The public interface is `frei0r/bundle.h`, separate from the module entry
+points in `frei0r.h`.  Look up a descriptor with
+`f0r_bundle_plugin_by_id()` or `f0r_bundle_plugin_by_index()`, verify
+`descriptor_size` and `descriptor_version`, call `init`, construct/use/destruct
+instances, and finally call `deinit`.  IDs are canonical, NUL-terminated, and
+unique within one bundle.  Registry order is stable only for that particular
+bundle build; use IDs for durable selection.  Descriptors and IDs remain valid
+for the bundle lifetime.
+
+### Profiles and dependency classes
+
+`FREI0R_BUNDLE_PROFILE=core` is the default and selects only plugins needing
+the language runtimes and math library.  `FREI0R_BUNDLE_PROFILE=all` selects
+every eligible plugin whose dependencies were resolved at configure time.
+`FREI0R_BUNDLE_PLUGINS` overrides either profile with a semicolon-separated
+target list.  To configure `all` after installing the desired development
+packages:
+
+```
+cmake -S . -B build/bundle-all -G Ninja \
+  -DFREI0R_BUILD_BUNDLE=ON -DFREI0R_BUNDLE_PROFILE=all
+```
+
+To configure an explicit list, quote it in a shell:
+
+```
+cmake -S . -B build/bundle-explicit -G Ninja \
+  -DFREI0R_BUILD_BUNDLE=ON \
+  -DFREI0R_BUNDLE_PLUGINS='brightness;invert0r'
+```
+
+An explicit target still requires its dependency to be available.  The
+non-core classifications are:
+
+| Class | Targets | Requirement |
+| --- | --- | --- |
+| `optional-opencv` | `facebl0r`, `facedetect` | OpenCV |
+| `optional-cairo` | `cairoimagegrid`, `cairogradient`, `mirr0r`, `shake0scillate`, `cairoaffineblend`, `cairoblend` | Cairo |
+| `optional-gavl` | `rgbparade`, `scale0tilt`, `vectorscope` | GAVL |
+| `optional-opengl-egl` | `shadert0y` | OpenGL and EGL |
+| `unsupported-dynamic-loading` | `colgate`, `ndvi` | Dynamic loading; not portable to static hosts |
+
+Install the matching development packages, leave the relevant `WITHOUT_*`
+option off, and use `all` or explicitly name the target.  The two
+`unsupported-dynamic-loading` targets cannot be requested for a static bundle.
+
+### WASI and Emscripten bundles
+
+Wasm archives are build outputs, not native-installable packages.  They are
+specific to the selected SDK, target, and feature variant; never mix a WASI
+archive with Emscripten or native objects.  Use the public `frei0r/bundle.h`
+from the same source revision and link each archive with its own toolchain.
+
+WASI Preview 1 example (with a compatible WASI SDK and Node):
 
 ```
 export WASI_SDK=/path/to/wasi-sdk
-cmake -S . -B build/runtime-smoke-wasi \
+cmake -S . -B build/bundle-wasi-scalar -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$WASI_SDK/share/cmake/wasi-sdk-p1.cmake" \
-  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build/runtime-smoke-wasi --target runtime-smoke-wasi
-node test/run-runtime-smoke-wasi.mjs \
-  build/runtime-smoke-wasi/test/runtime-smoke-wasi.wasm
-
-# Repeat with explicit linker section garbage collection.
-cmake -S . -B build/runtime-smoke-wasi-gc \
-  -DCMAKE_TOOLCHAIN_FILE="$WASI_SDK/share/cmake/wasi-sdk-p1.cmake" \
-  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON \
-  -DCMAKE_BUILD_TYPE=Release -DFREI0R_RUNTIME_SMOKE_GC=ON
-cmake --build build/runtime-smoke-wasi-gc --target runtime-smoke-wasi
-node test/run-runtime-smoke-wasi.mjs \
-  build/runtime-smoke-wasi-gc/test/runtime-smoke-wasi.wasm
+  -DFREI0R_BUILD_BUNDLE=ON -DBUILD_TESTING=ON \
+  -DFREI0R_BUNDLE_WASM_BASELINE=ON \
+  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON
+cmake --build build/bundle-wasi-scalar --target \
+  bundle-registry-wasi bundle-wasi-consumer
+ctest --test-dir build/bundle-wasi-scalar --output-on-failure -R \
+  '^(bundle-registry-wasi|bundle-wasi-consumer)$'
 ```
 
-For Emscripten, source the selected SDK environment and put `EM_CACHE` in the
-build directory so the SDK installation remains read-only.  CMake selects
-`emar` for the same archive.  The generated Node-oriented modular factory
-exports `_runtime_smoke_run` through its module API; no plugin entry points are
-public Wasm exports.
+For Emscripten, use a writable cache outside the SDK installation:
 
 ```
 export EMSDK=/path/to/emsdk
 source "$EMSDK/emsdk_env.sh"
-mkdir -p build/runtime-smoke-emscripten/em-cache
-export EM_CACHE="$PWD/build/runtime-smoke-emscripten/em-cache"
-emcmake cmake -S . -B build/runtime-smoke-emscripten \
-  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build/runtime-smoke-emscripten --target runtime-smoke-emscripten
-node test/run-runtime-smoke-emscripten.mjs \
-  build/runtime-smoke-emscripten/test/runtime-smoke-emscripten.js
+export EM_CACHE="$PWD/build/bundle-emscripten-scalar/em-cache"
+cmake -S . -B build/bundle-emscripten-scalar -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
+  -DFREI0R_BUILD_BUNDLE=ON -DBUILD_TESTING=ON \
+  -DFREI0R_BUNDLE_WASM_BASELINE=ON \
+  -DWITHOUT_OPENCV=ON -DWITHOUT_CAIRO=ON -DWITHOUT_GAVL=ON
+cmake --build build/bundle-emscripten-scalar --target \
+  bundle-registry-emscripten bundle-emscripten-consumer
+ctest --test-dir build/bundle-emscripten-scalar --output-on-failure -R \
+  '^(bundle-registry-emscripten|bundle-emscripten-consumer)$'
 ```
 
-The current WASI module imports only `fd_close`, `fd_seek`, and `fd_write`
-from `wasi_snapshot_preview1`, and exports memory plus `runtime_smoke_run`.
-The Emscripten artifact exports its runtime memory/table support and the
-mapped smoke runner, but not any `brightness_f0r_*` or `invert0r_f0r_*`
-function.  With WASI SDK 20.1.8 and Emscripten 4.0.1, Release artifacts were
-85,829 bytes for the WASI module, and 11,249 bytes Wasm plus 9,116 bytes JS for
-the Emscripten module.  Sizes are observations, not compatibility thresholds.
-
-Both toolchains proceed to the next experiment: each built the CMake-selected
-archive and completed the same runtime contract, including the WASI
-garbage-collection link.  This evidence covers only scalar, single-threaded,
-dependency-free C filters and Node execution.  It does not yet establish a
-browser deployment profile, public static-bundle API, external-dependency
-plugin support, or the full plugin set.
+The baseline is scalar and single-threaded.  Build SIMD or pthread variants in
+separate directories by replacing `FREI0R_BUNDLE_WASM_BASELINE=ON` with exactly
+one of `FREI0R_BUNDLE_WASM_SIMD=ON` or
+`FREI0R_BUNDLE_WASM_PTHREADS=ON`; these options are mutually exclusive and
+valid only for WASI or Emscripten.  Pthread support remains experimental and
+requires a toolchain/runtime configured for threads.  SIMD output is likewise
+experimental.  Node contracts exercise supported profiles, but browser
+deployment, cross-toolchain archive interchangeability, and optional external
+dependencies on Wasm are not established compatibility promises.

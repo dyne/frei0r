@@ -476,6 +476,11 @@ function(frei0r_finalize_bundle)
   set(bundle_registry_declarations)
   set(bundle_registry_entries)
   set(bundle_link_libraries)
+  set(bundle_install_link_libraries)
+  set(bundle_needs_opencv OFF)
+  set(bundle_needs_cairo OFF)
+  set(bundle_needs_gavl OFF)
+  set(bundle_needs_opengl_egl OFF)
   foreach(plugin IN LISTS resolved_plugins)
     get_target_property(sources ${plugin} FREI0R_PLUGIN_SOURCES)
     get_target_property(id ${plugin} FREI0R_PLUGIN_BUNDLE_ID)
@@ -485,6 +490,16 @@ function(frei0r_finalize_bundle)
     get_target_property(compile_options ${plugin} FREI0R_PLUGIN_COMPILE_OPTIONS)
     get_target_property(include_directories ${plugin} FREI0R_PLUGIN_INCLUDE_DIRECTORIES)
     get_target_property(link_libraries ${plugin} FREI0R_PLUGIN_LINK_LIBRARIES)
+    get_target_property(profile ${plugin} FREI0R_PLUGIN_BUNDLE_PROFILE)
+    if(profile STREQUAL "optional-opencv")
+      set(bundle_needs_opencv ON)
+    elseif(profile STREQUAL "optional-cairo")
+      set(bundle_needs_cairo ON)
+    elseif(profile STREQUAL "optional-gavl")
+      set(bundle_needs_gavl ON)
+    elseif(profile STREQUAL "optional-opengl-egl")
+      set(bundle_needs_opengl_egl ON)
+    endif()
     if(FREI0R_BUNDLE_WASM_PTHREADS)
       list(REMOVE_ITEM compile_definitions NO_FUTURE)
     endif()
@@ -577,24 +592,71 @@ function(frei0r_finalize_bundle)
     $<TARGET_OBJECTS:frei0r-bundle-registry>
     ${bundle_objects} ${bundle_descriptor_objects}
   )
-  set_target_properties(frei0r-bundle PROPERTIES OUTPUT_NAME frei0r)
+  list(REMOVE_DUPLICATES bundle_link_libraries)
+  # Preserve only portable system names directly in the installed interface.
+  # Optional dependencies are rediscovered by the installed package and use
+  # targets created there, so its export never captures this build host's
+  # library paths or package-specific target names.
+  foreach(library IN LISTS bundle_link_libraries)
+    if(library STREQUAL "m" OR library STREQUAL "-lm")
+      list(APPEND bundle_install_link_libraries "${library}")
+    endif()
+  endforeach()
+  list(FIND bundle_link_libraries "Threads::Threads" bundle_threads_index)
+  if(bundle_threads_index EQUAL -1)
+    set(FREI0R_BUNDLE_NEEDS_THREADS OFF CACHE INTERNAL
+        "Whether the selected bundle exports a Threads dependency" FORCE)
+  else()
+    set(FREI0R_BUNDLE_NEEDS_THREADS ON CACHE INTERNAL
+        "Whether the selected bundle exports a Threads dependency" FORCE)
+    list(APPEND bundle_install_link_libraries Threads::Threads)
+  endif()
+  if(bundle_needs_gavl)
+    list(APPEND bundle_install_link_libraries PkgConfig::Frei0rBundleGavl)
+  endif()
+  if(bundle_needs_opencv)
+    list(APPEND bundle_install_link_libraries Frei0rBundle::opencv)
+  endif()
+  if(bundle_needs_cairo)
+    list(APPEND bundle_install_link_libraries PkgConfig::Frei0rBundleCairo)
+  endif()
+  if(bundle_needs_opengl_egl)
+    list(APPEND bundle_install_link_libraries OpenGL::GL PkgConfig::Frei0rBundleEGL)
+  endif()
+  set(FREI0R_BUNDLE_NEEDS_OPENCV ${bundle_needs_opencv} CACHE INTERNAL
+      "Whether the selected bundle exports an OpenCV dependency" FORCE)
+  set(FREI0R_BUNDLE_NEEDS_CAIRO ${bundle_needs_cairo} CACHE INTERNAL
+      "Whether the selected bundle exports a Cairo dependency" FORCE)
+  set(FREI0R_BUNDLE_NEEDS_GAVL ${bundle_needs_gavl} CACHE INTERNAL
+      "Whether the selected bundle exports a GAVL dependency" FORCE)
+  set(FREI0R_BUNDLE_NEEDS_OPENGL_EGL ${bundle_needs_opengl_egl} CACHE INTERNAL
+      "Whether the selected bundle exports OpenGL/EGL dependencies" FORCE)
+  set_target_properties(frei0r-bundle PROPERTIES
+    OUTPUT_NAME frei0r-bundle-static
+    EXPORT_NAME static
+  )
   target_include_directories(frei0r-bundle PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
   if(bundle_link_libraries)
-    target_link_libraries(frei0r-bundle PRIVATE ${bundle_link_libraries})
+    # Static archives do not carry their dependent libraries.  Preserve the
+    # source build's exact resolved order, but make installed consumers use
+    # dependencies rediscovered by Frei0rBundleConfig.cmake.
+    target_link_libraries(frei0r-bundle PUBLIC
+      "$<BUILD_INTERFACE:${bundle_link_libraries}>"
+      "$<INSTALL_INTERFACE:${bundle_install_link_libraries}>"
+    )
   endif()
 
-  if(BUILD_TESTING)
-    frei0r_bundle_add_symbol_collision_audit(
-      NAME frei0r-bundle-symbol-collisions TARGETS ${bundle_object_targets}
-    )
+  if(NOT _frei0r_wasm_target OR BUILD_TESTING)
     add_library(frei0r-bundle-shared SHARED
       $<TARGET_OBJECTS:frei0r-bundle-registry>
       ${bundle_objects} ${bundle_descriptor_objects}
     )
     set_target_properties(frei0r-bundle-shared PROPERTIES
-      OUTPUT_NAME frei0r-bundle-test
+      OUTPUT_NAME frei0r-bundle
+      EXPORT_NAME shared
       C_VISIBILITY_PRESET hidden
       CXX_VISIBILITY_PRESET hidden
       VISIBILITY_INLINES_HIDDEN YES
@@ -608,5 +670,21 @@ function(frei0r_finalize_bundle)
     if(bundle_link_libraries)
       target_link_libraries(frei0r-bundle-shared PRIVATE ${bundle_link_libraries})
     endif()
+
+    if(NOT _frei0r_wasm_target)
+      install(TARGETS frei0r-bundle frei0r-bundle-shared
+        EXPORT Frei0rBundleTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      )
+    endif()
+  endif()
+
+  if(BUILD_TESTING)
+    frei0r_bundle_add_symbol_collision_audit(
+      NAME frei0r-bundle-symbol-collisions TARGETS ${bundle_object_targets}
+    )
   endif()
 endfunction()

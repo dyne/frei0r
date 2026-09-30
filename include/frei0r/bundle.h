@@ -92,9 +92,16 @@ typedef struct f0r_plugin_descriptor {
 
 /*
  * The registry order is stable for a particular bundle build.  It contains
- * only descriptors with unique IDs.  Bundle construction must reject a
- * duplicate ID; if a malformed bundle nevertheless contains one,
+ * only descriptors with unique canonical IDs.  Bundle construction must
+ * reject a duplicate ID; if a malformed bundle nevertheless contains one,
  * f0r_bundle_plugin_by_id returns null rather than choosing arbitrarily.
+ *
+ * A descriptor and its ID are immutable for the lifetime of the bundle.  A
+ * host obtains a descriptor by index or ID, checks its size and version, then
+ * calls init before construct.  It must destruct every constructed instance
+ * before calling deinit.  The remaining descriptor callbacks have the same
+ * per-plugin lifecycle and parameter rules as the frei0r 1.2 ABI in
+ * frei0r.h; a bundle does not expose process-global f0r_* entry points.
  */
 FREI0R_BUNDLE_PUBLIC size_t f0r_bundle_plugin_count(void);
 FREI0R_BUNDLE_PUBLIC const f0r_plugin_descriptor_t *
