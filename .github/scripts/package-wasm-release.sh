@@ -86,6 +86,7 @@ esac
   printf '  "sdk": {"name": "%s", "version": "%s"},\n' \
     "$sdk_name" "$sdk_version"
   printf '  "runtime_test": "%s",\n' "$runtime"
+  printf '  "application_contract": {"input": "deterministic-noise", "frames_per_plugin": 3, "parameters": "varied"},\n'
   printf '  "library": "lib/libfrei0r-bundle-static.a",\n'
   printf '  "headers": ["include/frei0r.h", "include/frei0r/bundle.h"],\n'
   printf '  "tested_contracts": ['
