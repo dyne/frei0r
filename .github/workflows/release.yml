@@ -211,6 +211,99 @@ jobs:
           name: release-osx-pkgconfig
           path: build/frei0r.pc
 
+  wasi-build:
+    name: 🌐 WASI bundle
+    runs-on: ubuntu-latest
+    needs: [release-plan]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - id: wasi-sdk
+        uses: bytecodealliance/setup-wasi-sdk-action@v1
+        with:
+          version: '29'
+          install-path: ${{ runner.temp }}/wasi-sdk
+      - name: Configure core bundle
+        run: |
+          cmake -S . -B build-wasi -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.wasi-sdk.outputs.wasi-sdk-path }}/share/cmake/wasi-sdk-p1.cmake" \
+            -DFREI0R_VERSION=${{ needs.release-plan.outputs.version }} \
+            -DFREI0R_BUILD_BUNDLE=ON \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+      - name: Build and test release outputs
+        run: |
+          cmake --build build-wasi --parallel 4 --target \
+            frei0r-bundle bundle-registry-wasi bundle-wasi-consumer
+          ctest --test-dir build-wasi --output-on-failure -R \
+            '^(bundle-registry-wasi|bundle-wasi-consumer)$'
+      - name: Package tested WASI bundle
+        run: |
+          .github/scripts/package-wasm-release.sh \
+            wasi \
+            "${{ needs.release-plan.outputs.version }}" \
+            29 \
+            build-wasi \
+            release-wasi
+      - name: Upload WASI release package
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-wasi-package
+          path: release-wasi/*.tar.gz
+          if-no-files-found: error
+
+  emscripten-build:
+    name: 🌐 Emscripten bundle
+    runs-on: ubuntu-latest
+    needs: [release-plan]
+    if: ${{ needs.release-plan.outputs.release == 'True' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Set writable Emscripten cache
+        run: echo "EM_CACHE=$RUNNER_TEMP/emscripten-cache" >> "$GITHUB_ENV"
+      - uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 4.0.1
+          actions-cache-folder: emsdk-4.0.1
+      - name: Configure core bundle
+        run: |
+          cmake -S . -B build-emscripten -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
+            -DFREI0R_VERSION=${{ needs.release-plan.outputs.version }} \
+            -DFREI0R_BUILD_BUNDLE=ON \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+      - name: Build and test release outputs
+        run: |
+          cmake --build build-emscripten --parallel 4 --target \
+            frei0r-bundle bundle-registry-emscripten bundle-emscripten-consumer
+          ctest --test-dir build-emscripten --output-on-failure -R \
+            '^(bundle-registry-emscripten|bundle-emscripten-consumer)$'
+      - name: Package tested Emscripten bundle
+        run: |
+          .github/scripts/package-wasm-release.sh \
+            emscripten \
+            "${{ needs.release-plan.outputs.version }}" \
+            4.0.1 \
+            build-emscripten \
+            release-emscripten
+      - name: Upload Emscripten release package
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-emscripten-package
+          path: release-emscripten/*.tar.gz
+          if-no-files-found: error
+
   publish-release:
     name: 🚀 Publish release
     runs-on: ubuntu-latest
@@ -258,7 +351,14 @@ jobs:
 
   publish-binary-release:
     name: 📦 Pack release
-    needs: [release-plan, publish-release, win-build, osx-build, linux-build]
+    needs:
+      - release-plan
+      - publish-release
+      - win-build
+      - osx-build
+      - linux-build
+      - wasi-build
+      - emscripten-build
     if: ${{ needs.release-plan.outputs.release == 'True' }}
     runs-on: ubuntu-latest
     steps:
@@ -314,6 +414,9 @@ jobs:
           cp frei0r-bin/release-linux-pkgconfig/frei0r.pc $dst/
           echo "${{ needs.publish-release.outputs.version }}" > $dst/VERSION.txt
           tar cvfz $dst.tar.gz $dst
+
+          cp frei0r-bin/release-wasi-package/*.tar.gz .
+          cp frei0r-bin/release-emscripten-package/*.tar.gz .
 
           sha256sum *.zip *.tar.gz > SHA256SUMS.txt
 

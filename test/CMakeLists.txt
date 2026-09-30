@@ -218,6 +218,21 @@ add_test(NAME bundle-api-contract COMMAND bundle-api-contract)
 add_executable(bundle-api-cxx bundle-api-cxx.cpp)
 add_test(NAME bundle-api-cxx COMMAND bundle-api-cxx)
 
+if(UNIX)
+  find_program(FREI0R_BASH_EXECUTABLE bash)
+  find_program(FREI0R_SHA256SUM_EXECUTABLE sha256sum)
+  find_program(FREI0R_TAR_EXECUTABLE tar)
+  if(FREI0R_BASH_EXECUTABLE AND FREI0R_SHA256SUM_EXECUTABLE AND
+     FREI0R_TAR_EXECUTABLE)
+    add_test(NAME wasm-release-package
+      COMMAND ${FREI0R_BASH_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/check-wasm-release-package.sh
+        ${CMAKE_SOURCE_DIR}/.github/scripts/package-wasm-release.sh
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
   option(FREI0R_RUNTIME_SMOKE_GC "Enable section garbage collection for the WASI smoke module" OFF)
   option(FREI0R_BUNDLE_WASI_GC "Enable section garbage collection for the WASI bundle runner" OFF)
