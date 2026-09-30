@@ -23,10 +23,13 @@ for (const entry of WebAssembly.Module.imports(module)) {
 const instance = await WebAssembly.instantiate(module, imports);
 const { memory, f0r_bundle_wasi_run: run, f0r_bundle_wasi_failure_id: failureId,
   f0r_bundle_wasi_failure_stage: failureStage,
-  f0r_bundle_wasi_output_digest: outputDigest } = instance.exports;
+  f0r_bundle_wasi_output_digest: outputDigest,
+  f0r_bundle_wasi_application_frame_count: applicationFrameCount,
+  f0r_bundle_wasi_parameter_change_count: parameterChangeCount } = instance.exports;
 if (!(memory instanceof WebAssembly.Memory) || typeof run !== 'function' ||
     typeof outputDigest !== 'function' || typeof failureId !== 'function' ||
-    typeof failureStage !== 'function') {
+    typeof failureStage !== 'function' || typeof applicationFrameCount !== 'function' ||
+    typeof parameterChangeCount !== 'function') {
   console.error('missing bounded bundle registry runner exports');
   process.exit(66);
 }
@@ -44,4 +47,10 @@ if (status !== 0) {
   console.error(`bundle registry failed: plugin=${stringAt(failureId())} stage=${stringAt(failureStage())} status=${status}`);
   process.exit(status);
 }
-console.log(`bundle registry contract passed digest=${outputDigest() >>> 0}`);
+const frames = applicationFrameCount() >>> 0;
+const parameterChanges = parameterChangeCount() >>> 0;
+if (frames < 2 || parameterChanges < 1) {
+  console.error(`application coverage missing: frames=${frames} parameter_changes=${parameterChanges}`);
+  process.exit(67);
+}
+console.log(`bundle application contract passed digest=${outputDigest() >>> 0} frames=${frames} parameter_changes=${parameterChanges}`);

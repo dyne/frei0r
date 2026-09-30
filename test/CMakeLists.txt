@@ -271,7 +271,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
   target_link_libraries(bundle-registry-wasi PRIVATE frei0r-bundle c++ c++abi)
   set_target_properties(bundle-registry-wasi PROPERTIES SUFFIX ".wasm")
   set_property(TARGET bundle-registry-wasi APPEND_STRING PROPERTY LINK_FLAGS
-    " -nostartfiles -Wl,--no-entry -Wl,--initial-memory=8388608 -Wl,--export-memory -Wl,--export=f0r_bundle_wasi_run -Wl,--export=f0r_bundle_wasi_output_digest -Wl,--export=f0r_bundle_wasi_failure_id -Wl,--export=f0r_bundle_wasi_failure_stage")
+    " -mexec-model=reactor -Wl,--initial-memory=8388608 -Wl,--export-memory -Wl,--export=f0r_bundle_wasi_run -Wl,--export=f0r_bundle_wasi_output_digest -Wl,--export=f0r_bundle_wasi_application_frame_count -Wl,--export=f0r_bundle_wasi_parameter_change_count -Wl,--export=f0r_bundle_wasi_failure_id -Wl,--export=f0r_bundle_wasi_failure_stage")
   if(FREI0R_BUNDLE_WASI_GC)
     set_property(TARGET bundle-registry-wasi APPEND_STRING PROPERTY LINK_FLAGS
       " -Wl,--gc-sections")
@@ -297,7 +297,7 @@ elseif(EMSCRIPTEN)
     BUNDLE_REGISTRY_CONTRACT_NO_MAIN)
   target_link_libraries(bundle-registry-emscripten PRIVATE frei0r-bundle)
   set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
-    " --no-entry -sINITIAL_MEMORY=67108864 -sMODULARIZE=1 -sEXPORT_NAME=createBundleRegistry -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_f0r_bundle_emscripten_run','_f0r_bundle_emscripten_output_digest','_f0r_bundle_emscripten_output_count','_f0r_bundle_emscripten_output_digest_at','_f0r_bundle_emscripten_output_id_at','_f0r_bundle_emscripten_failure_id','_f0r_bundle_emscripten_failure_stage']")
+    " --no-entry -sINITIAL_MEMORY=67108864 -sMODULARIZE=1 -sEXPORT_NAME=createBundleRegistry -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_f0r_bundle_emscripten_run','_f0r_bundle_emscripten_output_digest','_f0r_bundle_emscripten_application_frame_count','_f0r_bundle_emscripten_parameter_change_count','_f0r_bundle_emscripten_output_count','_f0r_bundle_emscripten_output_digest_at','_f0r_bundle_emscripten_output_id_at','_f0r_bundle_emscripten_failure_id','_f0r_bundle_emscripten_failure_stage']")
   if(FREI0R_BUNDLE_EMSCRIPTEN_GC)
     set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
       " -Wl,--gc-sections")

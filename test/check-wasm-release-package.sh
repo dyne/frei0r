@@ -44,7 +44,11 @@ verify_package() {
     cd "$extract_dir/$package_name"
     sha256sum -c SHA256SUMS.txt
   )
-  grep -Fq "\"target\":" "$extract_dir/$package_name/manifest.json"
+  local manifest="$extract_dir/$package_name/manifest.json"
+  grep -Fq "\"target\":" "$manifest"
+  grep -Fq '"input": "deterministic-noise"' "$manifest"
+  grep -Fq '"frames_per_plugin": 3' "$manifest"
+  grep -Fq '"parameters": "varied"' "$manifest"
   [[ -f "$extract_dir/$package_name/include/frei0r.h" ]]
   [[ -f "$extract_dir/$package_name/include/frei0r/bundle.h" ]]
   [[ -f "$extract_dir/$package_name/lib/libfrei0r-bundle-static.a" ]]

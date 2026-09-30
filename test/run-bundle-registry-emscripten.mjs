@@ -18,6 +18,8 @@ function cString(pointer) {
 }
 const run = module._f0r_bundle_emscripten_run;
 const outputDigest = module._f0r_bundle_emscripten_output_digest;
+const applicationFrameCount = module._f0r_bundle_emscripten_application_frame_count;
+const parameterChangeCount = module._f0r_bundle_emscripten_parameter_change_count;
 const failureId = module._f0r_bundle_emscripten_failure_id;
 const failureStage = module._f0r_bundle_emscripten_failure_stage;
 const outputCount = module._f0r_bundle_emscripten_output_count;
@@ -26,7 +28,8 @@ const outputIdAt = module._f0r_bundle_emscripten_output_id_at;
 if (typeof run !== 'function' || typeof outputDigest !== 'function' ||
     typeof failureId !== 'function' ||
     typeof failureStage !== 'function' || typeof outputCount !== 'function' ||
-    typeof outputDigestAt !== 'function' || typeof outputIdAt !== 'function') {
+    typeof outputDigestAt !== 'function' || typeof outputIdAt !== 'function' ||
+    typeof applicationFrameCount !== 'function' || typeof parameterChangeCount !== 'function') {
   console.error('missing bounded bundle registry runner exports');
   process.exit(65);
 }
@@ -36,7 +39,13 @@ if (status !== 0) {
   console.error(`bundle registry failed: plugin=${cString(failureId())} stage=${cString(failureStage())} status=${status}`);
   process.exit(status);
 }
-console.log(`bundle registry contract passed digest=${outputDigest() >>> 0}`);
+const frames = applicationFrameCount() >>> 0;
+const parameterChanges = parameterChangeCount() >>> 0;
+if (frames < 2 || parameterChanges < 1) {
+  console.error(`application coverage missing: frames=${frames} parameter_changes=${parameterChanges}`);
+  process.exit(66);
+}
+console.log(`bundle application contract passed digest=${outputDigest() >>> 0} frames=${frames} parameter_changes=${parameterChanges}`);
 if (process.argv.includes('--trace')) {
   for (let index = 0; index < outputCount(); ++index)
     console.log(`bundle registry trace index=${index} id=${cString(outputIdAt(index))} digest=${outputDigestAt(index) >>> 0}`);
