@@ -4,6 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "vitepress dev",
+    "demo:check": "svelte-check --tsconfig ./tsconfig.demo.json",
+    "demo:check:build": "node scripts/check-demo-build.mjs",
+    "demo:dev": "vite --config vite.demo.config.ts",
+    "demo:prepare-runtime": "node scripts/prepare-demo-runtime.mjs",
+    "demo:write-service-worker": "node scripts/write-demo-service-worker.mjs",
+    "demo:test:service-worker": "node scripts/test-demo-service-worker.mjs",
+    "demo:build": "npm run demo:prepare-runtime && vite build --config vite.demo.config.ts && npm run demo:write-service-worker",
+    "demo:preview": "vite preview --config vite.demo.config.ts",
     "docs:api": "node scripts/build-api.mjs",
     "build": "npm run docs:api && npm run build:site",
     "build:site": "vitepress build",
@@ -11,8 +19,13 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "svelte": "^5.50.0",
+    "svelte-check": "^4.3.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.3",
     "vitepress": "^2.0.0-alpha.17",
     "vue": "^3.5.32"
   }
 }
-

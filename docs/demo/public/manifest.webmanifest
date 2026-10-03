@@ -1,0 +1,22 @@
+{
+  "name": "frei0r Live Filter Demo",
+  "short_name": "frei0r Demo",
+  "description": "A local, in-browser demonstration of frei0r video filters.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101514",
+  "theme_color": "#101514",
+  "icons": [
+    {
+      "src": "icons/dyne-mark-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/dyne-mark-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

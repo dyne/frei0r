@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "isolatedModules": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["node", "vite/client"],
+    "verbatimModuleSyntax": true
+  },
+  "include": [
+    "demo/src/**/*.ts",
+    "demo/src/**/*.svelte",
+    "vite.demo.config.ts"
+  ]
+}
