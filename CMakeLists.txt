@@ -47,6 +47,23 @@ set_property(CACHE FREI0R_BUNDLE_PROFILE PROPERTY STRINGS core all)
 set(FREI0R_BUNDLE_PLUGINS "" CACHE STRING
     "Semicolon-separated bundle target names; overrides FREI0R_BUNDLE_PROFILE")
 
+option(FREI0R_BUILD_BROWSER_DEMO_RUNTIME
+  "Build the browser-facing frei0r demo runtime and its explicit bundle" OFF)
+set(FREI0R_BROWSER_DEMO_PLUGINS
+  "brightness;bw0r;colorize;dither;distort0r;emboss;glitch0r;glow;heatmap0r;hueshift0r;invert0r;pixeliz0r;posterize;rgbsplit0r;saturat0r;threshold0r;vertigo"
+  CACHE STRING "Explicit plugin targets for the browser demo runtime")
+if(FREI0R_BUILD_BROWSER_DEMO_RUNTIME)
+  if(FREI0R_BUNDLE_PLUGINS AND
+     NOT FREI0R_BUNDLE_PLUGINS STREQUAL FREI0R_BROWSER_DEMO_PLUGINS)
+    message(FATAL_ERROR
+      "FREI0R_BUILD_BROWSER_DEMO_RUNTIME requires its explicit browser manifest")
+  endif()
+  set(FREI0R_BUILD_BUNDLE ON CACHE BOOL
+      "Build the experimental static frei0r bundle" FORCE)
+  set(FREI0R_BUNDLE_PLUGINS "${FREI0R_BROWSER_DEMO_PLUGINS}" CACHE STRING
+      "Semicolon-separated bundle target names; overrides FREI0R_BUNDLE_PROFILE" FORCE)
+endif()
+
 # WebAssembly bundles start from an explicitly scalar, single-threaded profile.
 # The native MODULE targets retain their existing platform-specific settings;
 # these options affect only the separately compiled bundle objects.
@@ -165,6 +182,10 @@ set(FREI0R_BUNDLE_CLASSIFICATIONS "${FREI0R_BUNDLE_CLASSIFICATIONS}" CACHE INTER
 if (BUILD_TESTING)
   add_subdirectory (test)
 endif ()
+
+if(FREI0R_BUILD_BROWSER_DEMO_RUNTIME)
+  add_subdirectory(examples/browser-demo/runtime)
+endif()
 
 # Generate frei0r.pc and install it.
 set (prefix "${CMAKE_INSTALL_PREFIX}")
