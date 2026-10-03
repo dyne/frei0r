@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "vitepress dev",
     "demo:check": "svelte-check --tsconfig ./tsconfig.demo.json",
+    "demo:test:camera": "node scripts/test-demo-camera.mjs && npm run demo:check",
+    "demo:test:frame-pipeline": "node scripts/test-demo-frame-pipeline.mjs && npm run demo:check",
+    "demo:test:frame-scheduler": "node scripts/test-demo-frame-scheduler.mjs && npm run demo:check",
+    "demo:test:filter-parameters": "node scripts/test-demo-filter-parameters.mjs && npm run demo:check",
     "demo:check:build": "node scripts/check-demo-build.mjs",
     "demo:dev": "vite --config vite.demo.config.ts",
     "demo:prepare-runtime": "node scripts/prepare-demo-runtime.mjs",
