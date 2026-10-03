@@ -28,6 +28,8 @@ export interface FrameSchedulerSnapshot {
   readonly renderedFrames: number
   readonly droppedFrames: number
   readonly qualityScale: number
+  readonly selectedFilter?: number
+  readonly pendingFilter?: number
   readonly dimensions?: FrameDimensions
 }
 
@@ -92,6 +94,8 @@ export class FrameScheduler {
       renderedFrames: this.renderedFrames,
       droppedFrames: this.droppedFrames,
       qualityScale: this.qualityScale,
+      ...(this.selectedFilter === undefined ? {} : { selectedFilter: this.selectedFilter }),
+      ...(this.pendingFilter === undefined ? {} : { pendingFilter: this.pendingFilter }),
       ...(this.dimensions ? { dimensions: this.dimensions } : {})
     }
   }

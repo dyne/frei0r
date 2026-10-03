@@ -1,7 +1,11 @@
 export interface Frei0rDemoRuntime {
   readonly HEAPU8: Uint8Array
   readonly _frei0r_demo_catalog_count: () => number
+  readonly _frei0r_demo_catalog_id: (catalogIndex: number) => number
+  readonly _frei0r_demo_catalog_name: (catalogIndex: number) => number
+  readonly _frei0r_demo_catalog_explanation: (catalogIndex: number) => number
   readonly _frei0r_demo_catalog_color_model: (catalogIndex: number) => number
+  readonly _frei0r_demo_catalog_parameter_count: (catalogIndex: number) => number
   readonly _frei0r_demo_select: (catalogIndex: number, width: number, height: number) => number
   readonly _frei0r_demo_input_pointer: () => number
   readonly _frei0r_demo_output_pointer: () => number
