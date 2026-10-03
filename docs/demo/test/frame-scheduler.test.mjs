@@ -122,6 +122,19 @@ test('coalesces rapid filter changes and rebuilds after an orientation change', 
   assert.equal(scheduler.snapshot.renderedFrames, 2)
 })
 
+test('publishes the pending and applied filter so controls can reflect serialized selection', () => {
+  const video = new FakeVideo()
+  const pipeline = renderer()
+  const scheduler = new FrameScheduler(pipeline, video, new FakePlatform())
+  scheduler.selectFilter(3)
+  assert.equal(scheduler.snapshot.pendingFilter, 3)
+  assert.equal(scheduler.snapshot.selectedFilter, undefined)
+  scheduler.start()
+  video.frame(1)
+  assert.equal(scheduler.snapshot.pendingFilter, undefined)
+  assert.equal(scheduler.snapshot.selectedFilter, 3)
+})
+
 test('falls back to animation frames when video callbacks are unavailable', () => {
   const video = new FakeVideo(640, 480, false)
   video.requestVideoFrameCallback = undefined
