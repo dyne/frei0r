@@ -14,6 +14,7 @@ export type StageFixture =
 export type StageKind =
   | StageFixture
   | 'paused'
+  | 'processing-failure'
   | 'stopped'
 
 export interface StagePresentation {
@@ -21,7 +22,7 @@ export interface StagePresentation {
   readonly title: string
   readonly detail: string
   readonly status: string
-  readonly action: 'start' | 'stop' | 'retry' | 'none'
+  readonly action: 'start' | 'stop' | 'retry' | 'retry-processing' | 'none'
   readonly actionLabel: string
   readonly actionDisabled: boolean
   readonly cameraActive: boolean
@@ -32,7 +33,7 @@ export interface StageInputs {
   readonly camera: CameraSnapshot
   readonly runtimeState: RuntimeState
   readonly runtimeError?: string
-  readonly scheduler: Pick<FrameSchedulerSnapshot, 'active' | 'status'>
+  readonly scheduler: Pick<FrameSchedulerSnapshot, 'active' | 'status' | 'failure'>
   readonly cameraWasStarted: boolean
   readonly fixture?: StageFixture
 }
@@ -166,6 +167,19 @@ export function resolveStagePresentation(inputs: StageInputs): StagePresentation
   }
   if (inputs.camera.status === 'starting') return fixtures.requesting
   if (inputs.camera.status === 'active') {
+    if (inputs.scheduler.failure) {
+      return {
+        kind: 'processing-failure',
+        title: 'Filter processing paused',
+        detail: `${inputs.scheduler.failure} Choose another filter and retry processing, or stop the camera.`,
+        status: 'Filter processing failed. Camera remains active.',
+        action: 'retry-processing',
+        actionLabel: 'Retry processing',
+        actionDisabled: false,
+        cameraActive: true,
+        showCanvas: true
+      }
+    }
     return inputs.scheduler.active ? fixtures.running : pausedPresentation(inputs.scheduler.status)
   }
   if (inputs.camera.status === 'error') {

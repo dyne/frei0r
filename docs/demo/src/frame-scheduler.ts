@@ -31,6 +31,7 @@ export interface FrameSchedulerSnapshot {
   readonly selectedFilter?: number
   readonly pendingFilter?: number
   readonly dimensions?: FrameDimensions
+  readonly failure?: string
 }
 
 interface ScheduledCallback {
@@ -77,6 +78,7 @@ export class FrameScheduler {
   private droppedFrames = 0
   private qualityScale = 1
   private status = 'Camera processing is stopped.'
+  private failure: string | undefined
   private readonly listeners = new Set<(snapshot: FrameSchedulerSnapshot) => void>()
   private readonly configurationListeners = new Set<(catalogIndex: number, dimensions: FrameDimensions) => void>()
 
@@ -96,7 +98,8 @@ export class FrameScheduler {
       qualityScale: this.qualityScale,
       ...(this.selectedFilter === undefined ? {} : { selectedFilter: this.selectedFilter }),
       ...(this.pendingFilter === undefined ? {} : { pendingFilter: this.pendingFilter }),
-      ...(this.dimensions ? { dimensions: this.dimensions } : {})
+      ...(this.dimensions ? { dimensions: this.dimensions } : {}),
+      ...(this.failure ? { failure: this.failure } : {})
     }
   }
 
@@ -122,6 +125,7 @@ export class FrameScheduler {
 
   public start(): void {
     if (this.active) return
+    this.failure = undefined
     this.active = true
     this.status = 'Waiting for a camera frame.'
     this.publish()
@@ -135,7 +139,7 @@ export class FrameScheduler {
     this.publish()
   }
 
-  public receiveFrame(time: number): void {
+  public receiveFrame(timestampMilliseconds: number): void {
     if (!this.active) return
     if (this.inFlight) {
       ++this.droppedFrames
@@ -167,16 +171,18 @@ export class FrameScheduler {
     const startedAt = this.platform.now()
     try {
       this.applyPendingChanges(nextDimensions)
-      this.renderer.render(this.video as unknown as CanvasImageSource, time)
+      this.renderer.render(this.video as unknown as CanvasImageSource, timestampMilliseconds / 1000)
       ++this.renderedFrames
       this.status = 'Processing camera frames locally.'
     } catch (error) {
-      this.status = error instanceof Error ? error.message : 'Unable to process this camera frame.'
+      this.failure = error instanceof Error ? error.message : 'Unable to process this camera frame.'
+      this.status = this.failure
+      this.active = false
     } finally {
       this.inFlight = false
       if (this.platform.now() - startedAt > this.longTaskMilliseconds) this.reduceQuality()
       this.publish()
-      this.scheduleNext()
+      if (!this.failure) this.scheduleNext()
     }
   }
 

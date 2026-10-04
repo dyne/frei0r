@@ -59,6 +59,22 @@ test('gives denied, unavailable, and runtime failure states distinct recovery pa
   assert.match(runtimeFailure.detail, /Unable to load runtime/)
 })
 
+test('surfaces a processing failure while preserving retry and camera-stop recovery', () => {
+  const failure = resolveStagePresentation({
+    camera: { status: 'active' },
+    runtimeState: 'ready',
+    scheduler: { active: false, status: 'Filter failed.', failure: 'Filter failed.' },
+    cameraWasStarted: true
+  })
+
+  assert.equal(failure.kind, 'processing-failure')
+  assert.equal(failure.action, 'retry-processing')
+  assert.equal(failure.actionLabel, 'Retry processing')
+  assert.equal(failure.cameraActive, true)
+  assert.match(failure.detail, /another filter/)
+  assert.match(failure.detail, /stop the camera/)
+})
+
 test('accepts deterministic development-only stage fixtures', () => {
   assert.equal(stageFixtureFromSearch('?stage=denied', true), 'denied')
   assert.equal(stageFixtureFromSearch('?stage=unknown', true), undefined)

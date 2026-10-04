@@ -79,6 +79,7 @@ async function installSyntheticCamera(page, outcome = 'granted') {
       stoppedTracks: 0,
       streams: 0,
       uniqueOutputImages: 0,
+      inputFrameAllocations: 0,
       outputImages: new WeakSet(),
     }
     const videoPrototype = HTMLVideoElement.prototype
@@ -108,6 +109,11 @@ async function installSyntheticCamera(page, outcome = 'granted') {
       },
     })
     const originalPutImageData = CanvasRenderingContext2D.prototype.putImageData
+    const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData
+    CanvasRenderingContext2D.prototype.getImageData = function (...args) {
+      ++metrics.inputFrameAllocations
+      return originalGetImageData.call(this, ...args)
+    }
     CanvasRenderingContext2D.prototype.putImageData = function (imageData, ...args) {
       if (this.canvas.classList.contains('processed-frame')) {
         ++metrics.presentations
@@ -154,11 +160,21 @@ async function installSyntheticCamera(page, outcome = 'granted') {
     }
     Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { configurable: true, value: getUserMedia })
     window.__frei0rDemoSmoke = {
+      sampleVideoDigest: () => {
+        const video = document.querySelector('video')
+        const sample = document.createElement('canvas')
+        sample.width = video.videoWidth
+        sample.height = video.videoHeight
+        const context = sample.getContext('2d', { willReadFrequently: true })
+        context.drawImage(video, 0, 0)
+        return digest(originalGetImageData.call(context, 0, 0, sample.width, sample.height).data)
+      },
       snapshot: () => ({
         activeCallbacks: metrics.activeCallbacks.size,
         constraints: metrics.constraints,
         digests: metrics.digests.slice(),
         inputDigest: metrics.inputDigest,
+        inputFrameAllocations: metrics.inputFrameAllocations,
         maxCallbacks: metrics.maxCallbacks,
         presentations: metrics.presentations,
         requests: metrics.requests,
@@ -170,6 +186,7 @@ async function installSyntheticCamera(page, outcome = 'granted') {
         Object.defineProperty(videoPrototype, 'requestVideoFrameCallback', { configurable: true, value: originalRequest })
         Object.defineProperty(videoPrototype, 'cancelVideoFrameCallback', { configurable: true, value: originalCancel })
         CanvasRenderingContext2D.prototype.putImageData = originalPutImageData
+        CanvasRenderingContext2D.prototype.getImageData = originalGetImageData
       },
     }
   }, outcome)
@@ -212,8 +229,13 @@ async function runGrantedScenario(browser, origin) {
 
   const initial = await snapshot(page)
   assert.equal(initial.inputDigest, expectedSyntheticDigest, 'Synthetic RGBA input changed unexpectedly.')
+  const presentedInputDigest = await page.evaluate(() => window.__frei0rDemoSmoke.sampleVideoDigest())
+  assert.equal(initial.digests.at(-1), presentedInputDigest,
+    'The zero-conversion capture path changed the top-to-bottom RGBA input.')
   assert.deepEqual(initial.constraints, [{ audio: false, video: true }], 'The demo must request video-only camera access.')
   assert.ok(initial.maxCallbacks <= 1, 'The scheduler queued more than one video callback.')
+  assert.equal(initial.inputFrameAllocations, 0,
+    'The browser did not use the zero-churn capture path for camera frames.')
 
   const catalog = await page.locator('.filter-rail button').evaluateAll((buttons) => buttons.map((button) => button.id))
   assert.ok(catalog.length >= 12, 'The browser runtime did not expose the curated filter catalog.')
@@ -230,8 +252,12 @@ async function runGrantedScenario(browser, origin) {
   const allocationCheck = await snapshot(page)
   assert.ok(allocationCheck.uniqueOutputImages <= catalog.length + 2,
     'The renderer retained more output images than the selected filter configurations.')
+  assert.equal(allocationCheck.inputFrameAllocations, 0,
+    'The primary capture path allocated Canvas ImageData while rendering.')
 
+  const beforeParameterFilter = await snapshot(page)
   await page.locator('#filter-0').click()
+  await waitForPresentations(page, beforeParameterFilter.presentations, 2)
   await page.getByRole('button', { name: /Parameters/ }).click()
   const parameter = page.locator('#parameter-content input[type="range"]').first()
   await parameter.waitFor()
