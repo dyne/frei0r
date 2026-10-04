@@ -7,6 +7,10 @@ on:
     paths:
       - 'docs/**'
       - 'include/**'
+      - 'src/**'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'examples/browser-demo/runtime/**'
       - '.github/workflows/pages.yml'
   pull_request:
     branches:
@@ -14,6 +18,10 @@ on:
     paths:
       - 'docs/**'
       - 'include/**'
+      - 'src/**'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'examples/browser-demo/runtime/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -39,6 +47,38 @@ jobs:
           cache: npm
           cache-dependency-path: docs/package-lock.json
 
+      - name: Set writable Emscripten cache
+        run: echo "EM_CACHE=$RUNNER_TEMP/emscripten-demo-cache" >> "$GITHUB_ENV"
+
+      - name: Set up Emscripten
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 4.0.1
+          actions-cache-folder: emsdk-4.0.1
+
+      - name: Cache Emscripten demo compilation
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/emscripten-demo-cache
+          key: >-
+            emscripten-demo-${{ runner.os }}-4.0.1-${{
+            hashFiles('CMakeLists.txt', 'cmake/**', 'include/**', 'src/**',
+            'examples/browser-demo/runtime/**', 'docs/demo/**', 'docs/scripts/**',
+            'docs/vite.demo.config.ts', 'docs/package-lock.json') }}
+
+      - name: Configure browser demo runtime
+        run: |
+          cmake -S . -B build-website-demo -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
+            -DFREI0R_BUILD_BROWSER_DEMO_RUNTIME=ON \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+
+      - name: Build browser demo runtime
+        run: cmake --build build-website-demo --parallel 4 --target frei0r-demo-browser-runtime
+
       - name: Install Doxygen
         run: |
           sudo apt-get update
@@ -50,12 +90,33 @@ jobs:
 
       - name: Build website and API reference
         working-directory: docs
+        env:
+          FREI0R_DEMO_RUNTIME_DIR: ${{ github.workspace }}/build-website-demo/examples/browser-demo/runtime
         run: npm run build
 
-      - name: Check website artifact
-        run: |
-          test -f docs/.vitepress/dist/index.html
-          test -f docs/.vitepress/dist/codedoc/html/index.html
+      - name: Check complete Pages artifact
+        working-directory: docs
+        env:
+          BASE_PATH: /frei0r/
+        run: npm run check
+
+      - name: Install Chromium for demo smoke coverage
+        working-directory: docs
+        run: npx playwright install --with-deps chromium chromium-headless-shell
+
+      - name: Run deterministic demo browser smoke coverage
+        working-directory: docs
+        env:
+          DEMO_SMOKE_ARTIFACTS: ${{ runner.temp }}/demo-browser-smoke
+        run: npm run demo:test:browser
+
+      - name: Upload demo browser smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: demo-browser-smoke
+          path: ${{ runner.temp }}/demo-browser-smoke
+          if-no-files-found: warn
 
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request'

@@ -10,6 +10,7 @@ Last reviewed against `origin/gh_pages`: 2026-06-06.
 | URL | Source in the new site | Reason |
 | --- | --- | --- |
 | `/frei0r/` | `docs/index.md` | Canonical project landing page |
+| `/frei0r/demo/` | `docs/demo/index.html` | Live browser filter demonstration |
 | `/frei0r/codedoc/html/` | Generated from `docs/Doxyfile` | Existing public API reference |
 | `/frei0r/pics/fla_name_lb.webp` | `docs/public/pics/fla_name_lb.webp` | Existing frei0r wordmark URL |
 | `/frei0r/pics/frei0r.png` | `docs/public/pics/frei0r.png` | Existing social preview URL |

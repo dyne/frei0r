@@ -3,6 +3,9 @@
 The website uses the Dyne-styled VitePress files in this directory and publishes
 generated Doxygen documentation in the same artifact.
 
+See [DEMO.md](DEMO.md) for the live filter demo toolchain, local workflow,
+browser checks, update procedure, and deployment verification.
+
 ## Requirements
 
 - Node.js 24 or a compatible current LTS release
