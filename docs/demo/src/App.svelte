@@ -127,6 +127,10 @@
 
   async function toggleCamera() {
     if (stageFixture || runtimeState !== 'ready') return
+    if (stage.action === 'retry-processing') {
+      scheduler?.start()
+      return
+    }
     if (cameraState.status === 'active' || cameraState.status === 'starting') {
       scheduler?.stop()
       camera.stop()
@@ -138,6 +142,11 @@
       await tick()
       scheduler?.start()
     }
+  }
+
+  function stopCamera() {
+    scheduler?.stop()
+    camera.stop()
   }
 
   function setBoolean(parameter: FilterParameter, event: Event) {
@@ -281,6 +290,9 @@
     {#if stage.cameraActive}
       <div class="stage-feedback">
         <p class="stage-note">The camera stays active until you stop it or leave this page.</p>
+        {#if stage.kind === 'processing-failure'}
+          <button type="button" onclick={stopCamera}>Stop camera</button>
+        {/if}
         {#if previewQualityMessage}<p class="quality-notice">{previewQualityMessage}</p>{/if}
       </div>
     {/if}
