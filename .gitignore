@@ -36,16 +36,14 @@ ylwrap
 frei0r.pc
 doc/html
 /build/
+/build-*/
 /out/
 /.vs/
 CMakeSettings.json
 .vscode
-<<<<<<< HEAD
 docs/node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 docs/public/codedoc/
 docs/doxygen-warnings.log
-=======
 CMakeCache.txt
->>>>>>> d0c88f7 (chore: Ignore CMakeCache)

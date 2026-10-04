@@ -204,9 +204,8 @@ Plugin names and parameters differ by installation. A source checkout includes
 a metadata scanner:
 
 ```sh
-cd test
-make frei0r-meta
-make scan-meta
+cmake --build build --target frei0r-meta
+cmake --build build --target generate-metadata
 ```
 
 See the current

@@ -69,15 +69,16 @@ For details see the [BUILD](/BUILD.md) file.
 ```sh
 cmake -S . -B build -G Ninja
 cmake --build build
-cd test && make frei0r-asan && make check
+ctest --test-dir build --output-on-failure
 ```
 
 ### Metadata scan utility
 
-The metadata scanner binary is `test/frei0r-meta` (previously `frei0r-info`):
+The metadata scanner binary is `build/test/frei0r-meta` (previously
+`frei0r-info`). Generate metadata for every built plugin with the CMake target:
 
 ```sh
-cd test && make frei0r-meta && make scan-meta
+cmake --build build --target generate-metadata
 ```
 
 ### MS / Windows
@@ -176,4 +177,3 @@ We also have an (old) mailing list open to [subscription](https://mailinglists.d
 Frei0r is the result of a collective effort in coordination with several software developers meeting to find a common standard for video effect plugins to be used among their applications.
 
 For a full list of contributors and the project history, see the file [AUTHORS](/AUTHORS), the [ChangeLog](/ChangeLog) and the project web page: https://frei0r.dyne.org
-
