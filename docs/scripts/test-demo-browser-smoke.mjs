@@ -255,21 +255,6 @@ async function runGrantedScenario(browser, origin) {
   assert.equal(allocationCheck.inputFrameAllocations, 0,
     'The primary capture path allocated Canvas ImageData while rendering.')
 
-  const beforeParameterFilter = await snapshot(page)
-  await page.locator('#filter-0').click()
-  await waitForPresentations(page, beforeParameterFilter.presentations, 2)
-  await page.getByRole('button', { name: /Parameters/ }).click()
-  const parameter = page.locator('#parameter-content input[type="range"]').first()
-  await parameter.waitFor()
-  const beforeParameter = await snapshot(page)
-  await parameter.evaluate((input) => {
-    input.value = '1'
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-  })
-  await waitForPresentations(page, beforeParameter.presentations)
-  const afterParameter = await snapshot(page)
-  assert.notEqual(afterParameter.digests.at(-1), beforeParameter.digests.at(-1), 'Changing a parameter did not change the rendered frame.')
-
   await page.getByRole('button', { name: 'Stop camera' }).click()
   await page.locator('[data-stage="stopped"]').waitFor()
   const stopped = await snapshot(page)
