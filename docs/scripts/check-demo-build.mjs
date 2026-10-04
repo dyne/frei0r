@@ -16,9 +16,13 @@ if (!existsSync(indexPath)) {
 }
 
 const html = readFileSync(indexPath, 'utf8')
+if (!html.includes('<link rel="canonical" href="https://dyne.org/frei0r/demo/" />') ||
+    !html.includes('<meta name="description" content="A local, in-browser frei0r video-filter demonstration." />')) {
+  throw new Error('The demo HTML does not declare canonical public metadata.')
+}
 const localAssetPaths = [...html.matchAll(/\b(?:href|src)=["']([^"']+)["']/g)]
   .map((match) => match[1])
-  .filter((value) => !value.startsWith('data:'))
+  .filter((value) => !/^(?:[a-z]+:|data:)/i.test(value))
 
 if (localAssetPaths.length === 0) {
   throw new Error('The demo HTML does not reference any application assets.')
@@ -59,14 +63,24 @@ if (!glue.includes('export default createFrei0rDemoRuntime') ||
   throw new Error('The demo runtime products are not matching Emscripten glue and Wasm files.')
 }
 
+// A MIME type is an HTTP response property, not an attribute of a Pages
+// artifact. The artifact gate verifies the binary extension and Wasm magic;
+// browser smoke coverage verifies delivery behavior through an HTTP server.
+if (!wasmPath.endsWith('.wasm')) {
+  throw new Error('The demo runtime binary must retain its .wasm extension for HTTP delivery.')
+}
+
 const applicationBundles = localAssetPaths
   .filter((assetPath) => assetPath.endsWith('.js'))
   .map((assetPath) => readFileSync(join(demoDirectory, assetPath.slice(demoBase.length)), 'utf8'))
 if (!applicationBundles.some((bundle) =>
   bundle.includes('runtime-manifest.json') &&
   bundle.includes('locateFile') &&
-  bundle.includes('service-worker.js'))) {
-  throw new Error('The application bundle does not initialize the runtime with locateFile.')
+  bundle.includes('service-worker.js') &&
+  bundle.includes('Permission is requested only when you start the camera.') &&
+  bundle.includes('https://t.me/frei0r') &&
+  bundle.includes('https://github.com/dyne/frei0r'))) {
+  throw new Error('The application bundle is missing runtime initialization or public demo guidance.')
 }
 
 const manifestPath = join(demoDirectory, 'manifest.webmanifest')

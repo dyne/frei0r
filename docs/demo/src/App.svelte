@@ -260,6 +260,7 @@
     <div class="stage-intro">
       <h1 id="demo-title">Live filters, running locally</h1>
       <p>This demo processes frei0r effects in your browser. Video and audio are never uploaded.</p>
+      <p>Use a current browser on HTTPS or localhost with an available camera. Permission is requested only when you start the camera.</p>
     </div>
     <div class="stage-frame" aria-busy={stage.kind === 'requesting'}>
     <video bind:this={sourceVideo} autoplay muted playsinline aria-label="Camera source" hidden></video>

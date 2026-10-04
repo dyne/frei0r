@@ -71,12 +71,19 @@ for (const htmlFile of htmlFiles) {
 
 const retainedPaths = [
   'index.html',
+  'demo/index.html',
   'pics/fla_name_lb.webp',
   'pics/frei0r.png',
   'frei0r-all.webm',
   'codedoc/html/index.html',
   'codedoc/html/frei0r_8h.html'
 ]
+
+const expectedDemoPath = `${normalizedBasePath}/demo/`
+const homePage = readFileSync(join(outputDirectory, 'index.html'), 'utf8')
+if (!homePage.includes(`href="${expectedDemoPath}"`)) {
+  missing.push(`home page missing live demo navigation: ${expectedDemoPath}`)
+}
 
 for (const path of retainedPaths) {
   if (!existsSync(join(outputDirectory, path))) {
