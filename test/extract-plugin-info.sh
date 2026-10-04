@@ -1,6 +1,5 @@
 #!/bin/sh
 
-[ -r frei0r-meta ] || gmake
 tmp=`mktemp`
 find "${2}" -name "*.$1" |
     while read -r line; do

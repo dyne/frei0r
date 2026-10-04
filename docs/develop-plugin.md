@@ -102,11 +102,8 @@ Add the directory with `add_subdirectory(myfilter)` in the parent category's
 
 ```sh
 cmake -S . -B build -G Ninja
-cmake --build build --target myfilter
-
-cd test
-make frei0r-meta
-./frei0r-meta ../build/src/filter/myfilter/myfilter.so
+cmake --build build --target myfilter frei0r-meta
+build/test/frei0r-meta build/src/filter/myfilter/myfilter.so
 ```
 
 Adjust the library suffix and path for the platform. Check the displayed name,
@@ -115,9 +112,7 @@ author, explanation, type, color model, version and every parameter.
 ## 8. Run the plugin tests
 
 ```sh
-cd test
-make frei0r-asan
-make check
+ctest --test-dir build --output-on-failure -R '^myfilter$'
 ```
 
 New plugins should also include focused tests for their invariants where

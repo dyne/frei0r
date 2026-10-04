@@ -99,14 +99,13 @@ cmake --build build
 The repository includes runtime tools that load and exercise built plugins:
 
 ```sh
-cd test
-make frei0r-asan
-make check
-make frei0r-meta
-make scan-meta
+ctest --test-dir build --output-on-failure
+cmake --build build --target frei0r-meta
+cmake --build build --target generate-metadata
 ```
 
-The test Makefile expects plugins under the repository's `build/src` tree.
+The test utilities and generated plugin metadata are written under the
+repository's `build` tree.
 
 ## What to do next
 

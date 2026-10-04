@@ -404,4 +404,6 @@ endforeach()
 set(EXTENSION "so")
 add_custom_target(generate-metadata
   COMMAND sh ${CMAKE_SOURCE_DIR}/test/extract-plugin-info.sh ${EXTENSION} "${CMAKE_BINARY_DIR}/src"
+  DEPENDS frei0r-meta
+  VERBATIM
 )

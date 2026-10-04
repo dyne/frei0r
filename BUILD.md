@@ -66,12 +66,15 @@ cmake --install build/release-gcc-ninja
 
 Runtime test utilities:
 ```
-cd test
-make frei0r-asan   # builds ./frei0r-run with ASAN
-make check         # loads and runs all built plugins under ../build/src
-make frei0r-meta
-make scan-meta
+ctest --test-dir build --output-on-failure
+cmake --build build --target frei0r-meta
+cmake --build build --target generate-metadata
 ```
+
+The debug presets enable AddressSanitizer for the complete build. For example,
+use `cmake --preset debug-clang-ninja` followed by
+`cmake --build --preset debug-clang-ninja` and run CTest against
+`build/debug-clang-ninja`.
 
 ## Static plugin bundles
 
