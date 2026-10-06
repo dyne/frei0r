@@ -260,10 +260,25 @@ test('defines WebGL texture storage once per configuration and reuses the Wasm d
   assert.notEqual(gl.readDestinations[1], gl.readDestinations[2])
 })
 
-test('rejects BGRA filters before constructing a runtime instance', () => {
+test('converts RGBA capture to BGRA and back without changing alpha or allocating frames', () => {
   const runtime = createRuntime(ColorModel.BGRA8888)
-  const fixture = createPipeline(runtime, new Uint8ClampedArray(256))
+  const bytes = Uint8ClampedArray.from({ length: 256 }, (_, index) => index % 256)
+  const fixture = createPipeline(runtime, bytes)
+  const update = runtime._frei0r_demo_update
+  runtime._frei0r_demo_update = () => {
+    assert.deepEqual([...runtime.HEAPU8.subarray(16, 20)], [2, 1, 0, 3])
+    return update()
+  }
+  fixture.pipeline.configure(0, { width: 8, height: 8 })
+  fixture.pipeline.render({}, 0)
+  fixture.pipeline.render({}, 1 / 30)
+  assert.deepEqual(fixture.outputContext.presented.at(-1).data, bytes)
+  assert.equal(fixture.pipeline.snapshot.allocatedInputFrames, 0)
+})
 
+test('rejects unknown pixel formats before constructing a runtime instance', () => {
+  const runtime = createRuntime(99)
+  const fixture = createPipeline(runtime, new Uint8ClampedArray(256))
   assert.throws(() => fixture.pipeline.configure(0, { width: 8, height: 8 }), /unsupported pixel format/)
   assert.equal(runtime.selectCalls, 0)
 })

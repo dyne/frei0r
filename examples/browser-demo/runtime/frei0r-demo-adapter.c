@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <frei0r/bundle.h>
 
@@ -94,11 +95,13 @@ static int ensure_initialized(void)
         !descriptor->init || !descriptor->deinit || !descriptor->get_plugin_info ||
         !descriptor->get_param_info || !descriptor->construct ||
         !descriptor->destruct || !descriptor->set_param_value ||
-        !descriptor->get_param_value || !descriptor->update || descriptor->update2) {
+        !descriptor->get_param_value || !descriptor->update) {
+      fprintf(stderr, "Browser filter descriptor is unsupported: %s\n", id);
       deinitialize_descriptors();
       return set_error(FREI0R_DEMO_ERROR_CATALOG_INDEX);
     }
     if (!descriptor->init()) {
+      fprintf(stderr, "Browser filter initialization failed: %s\n", id);
       deinitialize_descriptors();
       return set_error(FREI0R_DEMO_ERROR_INSTANCE);
     }
@@ -108,6 +111,7 @@ static int ensure_initialized(void)
     if (info.plugin_type != F0R_PLUGIN_TYPE_FILTER ||
         !frei0r_demo_contract_color_model_supported(info.color_model) ||
         info.num_params < 0) {
+      fprintf(stderr, "Browser filter format is unsupported: %s\n", id);
       deinitialize_descriptors();
       return set_error(FREI0R_DEMO_ERROR_COLOR_MODEL);
     }

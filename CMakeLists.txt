@@ -50,7 +50,21 @@ set(FREI0R_BUNDLE_PLUGINS "" CACHE STRING
 option(FREI0R_BUILD_BROWSER_DEMO_RUNTIME
   "Build the browser-facing frei0r demo runtime and its explicit bundle" OFF)
 set(FREI0R_BROWSER_DEMO_PLUGINS
-  "brightness;bw0r;colorize;dither;distort0r;emboss;glitch0r;glow;heatmap0r;hueshift0r;invert0r;pixeliz0r;posterize;rgbsplit0r;saturat0r;threshold0r;vertigo"
+  "brightness;bw0r;colorize;dither;distort0r;emboss"
+  "glitch0r;glow;heatmap0r;hueshift0r;invert0r;pixeliz0r"
+  "posterize;rgbsplit0r;saturat0r;threshold0r;vertigo;B"
+  "G;IIRblur;R;aech0r;alpha0ps_alpha0ps;alpha0ps_alphagrad"
+  "alpha0ps_alphaspot;balanc0r;baltan;bgsubtract0r;bluescreen0r;c0rners"
+  "camerashake;cartoon;cluster;coloradj_RGB;colordistance;colorhalftone"
+  "contrast0r;d90stairsteppingfix;defish0r;delay0r;delaygrab;denoise_hqdn3d"
+  "edgeglow;elastic_scale;equaliz0r;filmgrain;flippo;gamma"
+  "gateweave;kaleid0sc0pe;lenscorrection;letterb0xed;levels;lightgraffiti"
+  "luminance;mask0mate;measure_pr0be;measure_pr0file;nervous;normaliz0r"
+  "nosync0r;ntsc;perspective;pixels0rt;premultiply;primaries"
+  "rgbnoise;scanline0r;select0r;sharpness;sigmoidaltransfer;sobel"
+  "softglow;sopsat;spillsupress;squareblur;squigglevision;tehroxx0r"
+  "three_point_balance;threelay0r;timeout;transparency;tutorial;twolay0r"
+  "vignette;water;3dperspective;tint0r"
   CACHE STRING "Explicit plugin targets for the browser demo runtime")
 if(FREI0R_BUILD_BROWSER_DEMO_RUNTIME)
   if(FREI0R_BUNDLE_PLUGINS AND

@@ -54,7 +54,7 @@ int main(void)
   size_t catalog_count = frei0r_demo_manifest_count();
   size_t catalog_index;
 
-  if (catalog_count < 12 || catalog_count > 20 ||
+  if (catalog_count < 80 ||
       frei0r_demo_manifest_id(catalog_count) ||
       frei0r_demo_contract_validate_frame(NULL, 8, 8) !=
         FREI0R_DEMO_ERROR_ARGUMENT ||
@@ -68,7 +68,7 @@ int main(void)
         FREI0R_DEMO_OK ||
       frei0r_demo_contract_validate_frame((const unsigned char *)aligned_frame + 4,
                                           8, 8) != FREI0R_DEMO_ERROR_ALIGNMENT ||
-      frei0r_demo_contract_color_model_supported(F0R_COLOR_MODEL_BGRA8888) ||
+      !frei0r_demo_contract_color_model_supported(F0R_COLOR_MODEL_BGRA8888) ||
       !frei0r_demo_contract_color_model_supported(F0R_COLOR_MODEL_RGBA8888) ||
       !frei0r_demo_contract_color_model_supported(F0R_COLOR_MODEL_PACKED32) ||
       frei0r_demo_contract_parameter_type_supported(F0R_PARAM_STRING))
@@ -97,7 +97,7 @@ int main(void)
         !descriptor->deinit || !descriptor->get_plugin_info ||
         !descriptor->get_param_info || !descriptor->construct ||
         !descriptor->destruct || !descriptor->set_param_value ||
-        !descriptor->get_param_value || !descriptor->update || descriptor->update2)
+        !descriptor->get_param_value || !descriptor->update)
       return 5;
 
     descriptor->get_plugin_info(&info);

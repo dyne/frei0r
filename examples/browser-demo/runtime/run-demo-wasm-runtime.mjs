@@ -8,11 +8,8 @@ if (!modulePath) {
   process.exit(64);
 }
 
-const expectedIds = [
-  'brightness', 'bw0r', 'colorize', 'dither', 'distort0r',
-  'emboss', 'glitch0r', 'glow', 'heatmap0r', 'hueshift0r', 'invert0r',
-  'pixeliz0r', 'posterize', 'rgbsplit0r', 'saturat0r', 'threshold0r', 'vertigo'
-];
+const contract = await readFile(new URL('./frei0r-demo-contract.h', import.meta.url), 'utf8');
+const expectedIds = [...contract.matchAll(/X\((\w+)\)/g)].map((match) => match[1]);
 const requiredExports = [
   'frei0r_demo_catalog_count', 'frei0r_demo_catalog_id',
   'frei0r_demo_catalog_name', 'frei0r_demo_catalog_author',
@@ -94,8 +91,8 @@ for (const [catalogIndex, id] of expectedIds.entries()) {
   for (let parameterIndex = 0;
        parameterIndex < call.frei0r_demo_parameter_count(); ++parameterIndex) {
     const type = call.frei0r_demo_parameter_type(parameterIndex);
-    if (!text(call.frei0r_demo_parameter_name(parameterIndex)) ||
-        !text(call.frei0r_demo_parameter_explanation(parameterIndex))) {
+    // Several portable filters legitimately provide an empty explanation.
+    if (!text(call.frei0r_demo_parameter_name(parameterIndex))) {
       console.error(`parameter metadata failed for ${id}`);
       process.exit(70);
     }

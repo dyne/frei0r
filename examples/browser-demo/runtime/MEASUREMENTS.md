@@ -1,5 +1,9 @@
 # Browser runtime measurements
 
+The recorded numbers below cover the initial catalog. The current 88-filter
+catalog is validated by the same measurement command; these recorded timings
+and artifact sizes should not be used as measurements of the expanded bundle.
+
 This report is generated from the explicit browser manifest by
 `measure-demo-wasm-runtime.mjs`. It measures the Emscripten ES module without
 the Svelte host or camera transfer cost. The checked report is updated from a

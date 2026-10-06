@@ -206,7 +206,7 @@ function createFrameCapture(canvas: FrameCanvas): FrameCapture {
 }
 
 export function supportsFrameColorModel(colorModel: number): boolean {
-  return colorModel === ColorModel.RGBA8888 || colorModel === ColorModel.PACKED32
+  return colorModel === ColorModel.BGRA8888 || colorModel === ColorModel.RGBA8888 || colorModel === ColorModel.PACKED32
 }
 
 export class FramePipeline {
@@ -221,6 +221,7 @@ export class FramePipeline {
   private heapBuffer: ArrayBufferLike | undefined
   private allocatedInputFrames = 0
   private allocatedInputBytes = 0
+  private bgra = false
 
   public constructor(private readonly runtime: Frei0rDemoRuntime, private readonly options: FramePipelineOptions) {
     this.capture = options.capture ?? createFrameCapture(options.captureCanvas)
@@ -243,6 +244,7 @@ export class FramePipeline {
       throw new Error('Frame dimensions must be positive multiples of eight within the demo pixel budget.')
     }
     const colorModel = this.runtime._frei0r_demo_catalog_color_model(catalogIndex)
+    this.bgra = colorModel === ColorModel.BGRA8888
     if (!supportsFrameColorModel(colorModel)) {
       throw new Error('This filter uses an unsupported pixel format for the browser demo.')
     }
@@ -271,10 +273,20 @@ export class FramePipeline {
       ++this.allocatedInputFrames
       this.allocatedInputBytes += allocatedBytes
     }
+    if (this.bgra) this.swapRedBlue(this.input!)
     if (this.runtime._frei0r_demo_update(timeSeconds) !== 0) {
       throw new Error(`The selected filter could not process this frame (runtime error ${this.runtime._frei0r_demo_last_error?.() ?? 'unknown'}).`)
     }
+    if (this.bgra) this.swapRedBlue(this.outputImage!.data)
     this.outputContext.putImageData(this.outputImage!, 0, 0)
+  }
+
+  private swapRedBlue(bytes: Uint8Array | Uint8ClampedArray): void {
+    for (let index = 0; index < bytes.length; index += 4) {
+      const red = bytes[index]
+      bytes[index] = bytes[index + 2]
+      bytes[index + 2] = red
+    }
   }
 
   private refreshViews(): void {

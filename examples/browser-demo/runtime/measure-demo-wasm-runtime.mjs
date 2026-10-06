@@ -13,11 +13,8 @@ const sizes = [
   [320, 240],
   [640, 480]
 ];
-const expectedIds = [
-  'brightness', 'bw0r', 'colorize', 'dither', 'distort0r',
-  'emboss', 'glitch0r', 'glow', 'heatmap0r', 'hueshift0r', 'invert0r',
-  'pixeliz0r', 'posterize', 'rgbsplit0r', 'saturat0r', 'threshold0r', 'vertigo'
-];
+const contract = await readFile(new URL('./frei0r-demo-contract.h', import.meta.url), 'utf8');
+const expectedIds = [...contract.matchAll(/X\((\w+)\)/g)].map((match) => match[1]);
 
 if (!modulePath) {
   console.error('usage: node measure-demo-wasm-runtime.mjs RUNTIME.mjs [--json|--verify]');

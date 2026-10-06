@@ -22,7 +22,8 @@ int frei0r_demo_contract_validate_frame(const void *frame, uint32_t width,
 
 int frei0r_demo_contract_color_model_supported(int color_model)
 {
-  return color_model == F0R_COLOR_MODEL_RGBA8888 ||
+  return color_model == F0R_COLOR_MODEL_BGRA8888 ||
+         color_model == F0R_COLOR_MODEL_RGBA8888 ||
          color_model == F0R_COLOR_MODEL_PACKED32;
 }
 
