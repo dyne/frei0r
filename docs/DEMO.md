@@ -100,8 +100,12 @@ npm run demo:check
 The browser test uses Chromium with a synthetic RGBA canvas stream. It checks
 the complete catalog, deterministic frame digests, parameter changes,
 stop/restart/page-hide cleanup, denied and missing-camera states, Wasm HTTP
-delivery, worker scope, and cached offline reload. Set
-`DEMO_SMOKE_ARTIFACTS=/path/to/evidence` to retain its JSON summary. If a local
+delivery, worker scope, and cached offline reload. It also checks desktop and
+mobile preview dimensions, mouse and synthesized touch swipes, continuous
+parameter adjustment, keyboard controls, and the FPS overlay. Set
+`DEMO_SMOKE_ARTIFACTS=/path/to/evidence` to retain its JSON summary and desktop
+and mobile screenshots. These checks use Chromium, not physical mobile devices.
+If a local
 browser installation is outside Playwright's default location, set
 `DEMO_SMOKE_CHROMIUM_EXECUTABLE=/path/to/chrome`.
 
@@ -114,12 +118,40 @@ filters needing optional host libraries or dynamic loading. Update the runtime
 contract and its tests with every catalog change, then rerun the clean build
 and browser smoke commands above.
 
+The catalog contains 88 filters. Optional OpenCV, Cairo, GAVL, and OpenGL
+dependencies, dynamic loaders, generators, and mixers remain outside this
+single-camera demo. Filters requiring string parameters (`colortap`, `curves`,
+`keyspillm0pup`, and `medians`) are also excluded from the current scalar/color/
+position controls. `autothresh0ld`, `colorenhance`, and `pixs0r` return failure
+from their initialization callback; `3dflippo` fails the repeated-frame WASM
+benchmark with an out-of-bounds memory access. Do not re-add these without
+fixing and testing their contract.
+
 The host passes Canvas 2D sRGB RGBA bytes directly to `RGBA8888` filters and
-also accepts opaque `PACKED32` filters. It rejects `BGRA8888`, avoiding a
-per-frame channel-swizzle pass. Frame dimensions are positive multiples of
+also accepts opaque `PACKED32` filters. For `BGRA8888`, it swaps red and blue
+in the existing input/output buffers without allocating additional frames.
+Frame dimensions are positive multiples of
 eight and the adapter owns its aligned input and output storage. The API color
 model definitions in [`../include/frei0r.h`](../include/frei0r.h) remain
 authoritative.
+
+## Preview controls
+
+On mobile, the preview fills the dynamic viewport and crops the camera image
+to cover it. On desktop, the preview occupies most of the viewport. Swipe left
+for the next filter and right for the previous filter; browsing wraps around.
+Swipe up to increase the dominant parameter and down to decrease it. Movement
+locks to one axis after a short threshold, and a vertical drag changes the value
+continuously before release. Numeric values stay within the frei0r normalized
+range. Boolean parameters switch on/off, color parameters traverse hue, and
+position parameters move vertically.
+
+The dominant control comes from filter-specific choices with a metadata-based
+fallback in `demo/src/filter-navigation.ts`. The top overlay shows the filter
+name and measured rendered FPS; the bottom shows the selected parameter and
+value. Filters without controls say so. The preview can be focused to use arrow
+keys, and Previous/Next buttons remain available. **Controls** opens the catalog
+and full parameter panel while the camera keeps running.
 
 ## PWA, privacy, and troubleshooting
 

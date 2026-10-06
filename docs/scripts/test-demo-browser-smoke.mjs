@@ -148,10 +148,14 @@ async function installSyntheticCamera(page, outcome = 'granted') {
       context.putImageData(frame, 0, 0)
       metrics.inputDigest = digest(frame.data)
       const stream = canvas.captureStream(30)
+      // Publish after capture starts so the synthetic video receives a real frame.
+      context.putImageData(frame, 0, 0)
+      const paint = setInterval(() => context.putImageData(frame, 0, 0), 1000 / 30)
       ++metrics.streams
       for (const track of stream.getTracks()) {
         const stop = track.stop.bind(track)
         track.stop = () => {
+          clearInterval(paint)
           ++metrics.stoppedTracks
           stop()
         }
@@ -226,10 +230,12 @@ async function runGrantedScenario(browser, origin) {
   })}`)
   assert.equal(wasmResponse.headers()['content-type'], 'application/wasm', 'The local smoke server must serve Wasm with its HTTP MIME type.')
   await startCamera(page)
+  await page.getByRole('button', { name: 'Controls', exact: true }).click()
 
   const initial = await snapshot(page)
   assert.equal(initial.inputDigest, expectedSyntheticDigest, 'Synthetic RGBA input changed unexpectedly.')
   const presentedInputDigest = await page.evaluate(() => window.__frei0rDemoSmoke.sampleVideoDigest())
+  assert.equal(presentedInputDigest, expectedSyntheticDigest, 'The synthetic camera must deliver its colored test frame.')
   assert.equal(initial.digests.at(-1), presentedInputDigest,
     'The zero-conversion capture path changed the top-to-bottom RGBA input.')
   assert.deepEqual(initial.constraints, [{ audio: false, video: true }], 'The demo must request video-only camera access.')
@@ -238,7 +244,7 @@ async function runGrantedScenario(browser, origin) {
     'The browser did not use the zero-churn capture path for camera frames.')
 
   const catalog = await page.locator('.filter-rail button').evaluateAll((buttons) => buttons.map((button) => button.id))
-  assert.ok(catalog.length >= 12, 'The browser runtime did not expose the curated filter catalog.')
+  assert.ok(catalog.length >= 80, 'The browser runtime did not expose the expanded filter catalog.')
   const digests = {}
   for (const id of catalog) {
     const before = await snapshot(page)
@@ -255,6 +261,7 @@ async function runGrantedScenario(browser, origin) {
   assert.equal(allocationCheck.inputFrameAllocations, 0,
     'The primary capture path allocated Canvas ImageData while rendering.')
 
+  await page.getByRole('button', { name: 'Close controls' }).click()
   await page.getByRole('button', { name: 'Stop camera' }).click()
   await page.locator('[data-stage="stopped"]').waitFor()
   const stopped = await snapshot(page)
@@ -305,6 +312,121 @@ async function runCameraFailureScenario(browser, origin, outcome, heading) {
   return result
 }
 
+async function runGestureScenario(browser, origin, mobile, landscape = false) {
+  const viewport = mobile
+    ? landscape ? { width: 844, height: 390 } : { width: 390, height: 844 }
+    : { width: 1440, height: 900 }
+  const context = await browser.newContext({ viewport, hasTouch: mobile, isMobile: mobile, serviceWorkers: 'block' })
+  const page = await context.newPage()
+  const assertNoExceptions = attachExceptionCollection(page)
+  await installSyntheticCamera(page)
+  await page.goto(`${origin}/frei0r/demo/`, { waitUntil: 'networkidle' })
+  await startCamera(page)
+  const surface = page.locator('.gesture-surface')
+  const frame = await page.locator('.stage-frame').boundingBox()
+  assert(frame)
+  if (mobile) {
+    assert.equal(frame.width, viewport.width, 'Mobile preview must fill the viewport width.')
+    assert.equal(frame.height, viewport.height, 'Mobile preview must fill the viewport height.')
+    assert.equal(frame.y, 0, 'Mobile preview must start at the top of the viewport.')
+  } else {
+    assert.ok(frame.width > viewport.width * 0.9 && frame.height > viewport.height * 0.8,
+      'Desktop preview must occupy most of the viewport.')
+  }
+  const cdp = mobile ? await context.newCDPSession(page) : undefined
+  async function swipe(dx, dy, during) {
+    const x = frame.x + frame.width / 2, y = frame.y + frame.height / 2
+    if (cdp) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 0 }] })
+      for (let step = 1; step <= 8; ++step) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * step / 8, y: y + dy * step / 8, id: 0 }] })
+      }
+      if (during) await during()
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    } else {
+      await page.mouse.move(x, y)
+      await page.mouse.down()
+      await page.mouse.move(x + dx, y + dy, { steps: 8 })
+      if (during) await during()
+      await page.mouse.up()
+    }
+  }
+  const initialName = await page.locator('.filter-name').textContent()
+  await swipe(-100, 0)
+  await page.waitForFunction((name) => document.querySelector('.filter-name')?.textContent !== name, initialName)
+  await page.waitForFunction(() => document.querySelector('.dominant-parameter')?.textContent === 'No adjustable parameters')
+  await swipe(100, 0)
+  await page.waitForFunction((name) => document.querySelector('.filter-name')?.textContent === name, initialName)
+  await page.locator('.dominant-parameter output').waitFor()
+  const initialValue = Number(await page.locator('.dominant-parameter output').textContent())
+  await swipe(0, -80, async () => {
+    assert.ok(Number(await page.locator('.dominant-parameter output').textContent()) > initialValue,
+      'Vertical adjustment must update continuously before the gesture ends.')
+  })
+  const increased = Number(await page.locator('.dominant-parameter output').textContent())
+  await swipe(0, 80)
+  assert.ok(Number(await page.locator('.dominant-parameter output').textContent()) < increased)
+  assert.equal(await page.locator('.filter-name').textContent(), initialName, 'A vertical swipe changed filters.')
+  await swipe(4, 4)
+  assert.equal(await page.locator('.filter-name').textContent(), initialName, 'A tap-sized movement changed filters.')
+  await surface.focus()
+  assert.equal(await surface.evaluate((element) => getComputedStyle(element).backgroundColor),
+    'rgba(0, 0, 0, 0)', 'The gesture surface must not obscure the video on hover or focus.')
+  await page.keyboard.press('ArrowUp')
+  assert.ok(Number(await page.locator('.dominant-parameter output').textContent()) > initialValue)
+  await page.waitForFunction(() => Number(document.querySelector('.fps')?.textContent?.split(' ')[0]) > 0)
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Page has horizontal overflow.')
+  if (artifactDirectory) {
+    await mkdir(artifactDirectory, { recursive: true })
+    await page.screenshot({ path: join(artifactDirectory, mobile
+      ? landscape ? 'mobile-landscape-camera.png' : 'mobile-camera.png'
+      : 'desktop-camera.png') })
+  }
+  await page.getByRole('button', { name: 'Controls', exact: true }).click()
+  await page.locator('.parameter-toggle').click()
+  const parameters = page.locator('.parameter-content input')
+  assert.ok(await parameters.count() > 0, 'Full parameter controls are unavailable.')
+  await page.getByRole('button', { name: 'Close controls' }).click()
+  await page.getByRole('button', { name: 'Stop camera' }).click()
+  assertNoExceptions()
+  await context.close()
+  return { viewport, frame, input: mobile ? 'Chromium synthesized touch' : 'Chromium mouse and keyboard' }
+}
+
+async function runPlaybackFailureScenario(browser, origin) {
+  const context = await browser.newContext({ serviceWorkers: 'block' })
+  const page = await context.newPage()
+  const assertNoExceptions = attachExceptionCollection(page)
+  await installSyntheticCamera(page)
+  await page.addInitScript(() => {
+    const play = HTMLVideoElement.prototype.play
+    let rejected = false
+    HTMLVideoElement.prototype.play = function () {
+      if (this.srcObject && !rejected) {
+        rejected = true
+        return Promise.reject(new Error('Synthetic playback failure'))
+      }
+      return play.call(this)
+    }
+  })
+  await page.goto(`${origin}/frei0r/demo/`, { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: 'Start camera' }).click()
+  await page.getByRole('heading', { name: 'Filter processing paused' }).waitFor()
+  assert.ok((await page.locator('.stage-overlay').textContent()).includes('Synthetic playback failure'))
+  await page.getByRole('button', { name: 'Controls', exact: true }).click()
+  const panel = await page.locator('.action-dock').boundingBox()
+  assert(panel && panel.y >= 0 && panel.y + panel.height <= 720,
+    'Filter controls must remain inside the viewport during playback failure.')
+  await page.getByRole('button', { name: 'Close controls' }).click()
+  await page.getByRole('button', { name: 'Retry processing' }).click()
+  await page.locator('[data-stage="running"]').waitFor()
+  await waitForPresentations(page, 0)
+  await page.getByRole('button', { name: 'Stop camera' }).click()
+  assert.equal((await snapshot(page)).stoppedTracks, 1)
+  assertNoExceptions()
+  await context.close()
+}
+
 async function writeEvidence(evidence) {
   if (!artifactDirectory) return
   await mkdir(artifactDirectory, { recursive: true })
@@ -329,7 +451,11 @@ try {
   const granted = await runGrantedScenario(browser, server.origin)
   const denied = await runCameraFailureScenario(browser, server.origin, 'denied', 'Camera permission was not granted')
   const missingMedia = await runCameraFailureScenario(browser, server.origin, 'missing-media', 'No usable camera is available')
-  const evidence = { granted, denied, missingMedia }
+  const desktop = await runGestureScenario(browser, server.origin, false)
+  const mobile = await runGestureScenario(browser, server.origin, true)
+  const mobileLandscape = await runGestureScenario(browser, server.origin, true, true)
+  await runPlaybackFailureScenario(browser, server.origin)
+  const evidence = { granted, denied, missingMedia, desktop, mobile, mobileLandscape }
   await writeEvidence(evidence)
   console.log(`Browser smoke passed: filters=${granted.catalog.length} minimum-frames-per-filter=8 lifecycle-streams=${granted.lifecycle.streams} denied=${denied.requests} missing-media=${missingMedia.requests}`)
 } finally {

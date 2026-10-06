@@ -4,7 +4,7 @@
   import { controlFixtureFromSearch, feedbackFixtureFromSearch, fixtureCatalogFor, fixtureParametersFor } from './control-fixtures'
   import { composeLiveStatus, hasRapidVisualChanges, qualityMessage } from './feedback-state'
   import { readFilterCatalog, type FilterCatalogItem } from './filter-catalog'
-  import { navigateFilterKey } from './filter-navigation'
+  import { dominantParameter, gestureAxis, navigateFilterKey, parameterLabel, swipeParameterValue } from './filter-navigation'
   import { FilterParameters, type FilterParameter } from './filter-parameters'
   import { FramePipeline } from './frame-pipeline'
   import { FrameScheduler, type FrameSchedulerSnapshot } from './frame-scheduler'
@@ -26,6 +26,11 @@
   let filterCatalog = $state.raw<readonly FilterCatalogItem[]>([])
   let activeFilterIndex = $state(0)
   let parametersExpanded = $state(false)
+  let controlsExpanded = $state(false)
+  let fps = $state(0)
+  let fpsStartedAt = 0
+  let fpsFrames = 0
+  let gesture: { pointer: number; x: number; y: number; height: number; filter: number; parameter?: FilterParameter; axis?: 'horizontal' | 'vertical' } | undefined
   let schedulerStatus = 'Preparing the local WebAssembly runtime.'
   let schedulerSnapshot = $state.raw<FrameSchedulerSnapshot>({
     active: false,
@@ -37,6 +42,7 @@
   let runtimeState = $state<RuntimeState>('loading')
   let runtimeError = $state<string>()
   let cameraWasStarted = $state(false)
+  let playbackError = $state<string>()
   let online = $state(globalThis.navigator?.onLine ?? true)
   let installPrompt = $state<BeforeInstallPromptEvent>()
   let installed = $state(false)
@@ -53,6 +59,8 @@
   let visibleCatalog = $derived(controlFixture ? fixtureCatalogFor(controlFixture) : filterCatalog)
   let visibleParameters = $derived(controlFixture ? fixtureParametersFor(controlFixture) ?? [] : filterParameters)
   let activeFilter = $derived(visibleCatalog.find((filter) => filter.index === activeFilterIndex) ?? visibleCatalog[0])
+  let mainParameter = $derived(schedulerSnapshot.pendingFilter === undefined
+    ? dominantParameter(activeFilter?.id, visibleParameters) : undefined)
   let isOnline = $derived(feedbackFixture === 'offline' ? false : online)
   let previewQuality = $derived(feedbackFixture === 'reduced-quality' ? 0.75 : schedulerSnapshot.qualityScale)
   let rapidVisualChanges = $derived(feedbackFixture === 'flashing' || hasRapidVisualChanges(activeFilter?.id))
@@ -67,7 +75,7 @@
     camera: cameraState,
     runtimeState,
     runtimeError,
-    scheduler: schedulerSnapshot,
+    scheduler: playbackError ? { ...schedulerSnapshot, failure: playbackError } : schedulerSnapshot,
     cameraWasStarted,
     fixture: stageFixture
   }))
@@ -108,6 +116,16 @@
       unsubscribeScheduler = scheduler.subscribe((snapshot) => {
         schedulerStatus = snapshot.status
         schedulerSnapshot = snapshot
+        const now = performance.now()
+        if (!snapshot.active) {
+          fps = 0
+          fpsStartedAt = now
+          fpsFrames = snapshot.renderedFrames
+        } else if (now - fpsStartedAt >= 500) {
+          fps = Math.round((snapshot.renderedFrames - fpsFrames) * 1000 / (now - fpsStartedAt))
+          fpsStartedAt = now
+          fpsFrames = snapshot.renderedFrames
+        }
       })
       unsubscribeParameters = parameters.subscribe((nextParameters) => {
         filterParameters = nextParameters
@@ -128,23 +146,39 @@
   async function toggleCamera() {
     if (stageFixture || runtimeState !== 'ready') return
     if (stage.action === 'retry-processing') {
-      scheduler?.start()
+      await startProcessing()
       return
     }
     if (cameraState.status === 'active' || cameraState.status === 'starting') {
-      scheduler?.stop()
-      camera.stop()
+      stopCamera()
       return
     }
     const result = await camera.start()
     if (result.ok) {
       cameraWasStarted = true
       await tick()
-      scheduler?.start()
+      await startProcessing()
+    }
+  }
+
+  async function startProcessing() {
+    const stream = cameraState.stream
+    try {
+      await sourceVideo?.play()
+      // Stop/page-hide can happen while the browser starts video playback.
+      if (cameraState.status === 'active' && cameraState.stream === stream) {
+        playbackError = undefined
+        scheduler?.start()
+      }
+    } catch (error) {
+      if (cameraState.status === 'active' && cameraState.stream === stream) {
+        playbackError = error instanceof Error ? error.message : 'Camera video playback could not start.'
+      }
     }
   }
 
   function stopCamera() {
+    playbackError = undefined
     scheduler?.stop()
     camera.stop()
   }
@@ -183,7 +217,7 @@
     scheduler?.selectFilter(index)
     void tick().then(() => {
       const activeControl = document.getElementById(`filter-${index}`)
-      activeControl?.scrollIntoView({
+      if (controlsExpanded) activeControl?.scrollIntoView({
         behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'nearest',
         inline: 'center'
@@ -196,6 +230,43 @@
     if (visibleCatalog.length === 0) return
     const current = Math.max(0, visibleCatalog.findIndex((filter) => filter.index === activeFilterIndex))
     chooseFilter(visibleCatalog[(current + direction + visibleCatalog.length) % visibleCatalog.length].index)
+  }
+
+  function startGesture(event: PointerEvent) {
+    if (!stage.showCanvas || event.button !== 0 || !event.isPrimary) return
+    const surface = event.currentTarget as HTMLElement
+    gesture = { pointer: event.pointerId, x: event.clientX, y: event.clientY,
+      height: surface.clientHeight, filter: activeFilterIndex, parameter: mainParameter }
+    surface.setPointerCapture(event.pointerId)
+  }
+
+  function moveGesture(event: PointerEvent) {
+    if (!gesture || gesture.pointer !== event.pointerId) return
+    const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y
+    gesture.axis ??= gestureAxis(dx, dy)
+    if (gesture.axis === 'vertical' && gesture.parameter &&
+        gesture.filter === activeFilterIndex && schedulerSnapshot.pendingFilter === undefined) {
+      parameters?.set(gesture.parameter.index,
+        swipeParameterValue(gesture.parameter, -dy / Math.max(160, gesture.height * 0.6)))
+    }
+  }
+
+  function endGesture(event: PointerEvent) {
+    if (!gesture || gesture.pointer !== event.pointerId) return
+    const dx = event.clientX - gesture.x
+    if (gesture.axis === 'horizontal' && Math.abs(dx) >= 45) chooseAdjacentFilter(dx < 0 ? 1 : -1)
+    gesture = undefined
+  }
+
+  function handleStageKeydown(event: KeyboardEvent) {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      chooseAdjacentFilter(event.key === 'ArrowLeft' ? -1 : 1)
+      event.preventDefault()
+    } else if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && mainParameter &&
+               schedulerSnapshot.pendingFilter === undefined) {
+      parameters?.set(mainParameter.index, swipeParameterValue(mainParameter, event.key === 'ArrowUp' ? 0.025 : -0.025))
+      event.preventDefault()
+    }
   }
 
   function handleFilterKeydown(event: KeyboardEvent, index: number) {
@@ -238,7 +309,7 @@
   />
 </svelte:head>
 
-<main class="demo-shell" data-stage={stage.kind}>
+<main class="demo-shell" class:previewing={stage.showCanvas} data-stage={stage.kind}>
   <header class="app-header">
     <a class="wordmark" href={import.meta.env.BASE_URL}>frei0r <span>live</span></a>
     <div class="status-cluster">
@@ -266,7 +337,7 @@
   {/if}
 
   <section class="live-stage" aria-labelledby="demo-title">
-    <div class="stage-intro">
+    <div class="stage-intro visually-hidden">
       <h1 id="demo-title">Live filters, running locally</h1>
       <p>This demo processes frei0r effects in your browser. Video and audio are never uploaded.</p>
       <p>Use a current browser on HTTPS or localhost with an available camera. Permission is requested only when you start the camera.</p>
@@ -275,7 +346,38 @@
     <video bind:this={sourceVideo} autoplay muted playsinline aria-label="Camera source" hidden></video>
     <canvas bind:this={captureCanvas} hidden></canvas>
       <canvas bind:this={outputCanvas} class="processed-frame" aria-label="Filtered camera preview" hidden={!stage.showCanvas}></canvas>
-      <div class="stage-overlay">
+      {#if stage.showCanvas}
+        <button class="gesture-surface" type="button"
+          aria-label="Live filter preview. Swipe left or right to browse filters; up or down to adjust. Arrow keys also work."
+          onpointerdown={startGesture} onpointermove={moveGesture} onpointerup={endGesture}
+          onpointercancel={() => gesture = undefined} onlostpointercapture={() => gesture = undefined}
+          onkeydown={handleStageKeydown}></button>
+        <div class="preview-top">
+          <span class="fps" aria-label="Rendered frames per second">{fps} FPS</span>
+          <span class="filter-name">{activeFilter?.name ?? 'frei0r'}</span>
+          <button type="button" aria-expanded={controlsExpanded} aria-controls="filter-controls" onclick={() => controlsExpanded = !controlsExpanded}>
+            {controlsExpanded ? 'Close controls' : 'Controls'}
+          </button>
+        </div>
+        {#if stage.kind !== 'processing-failure'}
+        <div class="preview-bottom">
+          <div class="dominant-parameter">
+            {#if schedulerSnapshot.pendingFilter !== undefined}<span>Applying filter…</span>
+            {:else if mainParameter}<span>{mainParameter.name}</span> <output>{parameterLabel(mainParameter)}</output>
+            {:else}<span>No adjustable parameters</span>{/if}
+          </div>
+          <p class="gesture-hint">Swipe left / right: filters · Up / down: adjust</p>
+          {#if previewQualityMessage}<p class="preview-warning">{previewQualityMessage}</p>{/if}
+          {#if rapidVisualChanges}<p class="preview-warning">Rapid visual changes possible</p>{/if}
+          <div class="preview-actions">
+            <button type="button" onclick={() => chooseAdjacentFilter(-1)} aria-label="Previous filter">Previous</button>
+            <button type="button" onclick={toggleCamera}>{stage.actionLabel}</button>
+            <button type="button" onclick={() => chooseAdjacentFilter(1)} aria-label="Next filter">Next</button>
+          </div>
+        </div>
+        {/if}
+      {/if}
+      <div class="stage-overlay" hidden={stage.showCanvas && stage.kind !== 'processing-failure'}>
         <div>
           <h2>{stage.title}</h2>
           <p>{stage.detail}</p>
@@ -284,6 +386,9 @@
           <button class="stage-action" type="button" onclick={toggleCamera} disabled={stage.actionDisabled || Boolean(stageFixture)}>
             {stage.actionLabel}
           </button>
+          {#if stage.kind === 'processing-failure'}
+            <button type="button" onclick={stopCamera}>Stop camera</button>
+          {/if}
         {/if}
       </div>
     </div>
@@ -298,7 +403,7 @@
     {/if}
   </section>
 
-  <section class="action-dock" aria-labelledby="filter-dock-title">
+  <section id="filter-controls" class="action-dock" aria-labelledby="filter-dock-title" hidden={!controlsExpanded && stage.showCanvas}>
     <div class="dock-heading">
       <div>
         <h2 id="filter-dock-title">Choose a filter</h2>
@@ -377,6 +482,10 @@
         </div>
       {/if}
     </section>
+    <nav class="project-links" aria-label="frei0r community">
+      <a href="https://github.com/dyne/frei0r">GitHub</a>
+      <a href="https://t.me/frei0r">Telegram</a>
+    </nav>
   </section>
 
   <footer>
@@ -386,6 +495,7 @@
 </main>
 
 <style>
+  :global([hidden]) { display: none !important; }
   :global(*) {
     box-sizing: border-box;
   }
@@ -411,9 +521,9 @@
     align-content: start;
     gap: clamp(1.25rem, 3vw, 2.5rem);
     min-height: 100vh;
-    max-width: 72rem;
+    max-width: 120rem;
     margin: 0 auto;
-    padding: clamp(1rem, 4vw, 3rem);
+    padding: 1rem 1.5rem;
   }
 
   .demo-shell > *,
@@ -563,9 +673,10 @@
     display: grid;
     align-items: end;
     width: 100%;
-    max-width: 46rem;
+    max-width: none;
     justify-self: center;
-    aspect-ratio: 4 / 3;
+    height: max(20rem, calc(100dvh - 9rem));
+    touch-action: none;
     min-height: 0;
     overflow: hidden;
     border: 1px solid rgba(37, 30, 24, 0.16);
@@ -575,6 +686,8 @@
   }
 
   .processed-frame {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -783,7 +896,7 @@
     outline-offset: 3px;
   }
 
-  button:hover:not(:disabled) {
+  button:hover:not(:disabled):not(.gesture-surface) {
     background: #8d4720;
   }
 
@@ -890,5 +1003,79 @@
       grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
       align-items: end;
     }
+  }
+  .live-stage { gap: 0; }
+  .stage-feedback { display: none; }
+  .preview-top, .preview-bottom {
+    position: absolute;
+    z-index: 2;
+    inset-inline: 0;
+    color: #fff4e8;
+    padding: 1rem;
+    pointer-events: none;
+  }
+  .gesture-surface {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    touch-action: none;
+    cursor: grab;
+  }
+  .gesture-surface:hover, .gesture-surface:active { background: transparent; }
+  .gesture-surface:focus-visible { outline-offset: -4px; }
+  .preview-top {
+    top: 0;
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.5rem;
+  }
+  .fps, .filter-name, .dominant-parameter, .gesture-hint, .preview-warning {
+    background: rgba(30, 24, 21, 0.85);
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+  }
+  .fps { font-size: 0.75rem; font-variant-numeric: tabular-nums; justify-self: start; white-space: nowrap; }
+  .filter-name { justify-self: center; font-weight: 700; overflow-wrap: anywhere; }
+  .preview-bottom {
+    bottom: 0;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+  }
+  .dominant-parameter { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+  .dominant-parameter output { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .project-links { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .gesture-hint, .preview-warning { font-size: 0.75rem; text-align: center; }
+  .preview-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem; }
+  .preview-top button, .preview-actions button { pointer-events: auto; background: #1e1815; }
+  .action-dock { max-width: none; box-shadow: none; }
+  .demo-shell.previewing .action-dock {
+    position: fixed;
+    z-index: 4;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(46rem, calc(100% - 2rem));
+    max-height: 65dvh;
+    overflow: auto;
+    background: #ffeedd;
+    box-shadow: 0 12px 36px rgba(30, 24, 21, 0.3);
+  }
+  @media (max-width: 47.99rem), (max-height: 30rem) and (pointer: coarse) {
+    .demo-shell { padding: 0; gap: 1rem; }
+    .live-stage { grid-row: 1; }
+    .stage-frame { height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+    .app-header, footer, .connection-status { margin-inline: 1rem; }
+    .preview-top { padding-top: max(1rem, env(safe-area-inset-top)); }
+    .preview-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    .stage-overlay { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+    .preview-top { grid-template-columns: 3.5rem minmax(0, 1fr) auto; }
+    .preview-top button { padding-inline: 0.6rem; font-size: 0.875rem; }
   }
 </style>
