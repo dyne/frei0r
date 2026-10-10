@@ -307,13 +307,27 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   assert(instance);
   cairo_affineblend_instance_t* inst = (cairo_affineblend_instance_t*) instance;
 
-  unsigned char* dst = (unsigned char*)inframe1;
-  unsigned char* src = (unsigned char*)inframe2;
   unsigned char* out = (unsigned char*)outframe;
   int pixels = inst->width * inst->height;
+  size_t bytes = (size_t)pixels * sizeof(uint32_t);
+  unsigned char* dst;
+  unsigned char* src;
+
+  // Both inputs are const; premultiply private copies.
+  dst = (unsigned char*)malloc(bytes);
+  src = (unsigned char*)malloc(bytes);
+  if (!dst || !src) {
+    free(dst);
+    free(src);
+    return;
+  }
+  memcpy(dst, inframe1, bytes);
+  memcpy(src, inframe2, bytes);
 
   frei0r_cairo_premultiply_rgba (dst, pixels, -1);
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
   draw_composite (inst, out, dst, src, time);
   frei0r_cairo_unpremultiply_rgba (out, pixels);
+  free(dst);
+  free(src);
 }

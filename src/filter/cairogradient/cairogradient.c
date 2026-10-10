@@ -330,13 +330,21 @@ void f0r_update(f0r_instance_t instance, double time,
   cairo_gradient_instance_t* inst = (cairo_gradient_instance_t*)instance;
 
   unsigned char* dst = (unsigned char*)outframe;
-  unsigned char* src = (unsigned char*)inframe;
   int pixels = inst->width * inst->height;
+  size_t bytes = (size_t)pixels * sizeof(uint32_t);
+  // inframe is const; premultiply a private copy.
+  unsigned char* src = (unsigned char*)malloc(bytes);
+
+  if (!src) {
+    return;
+  }
+  memcpy(src, inframe, bytes);
 
   // Clear the destination
-  memset(dst, 0, pixels * sizeof(uint32_t));
+  memset(dst, 0, bytes);
 
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
   draw_gradient(inst, dst, src, time);
   frei0r_cairo_unpremultiply_rgba (dst, pixels);
+  free(src);
 }

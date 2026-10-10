@@ -407,3 +407,20 @@ add_custom_target(generate-metadata
   DEPENDS frei0r-meta
   VERBATIM
 )
+
+# frei0r-run uses an opaque pattern, which hides this write on little-endian.
+if(TARGET cairogradient AND TARGET cairoblend AND TARGET cairoaffineblend)
+  add_executable(cairo-const-input cairo-const-input.c)
+  if(WIN32)
+    target_link_libraries(cairo-const-input PRIVATE dlfcn-win32::dl)
+  else()
+    target_link_libraries(cairo-const-input PRIVATE ${CMAKE_DL_LIBS})
+  endif()
+  add_dependencies(cairo-const-input cairogradient cairoblend cairoaffineblend)
+  foreach(plugin cairogradient cairoblend cairoaffineblend)
+    add_test(
+      NAME "${plugin}-const-input"
+      COMMAND cairo-const-input "$<TARGET_FILE:${plugin}>"
+    )
+  endforeach()
+endif()

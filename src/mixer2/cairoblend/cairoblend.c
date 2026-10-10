@@ -237,17 +237,28 @@ void f0r_update2(f0r_instance_t instance, double time, const uint32_t* inframe1,
   cairo_blend_instance_t* inst = (cairo_blend_instance_t*) instance;
 
   unsigned char* dst = (unsigned char*)inframe1;
-  unsigned char* src = (unsigned char*)inframe2;
   unsigned char* out = (unsigned char*)outframe;
   int pixels = inst->width * inst->height;
+  size_t bytes;
+  unsigned char* src;
 
   // Validate dimensions
   if (pixels <= 0) {
     return;
   }
 
+  // inframe2 is const; premultiply a private copy.
+  // frei0r_cairo_premultiply_rgba2 already writes out, not inframe1.
+  bytes = (size_t)pixels * sizeof(uint32_t);
+  src = (unsigned char*)malloc(bytes);
+  if (!src) {
+    return;
+  }
+  memcpy(src, inframe2, bytes);
+
   frei0r_cairo_premultiply_rgba2 (dst, out, pixels, -1);
   frei0r_cairo_premultiply_rgba (src, pixels, -1);
   draw_composite (inst, out, src, time);
   frei0r_cairo_unpremultiply_rgba (out, pixels);
+  free(src);
 }
