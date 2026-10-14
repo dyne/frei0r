@@ -17,9 +17,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(_MSC_VER)
+#define _USE_MATH_DEFINES
+#endif /* _MSC_VER */
 #include "frei0r.hpp"
 #include <cairo.h>
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 class Shake0scillate : public frei0r::filter {
