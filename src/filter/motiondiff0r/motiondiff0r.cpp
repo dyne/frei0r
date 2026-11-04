@@ -16,8 +16,10 @@
  *
  * The delayed frame is chosen from a small history using the timestamps
  * given by the host, so the time offset is independent of the frame rate.
- * Memory use grows with the time offset: one frame buffer is kept for every
- * frame received during the offset interval.
+ * History is preallocated at construction: at most 128 frames and 128 MiB
+ * of pixels per instance, including the current frame. The effective offset
+ * is shortened when the requested history does not fit. Rendering allocates
+ * no buffers; dimensions that cannot fit two frames fail construction.
  *
  * This source code is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Public License as published by
@@ -35,15 +37,14 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <deque>
-#include <vector>
+#include <memory>
 
 namespace {
 
 const double MAX_OFFSET_SECONDS = 2.0;
 const double MAX_GAIN = 16.0;
-// Safety limit for hosts sending very dense timestamps.
-const size_t MAX_HISTORY_FRAMES = 512;
+const size_t MAX_HISTORY_FRAMES = 128;
+const size_t MAX_HISTORY_BYTES = 128u * 1024u * 1024u;
 
 enum Mode { MODE_OVERLAY = 0, MODE_ABSDIFF = 1, MODE_MASK = 2 };
 
@@ -60,15 +61,11 @@ inline int luma(const uint8_t* p)
   return (299 * p[0] + 587 * p[1] + 114 * p[2] + 500) / 1000;
 }
 
-struct Frame {
-  double time;
-  std::vector<uint32_t> pixels;
-};
-
 class motiondiff0r : public frei0r::filter
 {
 public:
-  motiondiff0r(unsigned int, unsigned int)
+  motiondiff0r(unsigned int frame_width, unsigned int frame_height)
+    : frame_pixels(0), capacity(0), head(0), count(0)
   {
     offset = 0.1;      // 200 ms
     mode = 0.0;        // negative overlay
@@ -78,7 +75,7 @@ public:
     monochrome = false;
 
     register_param(offset, "Time Offset",
-                   "Time between the two frames (0..1 = 0..2 seconds; 0 = previous frame)");
+                   "0..1 = 0..2 seconds, limited to 128 frames / 128 MiB of history; 0 = previous frame");
     register_param(mode, "Mode",
                    "0: negative overlay, 0.5: absolute difference, 1: motion mask");
     register_param(blend, "Blend",
@@ -89,20 +86,45 @@ public:
                    "Ignore differences smaller than this to suppress noise");
     register_param(monochrome, "Monochrome",
                    "Compare luminance only and produce a grayscale result");
+
+    // The registration helper creates a zero-sized metadata-only instance.
+    if (!frame_width || !frame_height) return;
+    const size_t max_pixels = MAX_HISTORY_BYTES / (2 * sizeof(uint32_t));
+    if ((size_t)frame_width > max_pixels / frame_height) return;
+    frame_pixels = (size_t)frame_width * frame_height;
+    capacity = std::min(MAX_HISTORY_FRAMES,
+                        MAX_HISTORY_BYTES / (frame_pixels * sizeof(uint32_t)));
+    storage.reset(new (std::nothrow) uint32_t[capacity * frame_pixels]);
   }
+
+  virtual bool is_valid() const { return storage.get() != 0; }
 
   virtual void update(double time, uint32_t* out, const uint32_t* in)
   {
-    // No exception may cross the plugin API. If memory runs out the frame
-    // is compared with itself, which gives the neutral "no motion" output,
-    // and the history keeps only complete frames so later updates recover.
-    try {
-      store(time, in);
-    } catch (...) {
-      process(in, in, out, size);
-      return;
-    }
-    process(&history.back().pixels[0], &history.front().pixels[0], out, size);
+    const size_t n = frame_pixels;
+    const double target = time - std::min(std::max(offset, 0.0), 1.0) * MAX_OFFSET_SECONDS;
+
+    // Forget frames at or after the current time: the host seeked backwards
+    // or is rendering the same time again.
+    while (count && timestamps[slot(count - 1)] >= time)
+      --count;
+
+    // Keep the newest frame not later than the target as the oldest one.
+    while (count >= 2 && timestamps[slot(1)] <= target)
+      drop_front();
+    if (count == capacity)
+      drop_front();
+
+    // Store a copy of the current frame before rendering, so that the
+    // history stays intact when the host renders in place (in == out).
+    const size_t current = slot(count);
+    uint32_t* pixels = storage.get() + current * n;
+    std::copy(in, in + n, pixels);
+    timestamps[current] = time;
+    ++count;
+
+    // With no older frame yet, the current frame is compared with itself.
+    process(pixels, storage.get() + head * n, out, n);
   }
 
 private:
@@ -113,47 +135,22 @@ private:
   double threshold;
   bool monochrome;
 
-  std::deque<Frame> history;
-  std::vector<uint32_t> spare;
+  size_t frame_pixels;
+  size_t capacity;
+  size_t head;
+  size_t count;
+  double timestamps[MAX_HISTORY_FRAMES];
+  std::unique_ptr<uint32_t[]> storage;
 
-  void store(double time, const uint32_t* in)
+  size_t slot(size_t index) const
   {
-    const double target = time - std::min(std::max(offset, 0.0), 1.0) * MAX_OFFSET_SECONDS;
-
-    // Copy the current frame before touching the history, so that a failed
-    // allocation leaves the history unchanged. The copy also keeps the
-    // history intact when the host renders in place (in == out).
-    std::vector<uint32_t> pixels;
-    pixels.swap(spare);
-    pixels.assign(in, in + size);
-
-    // Forget frames at or after the current time: the host seeked backwards
-    // or is rendering the same time again.
-    while (!history.empty() && history.back().time >= time) {
-      recycle(history.back().pixels);
-      history.pop_back();
-    }
-
-    // Keep the newest frame not later than the target as the oldest one.
-    while (history.size() >= 2 && history[1].time <= target) {
-      recycle(history.front().pixels);
-      history.pop_front();
-    }
-    while (history.size() >= MAX_HISTORY_FRAMES) {
-      recycle(history.front().pixels);
-      history.pop_front();
-    }
-
-    history.push_back(Frame());
-    history.back().time = time;
-    history.back().pixels.swap(pixels);
+    return (head + index) % capacity;
   }
 
-  void recycle(std::vector<uint32_t>& pixels)
+  void drop_front()
   {
-    // One spare buffer avoids reallocating every frame during playback.
-    if (spare.capacity() < pixels.capacity())
-      spare.swap(pixels);
+    head = slot(1);
+    --count;
   }
 
   int current_mode() const

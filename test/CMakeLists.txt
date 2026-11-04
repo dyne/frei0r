@@ -16,6 +16,9 @@ add_test(NAME motiondiff0r-contract
 add_executable(motiondiff0r-alloc motiondiff0r-alloc.cpp
   ${CMAKE_SOURCE_DIR}/src/filter/motiondiff0r/motiondiff0r.cpp)
 add_test(NAME motiondiff0r-alloc COMMAND motiondiff0r-alloc)
+add_executable(motiondiff0r-memory-contract motiondiff0r-memory-contract.cpp
+  ${CMAKE_SOURCE_DIR}/src/filter/motiondiff0r/motiondiff0r.cpp)
+add_test(NAME motiondiff0r-memory-contract COMMAND motiondiff0r-memory-contract)
 add_test(NAME bundle-classification-coverage
   COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/test-bundle-classifications.cmake)
 add_executable(aech0r-contract aech0r-contract.c
