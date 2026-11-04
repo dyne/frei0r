@@ -26,6 +26,16 @@
 
 #include "frei0r.h"
 
+#ifdef HARRIS_TEST_ALLOCATORS
+/* Redirect allocations only after the system headers have been included. */
+void *harris_test_malloc(size_t size);
+void *harris_test_calloc(size_t count, size_t size);
+void *harris_test_realloc(void *ptr, size_t size);
+#define malloc harris_test_malloc
+#define calloc harris_test_calloc
+#define realloc harris_test_realloc
+#endif
+
 // Frei0r parameter indices
 #define HARRIS_PARAM_DELAY  0
 #define HARRIS_PARAM_SIMPLE 1
@@ -38,7 +48,7 @@ typedef struct harris0r_instance
 {
     unsigned int width;
     unsigned int height;
-    unsigned int size; // precalculated pixel size
+    size_t size; // precalculated pixel size
 
     // Parameters
     short int simple;
@@ -56,31 +66,15 @@ typedef struct harris0r_instance
 
 } harris0r_instance_t;
 
-void harris_mem_init(harris0r_instance_t *inst)
+static void harris_mem_init(harris0r_instance_t *inst)
 {
     inst->pos = 0; // reset position when switching modes
-    
-    if (inst->simple) { // if simple mode is chosen...
-
-        // free the memory allocated by smooth mode if there was any
-        if (inst->history != NULL) {
-            free(inst->history);
-            inst->history = NULL;
-        }
-        
-        // allocate memory for frame buffer
-        inst->cur_frame = (uint32_t*)malloc(inst->size * sizeof(uint32_t));
-    } else {
-        // free the memory allocated by simple mode
-        if (inst->cur_frame != NULL) {
-            free(inst->cur_frame);
-            inst->cur_frame = NULL;
-        }
-
-        // in smooth mode, inst->history is allocated dynamically based on inst->delay 
-        inst->history_frames = 0; // this will trigger a new memory allocation in f0r_update
-
-    }
+    free(inst->cur_frame);
+    free(inst->history);
+    inst->cur_frame = NULL;
+    inst->history = NULL;
+    inst->history_frames = 0;
+    // Allocate on update so a failure can produce passthrough and be retried.
 }
 
 int f0r_init()
@@ -127,10 +121,16 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
+    if (width == 0 || height == 0 || (size_t)width > SIZE_MAX / height)
+        return NULL;
+    size_t size = (size_t)width * height;
+    if (size > SIZE_MAX / sizeof(uint32_t)) return NULL;
+
     harris0r_instance_t* inst = (harris0r_instance_t*)calloc(1, sizeof(*inst));
+    if (inst == NULL) return NULL;
     inst->width = width;
     inst->height = height;
-    inst->size = width * height;
+    inst->size = size;
 
     inst->simple = 0; // use smooth implementation by default
 
@@ -142,7 +142,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     inst->history = NULL;
     inst->history_frames = 0;
 
-    // Important: inst->cur_frame is initialized when setting 'simple' param to true
+    // Frame buffers are allocated on the first update in each mode.
 
     return (f0r_instance_t)inst;
 }
@@ -167,7 +167,10 @@ void f0r_set_param_value(f0r_instance_t instance,
     {
         case HARRIS_PARAM_DELAY:
         {
-            inst->delay = HARRIS_DELAY_MIN + (unsigned int)(*((double*)param) * (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN));
+            double value = *((double*)param);
+            if (value < 0.0) value = 0.0;
+            if (value > 1.0) value = 1.0;
+            inst->delay = HARRIS_DELAY_MIN + (unsigned int)(value * (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN));
             break;
         }
 
@@ -196,7 +199,8 @@ void f0r_get_param_value(f0r_instance_t instance,
     {
         case HARRIS_PARAM_DELAY:
         {
-            *((double*)param) = inst->delay / (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN);
+            *((double*)param) = (double)(inst->delay - HARRIS_DELAY_MIN) /
+                               (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN);
             break;
         }
 
@@ -209,65 +213,54 @@ void f0r_get_param_value(f0r_instance_t instance,
 
 }
 
-inline static void harris_update_simple(harris0r_instance_t *inst, const uint32_t *src, uint32_t *dst) 
+inline static int harris_update_simple(harris0r_instance_t *inst, const uint32_t *src, uint32_t *dst)
 {
-    unsigned int size = inst->width * inst->height;
+    size_t size = inst->size;
+    if (inst->cur_frame == NULL) {
+        inst->cur_frame = (uint32_t*)malloc(size * sizeof(uint32_t));
+        if (inst->cur_frame == NULL) {
+            memmove(dst, src, size * sizeof(uint32_t));
+            return 0;
+        }
+    }
     
     // First frame: initialize cur_frame with source and copy to destination
     if (inst->pos == 0) {
         memcpy(inst->cur_frame, src, size * sizeof(uint32_t));
         memcpy(dst, inst->cur_frame, size * sizeof(uint32_t));
-        inst->pos = 1;
-        return;
+        return 1;
     }
     
     unsigned int channel_index = ((inst->pos - 1) / inst->delay) % 3;
-    uint32_t channel_value;
+    uint8_t *cur = (uint8_t*)inst->cur_frame;
+    const uint8_t *input = (const uint8_t*)src;
 
-    
-    for (unsigned int i = 0; i < size; i++) {
-        uint32_t cur_pixel = inst->cur_frame[i];
-        uint32_t src_pixel = src[i];
-        
-        switch (channel_index) {
-            case 0: // Red
-                channel_value = (src_pixel & 0x00FF0000) >> 16;
-                cur_pixel = (cur_pixel & 0xFF00FFFF) | (channel_value << 16);
-                break;
-                
-            case 1: // Green
-                channel_value = (src_pixel & 0x0000FF00) >> 8;
-                cur_pixel = (cur_pixel & 0xFFFF00FF) | (channel_value << 8);
-                break;
-                
-            case 2: // Blue
-                channel_value = (src_pixel & 0x000000FF);
-                cur_pixel = (cur_pixel & 0xFFFFFF00) | channel_value;
-                break;
-                
-            default:
-                break;
-        }
-        
-        inst->cur_frame[i] = cur_pixel;
+    for (size_t i = 0; i < size; i++) {
+        cur[4 * i + channel_index] = input[4 * i + channel_index];
+        cur[4 * i + 3] = input[4 * i + 3];
     }
     
     // Copy processed frame to destination
     memcpy(dst, inst->cur_frame, size * sizeof(uint32_t));
+    return 1;
 }
 
-inline static void harris_update_smooth(harris0r_instance_t *inst, const uint32_t *src, uint32_t *dst)
+inline static int harris_update_smooth(harris0r_instance_t *inst, const uint32_t *src, uint32_t *dst)
 {
     unsigned int needed = 2 * inst->delay + 1;
     if (inst->history_frames != needed) {
 
+        if (inst->size > SIZE_MAX / sizeof(uint32_t) / needed) {
+            memmove(dst, src, inst->size * sizeof(uint32_t));
+            return 0;
+        }
         size_t fb_size = (size_t)needed * inst->size * sizeof(uint32_t);
 
         uint32_t *tmp = realloc(inst->history, fb_size);
 
         if (!tmp) {
-            memcpy(dst, src, (size_t)inst->size * sizeof(uint32_t)); // passthrough
-            return;
+            memmove(dst, src, inst->size * sizeof(uint32_t)); // passthrough
+            return 0;
         }
         
         inst->history = tmp;
@@ -284,16 +277,19 @@ inline static void harris_update_smooth(harris0r_instance_t *inst, const uint32_
     unsigned int off_g = (inst->delay      < inst->pos) ? inst->delay      : inst->pos;
     unsigned int off_r = (2 * inst->delay  < inst->pos) ? 2 * inst->delay  : inst->pos;
 
-    const uint32_t *b_frame = inst->history + (size_t) head * inst->size;
-    const uint32_t *g_frame = inst->history + (size_t)((head + len - off_g) % len) * inst->size;
-    const uint32_t *r_frame = inst->history + (size_t)((head + len - off_r) % len) * inst->size;
+    const uint8_t *b_frame = (const uint8_t*)(inst->history + (size_t)head * inst->size);
+    const uint8_t *g_frame = (const uint8_t*)(inst->history + (size_t)((head + len - off_g) % len) * inst->size);
+    const uint8_t *r_frame = (const uint8_t*)(inst->history + (size_t)((head + len - off_r) % len) * inst->size);
+    const uint8_t *input = (const uint8_t*)src;
+    uint8_t *output = (uint8_t*)dst;
 
-    for (unsigned int i = 0; i < inst->size; i++) {
-        dst[i] = (r_frame[i] & 0x00FF0000u)   // red   from the oldest frame
-               | (g_frame[i] & 0x0000FF00u)   // green from the middle one
-               | (b_frame[i] & 0x000000FFu)   // blue  from the current frame
-               | (src[i]     & 0xFF000000u);  // alpha straight through
+    for (size_t i = 0; i < inst->size; i++) {
+        output[4 * i]     = r_frame[4 * i];     // red from the oldest frame
+        output[4 * i + 1] = g_frame[4 * i + 1]; // green from the middle one
+        output[4 * i + 2] = b_frame[4 * i + 2]; // blue from the current frame
+        output[4 * i + 3] = input[4 * i + 3];   // current alpha
     }
+    return 1;
 }
 
 
@@ -303,11 +299,7 @@ void f0r_update(f0r_instance_t instance, double time,
     assert(instance);
     harris0r_instance_t* inst = (harris0r_instance_t*)instance;
 
-    if (inst->simple) {
-        harris_update_simple(inst, src, dst);
-    } else {
-        harris_update_smooth(inst, src, dst);
-    }
-    
-    inst->pos++;
+    int updated = inst->simple ? harris_update_simple(inst, src, dst)
+                               : harris_update_smooth(inst, src, dst);
+    if (updated) inst->pos++;
 }

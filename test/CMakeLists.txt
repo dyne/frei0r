@@ -14,6 +14,15 @@ add_test(NAME bundle-classification-coverage
 add_executable(aech0r-contract aech0r-contract.c
   ${CMAKE_SOURCE_DIR}/src/filter/aech0r/aech0r.cpp)
 add_test(NAME aech0r-contract COMMAND aech0r-contract)
+add_library(harris0r-contract-plugin OBJECT
+  ${CMAKE_SOURCE_DIR}/src/filter/harris0r/harris0r.c)
+target_compile_definitions(harris0r-contract-plugin PRIVATE HARRIS_TEST_ALLOCATORS)
+add_executable(harris0r-contract harris0r-contract.c
+  $<TARGET_OBJECTS:harris0r-contract-plugin>)
+if(NOT MSVC)
+  target_link_libraries(harris0r-contract PRIVATE m)
+endif()
+add_test(NAME harris0r-contract COMMAND harris0r-contract)
 
 # This intentionally compiles plugins with private entry point names so that
 # the archive/registry path can be exercised without changing MODULE targets.
