@@ -23,6 +23,15 @@ if(NOT MSVC)
   target_link_libraries(harris0r-contract PRIVATE m)
 endif()
 add_test(NAME harris0r-contract COMMAND harris0r-contract)
+add_library(slitscan0r-contract-plugin OBJECT
+  ${CMAKE_SOURCE_DIR}/src/filter/slitscan0r/slitscan0r.c)
+target_compile_definitions(slitscan0r-contract-plugin PRIVATE SLITSCAN_TEST_ALLOCATORS)
+add_executable(slitscan0r-contract slitscan0r-contract.c
+  $<TARGET_OBJECTS:slitscan0r-contract-plugin>)
+if(NOT MSVC)
+  target_link_libraries(slitscan0r-contract PRIVATE m)
+endif()
+add_test(NAME slitscan0r-contract COMMAND slitscan0r-contract)
 
 # This intentionally compiles plugins with private entry point names so that
 # the archive/registry path can be exercised without changing MODULE targets.
