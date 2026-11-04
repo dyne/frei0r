@@ -11,6 +11,9 @@ add_test(NAME whirlpinch0r-contract
   COMMAND whirlpinch0r-contract $<TARGET_FILE:whirlpinch0r>)
 add_test(NAME bundle-classification-coverage
   COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/test-bundle-classifications.cmake)
+add_executable(aech0r-contract aech0r-contract.c
+  ${CMAKE_SOURCE_DIR}/src/filter/aech0r/aech0r.cpp)
+add_test(NAME aech0r-contract COMMAND aech0r-contract)
 
 # This intentionally compiles plugins with private entry point names so that
 # the archive/registry path can be exercised without changing MODULE targets.

@@ -114,11 +114,10 @@ public:
       m_factor = (unsigned int)(factor * M_FACTOR_MAV);
 
       // per-byte decay; byte order follows the original (B,G,R,A)
-      uint8_t d[4] = {
-        (uint8_t)(flag_b ? 255 : m_factor),
-        (uint8_t)(flag_g ? 255 : m_factor),
-        (uint8_t)(flag_r ? 255 : m_factor),
-        255                                   // alpha: pass input through
+      uint8_t d[3] = {
+        (uint8_t)(flag_b ? 0 : m_factor),
+        (uint8_t)(flag_g ? 0 : m_factor),
+        (uint8_t)(flag_r ? 0 : m_factor)
       };
 
       uint8_t*       e = reinterpret_cast<uint8_t*>(echo.data());
@@ -127,6 +126,10 @@ public:
       size_t i = 0;
 
       for (; i < n; ++i) {                    // scalar fallback / tail
+        if ((i & 3) == 3) {
+          e[i] = s[i];                        // alpha: pass input through
+          continue;
+        }
         int v = bright ? e[i] - d[i & 3] : e[i] + d[i & 3];
         v = v < 0 ? 0 : (v > 255 ? 255 : v);
         e[i] = bright ? (s[i] > v ? s[i] : v)
@@ -138,7 +141,7 @@ public:
   }
 };
 
-frei0r::construct<aech0r> plugin("aech0r",
+static frei0r::construct<aech0r> plugin("aech0r",
 									"analog video echo",
 									"d-j-a-y & vloop",
 									0,1);
