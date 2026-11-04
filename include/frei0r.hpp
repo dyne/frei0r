@@ -7,6 +7,7 @@ extern "C"
 #include <vector>
 #include <string>
 #include <iostream>
+#include <new>
 
 #ifdef FREI0R_BUNDLE_PLUGIN_TOKEN
 /*
@@ -62,6 +63,9 @@ namespace frei0r
     }
     
     virtual unsigned int effect_type()=0;
+
+    // Plugins with fallible constructor resources can reject the instance.
+    virtual bool is_valid() const { return true; }
     
     void register_param(f0r_param_color& p_loc,
 			const std::string& name,
@@ -285,7 +289,21 @@ namespace frei0r
   private:
     static fx* build(unsigned int width, unsigned int height)
     {
-      return new T(width,height);
+      // Constructors re-register metadata; restore it if construction fails.
+      std::vector<param_info> previous_params;
+      previous_params.swap(s_params);
+#if defined(__cpp_exceptions) || defined(__EXCEPTIONS) || defined(_CPPUNWIND)
+      try {
+#endif
+        T* instance = new (std::nothrow) T(width,height);
+        if (instance && instance->is_valid()) return instance;
+        delete instance;
+#if defined(__cpp_exceptions) || defined(__EXCEPTIONS) || defined(_CPPUNWIND)
+      } catch (const std::bad_alloc&) {
+      }
+#endif
+      s_params.swap(previous_params);
+      return 0;
     }
   };
 }
@@ -328,6 +346,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
   frei0r::fx* nfx = frei0r::s_build(width, height);
+  if (!nfx) return 0;
   nfx->width=width;
   nfx->height=height;
   nfx->size=width*height;

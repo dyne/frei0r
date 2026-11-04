@@ -1,7 +1,7 @@
 /*
- * Regression test for motiondiff0r: a failed allocation inside f0r_update
- * must not let an exception cross the plugin API, must produce a defined
- * output and must leave the frame history usable for the next frames.
+ * Regression test for motiondiff0r: allocations disabled during f0r_update
+ * must not interrupt rendering or prevent the frame history from advancing.
+ * All frame buffers are now allocated during construction.
  *
  * The plugin source is compiled into this program, so replacing the global
  * operator new below also covers the plugin's allocations.
@@ -82,6 +82,23 @@ void* operator new(std::size_t n)
   return p;
 }
 
+// Route all allocation forms through the same injector, including constructor
+// buffers allocated with nothrow new, so allocation/deallocation stay paired.
+void* operator new(std::size_t n, const std::nothrow_t&) noexcept
+{
+  try { return ::operator new(n); } catch (...) { return 0; }
+}
+
+void* operator new[](std::size_t n)
+{
+  return ::operator new(n);
+}
+
+void* operator new[](std::size_t n, const std::nothrow_t&) noexcept
+{
+  return ::operator new(n, std::nothrow);
+}
+
 void operator delete(void* p) noexcept
 {
   std::free(p);
@@ -91,6 +108,11 @@ void operator delete(void* p, std::size_t) noexcept
 {
   std::free(p);
 }
+
+void operator delete[](void* p) noexcept { std::free(p); }
+void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
+void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
+void operator delete[](void* p, const std::nothrow_t&) noexcept { std::free(p); }
 
 int main()
 {
@@ -108,45 +130,45 @@ int main()
   value = 0.5;
   f0r_set_param_value(instance, &value, p_mode);
 
-  // The copy of the first frame fails: the output shows no motion.
+  // No frame allocation is attempted: the first output shows no motion.
   fill(in, 100);
   fill(out, 77);
   fail_size = sizeof(in);
   errors += update(instance, 0.0, in, out, "failed first frame");
-  errors += expect_failures(1, "failed first frame");
+  errors += expect_failures(0, "allocation-free first frame");
   errors += expect(out, 0, "failed first frame");
 
   // The next frames render normally from a consistent history.
   fill(in, 150);
   errors += update(instance, 1 / 30.0, in, out, "frame after failure");
-  errors += expect(out, 0, "frame after failure");
+  errors += expect(out, 50, "frame after allocation denial");
   fill(in, 200);
   errors += update(instance, 2 / 30.0, in, out, "recovered history");
   errors += expect(out, 50, "recovered history");
 
-  // Every allocation fails while older frames are in the history.
+  // Deny every allocation while history is populated; rendering still advances.
   fill(in, 210);
   fail_all = true;
   errors += update(instance, 3 / 30.0, in, out, "failed frame with history");
   fail_all = false;
-  errors += expect_failures(2, "failed frame with history");
-  errors += expect(out, 0, "failed frame with history");
+  errors += expect_failures(0, "allocation-free frame with history");
+  errors += expect(out, 10, "allocation-free frame with history");
 
-  // The frame that could not be stored is skipped: compare with 200.
+  // The previous frame was retained normally: compare with 210.
   fill(in, 230);
   errors += update(instance, 4 / 30.0, in, out, "history after failure");
-  errors += expect(out, 30, "history after failure");
+  errors += expect(out, 20, "history after allocation denial");
 
   f0r_destruct(instance);
+  fail_size = 0;
 
-  // In-place rendering in the default negative overlay mode falls back to
-  // the neutral mid gray.
+  // In-place rendering also allocates nothing and retains the original input.
   instance = f0r_construct(width, height);
   if (!instance) return 1;
   fill(in, 240);
   fail_size = sizeof(in);
   errors += update(instance, 0.0, in, in, "failed in-place frame");
-  errors += expect_failures(3, "failed in-place frame");
+  errors += expect_failures(0, "allocation-free in-place frame");
   errors += expect(in, 128, "failed in-place frame");
   fill(in, 240);
   errors += update(instance, 1 / 30.0, in, in, "in-place frame after failure");
