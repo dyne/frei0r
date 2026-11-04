@@ -9,6 +9,8 @@ add_executable(whirlpinch0r-contract whirlpinch0r-contract.c)
 add_dependencies(whirlpinch0r-contract whirlpinch0r)
 add_test(NAME whirlpinch0r-contract
   COMMAND whirlpinch0r-contract $<TARGET_FILE:whirlpinch0r>)
+add_test(NAME bundle-classification-coverage
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/test-bundle-classifications.cmake)
 
 # This intentionally compiles plugins with private entry point names so that
 # the archive/registry path can be exercised without changing MODULE targets.
@@ -131,12 +133,9 @@ add_test(NAME bundle-default-off
 
 foreach(profile core all)
   set(profile_arguments
-    -DEXPECT_CLASSIFICATION_COUNT=160
     "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
   if(profile STREQUAL "all")
     list(APPEND profile_arguments -DNATIVE_DEPS=ON)
-    list(REMOVE_ITEM profile_arguments -DEXPECT_CLASSIFICATION_COUNT=160)
-    list(APPEND profile_arguments -DEXPECT_CLASSIFICATION_COUNT=171)
     list(REMOVE_ITEM profile_arguments "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
     list(APPEND profile_arguments
       "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
@@ -159,7 +158,6 @@ add_test(NAME bundle-profile-explicit
     -DPLUGINS=brightness,cairoimagegrid
     -DNATIVE_DEPS=ON
     -DEXPECT_TARGETS=brightness,cairoimagegrid
-    -DEXPECT_CLASSIFICATION_COUNT=171
     "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile.cmake
 )
