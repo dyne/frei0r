@@ -66,16 +66,18 @@ static uint8_t to_byte(double v)
     return (uint8_t)(v + 0.5);
 }
 
-/* Bilinear interpolation of the four byte channels in BGRA8888 pixels. */
+/* Interpolate premultiplied color, then return straight BGRA8888 pixels. */
 static uint32_t sample_bilinear(const uint32_t *src,
                                 unsigned int width,
                                 unsigned int height,
                                 double x,
                                 double y)
 {
-    unsigned int x0, y0, x1, y1, shift;
-    double fx, fy;
-    uint32_t p00, p10, p01, p11, out = 0;
+    unsigned int x0, y0, x1, y1, channel;
+    double fx, fy, a00, a10, a01, a11, alpha, top, bottom;
+    const uint8_t *p00, *p10, *p01, *p11;
+    uint32_t out = 0;
+    uint8_t *channels = (uint8_t *)&out;
 
     if (x < 0.0) x = 0.0;
     if (y < 0.0) y = 0.0;
@@ -89,19 +91,33 @@ static uint32_t sample_bilinear(const uint32_t *src,
     fx = x - (double)x0;
     fy = y - (double)y0;
 
-    p00 = src[(size_t)y0 * width + x0];
-    p10 = src[(size_t)y0 * width + x1];
-    p01 = src[(size_t)y1 * width + x0];
-    p11 = src[(size_t)y1 * width + x1];
+    p00 = (const uint8_t *)&src[(size_t)y0 * width + x0];
+    p10 = (const uint8_t *)&src[(size_t)y0 * width + x1];
+    p01 = (const uint8_t *)&src[(size_t)y1 * width + x0];
+    p11 = (const uint8_t *)&src[(size_t)y1 * width + x1];
 
-    for (shift = 0; shift < 32; shift += 8) {
-        double a = (double)((p00 >> shift) & 255u);
-        double b = (double)((p10 >> shift) & 255u);
-        double c = (double)((p01 >> shift) & 255u);
-        double d = (double)((p11 >> shift) & 255u);
-        double top = a + (b - a) * fx;
-        double bottom = c + (d - c) * fx;
-        out |= ((uint32_t)to_byte(top + (bottom - top) * fy)) << shift;
+    /* Alpha is the fourth byte in memory, independently of host endianness. */
+    a00 = p00[3]; a10 = p10[3]; a01 = p01[3]; a11 = p11[3];
+    top = a00 + (a10 - a00) * fx;
+    bottom = a01 + (a11 - a01) * fx;
+    alpha = top + (bottom - top) * fy;
+    channels[3] = to_byte(alpha);
+    if (channels[3] == 0) return 0;
+
+    /* Keep the original interpolation exact for opaque or constant alpha. */
+    if (a00 == a10 && a00 == a01 && a00 == a11) {
+        a00 = a10 = a01 = a11 = 1.0;
+        alpha = 1.0;
+    }
+
+    for (channel = 0; channel < 3; ++channel) {
+        double a = p00[channel] * a00;
+        double b = p10[channel] * a10;
+        double c = p01[channel] * a01;
+        double d = p11[channel] * a11;
+        top = a + (b - a) * fx;
+        bottom = c + (d - c) * fx;
+        channels[channel] = to_byte((top + (bottom - top) * fy) / alpha);
     }
     return out;
 }

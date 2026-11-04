@@ -5,6 +5,10 @@ include(${CMAKE_SOURCE_DIR}/cmake/Frei0rBundlePlugin.cmake)
 
 add_executable(frei0r-run test-pattern.c frei0r-run.c)
 add_executable(frei0r-meta frei0r-meta.c)
+add_executable(whirlpinch0r-contract whirlpinch0r-contract.c)
+add_dependencies(whirlpinch0r-contract whirlpinch0r)
+add_test(NAME whirlpinch0r-contract
+  COMMAND whirlpinch0r-contract $<TARGET_FILE:whirlpinch0r>)
 
 # This intentionally compiles plugins with private entry point names so that
 # the archive/registry path can be exercised without changing MODULE targets.
@@ -127,12 +131,12 @@ add_test(NAME bundle-default-off
 
 foreach(profile core all)
   set(profile_arguments
-    -DEXPECT_CLASSIFICATION_COUNT=159
+    -DEXPECT_CLASSIFICATION_COUNT=160
     "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
   if(profile STREQUAL "all")
     list(APPEND profile_arguments -DNATIVE_DEPS=ON)
-    list(REMOVE_ITEM profile_arguments -DEXPECT_CLASSIFICATION_COUNT=159)
-    list(APPEND profile_arguments -DEXPECT_CLASSIFICATION_COUNT=170)
+    list(REMOVE_ITEM profile_arguments -DEXPECT_CLASSIFICATION_COUNT=160)
+    list(APPEND profile_arguments -DEXPECT_CLASSIFICATION_COUNT=171)
     list(REMOVE_ITEM profile_arguments "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
     list(APPEND profile_arguments
       "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
@@ -155,7 +159,7 @@ add_test(NAME bundle-profile-explicit
     -DPLUGINS=brightness,cairoimagegrid
     -DNATIVE_DEPS=ON
     -DEXPECT_TARGETS=brightness,cairoimagegrid
-    -DEXPECT_CLASSIFICATION_COUNT=170
+    -DEXPECT_CLASSIFICATION_COUNT=171
     "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile.cmake
 )
@@ -350,9 +354,11 @@ if(WIN32)
   find_package(dlfcn-win32 REQUIRED)
   target_link_libraries(frei0r-run PRIVATE dlfcn-win32::dl)
   target_link_libraries(frei0r-meta PRIVATE dlfcn-win32::dl)
+  target_link_libraries(whirlpinch0r-contract PRIVATE dlfcn-win32::dl)
 else()
   target_link_libraries(frei0r-run PRIVATE m ${CMAKE_DL_LIBS})
   target_link_libraries(frei0r-meta PRIVATE m ${CMAKE_DL_LIBS})
+  target_link_libraries(whirlpinch0r-contract PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
 if(TEST_ASAN)
