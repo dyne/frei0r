@@ -71,6 +71,8 @@ add_library(runtime-smoke-plugins STATIC
 add_library(bundle-prototype-addition OBJECT
   ${CMAKE_SOURCE_DIR}/src/mixer2/addition/addition.cpp
 )
+# This object is also linked into the bundle-symbol-probe shared library.
+set_target_properties(bundle-prototype-addition PROPERTIES POSITION_INDEPENDENT_CODE ON)
 frei0r_bundle_add_descriptor(
   TARGET bundle-prototype-addition ID addition UPDATE TRUE UPDATE2 TRUE
   OUT_TARGET bundle-prototype-addition-descriptor
