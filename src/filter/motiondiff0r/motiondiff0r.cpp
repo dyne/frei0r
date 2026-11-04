@@ -93,33 +93,16 @@ public:
 
   virtual void update(double time, uint32_t* out, const uint32_t* in)
   {
-    const size_t n = size;
-    const double target = time - std::min(std::max(offset, 0.0), 1.0) * MAX_OFFSET_SECONDS;
-
-    // Forget frames at or after the current time: the host seeked backwards
-    // or is rendering the same time again.
-    while (!history.empty() && history.back().time >= time)
-      recycle_back();
-
-    // Keep the newest frame not later than the target as the oldest one.
-    while (history.size() >= 2 && history[1].time <= target)
-      recycle_front();
-    while (history.size() >= MAX_HISTORY_FRAMES)
-      recycle_front();
-
-    // Store a copy of the current frame before rendering, so that the
-    // history stays intact when the host renders in place (in == out).
-    history.push_back(Frame());
-    Frame& f = history.back();
-    f.time = time;
-    if (!pool.empty()) {
-      f.pixels.swap(pool.back());
-      pool.pop_back();
+    // No exception may cross the plugin API. If memory runs out the frame
+    // is compared with itself, which gives the neutral "no motion" output,
+    // and the history keeps only complete frames so later updates recover.
+    try {
+      store(time, in);
+    } catch (...) {
+      process(in, in, out, size);
+      return;
     }
-    f.pixels.assign(in, in + n);
-
-    // With no older frame yet, the current frame is compared with itself.
-    process(&f.pixels[0], &history.front().pixels[0], out, n);
+    process(&history.back().pixels[0], &history.front().pixels[0], out, size);
   }
 
 private:
@@ -131,29 +114,46 @@ private:
   bool monochrome;
 
   std::deque<Frame> history;
-  std::vector< std::vector<uint32_t> > pool;
+  std::vector<uint32_t> spare;
 
-  void recycle_front()
+  void store(double time, const uint32_t* in)
   {
-    pool.push_back(std::vector<uint32_t>());
-    pool.back().swap(history.front().pixels);
-    history.pop_front();
-    trim_pool();
+    const double target = time - std::min(std::max(offset, 0.0), 1.0) * MAX_OFFSET_SECONDS;
+
+    // Copy the current frame before touching the history, so that a failed
+    // allocation leaves the history unchanged. The copy also keeps the
+    // history intact when the host renders in place (in == out).
+    std::vector<uint32_t> pixels;
+    pixels.swap(spare);
+    pixels.assign(in, in + size);
+
+    // Forget frames at or after the current time: the host seeked backwards
+    // or is rendering the same time again.
+    while (!history.empty() && history.back().time >= time) {
+      recycle(history.back().pixels);
+      history.pop_back();
+    }
+
+    // Keep the newest frame not later than the target as the oldest one.
+    while (history.size() >= 2 && history[1].time <= target) {
+      recycle(history.front().pixels);
+      history.pop_front();
+    }
+    while (history.size() >= MAX_HISTORY_FRAMES) {
+      recycle(history.front().pixels);
+      history.pop_front();
+    }
+
+    history.push_back(Frame());
+    history.back().time = time;
+    history.back().pixels.swap(pixels);
   }
 
-  void recycle_back()
+  void recycle(std::vector<uint32_t>& pixels)
   {
-    pool.push_back(std::vector<uint32_t>());
-    pool.back().swap(history.back().pixels);
-    history.pop_back();
-    trim_pool();
-  }
-
-  void trim_pool()
-  {
-    // A couple of spare buffers is enough to avoid reallocating every frame.
-    while (pool.size() > 2)
-      pool.pop_back();
+    // One spare buffer avoids reallocating every frame during playback.
+    if (spare.capacity() < pixels.capacity())
+      spare.swap(pixels);
   }
 
   int current_mode() const
