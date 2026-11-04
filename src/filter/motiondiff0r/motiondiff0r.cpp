@@ -19,7 +19,8 @@
  * History is preallocated at construction: at most 128 frames and 128 MiB
  * of pixels per instance, including the current frame. The effective offset
  * is shortened when the requested history does not fit. Rendering allocates
- * no buffers; dimensions that cannot fit two frames fail construction.
+ * no buffers and reuses released slots before touching unused buffers;
+ * dimensions that cannot fit two frames fail construction.
  *
  * This source code is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Public License as published by
@@ -65,7 +66,7 @@ class motiondiff0r : public frei0r::filter
 {
 public:
   motiondiff0r(unsigned int frame_width, unsigned int frame_height)
-    : frame_pixels(0), capacity(0), head(0), count(0)
+    : frame_pixels(0), capacity(0), head(0), count(0), free_count(0)
   {
     offset = 0.1;      // 200 ms
     mode = 0.0;        // negative overlay
@@ -95,6 +96,10 @@ public:
     capacity = std::min(MAX_HISTORY_FRAMES,
                         MAX_HISTORY_BYTES / (frame_pixels * sizeof(uint32_t)));
     storage.reset(new (std::nothrow) uint32_t[capacity * frame_pixels]);
+    // Pop the lowest unused slot first; released slots go on top for reuse.
+    for (size_t i = 0; i < capacity; ++i)
+      free_slots[i] = capacity - i - 1;
+    free_count = capacity;
   }
 
   virtual bool is_valid() const { return storage.get() != 0; }
@@ -106,8 +111,10 @@ public:
 
     // Forget frames at or after the current time: the host seeked backwards
     // or is rendering the same time again.
-    while (count && timestamps[slot(count - 1)] >= time)
+    while (count && timestamps[slot(count - 1)] >= time) {
+      free_slots[free_count++] = frame_slots[slot(count - 1)];
       --count;
+    }
 
     // Keep the newest frame not later than the target as the oldest one.
     while (count >= 2 && timestamps[slot(1)] <= target)
@@ -118,13 +125,14 @@ public:
     // Store a copy of the current frame before rendering, so that the
     // history stays intact when the host renders in place (in == out).
     const size_t current = slot(count);
-    uint32_t* pixels = storage.get() + current * n;
+    frame_slots[current] = free_slots[--free_count];
+    uint32_t* pixels = storage.get() + frame_slots[current] * n;
     std::copy(in, in + n, pixels);
     timestamps[current] = time;
     ++count;
 
     // With no older frame yet, the current frame is compared with itself.
-    process(pixels, storage.get() + head * n, out, n);
+    process(pixels, storage.get() + frame_slots[head] * n, out, n);
   }
 
 private:
@@ -139,7 +147,10 @@ private:
   size_t capacity;
   size_t head;
   size_t count;
+  size_t free_count;
   double timestamps[MAX_HISTORY_FRAMES];
+  size_t frame_slots[MAX_HISTORY_FRAMES];
+  size_t free_slots[MAX_HISTORY_FRAMES];
   std::unique_ptr<uint32_t[]> storage;
 
   size_t slot(size_t index) const
@@ -149,6 +160,7 @@ private:
 
   void drop_front()
   {
+    free_slots[free_count++] = frame_slots[head];
     head = slot(1);
     --count;
   }
