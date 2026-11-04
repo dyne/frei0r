@@ -9,6 +9,10 @@ add_executable(whirlpinch0r-contract whirlpinch0r-contract.c)
 add_dependencies(whirlpinch0r-contract whirlpinch0r)
 add_test(NAME whirlpinch0r-contract
   COMMAND whirlpinch0r-contract $<TARGET_FILE:whirlpinch0r>)
+add_executable(motiondiff0r-contract motiondiff0r-contract.c)
+add_dependencies(motiondiff0r-contract motiondiff0r)
+add_test(NAME motiondiff0r-contract
+  COMMAND motiondiff0r-contract $<TARGET_FILE:motiondiff0r>)
 add_test(NAME bundle-classification-coverage
   COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/test-bundle-classifications.cmake)
 add_executable(aech0r-contract aech0r-contract.c
@@ -374,10 +378,12 @@ if(WIN32)
   target_link_libraries(frei0r-run PRIVATE dlfcn-win32::dl)
   target_link_libraries(frei0r-meta PRIVATE dlfcn-win32::dl)
   target_link_libraries(whirlpinch0r-contract PRIVATE dlfcn-win32::dl)
+  target_link_libraries(motiondiff0r-contract PRIVATE dlfcn-win32::dl)
 else()
   target_link_libraries(frei0r-run PRIVATE m ${CMAKE_DL_LIBS})
   target_link_libraries(frei0r-meta PRIVATE m ${CMAKE_DL_LIBS})
   target_link_libraries(whirlpinch0r-contract PRIVATE ${CMAKE_DL_LIBS})
+  target_link_libraries(motiondiff0r-contract PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
 if(TEST_ASAN)
