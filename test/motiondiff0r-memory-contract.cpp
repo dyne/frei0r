@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <new>
 
 extern "C" {
@@ -12,6 +13,9 @@ size_t allocation_calls = 0;
 size_t largest_request = 0;
 size_t fail_size = 0;
 bool deny_allocations = false;
+bool capture_storage = false;
+unsigned char *captured_storage = 0;
+const size_t small_frame_bytes = 8 * 8 * sizeof(uint32_t);
 
 void *allocate(size_t size, bool throwing)
 {
@@ -19,6 +23,10 @@ void *allocate(size_t size, bool throwing)
   if (size > largest_request) largest_request = size;
   void *p = (deny_allocations || size == fail_size || size > budget) ? 0 : std::malloc(size ? size : 1);
   if (!p && throwing) throw std::bad_alloc();
+  if (p && capture_storage && size == 128 * small_frame_bytes) {
+    captured_storage = static_cast<unsigned char*>(p);
+    std::memset(p, 0xa5, size);
+  }
   return p;
 }
 
@@ -139,6 +147,48 @@ static int rendering_without_allocations()
   return failed ? 1 : 0;
 }
 
+static int working_set(double offset, size_t expected_slots)
+{
+  captured_storage = 0;
+  capture_storage = true;
+  f0r_instance_t instance = f0r_construct(8, 8);
+  capture_storage = false;
+  if (!instance || !captured_storage) {
+    if (instance) f0r_destruct(instance);
+    return 1;
+  }
+  alignas(16) uint32_t input[64], output[64];
+  std::memset(input, 0x11, sizeof(input));
+  parameter(instance, 0, offset);
+  // Binary-exact timestamps make the expected history length unambiguous.
+  // Repeated wraparound must reuse released buffers, leaving unused ones intact.
+  for (unsigned int frame = 0; frame < 512; ++frame)
+    f0r_update(instance, frame / 32.0, input, output);
+  // Replacing the current frame and seeking must release their slots as well.
+  for (unsigned int frame = 0; frame < 512; ++frame) {
+    const double time = (frame % 16) / 32.0;
+    f0r_update(instance, time, input, output);
+    f0r_update(instance, time, input, output);
+  }
+  size_t touched = 0;
+  for (size_t slot = 0; slot < 128; ++slot) {
+    for (size_t byte = 0; byte < small_frame_bytes; ++byte) {
+      if (captured_storage[slot * small_frame_bytes + byte] != 0xa5) {
+        ++touched;
+        break;
+      }
+    }
+  }
+  f0r_destruct(instance);
+  captured_storage = 0;
+  if (touched != expected_slots) {
+    std::fprintf(stderr, "Offset %g touched %zu buffers, expected %zu\n",
+                 offset, touched, expected_slots);
+    return 1;
+  }
+  return 0;
+}
+
 int main()
 {
   if (!f0r_init()) return 1;
@@ -148,6 +198,8 @@ int main()
   errors += construction_budget(4096, 4096);
   errors += construction_failure();
   errors += rendering_without_allocations();
+  errors += working_set(0.0, 2);
+  errors += working_set(0.0625, 5); // 125 ms at 32 fps, including the current frame.
   f0r_deinit();
   return errors ? 1 : 0;
 }
