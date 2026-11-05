@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: latest
+          node-version: '24'
       - name: Install semantic-release
         run: |
           npm install --no-save \
@@ -319,7 +319,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: latest
+          node-version: '24'
       - name: Install semantic-release
         run: |
           npm install --no-save \
