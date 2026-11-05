@@ -378,12 +378,13 @@ void f0r_update(f0r_instance_t instance, double time,
     assert(instance);
 
     /* Restart on the first frame, after seeking backwards and when the
-     * orientation changes; otherwise add the slit of this frame. The input
-     * is fully read before the output is written, so in-place is safe. */
+     * orientation changes; otherwise add a slit only when time advances.
+     * Paused redraws can change the projection without consuming history.
+     * The input is fully read before output is written, so in-place is safe. */
     if (!inst->primed || time < inst->last_time || inst->vertical != flag(inst, PARAM_VERTICAL)) {
         seed(inst, inframe);
         inst->primed = 1;
-    } else {
+    } else if (time > inst->last_time) {
         push(inst, inframe);
     }
     inst->last_time = time;
