@@ -209,6 +209,59 @@ static int restart_case(void)
     return errors;
 }
 
+/* Paused redraws may change the projection, but must not consume history.
+ * Compare with three instances that render each timestamp exactly once. */
+static int same_time_case(int vertical, int reverse)
+{
+    static uint32_t in[pixels], inplace[pixels], expected[3][pixels];
+    f0r_instance_t reference[3] = { NULL, NULL, NULL };
+    f0r_instance_t redraw = NULL;
+    model_t m;
+    unsigned int frame, view;
+    int i, errors = 0;
+
+    m.vertical = vertical;
+    m.reverse = reverse;
+    m.position = 0.5;
+    for (i = 0; i < 3; ++i) {
+        reference[i] = scan_instance(&m, 3);
+        if (!reference[i]) { errors = 1; goto done; }
+        set(reference[i], p_mode, i != 0);
+        set(reference[i], p_fade, i == 2);
+    }
+    redraw = scan_instance(&m, 3);
+    if (!redraw) { errors = 1; goto done; }
+
+    for (frame = 0; frame < 2 * width + 3 && !errors; ++frame) {
+        double time = frame / 25.0;
+        fill(in, frame);
+        for (i = 0; i < 3; ++i)
+            f0r_update(reference[i], time, in, expected[i]);
+
+        set(redraw, p_mode, 0.0);
+        memcpy(inplace, in, sizeof(in));
+        f0r_update(redraw, time, inplace, inplace);
+        errors += compare(inplace, expected[0], "playback after paused redraws");
+
+        /* Repeat Scan, switch to Stargate, change Fade, then return to Scan.
+         * First-frame redraws and subsequent ring wraparound are both covered. */
+        for (view = 0; view < 4 && !errors; ++view) {
+            unsigned int image = view % 3;
+            set(redraw, p_mode, image != 0);
+            set(redraw, p_fade, image == 2);
+            memcpy(inplace, in, sizeof(in));
+            f0r_update(redraw, time, inplace, inplace);
+            errors += compare(inplace, expected[image], "same-time projection change");
+        }
+    }
+
+done:
+    if (redraw) f0r_destruct(redraw);
+    for (i = 0; i < 3; ++i)
+        if (reference[i]) f0r_destruct(reference[i]);
+    return errors;
+}
+
 /* Stargate is mirror-symmetric around the vanishing line, keeps an opaque
  * black hole in the middle and only shows (possibly darkened) history. */
 static int stargate_case(int vertical)
@@ -379,6 +432,10 @@ int main(void)
     errors += scan_case(0, 0, 2, 0.0);
     errors += scan_case(0, 1, 1, 1.0);
     errors += restart_case();
+    errors += same_time_case(1, 0);
+    errors += same_time_case(1, 1);
+    errors += same_time_case(0, 0);
+    errors += same_time_case(0, 1);
     errors += stargate_case(1);
     errors += stargate_case(0);
     f0r_deinit();
