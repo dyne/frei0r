@@ -338,9 +338,14 @@ elseif(EMSCRIPTEN)
   set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
     " --no-entry -sINITIAL_MEMORY=67108864 -sMODULARIZE=1 -sEXPORT_NAME=createBundleRegistry -sENVIRONMENT=node -sINVOKE_RUN=0 -sEXPORTED_FUNCTIONS=['_f0r_bundle_emscripten_run','_f0r_bundle_emscripten_output_digest','_f0r_bundle_emscripten_application_frame_count','_f0r_bundle_emscripten_parameter_change_count','_f0r_bundle_emscripten_output_count','_f0r_bundle_emscripten_output_digest_at','_f0r_bundle_emscripten_output_id_at','_f0r_bundle_emscripten_failure_id','_f0r_bundle_emscripten_failure_stage']")
   if(FREI0R_BUNDLE_EMSCRIPTEN_GC)
+    # Section collection is independent of the runner's heap settings below.
     set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
       " -Wl,--gc-sections")
   endif()
+  # Large constructor-owned histories must be able to grow beyond the initial
+  # heap. If growth fails, let nothrow allocations return NULL instead of aborting.
+  set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
+    " -sALLOW_MEMORY_GROWTH=1 -sABORTING_MALLOC=0")
   if(FREI0R_BUNDLE_WASM_PTHREADS)
     set_property(TARGET bundle-registry-emscripten APPEND_STRING PROPERTY LINK_FLAGS
       " -pthread -sUSE_PTHREADS=1 -sPTHREAD_POOL_SIZE=2")
