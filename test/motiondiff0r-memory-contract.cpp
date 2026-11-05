@@ -8,7 +8,7 @@ extern "C" {
 }
 
 namespace {
-const size_t budget = 128u * 1024u * 1024u;
+const size_t budget = 1024u * 1024u * 1024u;
 size_t allocation_calls = 0;
 size_t largest_request = 0;
 size_t fail_size = 0;
@@ -99,7 +99,7 @@ static int construction_failure()
     return 1;
   }
   largest_request = 0;
-  instance = f0r_construct(8192, 8192);
+  instance = f0r_construct(8192, 16385);
   if (instance || largest_request > budget) {
     if (instance) f0r_destruct(instance);
     std::fprintf(stderr, "Dimensions exceeding the two-frame budget were accepted\n");
@@ -196,6 +196,7 @@ int main()
   errors += construction_budget(1920, 1080);
   errors += construction_budget(3840, 2160);
   errors += construction_budget(4096, 4096);
+  errors += construction_budget(8192, 16384); // Exactly two frames fit in 1 GiB.
   errors += construction_failure();
   errors += rendering_without_allocations();
   errors += working_set(0.0, 2);

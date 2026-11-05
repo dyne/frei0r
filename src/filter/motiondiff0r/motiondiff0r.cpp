@@ -16,7 +16,7 @@
  *
  * The delayed frame is chosen from a small history using the timestamps
  * given by the host, so the time offset is independent of the frame rate.
- * History is preallocated at construction: at most 128 frames and 128 MiB
+ * History is preallocated at construction: at most 128 frames and 1 GiB
  * of pixels per instance, including the current frame. The effective offset
  * is shortened when the requested history does not fit. Rendering allocates
  * no buffers and reuses released slots before touching unused buffers;
@@ -45,7 +45,7 @@ namespace {
 const double MAX_OFFSET_SECONDS = 2.0;
 const double MAX_GAIN = 16.0;
 const size_t MAX_HISTORY_FRAMES = 128;
-const size_t MAX_HISTORY_BYTES = 128u * 1024u * 1024u;
+const size_t MAX_HISTORY_BYTES = 1024u * 1024u * 1024u;
 
 enum Mode { MODE_OVERLAY = 0, MODE_ABSDIFF = 1, MODE_MASK = 2 };
 
@@ -76,7 +76,7 @@ public:
     monochrome = false;
 
     register_param(offset, "Time Offset",
-                   "0..1 = 0..2 seconds, limited to 128 frames / 128 MiB of history; 0 = previous frame");
+                   "0..1 = 0..2 seconds, limited to 128 frames / 1 GiB of history; 0 = previous frame");
     register_param(mode, "Mode",
                    "0: negative overlay, 0.5: absolute difference, 1: motion mask");
     register_param(blend, "Blend",
