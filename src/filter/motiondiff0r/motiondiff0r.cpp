@@ -16,8 +16,8 @@
  *
  * The delayed frame is chosen from a small history using the timestamps
  * given by the host, so the time offset is independent of the frame rate.
- * History is preallocated at construction: at most 128 frames and 1 GiB
- * of pixels per instance, including the current frame. The effective offset
+ * History is preallocated at construction: at most 1 GiB of pixels and
+ * history metadata per instance, including the current frame. The effective offset
  * is shortened when the requested history does not fit. Rendering allocates
  * no buffers and reuses released slots before touching unused buffers;
  * dimensions that cannot fit two frames fail construction.
@@ -44,8 +44,11 @@ namespace {
 
 const double MAX_OFFSET_SECONDS = 2.0;
 const double MAX_GAIN = 16.0;
-const size_t MAX_HISTORY_FRAMES = 128;
+#ifdef MOTIONDIFF_TEST_HISTORY_BYTES
+const size_t MAX_HISTORY_BYTES = MOTIONDIFF_TEST_HISTORY_BYTES;
+#else
 const size_t MAX_HISTORY_BYTES = 1024u * 1024u * 1024u;
+#endif
 
 enum Mode { MODE_OVERLAY = 0, MODE_ABSDIFF = 1, MODE_MASK = 2 };
 
@@ -64,9 +67,16 @@ inline int luma(const uint8_t* p)
 
 class motiondiff0r : public frei0r::filter
 {
+  struct FrameInfo {
+    double timestamp;
+    size_t previous;
+    size_t next;
+  };
+
 public:
   motiondiff0r(unsigned int frame_width, unsigned int frame_height)
-    : frame_pixels(0), capacity(0), head(0), count(0), free_count(0)
+    : frame_pixels(0), capacity(0), head(0), tail(0), count(0),
+      free_head(0), next_unused(0)
   {
     offset = 0.1;      // 200 ms
     mode = 0.0;        // negative overlay
@@ -76,7 +86,7 @@ public:
     monochrome = false;
 
     register_param(offset, "Time Offset",
-                   "0..1 = 0..2 seconds, limited to 128 frames / 1 GiB of history; 0 = previous frame");
+                   "0..1 = 0..2 seconds, limited to 1 GiB of history; 0 = previous frame");
     register_param(mode, "Mode",
                    "0: negative overlay, 0.5: absolute difference, 1: motion mask");
     register_param(blend, "Blend",
@@ -90,19 +100,19 @@ public:
 
     // The registration helper creates a zero-sized metadata-only instance.
     if (!frame_width || !frame_height) return;
-    const size_t max_pixels = MAX_HISTORY_BYTES / (2 * sizeof(uint32_t));
+    const size_t max_pixels = (MAX_HISTORY_BYTES / 2 - sizeof(FrameInfo)) / sizeof(uint32_t);
     if ((size_t)frame_width > max_pixels / frame_height) return;
     frame_pixels = (size_t)frame_width * frame_height;
-    capacity = std::min(MAX_HISTORY_FRAMES,
-                        MAX_HISTORY_BYTES / (frame_pixels * sizeof(uint32_t)));
+    capacity = MAX_HISTORY_BYTES / (frame_pixels * sizeof(uint32_t) + sizeof(FrameInfo));
     storage.reset(new (std::nothrow) uint32_t[capacity * frame_pixels]);
-    // Pop the lowest unused slot first; released slots go on top for reuse.
-    for (size_t i = 0; i < capacity; ++i)
-      free_slots[i] = capacity - i - 1;
-    free_count = capacity;
+    if (!storage) return;
+    frames.reset(new (std::nothrow) FrameInfo[capacity]);
+    // capacity is the sentinel for empty links. Initialize entries on use so
+    // short offsets touch only the pixel buffers and metadata they need.
+    head = tail = free_head = capacity;
   }
 
-  virtual bool is_valid() const { return storage.get() != 0; }
+  virtual bool is_valid() const { return storage.get() != 0 && frames.get() != 0; }
 
   virtual void update(double time, uint32_t* out, const uint32_t* in)
   {
@@ -111,28 +121,36 @@ public:
 
     // Forget frames at or after the current time: the host seeked backwards
     // or is rendering the same time again.
-    while (count && timestamps[slot(count - 1)] >= time) {
-      free_slots[free_count++] = frame_slots[slot(count - 1)];
-      --count;
-    }
+    while (count && frames[tail].timestamp >= time)
+      release(tail);
 
     // Keep the newest frame not later than the target as the oldest one.
-    while (count >= 2 && timestamps[slot(1)] <= target)
-      drop_front();
+    while (count >= 2 && frames[frames[head].next].timestamp <= target)
+      release(head);
     if (count == capacity)
-      drop_front();
+      release(head);
 
     // Store a copy of the current frame before rendering, so that the
     // history stays intact when the host renders in place (in == out).
-    const size_t current = slot(count);
-    frame_slots[current] = free_slots[--free_count];
-    uint32_t* pixels = storage.get() + frame_slots[current] * n;
+    size_t current;
+    if (free_head != capacity) {
+      current = free_head;
+      free_head = frames[current].next;
+    } else {
+      current = next_unused++;
+    }
+    uint32_t* pixels = storage.get() + current * n;
     std::copy(in, in + n, pixels);
-    timestamps[current] = time;
+    frames[current].timestamp = time;
+    frames[current].previous = tail;
+    frames[current].next = capacity;
+    if (count) frames[tail].next = current;
+    else head = current;
+    tail = current;
     ++count;
 
     // With no older frame yet, the current frame is compared with itself.
-    process(pixels, storage.get() + frame_slots[head] * n, out, n);
+    process(pixels, storage.get() + head * n, out, n);
   }
 
 private:
@@ -146,22 +164,24 @@ private:
   size_t frame_pixels;
   size_t capacity;
   size_t head;
+  size_t tail;
   size_t count;
-  size_t free_count;
-  double timestamps[MAX_HISTORY_FRAMES];
-  size_t frame_slots[MAX_HISTORY_FRAMES];
-  size_t free_slots[MAX_HISTORY_FRAMES];
+  size_t free_head;
+  size_t next_unused;
+  std::unique_ptr<FrameInfo[]> frames;
   std::unique_ptr<uint32_t[]> storage;
 
-  size_t slot(size_t index) const
+  void release(size_t index)
   {
-    return (head + index) % capacity;
-  }
-
-  void drop_front()
-  {
-    free_slots[free_count++] = frame_slots[head];
-    head = slot(1);
+    const size_t previous = frames[index].previous;
+    const size_t next = frames[index].next;
+    if (previous != capacity) frames[previous].next = next;
+    else head = next;
+    if (next != capacity) frames[next].previous = previous;
+    else tail = previous;
+    // The next link doubles as a free list while this slot is inactive.
+    frames[index].next = free_head;
+    free_head = index;
     --count;
   }
 
