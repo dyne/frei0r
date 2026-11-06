@@ -35,7 +35,8 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Live demo', link: '/demo/' },
+      // The demo is a standalone app, not a VitePress route.
+      { text: 'Live demo', link: '/demo/', target: '_self' },
       { text: 'Get frei0r', link: '/get-frei0r' },
       { text: 'Software', link: '/software' },
       { text: 'Documentation', link: '/documentation' },
@@ -52,7 +53,7 @@ export default defineConfig({
         text: 'frei0r',
         items: [
           { text: 'Home', link: '/' },
-          { text: 'Live demo', link: '/demo/' },
+          { text: 'Live demo', link: '/demo/', target: '_self' },
           { text: 'Get frei0r', link: '/get-frei0r' },
           { text: 'Supporting software', link: '/software' },
           { text: 'Community', link: '/community' }
