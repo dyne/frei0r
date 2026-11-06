@@ -223,7 +223,11 @@ async function runGrantedScenario(browser, origin) {
   const page = await context.newPage()
   const assertNoExceptions = attachExceptionCollection(page)
   await installSyntheticCamera(page)
-  await page.goto(`${origin}/frei0r/demo/`, { waitUntil: 'networkidle' })
+  await page.goto(`${origin}/frei0r/`, { waitUntil: 'networkidle' })
+  await Promise.all([
+    page.waitForURL(`${origin}/frei0r/demo/`, { waitUntil: 'networkidle' }),
+    page.locator('.VPNavBar').getByRole('link', { name: 'Live demo', exact: true }).click(),
+  ])
   const wasmResponse = await page.request.get(`${origin}/frei0r/demo/runtime/${await page.evaluate(async () => {
     const manifest = await fetch('./runtime/runtime-manifest.json').then((response) => response.json())
     return manifest.wasm
