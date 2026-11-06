@@ -244,7 +244,7 @@ jobs:
             '^(bundle-registry-wasi|bundle-wasi-consumer)$'
       - name: Package tested WASI bundle
         run: |
-          .github/scripts/package-wasm-release.sh \
+          cmake/package-wasm-release.sh \
             wasi \
             "${{ needs.release-plan.outputs.version }}" \
             29 \
@@ -291,7 +291,7 @@ jobs:
             '^(bundle-registry-emscripten|bundle-emscripten-consumer)$'
       - name: Package tested Emscripten bundle
         run: |
-          .github/scripts/package-wasm-release.sh \
+          cmake/package-wasm-release.sh \
             emscripten \
             "${{ needs.release-plan.outputs.version }}" \
             4.0.1 \

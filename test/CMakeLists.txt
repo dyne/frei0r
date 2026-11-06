@@ -266,7 +266,7 @@ if(UNIX)
     add_test(NAME wasm-release-package
       COMMAND ${FREI0R_BASH_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/check-wasm-release-package.sh
-        ${CMAKE_SOURCE_DIR}/.github/scripts/package-wasm-release.sh
+        ${CMAKE_SOURCE_DIR}/cmake/package-wasm-release.sh
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR})
   endif()

@@ -26,7 +26,7 @@ command -v sha256sum >/dev/null || fatal "sha256sum is required"
 command -v tar >/dev/null || fatal "tar is required"
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
-source_dir=$(cd "$script_dir/../.." && pwd -P)
+source_dir=$(cd "$script_dir/.." && pwd -P)
 build_dir=$(cd "$build_dir" && pwd -P)
 mkdir -p "$output_dir"
 output_dir=$(cd "$output_dir" && pwd -P)
