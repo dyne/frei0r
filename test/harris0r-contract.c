@@ -95,6 +95,18 @@ static int mapping(void)
         f0r_get_param_value(instance, &again, 0);
         if (fabs(value - normalized) > 1e-12 || fabs(again - value) > 1e-12)
             goto failed;
+        /* Keep truncation on either side of each normalized frame setting;
+         * adding a broad epsilon or rounding to nearest changes the bins. */
+        if (index > 0) {
+            parameter(instance, 0, normalized - 1e-9);
+            f0r_get_param_value(instance, &value, 0);
+            if (fabs(value - (index - 1) / 15.0) > 1e-12) goto failed;
+        }
+        if (index < 15) {
+            parameter(instance, 0, normalized + 1e-9);
+            f0r_get_param_value(instance, &value, 0);
+            if (fabs(value - normalized) > 1e-12) goto failed;
+        }
     }
     parameter(instance, 0, 0.5);
     f0r_get_param_value(instance, &value, 0);
@@ -212,8 +224,7 @@ static int allocation_failures(uint32_t *input, uint32_t *output)
 
 int main(void)
 {
-    const unsigned int delays[] = { 1, 2, 16 };
-    unsigned int i;
+    unsigned int delay;
     int simple, inplace, errors;
     void *storage;
     uint32_t *input, *output;
@@ -223,10 +234,10 @@ int main(void)
     input = (uint32_t *)(((uintptr_t)storage + 15) & ~(uintptr_t)15);
     output = input + pixels;
     errors = mapping();
-    for (i = 0; i < sizeof(delays) / sizeof(delays[0]); ++i)
+    for (delay = 1; delay <= 16; ++delay)
         for (simple = 0; simple < 2; ++simple)
             for (inplace = 0; inplace < 2; ++inplace)
-                errors += sequence(input, output, delays[i], simple, inplace);
+                errors += sequence(input, output, delay, simple, inplace);
     errors += mode_changes(input, output);
     errors += allocation_failures(input, output);
     free(storage);
