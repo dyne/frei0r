@@ -152,10 +152,11 @@ jobs:
           key: i386
       - name: Install multilib build tools
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get update -qy
           sudo apt-get install --no-install-recommends -y \
             gcc-multilib g++-multilib cmake ninja-build pkg-config file \
-            libgl-dev libegl-dev
+            libgl-dev:i386 libegl-dev:i386
       - name: Configure native 32-bit build
         run: |
           cmake -S . -B build-i386 -G Ninja \
