@@ -139,6 +139,55 @@ jobs:
             build/test/frei0r-run -d -p "$plugin"
           done
 
+  test-i386:
+    name: 🔬 i386 C/C++ contracts (GCC -m32)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: i386
+      - name: Install multilib build tools
+        run: |
+          sudo apt-get update -qy
+          sudo apt-get install --no-install-recommends -y \
+            gcc-multilib g++-multilib cmake ninja-build pkg-config file \
+            libgl-dev libegl-dev
+      - name: Configure native 32-bit build
+        run: |
+          cmake -S . -B build-i386 -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_FLAGS=-m32 \
+            -DCMAKE_CXX_FLAGS=-m32 \
+            -DBUILD_TESTING=ON \
+            -DWITHOUT_OPENCV=ON \
+            -DWITHOUT_CAIRO=ON \
+            -DWITHOUT_GAVL=ON
+      - name: Build C/C++ contracts
+        run: |
+          # These targets do not link the optional graphics libraries.
+          cmake --build build-i386 --parallel 4 --target \
+            aech0r-contract harris0r-contract slitscan0r-contract \
+            motiondiff0r-alloc motiondiff0r-memory-contract motiondiff0r-small-budget
+      - name: Verify 32-bit binaries
+        run: |
+          for binary in \
+            aech0r-contract harris0r-contract slitscan0r-contract \
+            motiondiff0r-alloc motiondiff0r-memory-contract motiondiff0r-small-budget; do
+            file "build-i386/test/$binary" | grep 'ELF 32-bit.*Intel 80386'
+          done
+      - name: Run native i386 contracts
+        run: |
+          ctest --test-dir build-i386 --output-on-failure --no-tests=error -R \
+            '^(aech0r-contract|harris0r-contract|slitscan0r-contract|motiondiff0r-(alloc|memory-contract|small-budget))$'
+
   bundle-native:
     name: 📦 native bundle contracts
     runs-on: ubuntu-latest
