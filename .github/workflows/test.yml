@@ -158,6 +158,8 @@ jobs:
             gcc-multilib g++-multilib cmake ninja-build pkg-config file \
             libgl-dev:i386 libegl-dev:i386
       - name: Configure native 32-bit build
+        env:
+          PKG_CONFIG_LIBDIR: /usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
         run: |
           cmake -S . -B build-i386 -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
