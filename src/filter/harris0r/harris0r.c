@@ -170,7 +170,9 @@ void f0r_set_param_value(f0r_instance_t instance,
             double value = *((double*)param);
             if (value < 0.0) value = 0.0;
             if (value > 1.0) value = 1.0;
-            inst->delay = HARRIS_DELAY_MIN + (unsigned int)(value * (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN));
+            /* Round the product to double before truncating. With x87 excess
+             * precision, e.g. (1.0 / 15.0) * 15 can remain just below 1. */
+            inst->delay = HARRIS_DELAY_MIN + (unsigned int)(double)(value * (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN));
             break;
         }
 
