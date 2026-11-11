@@ -170,9 +170,11 @@ void f0r_set_param_value(f0r_instance_t instance,
             double value = *((double*)param);
             if (value < 0.0) value = 0.0;
             if (value > 1.0) value = 1.0;
-            /* Round the product to double before truncating. With x87 excess
-             * precision, e.g. (1.0 / 15.0) * 15 can remain just below 1. */
-            inst->delay = HARRIS_DELAY_MIN + (unsigned int)(double)(value * (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN));
+            /* Store as double before truncating: x87 can otherwise keep the
+             * product just below an integer. Volatile forces this rounding
+             * even when the compiler ignores casts under excess precision. */
+            volatile double frames = value * (HARRIS_DELAY_MAX - HARRIS_DELAY_MIN);
+            inst->delay = HARRIS_DELAY_MIN + (unsigned int)frames;
             break;
         }
 
