@@ -56,18 +56,22 @@ void f0r_get_param_value(f0r_instance_t instance,
 { /* no params */ }
 
 void f0r_update(f0r_instance_t instance, double time,
-		const uint32_t* inframe, uint32_t* outframe)
+                const uint32_t* inframe, uint32_t* outframe)
 {
   assert(instance);
   inverter_instance_t* inst = (inverter_instance_t*)instance;
-  unsigned int w = inst->width;
-  unsigned int h = inst->height;
-  unsigned int x,y;
-  
-  uint32_t* dst = outframe;
-  const uint32_t* src = inframe;
-  for(y=0;y<h;++y)
-      for(x=0;x<w;++x,++src)
-	  *dst++ = 0x00ffffff^(*src); 
+  unsigned int pixels = inst->width * inst->height;
+  unsigned char* dst = (unsigned char*)outframe;
+  const unsigned char* src = (const unsigned char*)inframe;
+
+  /* RGBA channels are ordered bytes, not uint32_t bit fields. */
+  while (pixels--) {
+    dst[0] = 255 - src[0];
+    dst[1] = 255 - src[1];
+    dst[2] = 255 - src[2];
+    dst[3] = src[3];
+    src += 4;
+    dst += 4;
+  }
 }
 
