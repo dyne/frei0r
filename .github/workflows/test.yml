@@ -191,6 +191,38 @@ jobs:
           ctest --test-dir build-i386 --output-on-failure --no-tests=error -R \
             '^(aech0r-contract|harris0r-contract|slitscan0r-contract|motiondiff0r-(alloc|memory-contract|small-budget))$'
 
+  test-s390x:
+    name: 🔬 s390x big-endian contracts (QEMU)
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install s390x build tools and libraries
+        run: |
+          dpkg --add-architecture s390x
+          apt-get update -qy
+          apt-get install --no-install-recommends -y \
+            cmake ninja-build pkg-config ccache qemu-user \
+            gcc-s390x-linux-gnu g++-s390x-linux-gnu libc6-dev-s390x-cross \
+            libcairo2-dev:s390x libfreetype-dev:s390x libgl-dev:s390x libegl-dev:s390x
+      - name: Configure s390x build
+        env:
+          PKG_CONFIG_LIBDIR: /usr/lib/s390x-linux-gnu/pkgconfig:/usr/share/pkgconfig
+        run: |
+          cmake -S . -B build-s390x -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/s390x-linux-gnu.cmake \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DWITHOUT_OPENCV=ON -DWITHOUT_GAVL=ON
+      - name: Build big-endian regressions
+        run: |
+          cmake --build build-s390x --parallel 4 --target \
+            bundle-api-contract cairo-input-contract invert0r
+      - name: Run big-endian regressions under QEMU
+        run: |
+          ctest --test-dir build-s390x --output-on-failure --no-tests=error -R \
+            '^(bundle-api-contract|invert0r|cairo(gradient|affineblend|blend)(-input-contract)?)$'
+
   bundle-native:
     name: 📦 native bundle contracts
     runs-on: ubuntu-latest

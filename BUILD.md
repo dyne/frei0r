@@ -76,6 +76,32 @@ use `cmake --preset debug-clang-ninja` followed by
 `cmake --build --preset debug-clang-ninja` and run CTest against
 `build/debug-clang-ninja`.
 
+## Big-endian tests with QEMU
+
+On Debian, install the cross compiler, QEMU user-mode runner and s390x
+development libraries. No virtual machine or binfmt registration is needed:
+
+```sh
+sudo dpkg --add-architecture s390x
+sudo apt-get update
+sudo apt-get install cmake ninja-build pkg-config ccache qemu-user \
+  gcc-s390x-linux-gnu g++-s390x-linux-gnu libc6-dev-s390x-cross \
+  libcairo2-dev:s390x libfreetype-dev:s390x libgl-dev:s390x libegl-dev:s390x
+PKG_CONFIG_LIBDIR=/usr/lib/s390x-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+  cmake -S . -B build-s390x -G Ninja \
+    -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/s390x-linux-gnu.cmake \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+    -DWITHOUT_OPENCV=ON -DWITHOUT_GAVL=ON
+cmake --build build-s390x --parallel 4 --target \
+  bundle-api-contract cairo-input-contract invert0r
+ctest --test-dir build-s390x --output-on-failure -R \
+  '^(bundle-api-contract|invert0r|cairo(gradient|affineblend|blend)(-input-contract)?)$'
+```
+
+This runs the bundle pixel checks, Cairo input/color regressions and the
+ordinary tests for the affected plugins on an emulated big-endian CPU.
+
 ## Static plugin bundles
 
 `FREI0R_BUILD_BUNDLE=ON` builds a registry-backed bundle in addition to the

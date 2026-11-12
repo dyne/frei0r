@@ -5,6 +5,16 @@ include(${CMAKE_SOURCE_DIR}/cmake/Frei0rBundlePlugin.cmake)
 
 add_executable(frei0r-run test-pattern.c frei0r-run.c)
 add_executable(frei0r-meta frei0r-meta.c)
+if(UNIX AND TARGET cairogradient)
+  add_executable(cairo-input-contract cairo-input-contract.c)
+  target_include_directories(cairo-input-contract PRIVATE ${Cairo_INCLUDE_DIRS})
+  target_link_libraries(cairo-input-contract PRIVATE ${CMAKE_DL_LIBS} ${Cairo_LIBRARIES})
+  foreach(plugin cairogradient cairoaffineblend cairoblend)
+    add_dependencies(cairo-input-contract ${plugin})
+    add_test(NAME ${plugin}-input-contract
+      COMMAND cairo-input-contract $<TARGET_FILE:${plugin}>)
+  endforeach()
+endif()
 add_executable(whirlpinch0r-contract whirlpinch0r-contract.c)
 add_dependencies(whirlpinch0r-contract whirlpinch0r)
 add_test(NAME whirlpinch0r-contract
@@ -442,7 +452,7 @@ foreach(tdir ${TDIRS})
       add_dependencies(${target} frei0r-run)
       add_test(
         NAME "${target}"
-        COMMAND "${CMAKE_BINARY_DIR}/test/frei0r-run" ${TESTFLAGS} -p "$<TARGET_FILE:${target}>"
+        COMMAND frei0r-run ${TESTFLAGS} -p "$<TARGET_FILE:${target}>"
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/test"
       )
     endforeach()

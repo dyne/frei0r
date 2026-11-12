@@ -21,6 +21,7 @@
 
 
 #include <cairo.h>
+#include <stdint.h>
 #include <string.h>
 #include "frei0r/math.h"
 
@@ -230,33 +231,42 @@ static inline double frei0r_cairo_get_scale (double norm_scale)
 }
 
 /**
- * Convert frei0r RGBA to pre-multiplied alpha as needed by Cairo.
+ * Convert frei0r RGBA bytes to Cairo's native-endian premultiplied pixels.
+ * Red and blue remain swapped to match the color-setting helpers above.
  *
- * \param rgba the image buffer with format F0R_COLOR_MODEL_RGBA8888
+ * \param in the image buffer with format F0R_COLOR_MODEL_RGBA8888
+ * \param out the destination buffer (may equal in)
  * \param pixels the size of the image buffer in number of pixels
  * \param alpha if >= 0, the alpha channel will be set to this value
  * \see frei0r_cairo_unpremultiply_rgba
  */
-static inline void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
+static inline void frei0r_cairo_premultiply_rgba2 (const unsigned char *in, unsigned char *out,
+                                                int pixels, int alpha)
 {
-  // Validate inputs
-  if (!rgba || pixels <= 0) {
+  if (!in || !out || pixels <= 0) {
     return;
   }
 
-  int i = pixels + 1;
-  while ( --i ) {
-    register unsigned char a = rgba[3];
-    if (a == 0) {
-      *((uint32_t *)rgba) = 0;
-    } else if (a < 0xff) {
-      rgba[0] = ( rgba[0] * a ) >> 8;
-      rgba[1] = ( rgba[1] * a ) >> 8;
-      rgba[2] = ( rgba[2] * a ) >> 8;
+  while (pixels--) {
+    unsigned int a = in[3];
+    unsigned int r = in[0], g = in[1], b = in[2];
+    uint32_t pixel;
+    if (a < 255) {
+      r = (r * a) >> 8;
+      g = (g * a) >> 8;
+      b = (b * a) >> 8;
     }
-    if (alpha >= 0) rgba[3] = alpha;
-    rgba += 4;
+    if (alpha >= 0) a = (unsigned char)alpha;
+    pixel = ((uint32_t)a << 24) | (b << 16) | (g << 8) | r;
+    memcpy(out, &pixel, sizeof(pixel));
+    in += 4;
+    out += 4;
   }
+}
+
+static inline void frei0r_cairo_premultiply_rgba (unsigned char *rgba, int pixels, int alpha)
+{
+  frei0r_cairo_premultiply_rgba2(rgba, rgba, pixels, alpha);
 }
 
 /**
@@ -273,54 +283,20 @@ static inline void frei0r_cairo_unpremultiply_rgba (unsigned char *rgba, int pix
     return;
   }
 
-  int i = pixels + 1;
-  while ( --i ) {
-    register unsigned char a = rgba[3];
+  while (pixels--) {
+    uint32_t pixel;
+    unsigned int a;
+    memcpy(&pixel, rgba, sizeof(pixel));
+    a = pixel >> 24;
+    rgba[0] = pixel & 255;
+    rgba[1] = (pixel >> 8) & 255;
+    rgba[2] = (pixel >> 16) & 255;
+    rgba[3] = a;
     if (a > 0 && a < 0xff) {
       rgba[0] = MIN(( rgba[0] << 8 ) / a, 255);
       rgba[1] = MIN(( rgba[1] << 8 ) / a, 255);
       rgba[2] = MIN(( rgba[2] << 8 ) / a, 255);
     }
     rgba += 4;
-  }
-}
-
-/**
- * Convert frei0r RGBA to pre-multiplied alpha as needed by Cairo.
- *
- * \param rgba the image buffer with format F0R_COLOR_MODEL_RGBA8888
- * \param pixels the size of the image buffer in number of pixels
- * \param alpha if >= 0, the alpha channel will be set to this value
- * \see frei0r_cairo_premultiply_rgba
- *
- * This is the same as frei0r_cairo_premultiply_rgba but it writes the
- * output to a different buffer.
- */
-static inline void frei0r_cairo_premultiply_rgba2 (unsigned char *in, unsigned char *out,
-                                     int pixels, int alpha)
-{
-  // Validate inputs
-  if (!in || !out || pixels <= 0) {
-    return;
-  }
-
-  int i = pixels + 1;
-  while ( --i ) {
-    register unsigned char a = in[3];
-    if (a == 0) {
-      *((uint32_t *)out) = 0;
-    } else if (a == 0xff) {
-      memcpy(out, in, 4);
-    } else {
-      out[0] = ( in[0] * a ) >> 8;
-      out[1] = ( in[1] * a ) >> 8;
-      out[2] = ( in[2] * a ) >> 8;
-      if (alpha < 0)
-        out[3] = a;
-    }
-    if (alpha >= 0)
-        out[3] = alpha;
-    in += 4;
-    out += 4;
   }
 }
