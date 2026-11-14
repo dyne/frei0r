@@ -186,13 +186,19 @@ foreach(profile core all)
     list(REMOVE_ITEM profile_arguments "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
     list(APPEND profile_arguments
       "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts")
-    list(APPEND profile_arguments -DEXPECT_TARGETS=cairoimagegrid,rgbparade)
+    if(WITHOUT_GAVL)
+      list(APPEND profile_arguments -DEXPECT_TARGETS=cairoimagegrid
+        -DEXPECT_NOT_TARGETS=rgbparade,vectorscope)
+    else()
+      list(APPEND profile_arguments -DEXPECT_TARGETS=cairoimagegrid,rgbparade)
+    endif()
   endif()
   add_test(NAME bundle-profile-${profile}
     COMMAND ${CMAKE_COMMAND}
       -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
       -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/bundle-profile-${profile}
       -DPROFILE=${profile}
+      -DWITHOUT_GAVL=${WITHOUT_GAVL}
       ${profile_arguments}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile.cmake
   )
@@ -204,6 +210,7 @@ add_test(NAME bundle-profile-explicit
     -DPROFILE=core
     -DPLUGINS=brightness,cairoimagegrid
     -DNATIVE_DEPS=ON
+    -DWITHOUT_GAVL=${WITHOUT_GAVL}
     -DEXPECT_TARGETS=brightness,cairoimagegrid
     "-DEXPECT_CLASSIFICATION_RECORDS=brightness|core|language runtime and math library only,cairoimagegrid|optional-cairo|requires Cairo,colgate|unsupported-dynamic-loading|uses dynamic loading and is not portable to static hosts"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/check-bundle-profile.cmake
