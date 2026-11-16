@@ -336,8 +336,26 @@ typedef struct
 
 
 //-------------------------------------------------------
+//smallest frame size (w and h) each interpolator can read safely
+static int intp_min_size(int intp)
+{
+	switch (intp)
+	{
+	case 2:
+	case 3:
+	case 4:	return 4;
+	case 5:	return 6;
+	case 6:	return 16;
+	default: return 0;
+	}
+}
+
+//-------------------------------------------------------
 static interpp set_intp(param p)
 {
+	if (p.w < intp_min_size(p.intp) || p.h < intp_min_size(p.intp))
+		return interpBL_b32;	//frame too small for the window
+
 	switch (p.intp)	//katero interpolacijo bo uporabil
 	{
 		//	case -1:return interpNNpr_b;	//nearest neighbor+print
