@@ -92,7 +92,7 @@ static const uint8_t gamma_compress_table[] = {
 
 #ifdef __SSE4_1__
 // GCC autovectorization :)
-__m128 cbrt_sse(const __m128 u)
+static inline __m128 cbrt_sse(const __m128 u)
 {
     union {
         float a[4];
@@ -105,7 +105,7 @@ __m128 cbrt_sse(const __m128 u)
     return cast.v;
 }
 
-__m128 pow3_sse(const __m128 u)
+static inline __m128 pow3_sse(const __m128 u)
 {
     return _mm_mul_ps(u, _mm_mul_ps(u, u));
 }

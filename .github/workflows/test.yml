@@ -86,7 +86,8 @@ jobs:
           - compiler: clang-14
             cxx_compiler: clang++-14
       fail-fast: false
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04 no longer provides the Clang 14 packages used by this job.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -155,7 +156,7 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update -qy
           sudo apt-get install --no-install-recommends -y \
-            gcc-multilib g++-multilib cmake ninja-build pkg-config file \
+            gcc-multilib g++-multilib cmake ninja-build pkg-config binutils \
             libgl-dev:i386 libegl-dev:i386
       - name: Configure native 32-bit build
         env:
@@ -184,7 +185,10 @@ jobs:
           for binary in \
             aech0r-contract harris0r-contract slitscan0r-contract \
             motiondiff0r-alloc motiondiff0r-memory-contract motiondiff0r-small-budget; do
-            file "build-i386/test/$binary" | grep 'ELF 32-bit.*Intel 80386'
+            # Inspect ELF fields; file's human-readable CPU name can change.
+            elf_header=$(LC_ALL=C readelf -h "build-i386/test/$binary")
+            printf '%s\n' "$elf_header" | grep 'Class:.*ELF32'
+            printf '%s\n' "$elf_header" | grep 'Machine:.*Intel 80386'
           done
       - name: Run native i386 contracts
         run: |
