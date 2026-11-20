@@ -274,8 +274,8 @@ void Partik0l::blob_init(int ray) {
   
 
 void Partik0l::blob(uint32_t* out, int x, int y) {
-  //  if(y>h-blob_size) return;
-  //  if(x>w-blob_size) return;
+  if(y>h-blob_size) return;
+  if(x>w-blob_size) return;
 
   int i, j;
   int stride = (w-blob_size)>>1;
