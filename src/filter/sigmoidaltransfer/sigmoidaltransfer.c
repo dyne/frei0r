@@ -27,6 +27,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 #include "frei0r.h"
 #include "frei0r/math.h"
 
@@ -37,18 +40,21 @@ typedef struct sigmoidal_instance
   double base;
   double sharpness;
 
-  /* Precomputed values of the (scaled and shifted) sigmoid function
-     is stored in this lookup table. */
-  uint8_t lut[256];
+  uint32_t lut32[256];
+  double lumaR[256];
+  double lumaG[256];
+  double lumaB[256];
 } sigmoidal_instance_t;
 
-static void gen_sigmoid_lut (uint8_t *const lut, const float base, const float sharpness)
+static void gen_sigmoid_lut (uint32_t *const lut32, const float base, const float sharpness)
 {
   float k = expf(sharpness * 5.0) / 255.0;
   float b = (base - 0.5) * 63.0;
 
-  for (int i = 0; i < 256; ++i)
-    lut[i] = CLAMP (255.0 / (1.0 + expf(-k * (i - b - 127.0))), 0, 255.0);
+  for (int i = 0; i < 256; ++i) {
+    uint32_t v = (uint8_t)CLAMP (255.0 / (1.0 + expf(-k * (i - b - 127.0))), 0, 255.0);
+    lut32[i] = v | (v << 8) | (v << 16);
+  }
 }
 
 static void sigmoidal_transfer(f0r_instance_t instance, double time,
@@ -57,30 +63,37 @@ static void sigmoidal_transfer(f0r_instance_t instance, double time,
   assert(instance);
   sigmoidal_instance_t* inst = (sigmoidal_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
+  unsigned int i = 0;
 
-  const unsigned char* src = (unsigned char*)inframe;
-  unsigned char* dst = (unsigned char*)outframe;
+  const uint32_t* lut32 = inst->lut32;
+  const double* lumaR = inst->lumaR;
+  const double* lumaG = inst->lumaG;
+  const double* lumaB = inst->lumaB;
 
-  unsigned char luma, r, g, b;
-  double val;
-  while (len--)
+#if defined(__SSE2__)
+  for (; i + 1 < len; i += 2)
   {
-    r = *src++;
-    g = *src++;
-    b = *src++;
+    uint32_t p0 = inframe[i];
+    uint32_t p1 = inframe[i + 1];
+    __m128d vr = _mm_set_pd(lumaR[p1 & 0xFFu], lumaR[p0 & 0xFFu]);
+    __m128d vg = _mm_set_pd(lumaG[(p1 >> 8) & 0xFFu], lumaG[(p0 >> 8) & 0xFFu]);
+    __m128d vb = _mm_set_pd(lumaB[(p1 >> 16) & 0xFFu], lumaB[(p0 >> 16) & 0xFFu]);
+    __m128d vl = _mm_add_pd(_mm_add_pd(vr, vg), vb);
+    __m128i il = _mm_cvttpd_epi32(vl);
+    uint32_t l0 = (uint32_t)_mm_cvtsi128_si32(il);
+    uint32_t l1 = (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(il, 4));
+    outframe[i]     = lut32[l0 & 0xFFu] | (p0 & 0xFF000000u);
+    outframe[i + 1] = lut32[l1 & 0xFFu] | (p1 & 0xFF000000u);
+  }
+#endif
 
-    //desaturate 
-    luma = (unsigned char)(0.299 * r + 0.587 * g + 0.114 * b);
-    //compute sigmoidal transfer
-    luma = inst->lut[luma];
-
-    *dst++ = luma;
-    *dst++ = luma;
-    *dst++ = luma;
-    *dst++ = *src++;
+  for (; i < len; i++)
+  {
+    uint32_t p = inframe[i];
+    unsigned char luma = (unsigned char)(lumaR[p & 0xFFu] + lumaG[(p >> 8) & 0xFFu] + lumaB[(p >> 16) & 0xFFu]);
+    outframe[i] = lut32[luma] | (p & 0xFF000000u);
   }
 }
-
 
 int f0r_init()
 {
@@ -88,7 +101,7 @@ int f0r_init()
 }
 
 void f0r_deinit()
-{ /* no initialization required */ }
+{ }
 
 void f0r_get_plugin_info(f0r_plugin_info_t* sigmoidalInfo)
 {
@@ -127,7 +140,12 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->base = 0.5;
   inst->sharpness = 3.0 / 5.0;
 
-  gen_sigmoid_lut (inst->lut, inst->base, inst->sharpness);
+  for (int i = 0; i < 256; i++) {
+    inst->lumaR[i] = 0.299 * i;
+    inst->lumaG[i] = 0.587 * i;
+    inst->lumaB[i] = 0.114 * i;
+  }
+  gen_sigmoid_lut (inst->lut32, inst->base, inst->sharpness);
   return (f0r_instance_t)inst;
 }
 
@@ -150,7 +168,7 @@ void f0r_set_param_value(f0r_instance_t instance,
       break;
   }
 
-  gen_sigmoid_lut (inst->lut, inst->base, inst->sharpness);
+  gen_sigmoid_lut (inst->lut32, inst->base, inst->sharpness);
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
