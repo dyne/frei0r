@@ -18,6 +18,10 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 #include <assert.h>
 
 #include "frei0r.h"
@@ -138,10 +142,80 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   brightness_instance_t* inst = (brightness_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
-  
+  int b = inst->brightness;
+
+  if (b == 0)
+  {
+    if (outframe != inframe)
+      memcpy(outframe, inframe, (size_t)len * sizeof(uint32_t));
+    return;
+  }
+
+#ifdef __SSE2__
+  if (b >= -256 && b < 0)
+  {
+    __m128i vZero = _mm_setzero_si128();
+    __m128i vScale = _mm_set1_epi16((short)(256 + b));
+    __m128i vAlphaMask = _mm_set1_epi32((int)0xFF000000u);
+    __m128i vRgbMask = _mm_set1_epi32(0x00FFFFFF);
+    unsigned int i = 0;
+    for (; i + 3 < len; i += 4)
+    {
+      __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+      __m128i lo = _mm_srli_epi16(_mm_mullo_epi16(_mm_unpacklo_epi8(px, vZero), vScale), 8);
+      __m128i hi = _mm_srli_epi16(_mm_mullo_epi16(_mm_unpackhi_epi8(px, vZero), vScale), 8);
+      __m128i res = _mm_packus_epi16(lo, hi);
+      res = _mm_or_si128(_mm_and_si128(res, vRgbMask), _mm_and_si128(px, vAlphaMask));
+      _mm_storeu_si128((__m128i*)(outframe + i), res);
+    }
+    const unsigned char* lut = inst->lut;
+    unsigned char* dst = (unsigned char*)(outframe + i);
+    const unsigned char* src = (const unsigned char*)(inframe + i);
+    for (; i < len; ++i)
+    {
+      *dst++ = lut[*src++];
+      *dst++ = lut[*src++];
+      *dst++ = lut[*src++];
+      *dst++ = *src++;
+    }
+    return;
+  }
+  if (b > 0 && b < 256)
+  {
+    __m128i vZero = _mm_setzero_si128();
+    __m128i v256 = _mm_set1_epi16(256);
+    __m128i vB = _mm_set1_epi16((short)b);
+    __m128i vAlphaMask = _mm_set1_epi32((int)0xFF000000u);
+    __m128i vRgbMask = _mm_set1_epi32(0x00FFFFFF);
+    unsigned int i = 0;
+    for (; i + 3 < len; i += 4)
+    {
+      __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+      __m128i lo = _mm_unpacklo_epi8(px, vZero);
+      __m128i hi = _mm_unpackhi_epi8(px, vZero);
+      lo = _mm_add_epi16(lo, _mm_srli_epi16(_mm_mullo_epi16(_mm_sub_epi16(v256, lo), vB), 8));
+      hi = _mm_add_epi16(hi, _mm_srli_epi16(_mm_mullo_epi16(_mm_sub_epi16(v256, hi), vB), 8));
+      __m128i res = _mm_packus_epi16(lo, hi);
+      res = _mm_or_si128(_mm_and_si128(res, vRgbMask), _mm_and_si128(px, vAlphaMask));
+      _mm_storeu_si128((__m128i*)(outframe + i), res);
+    }
+    const unsigned char* lut = inst->lut;
+    unsigned char* dst = (unsigned char*)(outframe + i);
+    const unsigned char* src = (const unsigned char*)(inframe + i);
+    for (; i < len; ++i)
+    {
+      *dst++ = lut[*src++];
+      *dst++ = lut[*src++];
+      *dst++ = lut[*src++];
+      *dst++ = *src++;
+    }
+    return;
+  }
+#endif
+
   unsigned char* lut = inst->lut;
   unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
+  const unsigned char* src = (const unsigned char*)inframe;
   while (len--)
   {
     *dst++ = lut[*src++];
