@@ -24,6 +24,25 @@
 #define NBYTES 4
 #define ALPHA 3
 
+namespace {
+
+struct BurnLut {
+  uint8_t table[256][256];
+  BurnLut() {
+    for (int a = 0; a < 256; ++a) {
+      const int num = (255 - a) << 8;
+      for (int b = 0; b < 256; ++b) {
+        const int tmp = num / (b + 1);
+        table[a][b] = static_cast<uint8_t>(CLAMP0255(255 - tmp));
+      }
+    }
+  }
+};
+
+static const BurnLut kBurnLut;
+
+} // namespace
+
 class burn : public frei0r::mixer2
 {
 public:
@@ -44,35 +63,19 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
-    const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
-    uint8_t *dst = reinterpret_cast<uint8_t*>(out);
-    uint32_t sizeCounter = size;
-            
-    uint32_t b;
-  
-    /* FIXME: Is the burn effect supposed to be dependent on the sign of this
-     * temporary variable? */
-    int tmp;
-  
-    while (sizeCounter--)
+    const uint8_t* __restrict__ src1 = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t* __restrict__ src2 = reinterpret_cast<const uint8_t*>(in2);
+    uint8_t* __restrict__ dst = reinterpret_cast<uint8_t*>(out);
+    const size_t total_bytes = static_cast<size_t>(size) * NBYTES;
+
+    for (size_t i = 0; i < total_bytes; i += NBYTES)
       {
-        for (b = 0; b < ALPHA; b++)
-          {
-            tmp = (255 - src1[b]) << 8;
-            tmp /= src2[b] + 1;
-            dst[b] = (uint8_t) CLAMP0255(255 - tmp);
-          }
-        dst[ALPHA] = MIN(src1[ALPHA], src2[ALPHA]);
-  
-        src1 += NBYTES;
-        src2 += NBYTES;
-        dst += NBYTES;
+        dst[i + 0] = kBurnLut.table[src1[i + 0]][src2[i + 0]];
+        dst[i + 1] = kBurnLut.table[src1[i + 1]][src2[i + 1]];
+        dst[i + 2] = kBurnLut.table[src1[i + 2]][src2[i + 2]];
+        dst[i + ALPHA] = MIN(src1[i + ALPHA], src2[i + ALPHA]);
       }
   }
-  
-  
-    
 };
 
 
@@ -81,4 +84,3 @@ static frei0r::construct<burn> plugin("burn",
                                "Jean-Sebastien Senecal",
                                0,2,
                                F0R_COLOR_MODEL_RGBA8888);
-                               
