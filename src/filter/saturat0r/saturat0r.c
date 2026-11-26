@@ -111,53 +111,100 @@ void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
   assert(instance);
+  (void)time;
   saturat0r_instance_t* inst = (saturat0r_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
   double saturation = inst->saturation * MAX_SATURATION;
-  
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
 
-  double one_minus_saturation = 1.0-saturation;
+  const uint32_t *restrict in = inframe;
+  uint32_t *restrict out = outframe;
+
+  double one_minus_saturation = 1.0 - saturation;
   int bwgt = (int)(7471.0  * one_minus_saturation);
   int gwgt = (int)(38470.0 * one_minus_saturation);
   int rwgt = (int)(19595.0 * one_minus_saturation);
 
-  int b, g, r, bw;
-
-  if (0 <= saturation && saturation <=1) // optimisation: no clamping needed
+  /* Verify in 256 iterations whether 20-bit fixed-point matches (int)(c * saturation)
+     bit-for-bit for all 8-bit inputs. If so, run a pure vectorizable integer loop. */
+  if (saturation >= 0.0 && saturation <= 8.0)
   {
-    while (len--)
+    double scaled = saturation * 1048576.0;
+    uint32_t sat_fp = (uint32_t)scaled;
+    if ((double)sat_fp < scaled) sat_fp++;
+    int exact_fp = 1;
+    for (uint32_t c = 0; c < 256; ++c)
     {
-      b = *src++;
-      g = *src++;
-      r = *src++;
-      
-      bw = (b*bwgt + g*gwgt + r*rwgt) >> 16;
-      
-      *dst++ = (unsigned char) (bw + b*saturation);
-      *dst++ = (unsigned char) (bw + g*saturation);
-      *dst++ = (unsigned char) (bw + r*saturation);
+      if ((int)((c * sat_fp) >> 20) != (int)(c * saturation))
+      {
+        exact_fp = 0;
+        break;
+      }
+    }
 
-      *dst++ = *src++;  // copy alpha
+    if (exact_fp)
+    {
+      if (saturation <= 1.0)
+      {
+        for (unsigned int i = 0; i < len; ++i)
+        {
+          uint32_t px = in[i];
+          int b = (int)(px & 0xFFu);
+          int g = (int)((px >> 8) & 0xFFu);
+          int r = (int)((px >> 16) & 0xFFu);
+          int bw = (b * bwgt + g * gwgt + r * rwgt) >> 16;
+
+          uint32_t nb = (uint32_t)(unsigned char)(bw + (int)(((uint32_t)b * sat_fp) >> 20));
+          uint32_t ng = (uint32_t)(unsigned char)(bw + (int)(((uint32_t)g * sat_fp) >> 20));
+          uint32_t nr = (uint32_t)(unsigned char)(bw + (int)(((uint32_t)r * sat_fp) >> 20));
+          out[i] = nb | (ng << 8) | (nr << 16) | (px & 0xFF000000u);
+        }
+      }
+      else
+      {
+        for (unsigned int i = 0; i < len; ++i)
+        {
+          uint32_t px = in[i];
+          int b = (int)(px & 0xFFu);
+          int g = (int)((px >> 8) & 0xFFu);
+          int r = (int)((px >> 16) & 0xFFu);
+          int bw = (b * bwgt + g * gwgt + r * rwgt) >> 16;
+
+          uint32_t nb = CLAMP0255(bw + (int)(((uint32_t)b * sat_fp) >> 20));
+          uint32_t ng = CLAMP0255(bw + (int)(((uint32_t)g * sat_fp) >> 20));
+          uint32_t nr = CLAMP0255(bw + (int)(((uint32_t)r * sat_fp) >> 20));
+          out[i] = nb | (ng << 8) | (nr << 16) | (px & 0xFF000000u);
+        }
+      }
+      return;
+    }
+  }
+
+  unsigned char *restrict dst = (unsigned char*)outframe;
+  const unsigned char *restrict src = (const unsigned char*)inframe;
+  if (0 <= saturation && saturation <= 1)
+  {
+    for (unsigned int i = 0; i < len; ++i)
+    {
+      int b = src[0], g = src[1], r = src[2];
+      int bw = (b * bwgt + g * gwgt + r * rwgt) >> 16;
+      dst[0] = (unsigned char)(bw + b * saturation);
+      dst[1] = (unsigned char)(bw + g * saturation);
+      dst[2] = (unsigned char)(bw + r * saturation);
+      dst[3] = src[3];
+      src += 4; dst += 4;
     }
   }
   else
   {
-    while (len--)
+    for (unsigned int i = 0; i < len; ++i)
     {
-      b = *src++;
-      g = *src++;
-      r = *src++;
-
-      bw = (b*bwgt + g*gwgt + r*rwgt) >> 16;
-      
-      *dst++ = CLAMP0255((int) (bw + b*saturation));
-      *dst++ = CLAMP0255((int) (bw + g*saturation));
-      *dst++ = CLAMP0255((int) (bw + r*saturation));
-
-      *dst++ = *src++;  // copy alpha
+      int b = src[0], g = src[1], r = src[2];
+      int bw = (b * bwgt + g * gwgt + r * rwgt) >> 16;
+      dst[0] = CLAMP0255((int)(bw + b * saturation));
+      dst[1] = CLAMP0255((int)(bw + g * saturation));
+      dst[2] = CLAMP0255((int)(bw + r * saturation));
+      dst[3] = src[3];
+      src += 4; dst += 4;
     }
   }
 }
-
