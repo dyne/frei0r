@@ -22,6 +22,42 @@
 
 #include <algorithm>
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
+namespace {
+
+struct Recip24Table {
+  uint32_t recip[256];
+  Recip24Table() {
+    recip[0] = 0;
+    /* Exact 24-bit reciprocal for floor(num / d) for num <= 65025, d in [1, 255]. */
+    for (uint32_t d = 1; d < 256; ++d) {
+      recip[d] = ((1u << 24) + d - 1u) / d;
+    }
+  }
+};
+
+static const Recip24Table kRecip24;
+
+#if defined(__SSE2__)
+static inline __m128i sse2_int_mult_epu16(__m128i a, __m128i b) {
+  const __m128i c80 = _mm_set1_epi16(0x80);
+  const __m128i t = _mm_add_epi16(_mm_mullo_epi16(a, b), c80);
+  return _mm_srli_epi16(_mm_add_epi16(t, _mm_srli_epi16(t, 8)), 8);
+}
+
+static inline __m128i sse2_scale_pixel_24(__m128i m32, uint32_t wr) {
+  const __m128i vwr = _mm_set1_epi32(static_cast<int>(wr));
+  const __m128i rb = _mm_srli_epi64(_mm_mul_epu32(m32, vwr), 24);
+  const __m128i ga = _mm_srli_epi64(_mm_mul_epu32(_mm_srli_epi64(m32, 32), vwr), 24);
+  return _mm_or_si128(rb, _mm_slli_epi64(ga, 32));
+}
+#endif
+
+} // namespace
+
 class alphaatop : public frei0r::mixer2
 {
 public:
@@ -34,33 +70,97 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
-    uint8_t *dst = reinterpret_cast<uint8_t*>(out);
-    const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
+    uint32_t* __restrict__ out32 = out;
+    const uint8_t* __restrict__ src1 = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t* __restrict__ src2 = reinterpret_cast<const uint8_t*>(in2);
+    const uint32_t* __restrict__ recip = kRecip24.recip;
+    const unsigned int n = size;
+    unsigned int i = 0;
 
-    for (unsigned int i=0; i<size; ++i)
+#if defined(__SSE2__)
+    const __m128i zero = _mm_setzero_si128();
+    const __m128i alpha_mask = _mm_set1_epi32(static_cast<int>(0xFF000000u));
+
+    for (; i + 4 <= n; i += 4)
     {
-      uint32_t tmp1, tmp2;
-      uint8_t alpha_src1 = src1[3];
-      uint8_t alpha_src2 = src2[3];
-      uint8_t alpha_dst;
-      uint8_t w1 = alpha_src2;
-      uint8_t w2 = 0xff ^ alpha_src1; // w2 = 255 - alpha_1
+      const __m128i v1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(src1 + i * 4));
+      const __m128i v2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(src2 + i * 4));
 
-      // compute destination alpha
-      alpha_dst = dst[3] = w1;
+      const __m128i s1_lo = _mm_unpacklo_epi8(v1, zero);
+      const __m128i s1_hi = _mm_unpackhi_epi8(v1, zero);
+      const __m128i s2_lo = _mm_unpacklo_epi8(v2, zero);
+      const __m128i s2_hi = _mm_unpackhi_epi8(v2, zero);
 
-       // compute destination values
-      if (alpha_dst == 0)
-        for (int b=0; b<3; ++b)
-          dst[b] = 0;
+      const __m128i a1_lo = _mm_shufflelo_epi16(
+          _mm_shufflehi_epi16(s1_lo, _MM_SHUFFLE(3, 3, 3, 3)),
+          _MM_SHUFFLE(3, 3, 3, 3));
+      const __m128i a1_hi = _mm_shufflelo_epi16(
+          _mm_shufflehi_epi16(s1_hi, _MM_SHUFFLE(3, 3, 3, 3)),
+          _MM_SHUFFLE(3, 3, 3, 3));
+
+      const __m128i a2_lo = _mm_shufflelo_epi16(
+          _mm_shufflehi_epi16(s2_lo, _MM_SHUFFLE(3, 3, 3, 3)),
+          _MM_SHUFFLE(3, 3, 3, 3));
+      const __m128i a2_hi = _mm_shufflelo_epi16(
+          _mm_shufflehi_epi16(s2_hi, _MM_SHUFFLE(3, 3, 3, 3)),
+          _MM_SHUFFLE(3, 3, 3, 3));
+
+      /* Mask m1 to 0 when alpha_src2 == 0 so result is 0 without branches */
+      const __m128i nz_lo = _mm_cmpeq_epi16(a2_lo, zero);
+      const __m128i nz_hi = _mm_cmpeq_epi16(a2_hi, zero);
+      const __m128i m1_lo = _mm_andnot_si128(nz_lo, sse2_int_mult_epu16(s1_lo, a1_lo));
+      const __m128i m1_hi = _mm_andnot_si128(nz_hi, sse2_int_mult_epu16(s1_hi, a1_hi));
+
+      const __m128i m2_lo = sse2_int_mult_epu16(s2_lo, a2_lo);
+      const __m128i m2_hi = sse2_int_mult_epu16(s2_hi, a2_hi);
+
+      const uint32_t wr0 = static_cast<uint32_t>(0xffu ^ src1[(i + 0) * 4 + 3]) * recip[src2[(i + 0) * 4 + 3]];
+      const uint32_t wr1 = static_cast<uint32_t>(0xffu ^ src1[(i + 1) * 4 + 3]) * recip[src2[(i + 1) * 4 + 3]];
+      const uint32_t wr2 = static_cast<uint32_t>(0xffu ^ src1[(i + 2) * 4 + 3]) * recip[src2[(i + 2) * 4 + 3]];
+      const uint32_t wr3 = static_cast<uint32_t>(0xffu ^ src1[(i + 3) * 4 + 3]) * recip[src2[(i + 3) * 4 + 3]];
+
+      const __m128i q0 = sse2_scale_pixel_24(_mm_unpacklo_epi16(m2_lo, zero), wr0);
+      const __m128i q1 = sse2_scale_pixel_24(_mm_unpackhi_epi16(m2_lo, zero), wr1);
+      const __m128i q2 = sse2_scale_pixel_24(_mm_unpacklo_epi16(m2_hi, zero), wr2);
+      const __m128i q3 = sse2_scale_pixel_24(_mm_unpackhi_epi16(m2_hi, zero), wr3);
+
+      const __m128i sum_lo = _mm_add_epi16(m1_lo, _mm_packs_epi32(q0, q1));
+      const __m128i sum_hi = _mm_add_epi16(m1_hi, _mm_packs_epi32(q2, q3));
+      const __m128i rgb = _mm_packus_epi16(sum_lo, sum_hi);
+      const __m128i res = _mm_or_si128(_mm_andnot_si128(alpha_mask, rgb),
+                                       _mm_and_si128(alpha_mask, v2));
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(out32 + i), res);
+    }
+#endif
+
+    for (; i < n; ++i)
+    {
+      const uint8_t alpha_src2 = src2[i * 4 + 3];
+      if (alpha_src2 == 0)
+      {
+        out32[i] = 0;
+      }
       else
-        for (int b=0; b<3; ++b)
-          dst[b] = CLAMP0255( (uint32_t)( (uint32_t) (INT_MULT(src1[b], alpha_src1, tmp1) * w1 + INT_MULT(src2[b], alpha_src2, tmp2) * w2) / alpha_dst) );
+      {
+        const uint8_t alpha_src1 = src1[i * 4 + 3];
+        const uint32_t w2 = 0xffu ^ alpha_src1;
+        const uint64_t w2r = static_cast<uint64_t>(w2) * recip[alpha_src2];
+        uint32_t t1, t2;
 
-      src1 += 4;
-      src2 += 4;
-      dst += 4;
+        uint32_t c0 = INT_MULT(src1[i * 4 + 0], alpha_src1, t1)
+                    + static_cast<uint32_t>((INT_MULT(src2[i * 4 + 0], alpha_src2, t2) * w2r) >> 24);
+        if (c0 > 255u) c0 = 255u;
+
+        uint32_t c1 = INT_MULT(src1[i * 4 + 1], alpha_src1, t1)
+                    + static_cast<uint32_t>((INT_MULT(src2[i * 4 + 1], alpha_src2, t2) * w2r) >> 24);
+        if (c1 > 255u) c1 = 255u;
+
+        uint32_t c2 = INT_MULT(src1[i * 4 + 2], alpha_src1, t1)
+                    + static_cast<uint32_t>((INT_MULT(src2[i * 4 + 2], alpha_src2, t2) * w2r) >> 24);
+        if (c2 > 255u) c2 = 255u;
+
+        out32[i] = c0 | (c1 << 8) | (c2 << 16) | (static_cast<uint32_t>(alpha_src2) << 24);
+      }
     }
   }
 
