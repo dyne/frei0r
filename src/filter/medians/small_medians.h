@@ -290,3 +290,250 @@ return mm[12];
 #undef P_MI
 
 
+
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#define V_SO(a,b) do { __m128i _t = _mm_min_epu8((a),(b)); (b) = _mm_max_epu8((a),(b)); (a) = _t; } while (0)
+#define V_MA(a,b) do { (b) = _mm_max_epu8((a),(b)); } while (0)
+#define V_MI(a,b) do { (a) = _mm_min_epu8((a),(b)); } while (0)
+
+static inline __m128i median3_sse2(__m128i *v)
+{
+  V_SO(v[0], v[1]);
+  V_MI(v[1], v[2]);
+  V_MA(v[0], v[1]);
+  return v[1];
+}
+
+static inline __m128i median5_sse2(__m128i *v)
+{
+  V_SO(v[0], v[1]);
+  V_SO(v[3], v[4]);
+  V_MI(v[1], v[4]);
+  V_MA(v[0], v[3]);
+  V_SO(v[1], v[2]);
+  V_MI(v[2], v[3]);
+  V_MA(v[1], v[2]);
+  return v[2];
+}
+
+static inline __m128i median7_sse2(__m128i *v)
+{
+  V_SO(v[0], v[5]);
+  V_SO(v[2], v[4]);
+  V_SO(v[0], v[3]);
+  V_SO(v[1], v[6]);
+  V_SO(v[3], v[5]);
+  V_MA(v[0], v[1]);
+  V_SO(v[2], v[6]);
+  V_MA(v[2], v[3]);
+  V_MI(v[4], v[5]);
+  V_MI(v[3], v[6]);
+  V_SO(v[1], v[4]);
+  V_MA(v[1], v[3]);
+  V_MI(v[3], v[4]);
+  return v[3];
+}
+
+static inline __m128i median9_sse2(__m128i *v)
+{
+  V_SO(v[1], v[2]);
+  V_SO(v[4], v[5]);
+  V_SO(v[7], v[8]);
+  V_SO(v[0], v[1]);
+  V_SO(v[3], v[4]);
+  V_SO(v[6], v[7]);
+  V_SO(v[1], v[2]);
+  V_SO(v[4], v[5]);
+  V_SO(v[7], v[8]);
+  V_MA(v[0], v[3]);
+  V_MI(v[5], v[8]);
+  V_SO(v[4], v[7]);
+  V_MA(v[3], v[6]);
+  V_MA(v[1], v[4]);
+  V_MI(v[2], v[5]);
+  V_MI(v[4], v[7]);
+  V_SO(v[4], v[2]);
+  V_MA(v[6], v[4]);
+  V_MI(v[4], v[2]);
+  return v[4];
+}
+
+static inline __m128i median11_sse2(__m128i *v)
+{
+  V_SO(v[3], v[7]);
+  V_SO(v[0], v[10]);
+  V_SO(v[7], v[10]);
+  V_SO(v[4], v[9]);
+  V_SO(v[0], v[3]);
+  V_SO(v[8], v[3]);
+  V_SO(v[1], v[6]);
+  V_SO(v[3], v[9]);
+  V_SO(v[5], v[6]);
+  V_MI(v[6], v[10]);
+  V_SO(v[2], v[6]);
+  V_SO(v[1], v[5]);
+  V_MA(v[0], v[1]);
+  V_SO(v[8], v[4]);
+  V_SO(v[4], v[1]);
+  V_MA(v[4], v[8]);
+  V_MI(v[6], v[1]);
+  V_MI(v[5], v[9]);
+  V_MA(v[2], v[8]);
+  V_SO(v[8], v[3]);
+  V_SO(v[7], v[5]);
+  V_MI(v[5], v[3]);
+  V_MA(v[7], v[8]);
+  V_SO(v[8], v[6]);
+  V_MA(v[8], v[5]);
+  V_MI(v[5], v[6]);
+  return v[5];
+}
+
+static inline __m128i median13_sse2(__m128i *v)
+{
+  V_SO(v[10], v[3]);
+  V_SO(v[6], v[10]);
+  V_SO(v[11], v[1]);
+  V_SO(v[5], v[4]);
+  V_SO(v[0], v[8]);
+  V_SO(v[1], v[3]);
+  V_SO(v[5], v[0]);
+  V_SO(v[7], v[1]);
+  V_SO(v[8], v[10]);
+  V_SO(v[8], v[12]);
+  V_SO(v[4], v[12]);
+  V_SO(v[3], v[12]);
+  V_SO(v[7], v[11]);
+  V_SO(v[9], v[2]);
+  V_SO(v[0], v[2]);
+  V_SO(v[4], v[1]);
+  V_SO(v[11], v[0]);
+  V_SO(v[4], v[9]);
+  V_MA(v[7], v[5]);
+  V_MI(v[2], v[1]);
+  V_MA(v[4], v[6]);
+  V_SO(v[5], v[9]);
+  V_SO(v[9], v[0]);
+  V_MI(v[3], v[0]);
+  V_MA(v[5], v[6]);
+  V_SO(v[2], v[3]);
+  V_MA(v[11], v[6]);
+  V_SO(v[9], v[2]);
+  V_MA(v[8], v[9]);
+  V_MI(v[10], v[2]);
+  V_SO(v[9], v[10]);
+  V_MA(v[9], v[6]);
+  V_MI(v[10], v[3]);
+  V_MI(v[6], v[10]);
+  return v[6];
+}
+
+static inline __m128i median25_sse2(__m128i *v)
+{
+  V_SO(v[0], v[1]);
+  V_SO(v[3], v[4]);
+  V_SO(v[2], v[4]);
+  V_SO(v[2], v[3]);
+  V_SO(v[6], v[7]);
+  V_SO(v[5], v[7]);
+  V_SO(v[5], v[6]);
+  V_SO(v[9], v[10]);
+  V_SO(v[8], v[10]);
+  V_SO(v[8], v[9]);
+  V_SO(v[12], v[13]);
+  V_SO(v[11], v[13]);
+  V_SO(v[11], v[12]);
+  V_SO(v[15], v[16]);
+  V_SO(v[14], v[16]);
+  V_SO(v[14], v[15]);
+  V_SO(v[18], v[19]);
+  V_SO(v[17], v[19]);
+  V_SO(v[17], v[18]);
+  V_SO(v[21], v[22]);
+  V_SO(v[20], v[22]);
+  V_SO(v[20], v[21]);
+  V_SO(v[23], v[24]);
+  V_SO(v[2], v[5]);
+  V_SO(v[3], v[6]);
+  V_SO(v[0], v[6]);
+  V_SO(v[0], v[3]);
+  V_SO(v[4], v[7]);
+  V_SO(v[1], v[7]);
+  V_SO(v[1], v[4]);
+  V_SO(v[11], v[14]);
+  V_SO(v[8], v[14]);
+  V_SO(v[8], v[11]);
+  V_SO(v[12], v[15]);
+  V_SO(v[9], v[15]);
+  V_SO(v[9], v[12]);
+  V_SO(v[13], v[16]);
+  V_SO(v[10], v[16]);
+  V_SO(v[10], v[13]);
+  V_SO(v[20], v[23]);
+  V_SO(v[17], v[23]);
+  V_SO(v[17], v[20]);
+  V_SO(v[21], v[24]);
+  V_SO(v[18], v[24]);
+  V_SO(v[18], v[21]);
+  V_SO(v[19], v[22]);
+  V_MA(v[8], v[17]);
+  V_SO(v[9], v[18]);
+  V_SO(v[0], v[18]);
+  V_MA(v[0], v[9]);
+  V_SO(v[10], v[19]);
+  V_SO(v[1], v[19]);
+  V_SO(v[1], v[10]);
+  V_SO(v[11], v[20]);
+  V_SO(v[2], v[20]);
+  V_MA(v[2], v[11]);
+  V_SO(v[12], v[21]);
+  V_SO(v[3], v[21]);
+  V_SO(v[3], v[12]);
+  V_SO(v[13], v[22]);
+  V_MI(v[4], v[22]);
+  V_SO(v[4], v[13]);
+  V_SO(v[14], v[23]);
+  V_SO(v[5], v[23]);
+  V_SO(v[5], v[14]);
+  V_SO(v[15], v[24]);
+  V_MI(v[6], v[24]);
+  V_SO(v[6], v[15]);
+  V_MI(v[7], v[16]);
+  V_MI(v[7], v[19]);
+  V_MI(v[13], v[21]);
+  V_MI(v[15], v[23]);
+  V_MI(v[7], v[13]);
+  V_MI(v[7], v[15]);
+  V_MA(v[1], v[9]);
+  V_MA(v[3], v[11]);
+  V_MA(v[5], v[17]);
+  V_MA(v[11], v[17]);
+  V_MA(v[9], v[17]);
+  V_SO(v[4], v[10]);
+  V_SO(v[6], v[12]);
+  V_SO(v[7], v[14]);
+  V_SO(v[4], v[6]);
+  V_MA(v[4], v[7]);
+  V_SO(v[12], v[14]);
+  V_MI(v[10], v[14]);
+  V_SO(v[6], v[7]);
+  V_SO(v[10], v[12]);
+  V_SO(v[6], v[10]);
+  V_MA(v[6], v[17]);
+  V_SO(v[12], v[17]);
+  V_MI(v[7], v[17]);
+  V_SO(v[7], v[10]);
+  V_SO(v[12], v[18]);
+  V_MA(v[7], v[12]);
+  V_MI(v[10], v[18]);
+  V_SO(v[12], v[20]);
+  V_MI(v[10], v[20]);
+  V_MA(v[10], v[12]);
+  return v[12];
+}
+
+#undef V_SO
+#undef V_MA
+#undef V_MI
+#endif /* __SSE2__ */
