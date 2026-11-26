@@ -21,6 +21,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
 /* Check for SSE4.1 support */
 #if defined(__SSE4_1__)
@@ -57,8 +60,12 @@ typedef struct tint0r_instance
   double amount; /* the amount value [0, 1] */
 } tint0r_instance_t;
 
+static float inv255_lut[256];
+
 int f0r_init()
 {
+  for (int i = 0; i < 256; ++i)
+    inv255_lut[i] = (float)i / 255.0f;
   return 1;
 }
 
@@ -244,20 +251,73 @@ static void tint_scalar(const uint32_t* inframe, uint32_t* outframe, size_t len,
                         double amount, f0r_param_color_t blackColor, f0r_param_color_t whiteColor)
 {
   double comp_amount = 1.0 - amount;
+  size_t i = 0;
 
-  const unsigned char* src = (const unsigned char*)inframe;
-  unsigned char* dst = (unsigned char*)outframe;
+#ifdef __SSE2__
+  const __m128 vW_b = _mm_set1_ps(0.114f);
+  const __m128 vW_g = _mm_set1_ps(0.587f);
+  const __m128 vW_r = _mm_set1_ps(0.299f);
+  const __m128 vMinBf = _mm_set1_ps(blackColor.b);
+  const __m128 vMinGf = _mm_set1_ps(blackColor.g);
+  const __m128 vMinRf = _mm_set1_ps(blackColor.r);
+  const __m128 vDiffBf = _mm_set1_ps(whiteColor.b - blackColor.b);
+  const __m128 vDiffGf = _mm_set1_ps(whiteColor.g - blackColor.g);
+  const __m128 vDiffRf = _mm_set1_ps(whiteColor.r - blackColor.r);
+  const __m128d vAmt = _mm_set1_pd(amount);
+  const __m128d vComp = _mm_set1_pd(comp_amount);
+  const __m128d vZero = _mm_setzero_pd();
+  const __m128d vOne = _mm_set1_pd(1.0);
+  const __m128d v255 = _mm_set1_pd(255.0);
+  const __m128i vAlphaMask = _mm_set1_epi32((int)0xFF000000u);
 
-  float b, g, r;
-  float luma;
-
-  while (len--)
+  for (; i + 3 < len; i += 4)
   {
-    b = src[0] / 255.0f;
-    g = src[1] / 255.0f;
-    r = src[2] / 255.0f;
+    const unsigned char *s = (const unsigned char *)(inframe + i);
+    __m128 fb = _mm_setr_ps(inv255_lut[s[0]], inv255_lut[s[4]], inv255_lut[s[8]],  inv255_lut[s[12]]);
+    __m128 fg = _mm_setr_ps(inv255_lut[s[1]], inv255_lut[s[5]], inv255_lut[s[9]],  inv255_lut[s[13]]);
+    __m128 fr = _mm_setr_ps(inv255_lut[s[2]], inv255_lut[s[6]], inv255_lut[s[10]], inv255_lut[s[14]]);
+    __m128 fl = _mm_add_ps(_mm_add_ps(_mm_mul_ps(fb, vW_b), _mm_mul_ps(fg, vW_g)), _mm_mul_ps(fr, vW_r));
 
-    luma = (b * 0.114f + g * 0.587f + r * 0.299f);
+    /* Exact float precision for luma * (maxColor - minColor) + minColor */
+    __m128 tb = _mm_add_ps(_mm_mul_ps(fl, vDiffBf), vMinBf);
+    __m128 tg = _mm_add_ps(_mm_mul_ps(fl, vDiffGf), vMinGf);
+    __m128 tr = _mm_add_ps(_mm_mul_ps(fl, vDiffRf), vMinRf);
+
+    /* Low 2 pixels (0, 1) in exact double precision */
+    __m128d b01 = _mm_add_pd(_mm_mul_pd(vComp, _mm_cvtps_pd(fb)), _mm_mul_pd(vAmt, _mm_cvtps_pd(tb)));
+    __m128d g01 = _mm_add_pd(_mm_mul_pd(vComp, _mm_cvtps_pd(fg)), _mm_mul_pd(vAmt, _mm_cvtps_pd(tg)));
+    __m128d r01 = _mm_add_pd(_mm_mul_pd(vComp, _mm_cvtps_pd(fr)), _mm_mul_pd(vAmt, _mm_cvtps_pd(tr)));
+    __m128i ib01 = _mm_cvttpd_epi32(_mm_mul_pd(v255, _mm_min_pd(_mm_max_pd(b01, vZero), vOne)));
+    __m128i ig01 = _mm_cvttpd_epi32(_mm_mul_pd(v255, _mm_min_pd(_mm_max_pd(g01, vZero), vOne)));
+    __m128i ir01 = _mm_cvttpd_epi32(_mm_mul_pd(v255, _mm_min_pd(_mm_max_pd(r01, vZero), vOne)));
+
+    /* High 2 pixels (2, 3) in exact double precision */
+    __m128d b23 = _mm_add_pd(_mm_mul_pd(vComp, _mm_cvtps_pd(_mm_movehl_ps(fb, fb))), _mm_mul_pd(vAmt, _mm_cvtps_pd(_mm_movehl_ps(tb, tb))));
+    __m128d g23 = _mm_add_pd(_mm_mul_pd(vComp, _mm_cvtps_pd(_mm_movehl_ps(fg, fg))), _mm_mul_pd(vAmt, _mm_cvtps_pd(_mm_movehl_ps(tg, tg))));
+    __m128d r23 = _mm_add_pd(_mm_mul_pd(vComp, _mm_cvtps_pd(_mm_movehl_ps(fr, fr))), _mm_mul_pd(vAmt, _mm_cvtps_pd(_mm_movehl_ps(tr, tr))));
+    __m128i ib23 = _mm_cvttpd_epi32(_mm_mul_pd(v255, _mm_min_pd(_mm_max_pd(b23, vZero), vOne)));
+    __m128i ig23 = _mm_cvttpd_epi32(_mm_mul_pd(v255, _mm_min_pd(_mm_max_pd(g23, vZero), vOne)));
+    __m128i ir23 = _mm_cvttpd_epi32(_mm_mul_pd(v255, _mm_min_pd(_mm_max_pd(r23, vZero), vOne)));
+
+    /* Combine 4 pixels into packed BGRA32 */
+    __m128i vb = _mm_unpacklo_epi64(ib01, ib23);
+    __m128i vg = _mm_slli_epi32(_mm_unpacklo_epi64(ig01, ig23), 8);
+    __m128i vr = _mm_slli_epi32(_mm_unpacklo_epi64(ir01, ir23), 16);
+    __m128i va = _mm_and_si128(_mm_loadu_si128((const __m128i *)(inframe + i)), vAlphaMask);
+    _mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_or_si128(vb, vg), _mm_or_si128(vr, va)));
+  }
+#endif
+
+  const unsigned char* src = (const unsigned char*)(inframe + i);
+  unsigned char* dst = (unsigned char*)(outframe + i);
+
+  for (; i < len; ++i)
+  {
+    float b = inv255_lut[src[0]];
+    float g = inv255_lut[src[1]];
+    float r = inv255_lut[src[2]];
+
+    float luma = (b * 0.114f + g * 0.587f + r * 0.299f);
 
     dst[0] = map_color(amount, comp_amount, b, luma, blackColor.b, whiteColor.b);
     dst[1] = map_color(amount, comp_amount, g, luma, blackColor.g, whiteColor.g);
