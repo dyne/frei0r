@@ -59,6 +59,7 @@ static void get_pixel_position( f0r_param_position_t* r, f0r_param_position_t* t
 
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct perspective_instance {
 	int w, h;
@@ -66,8 +67,46 @@ typedef struct perspective_instance {
 	f0r_param_position_t tr;
 	f0r_param_position_t bl;
 	f0r_param_position_t br;
+	int32_t *map;
+	int map_dirty;
 } perspective_instance_t;
 
+
+static void rebuild_map(perspective_instance_t* inst)
+{
+	int w = inst->w;
+	int h = inst->h;
+	int32_t *map = inst->map;
+	f0r_param_position_t top;
+	f0r_param_position_t bot;
+	f0r_param_position_t r;
+	f0r_param_position_t in;
+	double dw = (double)w;
+	double dh = (double)h;
+	float fw = (float)w;
+	float fh = (float)h;
+	int x, y;
+
+	sub_vec2( &top, &inst->tr, &inst->tl );
+	sub_vec2( &bot, &inst->br, &inst->bl );
+
+	for ( y = 0; y < h; y++ ) {
+		in.y = (double)y / dh;
+		int32_t *row = map + (size_t)y * w;
+		for ( x = 0; x < w; x++ ) {
+			in.x = (double)x / dw;
+			get_pixel_position( &r, &top, &bot, &inst->tl, &inst->bl, &in );
+			int rx = (int)lrint(r.x * fw);
+			int ry = (int)lrint(r.y * fh);
+			if ( rx < 0 || rx >= w || ry < 0 || ry >= h ) {
+				row[x] = -1;
+			} else {
+				row[x] = rx + w * ry;
+			}
+		}
+	}
+	inst->map_dirty = 0;
+}
 
 int f0r_init()
 {
@@ -128,29 +167,33 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	inst->bl.y = 1.0;
 	inst->br.x = 1.0;
 	inst->br.y = 1.0;
+	inst->map = (int32_t*)malloc((size_t)width * height * sizeof(int32_t));
+	inst->map_dirty = 1;
 	return (f0r_instance_t)inst;
 }
 void f0r_destruct(f0r_instance_t instance)
 {
 	perspective_instance_t* inst = (perspective_instance_t*)instance;
+	free(inst->map);
 	free(inst);
 }
 void f0r_set_param_value(f0r_instance_t instance, 
                          f0r_param_t param, int param_index)
 {
 	perspective_instance_t* inst = (perspective_instance_t*)instance;
+	f0r_param_position_t p = *((f0r_param_position_t*)param);
 	switch ( param_index ) {
 		case 0:
-			inst->tl = *((f0r_param_position_t*)param);
+			if (inst->tl.x != p.x || inst->tl.y != p.y) { inst->tl = p; inst->map_dirty = 1; }
 			break;
 		case 1:
-			inst->tr = *((f0r_param_position_t*)param);
+			if (inst->tr.x != p.x || inst->tr.y != p.y) { inst->tr = p; inst->map_dirty = 1; }
 			break;
 		case 2:
-			inst->bl = *((f0r_param_position_t*)param);
+			if (inst->bl.x != p.x || inst->bl.y != p.y) { inst->bl = p; inst->map_dirty = 1; }
 			break;
 		case 3:
-			inst->br = *((f0r_param_position_t*)param);
+			if (inst->br.x != p.x || inst->br.y != p.y) { inst->br = p; inst->map_dirty = 1; }
 			break;
 		}
 }
@@ -182,41 +225,19 @@ void f0r_update(f0r_instance_t instance, double time,
 	uint32_t* dst = outframe;
 	const uint32_t* src = inframe;
 	int len = inst->w * inst->h;
-	
+
+	memset(dst, 0, (size_t)len * sizeof(uint32_t));
+
+	if (inst->map_dirty) {
+		rebuild_map(inst);
+	}
+
+	const int32_t *map = inst->map;
 	int i;
 	for ( i = 0; i < len; i++ ) {
-		*dst = 0x00000000;
-		dst++;
-	}
-	dst = outframe;
-
-	int w = inst->w;
-	int h = inst->h;
-	
-	int rx;
-	int ry;
-	int x;
-	int y;
-	f0r_param_position_t top;
-	f0r_param_position_t bot;
-	f0r_param_position_t r;
-	f0r_param_position_t in;
-	sub_vec2( &top, &inst->tr, &inst->tl );
-	sub_vec2( &bot, &inst->br, &inst->bl );
-	for( y = 0; y < h; y++ ) {
-		for ( x = 0; x < w; x++ ) {
-			in.x = (double)x / (double)w;
-			in.y = (double)y / (double)h;
-			get_pixel_position( &r, &top, &bot, &inst->tl, &inst->bl, &in );
-			rx = lrint(r.x * (float)w);
-			ry = lrint(r.y * (float)h);
-			if ( rx < 0 || rx >= w || ry < 0 || ry >= h ) {
-				src++;
-				continue;
-			}
-			dst[rx + w * ry] = *src;
-			src++;
+		int32_t idx = map[i];
+		if ( idx >= 0 ) {
+			dst[idx] = src[i];
 		}
 	}
-
 }
