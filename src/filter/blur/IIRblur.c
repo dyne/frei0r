@@ -65,6 +65,8 @@ typedef struct
 
     //video buffers
     float_rgba *img;
+    float_rgba *lb;
+    float_rgba *bot_avg;
 
     //internal variables
     float a1,a2,a3;
@@ -210,7 +212,9 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     in->w=width;
     in->h=height;
 
-    in->img=calloc(width*height*4,sizeof(float));
+    in->img=calloc((size_t)width*height*4,sizeof(float));
+    in->lb=calloc((size_t)(width > height ? width : height) + 256, sizeof(float_rgba));
+    in->bot_avg=calloc(width, sizeof(float_rgba));
 
     in->am=map_value_forward_log(0.2, 0.5, 100.0);
     in->a1=-0.796093; in->a2=0.186308;
@@ -228,6 +232,8 @@ void f0r_destruct(f0r_instance_t instance)
     in=(inst*)instance;
 
     free(in->img);
+    free(in->lb);
+    free(in->bot_avg);
 
     free(instance);
 }
@@ -373,16 +379,19 @@ void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, u
         fibe2o_8(inframe, outframe, in->img, in->w, in->h, in->a1, in->a2, in->rd1, in->rd2, in->rs1, in->rs2, in->rc1, in->rc2, in->ec);
         break;
     case 2:
-        fibe3_8(inframe, outframe, in->img, in->w, in->h, in->a1, in->a2, in->a3, in->ec);
+        fibe3_8(inframe, outframe, in->img, in->lb, in->bot_avg, in->w, in->h, in->a1, in->a2, in->a3, in->ec);
         // The bottom 3 lines were not updated, and outframe may be initialized with garbage.
-        // Copy the 4th line from the bottom to the bottom 3 lines.
-        for (i = 0; i < 3; i++)
-            memcpy(&outframe[in->w * (in->h - 3 + i)], &outframe[in->w * (in->h - 4)], in->w * 4);
+        // Copy the 4th line from the bottom to the bottom 3 lines, preserving each pixel's alpha.
+        if (in->h >= 4) {
+            const uint32_t *src_row = &outframe[in->w * (in->h - 4)];
+            for (i = 0; i < 3; i++) {
+                uint32_t *dst_row = &outframe[in->w * (in->h - 3 + i)];
+                const uint32_t *in_row = &inframe[in->w * (in->h - 3 + i)];
+                for (int j = 0; j < in->w; j++) {
+                    dst_row[j] = (src_row[j] & 0x00FFFFFFu) | (in_row[j] & 0xFF000000u);
+                }
+            }
+        }
         break;
-    }
-    //copy alpha
-    for (i=0;i<in->w*in->h;i++)
-    {
-        outframe[i]=(outframe[i]&0x00FFFFFF) | (inframe[i]&0xFF000000);
     }
 }
