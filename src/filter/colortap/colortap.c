@@ -300,7 +300,38 @@ typedef struct colortap_instance
   unsigned int width;
   unsigned int height;
   char *table;//accepted values: "xpro","sepia","heat","red_green","old_photo","xray","esses","yellow_blue", default "xpro"
+  uint32_t lut_r[256];
+  uint32_t lut_g[256];
+  uint32_t lut_b[256];
 } colortap_instance_t;
+
+static void colortap_rebuild_luts(colortap_instance_t* inst)
+{
+  const uint8_t* table;
+  if (strcmp(inst->table, "sepia") == 0)
+    table = sepia_table;
+  else if (strcmp(inst->table, "heat") == 0)
+    table = heat_table;
+  else if (strcmp(inst->table, "red_green") == 0)
+    table = red_green_table;
+  else if (strcmp(inst->table, "old_photo") == 0)
+    table = old_photo_table;
+  else if (strcmp(inst->table, "xray") == 0)
+    table = xray_table;
+  else if (strcmp(inst->table, "esses") == 0)
+    table = esses_table;
+  else if (strcmp(inst->table, "yellow_blue") == 0)
+    table = yellowblue_table;
+  else
+    table = xpro_table;
+
+  for (int i = 0; i < 256; i++)
+  {
+    inst->lut_r[i] = (uint32_t)table[i * 3];
+    inst->lut_g[i] = (uint32_t)table[i * 3 + 1] << 8;
+    inst->lut_b[i] = (uint32_t)table[i * 3 + 2] << 16;
+  }
+}
 
 int f0r_init()
 {
@@ -340,9 +371,10 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   colortap_instance_t* inst = (colortap_instance_t*)calloc(1, sizeof(*inst));
   inst->width = width;
   inst->height = height;
-	const char* sval = "esses";
-	inst->table = (char*)malloc( strlen(sval) + 1 );
-	strcpy( inst->table, sval );
+  const char* sval = "esses";
+  inst->table = (char*)malloc( strlen(sval) + 1 );
+  strcpy( inst->table, sval );
+  colortap_rebuild_luts(inst);
   return (f0r_instance_t)inst;
 }
 
@@ -356,15 +388,16 @@ void f0r_destruct(f0r_instance_t instance)
 void f0r_set_param_value(f0r_instance_t instance, 
 			 f0r_param_t param, int param_index)
 {
-	colortap_instance_t* inst = (colortap_instance_t*)instance;
-	switch (param_index)
+  colortap_instance_t* inst = (colortap_instance_t*)instance;
+  switch (param_index)
   {
     case 0:
     {
-			char* sval = (*(char**)param);
-			inst->table = (char*)realloc( inst->table, strlen(sval) + 1 );
-			strcpy( inst->table, sval );
-			break;
+      char* sval = (*(char**)param);
+      inst->table = (char*)realloc( inst->table, strlen(sval) + 1 );
+      strcpy( inst->table, sval );
+      colortap_rebuild_luts(inst);
+      break;
     }
   }
 }
@@ -386,60 +419,30 @@ void f0r_get_param_value(f0r_instance_t instance,
 void f0r_update(f0r_instance_t instance, double time,
 		const uint32_t* inframe, uint32_t* outframe)
 {
-  // Check and cast instance
+  (void)time;
   assert(instance);
   colortap_instance_t* inst = (colortap_instance_t*)instance;
-  unsigned int len = inst->width * inst->height;
+  const unsigned int len = inst->width * inst->height;
+  const uint32_t* lr = inst->lut_r;
+  const uint32_t* lg = inst->lut_g;
+  const uint32_t* lb = inst->lut_b;
 
-  const uint8_t* table;
-  if (strcmp(inst->table, "sepia")==0)
+  unsigned int i = 0;
+  for (; i + 3 < len; i += 4)
   {
-    table = sepia_table;
-  }
-  else if (strcmp(inst->table, "heat")==0)
-  {
-    table = heat_table;
-  }
-  else if (strcmp(inst->table, "red_green")==0)
-  {
-    table = red_green_table;
-  }
-  else if (strcmp(inst->table, "old_photo")==0)
-  {
-    table = old_photo_table;
-  }
-  else if (strcmp(inst->table, "xray")==0)
-  {
-    table = xray_table;
-  }
-  else if (strcmp(inst->table, "esses")==0)
-  {
-    table = esses_table;
-  }
-  else if (strcmp(inst->table, "yellow_blue")==0)
-  {
-    table = yellowblue_table;
-  }
-  else
-  {
-    table = xpro_table;
-  }
+    uint32_t p0 = inframe[i];
+    uint32_t p1 = inframe[i + 1];
+    uint32_t p2 = inframe[i + 2];
+    uint32_t p3 = inframe[i + 3];
 
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-  unsigned char r,g, b = 0;
-
-  while (len--)
+    outframe[i]     = lr[p0 & 0xffu] | lg[(p0 >> 8) & 0xffu] | lb[(p0 >> 16) & 0xffu] | (p0 & 0xff000000u);
+    outframe[i + 1] = lr[p1 & 0xffu] | lg[(p1 >> 8) & 0xffu] | lb[(p1 >> 16) & 0xffu] | (p1 & 0xff000000u);
+    outframe[i + 2] = lr[p2 & 0xffu] | lg[(p2 >> 8) & 0xffu] | lb[(p2 >> 16) & 0xffu] | (p2 & 0xff000000u);
+    outframe[i + 3] = lr[p3 & 0xffu] | lg[(p3 >> 8) & 0xffu] | lb[(p3 >> 16) & 0xffu] | (p3 & 0xff000000u);
+  }
+  for (; i < len; i++)
   {
-    r = *src++;
-    g = *src++;
-    b = *src++;
-
-    *dst++ = table[r * 3];
-    *dst++ = table[g * 3 + 1];
-    *dst++ = table[b * 3 + 2];
-    *dst++ = *src++;
+    uint32_t p = inframe[i];
+    outframe[i] = lr[p & 0xffu] | lg[(p >> 8) & 0xffu] | lb[(p >> 16) & 0xffu] | (p & 0xff000000u);
   }
 }
-
-
