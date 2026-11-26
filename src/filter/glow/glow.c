@@ -103,21 +103,18 @@ void f0r_update(f0r_instance_t instance, double time,
 {
 	glow_instance_t* inst = (glow_instance_t*)instance;
 
-	uint8_t* dst = (uint8_t*)outframe;
-	const uint8_t* src = (uint8_t*)inframe;
-	const uint8_t* blur = (uint8_t*)inst->blurred;
+	uint8_t* restrict dst = (uint8_t*)outframe;
+	const uint8_t* restrict src = (const uint8_t*)inframe;
+	const uint8_t* restrict blur = (const uint8_t*)inst->blurred;
 
 	int len = inst->w * inst->h * 4;
 
 	blur_update(inst->blur_instance, 0.0, inframe, inst->blurred );
-	
-	int i;
-	for ( i = 0; i < len; i++ ) {
-		*dst = 255 - ( ( 255 - *src ) * ( 255 - *blur ) ) / 255;
-		// 1 - ( ( 1 - A ) * ( 1 - B ) )
-		dst++;
-		src++;
-		blur++;
+
+	for ( int i = 0; i < len; i++ ) {
+		unsigned int prod = (unsigned int)(255u - src[i]) * (unsigned int)(255u - blur[i]);
+		// Exact division by 255 for all prod in [0, 65025]
+		dst[i] = (uint8_t)(255u - ((prod + 1u + (prod >> 8)) >> 8));
 	}
 
 }
