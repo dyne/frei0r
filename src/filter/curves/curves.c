@@ -29,9 +29,10 @@
 
 #include "frei0r.h"
 #include "frei0r/math.h"
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
-#define MAX3(a, b, c) ( ( a > b && a > c) ? a : (b > c ? b : c) )
-#define MIN3(a, b, c) ( ( a < b && a < c) ? a : (b < c ? b : c) )
 
 #define POS_TOP_LEFT 0
 #define POS_TOP_RIGHT 1
@@ -68,44 +69,16 @@ typedef struct curves_instance
   double *bsplineMap;
   double *csplineMap;
   float *curveMap;
+  uint8_t bsplineMapU8[256];
+  uint8_t csplineMapU8[256];
+  uint8_t *bsplineLumaLut;
+  uint8_t *csplineLumaLut;
 } curves_instance_t;
 
 
 // color conversion functions taken from:
 // http://www.cs.rit.edu/~ncs/color/t_convert.html
 // slightly modified
-
-// r,g,b values are from 0 to 255
-// h = [0,360], s = [0,1], v = [0,1]
-//              if s == 0, then h = -1 (undefined)
-static void RGBtoHSV(double r, double g, double b, double *h, double *s, double *v)
-{
-    double min = MIN3(r, g, b);
-    double max = MAX3(r, g, b);
-    *v = max / 255.;
-
-    double delta = max - min;
-
-    if (delta != 0) {
-        *s = delta / max;               // s
-    } else {
-       // r = g = b                    // s = 0
-       *s = 0;
-       *h = -1;
-       return;
-    }
-
-    if (r == max)
-        *h = (g - b) / delta;         // between yellow & magenta
-    else if (g == max)
-        *h = 2 + (b - r) / delta;     // between cyan & yellow
-    else
-        *h = 4 + (r - g) / delta;     // between magenta & cyan
-
-    *h *= 60;                         // degrees
-    if (*h < 0)
-        *h += 360;
-}
 
 // r,g,b values are from 0 to 1
 // h = [0,360], s = [0,1], v = [0,1]
@@ -278,6 +251,8 @@ void f0r_destruct(f0r_instance_t instance)
   free(inst->bsplineMap);
   free(inst->csplineMap);
   free(inst->curveMap);
+  free(inst->bsplineLumaLut);
+  free(inst->csplineLumaLut);
   free(inst);
 }
 
@@ -588,6 +563,27 @@ static int tokenise(char *string, const char *delimiter, char ***tokens)
 /**
  * Updates the color map according to the bézier spline described in the "Bézier spline" parameter.
  */
+static void build_fast_tables(enum CHANNELS channel, const double *map,
+                              uint8_t mapU8[256], uint8_t **lumaLutPtr)
+{
+    if (channel == CHANNEL_LUMA) {
+        if (!*lumaLutPtr)
+            *lumaLutPtr = (uint8_t *)malloc(256 * 256);
+        uint8_t *lut = *lumaLutPtr;
+        uint8_t v0 = (unsigned char)map[0];
+        memset(lut, v0, 256);
+        for (int l = 1; l < 256; ++l) {
+            double lv = map[l];
+            uint8_t *row = lut + (l << 8);
+            for (int v = 0; v < 256; ++v)
+                row[v] = CLAMP0255((int)(v * lv));
+        }
+    } else if (channel != CHANNEL_HUE && channel != CHANNEL_SATURATION) {
+        for (int i = 0; i < 256; ++i)
+            mapU8[i] = (unsigned char)map[i];
+    }
+}
+
 static void updateBsplineMap(f0r_instance_t instance)
 {
     assert(instance);
@@ -708,6 +704,7 @@ static void updateBsplineMap(f0r_instance_t instance)
     }
 
     free(points);
+    build_fast_tables(inst->channel, inst->bsplineMap, inst->bsplineMapU8, &inst->bsplineLumaLut);
 }
 
 /**
@@ -773,6 +770,7 @@ static void updateCsplineMap(f0r_instance_t instance)
 
     free(coeffs);
     free(points);
+    build_fast_tables(inst->channel, inst->csplineMap, inst->csplineMapU8, &inst->csplineLumaLut);
 }
 
 void f0r_update(f0r_instance_t instance, double time,
@@ -782,81 +780,55 @@ void f0r_update(f0r_instance_t instance, double time,
   curves_instance_t* inst = (curves_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
 
-  // test initialization c/b spline
-  double *splinemap = strlen(inst->bspline)>0 ? inst->bsplineMap : inst->csplineMap;
-  if(!splinemap) {
-	memcpy(outframe,inframe,inst->width * inst->height * 4);
+  int use_bspline = inst->bspline[0] != '\0';
+  double *map = use_bspline ? inst->bsplineMap : inst->csplineMap;
+  if (!map) {
+	memcpy(outframe, inframe, (size_t)len * 4);
 	return;
   }
 
   unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-
-  int i = 0;
-  double *map = NULL;
+  const uint8_t *mapU8 = use_bspline ? inst->bsplineMapU8 : inst->csplineMapU8;
   int scale = inst->height / 2;
-  double *points = NULL;
-  if (strlen(inst->bspline) == 0) {
-      points = (double*)calloc(inst->pointNumber * 2, sizeof(double));
-      i = inst->pointNumber * 2;
-      //copy point values
-      while(--i >= 0)
-          points[i] = inst->points[i];
-      //sort point values by X component
-      for(i = 1; i < inst->pointNumber; i++)
-          for(int j = i; j > 0 && points[j * 2] < points[(j - 1) * 2]; j--)
-              swap(points, j, j - 1);
 
-      map = inst->csplineMap;
-  } else {
-      map = inst->bsplineMap;
-  }
-
-  int r, g, b, luma;
-  double factorR, factorG, factorB, lumaValue;
-  double rf, gf, bf, hue, sat, val;
+  double rf, gf, bf;
 
   switch ((int)inst->channel) {
   case CHANNEL_RGB:
-      while (len--) {
-          *dst++ = map[*src++];        // r
-          *dst++ = map[*src++];        // g
-          *dst++ = map[*src++];        // b
-          *dst++ = *src++;              // a
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          uint32_t r = mapU8[px & 0xFFu];
+          uint32_t g = mapU8[(px >> 8) & 0xFFu];
+          uint32_t b = mapU8[(px >> 16) & 0xFFu];
+          outframe[k] = r | (g << 8) | (b << 16) | (px & 0xFF000000u);
       }
       break;
   case CHANNEL_RED:
-      memcpy(outframe, inframe, len*sizeof(uint32_t));
-      while (len--) {
-          *dst = map[*dst];
-          dst += 4;
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          outframe[k] = (px & 0xFFFFFF00u) | (uint32_t)mapU8[px & 0xFFu];
       }
       break;
   case CHANNEL_GREEN:
-      memcpy(outframe, inframe, len*sizeof(uint32_t));
-      dst += 1;
-      while (len--) {
-          *dst = map[*dst];
-          dst += 4;
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          outframe[k] = (px & 0xFFFF00FFu) | ((uint32_t)mapU8[(px >> 8) & 0xFFu] << 8);
       }
       break;
   case CHANNEL_BLUE:
-      memcpy(outframe, inframe, len*sizeof(uint32_t));
-      dst += 2;
-      while (len--) {
-          *dst = map[*dst];
-          dst += 4;
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          outframe[k] = (px & 0xFF00FFFFu) | ((uint32_t)mapU8[(px >> 16) & 0xFFu] << 16);
       }
       break;
   case CHANNEL_ALPHA:
-      memcpy(outframe, inframe, len*sizeof(uint32_t));
-      dst += 3;
-      while (len--) {
-          *dst = map[*dst];
-          dst += 4;
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          outframe[k] = (px & 0x00FFFFFFu) | ((uint32_t)mapU8[px >> 24] << 24);
       }
       break;
-  case CHANNEL_LUMA:
+  case CHANNEL_LUMA: {
+      double factorR, factorG, factorB;
       if (inst->formula) {      // Rec.709
           factorR = .2126;
           factorG = .7152;
@@ -866,59 +838,168 @@ void f0r_update(f0r_instance_t instance, double time,
           factorG = .587;
           factorB = .114;
       }
-      while (len--) {
-          r = *src++;
-          g = *src++;
-          b = *src++;
-          luma = ROUND(factorR * r + factorG * g + factorB * b);
-          lumaValue = map[luma];
-          if (luma == 0) {
-              *dst++ = lumaValue;
-              *dst++ = lumaValue;
-              *dst++ = lumaValue;
-          } else {
-              *dst++ = CLAMP0255((int)(r * lumaValue));
-              *dst++ = CLAMP0255((int)(g * lumaValue));
-              *dst++ = CLAMP0255((int)(b * lumaValue));
-          }
-          *dst++ = *src++;
+      const uint8_t *lumaLut = use_bspline ? inst->bsplineLumaLut : inst->csplineLumaLut;
+      unsigned int k = 0;
+#ifdef __SSE2__
+      __m128d vfR = _mm_set1_pd(factorR);
+      __m128d vfG = _mm_set1_pd(factorG);
+      __m128d vfB = _mm_set1_pd(factorB);
+      __m128d vHalf = _mm_set1_pd(0.5);
+      __m128i vZero = _mm_setzero_si128();
+      for (; k + 3 < len; k += 4) {
+          __m128i px4 = _mm_loadu_si128((const __m128i *)(inframe + k));
+          __m128i u16_lo = _mm_unpacklo_epi8(px4, vZero);
+          __m128i u16_hi = _mm_unpackhi_epi8(px4, vZero);
+
+          __m128i p0_i = _mm_unpacklo_epi16(u16_lo, vZero);
+          __m128i p1_i = _mm_unpackhi_epi16(u16_lo, vZero);
+          __m128i rg01 = _mm_unpacklo_epi32(p0_i, p1_i);
+          __m128i ba01 = _mm_unpackhi_epi32(p0_i, p1_i);
+          __m128d vl01 = _mm_add_pd(
+              _mm_add_pd(_mm_add_pd(_mm_mul_pd(vfR, _mm_cvtepi32_pd(rg01)),
+                                    _mm_mul_pd(vfG, _mm_cvtepi32_pd(_mm_srli_si128(rg01, 8)))),
+                         _mm_mul_pd(vfB, _mm_cvtepi32_pd(ba01))),
+              vHalf);
+
+          __m128i p2_i = _mm_unpacklo_epi16(u16_hi, vZero);
+          __m128i p3_i = _mm_unpackhi_epi16(u16_hi, vZero);
+          __m128i rg23 = _mm_unpacklo_epi32(p2_i, p3_i);
+          __m128i ba23 = _mm_unpackhi_epi32(p2_i, p3_i);
+          __m128d vl23 = _mm_add_pd(
+              _mm_add_pd(_mm_add_pd(_mm_mul_pd(vfR, _mm_cvtepi32_pd(rg23)),
+                                    _mm_mul_pd(vfG, _mm_cvtepi32_pd(_mm_srli_si128(rg23, 8)))),
+                         _mm_mul_pd(vfB, _mm_cvtepi32_pd(ba23))),
+              vHalf);
+
+          __m128i li01 = _mm_cvttpd_epi32(vl01);
+          __m128i li23 = _mm_cvttpd_epi32(vl23);
+          int l0 = _mm_cvtsi128_si32(li01);
+          int l1 = _mm_cvtsi128_si32(_mm_srli_si128(li01, 4));
+          int l2 = _mm_cvtsi128_si32(li23);
+          int l3 = _mm_cvtsi128_si32(_mm_srli_si128(li23, 4));
+
+          uint32_t p0 = inframe[k], p1 = inframe[k + 1], p2 = inframe[k + 2], p3 = inframe[k + 3];
+          const uint8_t *row0 = lumaLut + (l0 << 8);
+          const uint8_t *row1 = lumaLut + (l1 << 8);
+          const uint8_t *row2 = lumaLut + (l2 << 8);
+          const uint8_t *row3 = lumaLut + (l3 << 8);
+          outframe[k]     = (uint32_t)row0[p0 & 0xFFu] | ((uint32_t)row0[(p0 >> 8) & 0xFFu] << 8) | ((uint32_t)row0[(p0 >> 16) & 0xFFu] << 16) | (p0 & 0xFF000000u);
+          outframe[k + 1] = (uint32_t)row1[p1 & 0xFFu] | ((uint32_t)row1[(p1 >> 8) & 0xFFu] << 8) | ((uint32_t)row1[(p1 >> 16) & 0xFFu] << 16) | (p1 & 0xFF000000u);
+          outframe[k + 2] = (uint32_t)row2[p2 & 0xFFu] | ((uint32_t)row2[(p2 >> 8) & 0xFFu] << 8) | ((uint32_t)row2[(p2 >> 16) & 0xFFu] << 16) | (p2 & 0xFF000000u);
+          outframe[k + 3] = (uint32_t)row3[p3 & 0xFFu] | ((uint32_t)row3[(p3 >> 8) & 0xFFu] << 8) | ((uint32_t)row3[(p3 >> 16) & 0xFFu] << 16) | (p3 & 0xFF000000u);
+      }
+#endif
+      for (; k < len; ++k) {
+          uint32_t px = inframe[k];
+          int r = (int)(px & 0xFFu);
+          int g = (int)((px >> 8) & 0xFFu);
+          int b = (int)((px >> 16) & 0xFFu);
+          int luma = ROUND(factorR * r + factorG * g + factorB * b);
+          const uint8_t *row = lumaLut + (luma << 8);
+          outframe[k] = (uint32_t)row[r] | ((uint32_t)row[g] << 8) | ((uint32_t)row[b] << 16) | (px & 0xFF000000u);
       }
       break;
-  case CHANNEL_HUE:
-      while (len--) {
-          rf = *src++;
-          gf = *src++;
-          bf = *src++;
-          RGBtoHSV(rf, gf, bf, &hue, &sat, &val);
-          if (hue != -1) {
-              HSVtoRGB(&rf, &gf, &bf, map[(int)hue], sat, val);
-              *dst++ = rf * 255;
-              *dst++ = gf * 255;
-              *dst++ = bf * 255;
-          } else {
-              *dst++ = rf;
-              *dst++ = gf;
-              *dst++ = bf;
+  }
+  case CHANNEL_HUE: {
+      double h_div60[361];
+      for (int h = 0; h < 361; ++h)
+          h_div60[h] = map[h] / 60.0;
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          int r = (int)(px & 0xFFu);
+          int g = (int)((px >> 8) & 0xFFu);
+          int b = (int)((px >> 16) & 0xFFu);
+          int mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+          int mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+          int delta = mx - mn;
+          if (delta == 0) {
+              outframe[k] = px;
+              continue;
           }
-          *dst++ = *src++;
+          double v = mx / 255.0;
+          double s = (double)delta / (double)mx;
+          double h;
+          if (r == mx)
+              h = (double)(g - b) / (double)delta;
+          else if (g == mx)
+              h = 2.0 + (double)(b - r) / (double)delta;
+          else
+              h = 4.0 + (double)(r - g) / (double)delta;
+          h *= 60.0;
+          if (h < 0.0)
+              h += 360.0;
+          double hn = h_div60[(int)h];
+          int sector = (int)hn;
+          double frac = hn - sector;
+          double p = v * (1.0 - s);
+          if (sector & 1) {
+              double q = v * (1.0 - s * frac);
+              switch (sector) {
+              case 1: rf = q; gf = v; bf = p; break;
+              case 3: rf = p; gf = q; bf = v; break;
+              case 5: rf = v; gf = p; bf = q; break;
+              default: rf = gf = bf = 0.0; break;
+              }
+          } else {
+              double t = v * (1.0 - s * (1.0 - frac));
+              switch (sector) {
+              case 0: rf = v; gf = t; bf = p; break;
+              case 2: rf = p; gf = v; bf = t; break;
+              case 4: rf = t; gf = p; bf = v; break;
+              default: rf = gf = bf = 0.0; break;
+              }
+          }
+          outframe[k] = (uint32_t)(unsigned char)(rf * 255.0)
+                      | ((uint32_t)(unsigned char)(gf * 255.0) << 8)
+                      | ((uint32_t)(unsigned char)(bf * 255.0) << 16)
+                      | (px & 0xFF000000u);
       }
       break;
-  case CHANNEL_SATURATION:
-      while (len--) {
-          rf = *src++;
-          gf = *src++;
-          bf = *src++;
-          RGBtoHSV(rf, gf, bf, &hue, &sat, &val);
-          HSVtoRGB(&rf, &gf, &bf, hue, map[(int)(sat * 255)], val);
-          *dst++ = rf * 255;
-          *dst++ = gf * 255;
-          *dst++ = bf * 255;
-          *dst++ = *src++;
+  }
+  case CHANNEL_SATURATION: {
+      for (unsigned int k = 0; k < len; ++k) {
+          uint32_t px = inframe[k];
+          int r = (int)(px & 0xFFu);
+          int g = (int)((px >> 8) & 0xFFu);
+          int b = (int)((px >> 16) & 0xFFu);
+          int mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+          int mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+          int delta = mx - mn;
+          double v = mx / 255.0;
+          if (delta == 0) {
+              HSVtoRGB(&rf, &gf, &bf, -1.0, map[0], v);
+          } else {
+              double s = (double)delta / (double)mx;
+              double h;
+              if (r == mx)
+                  h = (double)(g - b) / (double)delta;
+              else if (g == mx)
+                  h = 2.0 + (double)(b - r) / (double)delta;
+              else
+                  h = 4.0 + (double)(r - g) / (double)delta;
+              h *= 60.0;
+              if (h < 0.0)
+                  h += 360.0;
+              HSVtoRGB(&rf, &gf, &bf, h, map[(int)(s * 255.0)], v);
+          }
+          outframe[k] = (uint32_t)(unsigned char)(rf * 255.0)
+                      | ((uint32_t)(unsigned char)(gf * 255.0) << 8)
+                      | ((uint32_t)(unsigned char)(bf * 255.0) << 16)
+                      | (px & 0xFF000000u);
       }
+      break;
+  }
   }
 
 
-  if (inst->drawCurves && !strlen(inst->bspline)) {
+  if (inst->drawCurves && !use_bspline) {
+	double points[10];
+	int i = (int)inst->pointNumber * 2;
+	while (--i >= 0)
+	    points[i] = inst->points[i];
+	for (i = 1; i < inst->pointNumber; i++)
+	    for (int j = i; j > 0 && points[j * 2] < points[(j - 1) * 2]; j--)
+	        swap(points, j, j - 1);
 	unsigned char color[] = {0, 0, 0};
 	if (inst->channel == CHANNEL_RED || inst->channel == CHANNEL_GREEN || inst->channel == CHANNEL_BLUE)
 	  color[(int)inst->channel] = 255;
@@ -967,7 +1048,6 @@ void f0r_update(f0r_instance_t instance, double time,
 		}
 	  }
 	}
-	free(points);
 	//drawing curve on the graph
 	float halfLineWidth = lineWidth * .5;
 	float prevY = 0;
