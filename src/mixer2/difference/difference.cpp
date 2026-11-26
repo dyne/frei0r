@@ -42,27 +42,34 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
-    const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
-    uint8_t *dst = reinterpret_cast<uint8_t*>(out);
-    uint32_t sizeCounter = size;
-            
-    uint32_t b;
-    int diff;
-  
-    while (sizeCounter--)
+    const uint8_t *__restrict__ src1 = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t *__restrict__ src2 = reinterpret_cast<const uint8_t*>(in2);
+    uint8_t *__restrict__ dst = reinterpret_cast<uint8_t*>(out);
+    uint32_t i = 0;
+    for (; i + 16 <= size; i += 16)
       {
-        for (b = 0; b < ALPHA; b++)
+        const uint8_t *__restrict__ s1 = src1 + i * 4;
+        const uint8_t *__restrict__ s2 = src2 + i * 4;
+        uint8_t *__restrict__ d = dst + i * 4;
+        for (int k = 0; k < 64; ++k)
           {
-            diff = src1[b] - src2[b];
-            dst[b] = (diff < 0) ? -diff : diff;
+            int diff = (int)s1[k] - (int)s2[k];
+            d[k] = (uint8_t)(diff < 0 ? -diff : diff);
           }
-  
-        dst[ALPHA] = MIN(src1[ALPHA], src2[ALPHA]);
-  
-        src1 += NBYTES;
-        src2 += NBYTES;
-        dst += NBYTES;
+        for (int p = 0; p < 16; ++p)
+          d[p * 4 + 3] = s1[p * 4 + 3] < s2[p * 4 + 3] ? s1[p * 4 + 3] : s2[p * 4 + 3];
+      }
+    for (; i < size; ++i)
+      {
+        const uint8_t *s1 = src1 + i * 4;
+        const uint8_t *s2 = src2 + i * 4;
+        uint8_t *d = dst + i * 4;
+        for (uint32_t b = 0; b < ALPHA; b++)
+          {
+            int diff = s1[b] - s2[b];
+            d[b] = (diff < 0) ? -diff : diff;
+          }
+        d[ALPHA] = MIN(s1[ALPHA], s2[ALPHA]);
       }
   }
     
