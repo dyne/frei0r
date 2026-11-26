@@ -21,6 +21,10 @@
 #include "frei0r.hpp"
 #include "frei0r/math.h"
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
 #define NBYTES 4
 #define ALPHA 3
 
@@ -31,11 +35,6 @@ class addition : public frei0r::mixer2
 public:
   addition(unsigned int width, unsigned int height)
   {
-    // initialize look-up table
-    for (int i = 0; i < 256; i++)
-      add_lut[i] = i;
-  	for (int i = 256; i <= 510; i++)
-      add_lut[i] = 255;
   }
 
   /**
@@ -49,30 +48,37 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
-    const uint8_t *A = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *B = reinterpret_cast<const uint8_t*>(in2);
-    uint8_t *D = reinterpret_cast<uint8_t*>(out);
-    uint32_t sizeCounter = size;
-            
-    uint32_t b;
-  
-    while (sizeCounter--)
+    const uint8_t* __restrict__ A = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t* __restrict__ B = reinterpret_cast<const uint8_t*>(in2);
+    uint8_t* __restrict__ D = reinterpret_cast<uint8_t*>(out);
+    const size_t total_bytes = static_cast<size_t>(size) * NBYTES;
+    size_t i = 0;
+
+#if defined(__SSE2__)
+    const __m128i alpha_mask = _mm_set1_epi32(static_cast<int>(0xFF000000u));
+    for (; i + 16 <= total_bytes; i += 16)
       {
-        for (b = 0; b < ALPHA; b++)
-          D[b] = add_lut[A[b] + B[b]];
-        
-        D[ALPHA] = MIN(A[ALPHA], B[ALPHA]);
-        A += NBYTES;
-        B += NBYTES;
-        D += NBYTES;
+        const __m128i va = _mm_loadu_si128(reinterpret_cast<const __m128i*>(A + i));
+        const __m128i vb = _mm_loadu_si128(reinterpret_cast<const __m128i*>(B + i));
+        const __m128i rgb = _mm_adds_epu8(va, vb);
+        const __m128i a = _mm_min_epu8(va, vb);
+        const __m128i res = _mm_or_si128(_mm_andnot_si128(alpha_mask, rgb),
+                                         _mm_and_si128(alpha_mask, a));
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(D + i), res);
+      }
+#endif
+
+    for (; i < total_bytes; i += NBYTES)
+      {
+        for (uint32_t b = 0; b < ALPHA; b++)
+          {
+            const uint32_t sum = static_cast<uint32_t>(A[i + b]) + B[i + b];
+            D[i + b] = static_cast<uint8_t>(sum > 255u ? 255u : sum);
+          }
+        D[i + ALPHA] = MIN(A[i + ALPHA], B[i + ALPHA]);
       }
   }
-  
-private:
-  static uint8_t add_lut[511]; // look-up table storing values to do a quick MAX of two values when you know you add two unsigned chars
 };
-
-uint8_t addition::add_lut[511];
 
 static frei0r::construct<addition> plugin("addition",
                                   "Perform an RGB[A] addition operation of the pixel sources.",
