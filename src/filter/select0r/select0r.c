@@ -25,14 +25,13 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 //	apr 2012	added slope parameter
 
-//compile: gcc -c -fPIC -Wall select0r.c -o select0r.o
-//link: gcc -shared -o select0r.so select0r.o
-
-//#include <stdio.h>	/* for debug printf only +/
 #include <frei0r.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 
 typedef struct
 {
@@ -51,17 +50,10 @@ typedef struct
 
 static const double PI=3.14159265358979;
 
+#define SELECT0R_TILE 256
+
 //-----------------------------------------------------------
 //inline functions for subspace metrics
-//distance from center point for different shapes
-//for cartesian and cylindric (wraparound hue) spaces
-//cx,cy,cz:  center of subspace
-//dx,dy,dz:  size of subspace
-//dx, dy and dz must be inverse (1/x) values!   (avoid division)
-//x,y,z:  point from which distance is determined
-//  returns square of distance
-//  r==1 is edge of subspace
-//box shape
 static inline float dist_box(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
 {
 	float ax,ay,az,r;
@@ -75,7 +67,7 @@ static inline float dist_box(float cx, float cy, float cz, float dx, float dy, f
 	r=r*r;
 	return r;
 }
-//ellipsoid shape
+
 static inline float dist_eli(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
 {
 	float ax,ay,az,r;
@@ -86,7 +78,7 @@ static inline float dist_eli(float cx, float cy, float cz, float dx, float dy, f
 	r=ax*ax+ay*ay+az*az;
 	return r;
 }
-//octahedron shape
+
 static inline float dist_oct(float cx, float cy, float cz, float dx, float dy, float dz, float x, float y, float z)
 {
 	float ax,ay,az,r;
@@ -98,12 +90,11 @@ static inline float dist_oct(float cx, float cy, float cz, float dx, float dy, f
 	r=r*r;
 	return r;
 }
-//box shape, cylindrical space
+
 static inline float dist_box_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
 {
 	float ax,ay,az,r;
 	
-	// wrap hue term -0.5 .. 0.5
 	ax = 0.5f - fabsf(fabsf(hue - chue) - 0.5f);
 	ax=ax*dhue;
 	ay=fabsf(y-cy)*dy;
@@ -114,7 +105,7 @@ static inline float dist_box_c(float chue, float cy, float cz, float dhue, float
 	r=r*r;
 	return r;
 }
-//ellipsoid shape, cylindrical space
+
 static inline float dist_eli_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
 {
 	float ax,ay,az,r;
@@ -126,7 +117,7 @@ static inline float dist_eli_c(float chue, float cy, float cz, float dhue, float
 	r=ax*ax+ay*ay+az*az;
 	return r;
 }
-//octahedron shape, cylindrical space
+
 static inline float dist_oct_c(float chue, float cy, float cz, float dhue, float dy, float dz, float hue, float y, float z)
 {
 	float ax,ay,az,r;
@@ -141,7 +132,6 @@ static inline float dist_oct_c(float chue, float cy, float cz, float dhue, float
 }
 
 //----------------------------------------------------------
-//inline RGB to ABI conversion function
 static inline void rgb2abi(float k32, float r, float g, float b, float *a, float *bb, float *i)
 {
 	*a=r-0.5*g-0.5*b;
@@ -149,8 +139,6 @@ static inline void rgb2abi(float k32, float r, float g, float b, float *a, float
 	*i=0.3333*(r+g+b);
 }
 
-//----------------------------------------------------------
-//inline RGB to HCI conversion function
 static inline void rgb2hci(float ipi2, float k32, float r, float g, float b, float *h, float *c, float *i)
 {
 	float a,bb;
@@ -162,7 +150,6 @@ static inline void rgb2hci(float ipi2, float k32, float r, float g, float b, flo
 }
 
 //------------------------------------------------------
-//thresholding inline functions  (hard and soft)
 static inline float thres(float a)
 {
 	return (a<1.0) ? 1.0 : 0.0;
@@ -191,468 +178,218 @@ static inline float slope(float a, float is)
 	return (a>=0) ? a : 0.0;
 }
 
-//----------------------------------------------------------
-//RGB selection
-//d = deltas (size of subspace)
-//n = nudges
-//ss = subspace shape [0..2] box, ellipsoid, octahedron
-//thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
-//avoids switch () inside inner loop for speed - this means
-//a big, repetitive switch statement outside....
-static void sel_rgb(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
+#if defined(__SSE2__)
+static inline __m128 sse_fabs_ps(__m128 v)
 {
-	float kr,kg,kb,dd;
-	int i,s;
-	float ddx,ddy,ddz;
-	float islp;
-	
-	//add nudge
-	kr=key.r+n.x;
-	kg=key.g+n.y;
-	kb=key.b+n.z;
-	ddx = (d.x!=0) ? 1.0/d.x : 1.0E6; 
-	ddy = (d.y!=0) ? 1.0/d.y : 1.0E6;
-	ddz = (d.z!=0) ? 1.0/d.z : 1.0E6;
-	
-	islp = (slp>0.000001) ? 0.2/slp : 200000.0;
-	
-	s=10*ss+thr;	//to avoid nested switch statements
-	
-	switch (s)
-	{
-	case 0:		//box, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_box(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 1:		//box, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_box(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 2:		//box, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_box(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 3:		//box, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_box(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 4:		//box, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_box(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-		
-	case 10:	//ellipsoid, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 11:	//ellipsoid, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 12:	//ellipsoid, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 13:	//ellipsoid, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 14:	//ellipsoid, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-		
-	case 20:	//octahedron, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 21:	//octahedron, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 22:	//octahedron, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 23:	//octahedron, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 24:	//octahedron, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, slika[i].r, slika[i].g, slika[i].b);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
+	const __m128 sign_mask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF));
+	return _mm_and_ps(v, sign_mask);
+}
+
+static inline void unpack_4px_rgb_ps(const uint32_t *src, __m128 *vr, __m128 *vg, __m128 *vb)
+{
+	const __m128i mask = _mm_set1_epi32(0xFF);
+	const __m128 vf1 = _mm_set1_ps(1.0f / 256.0f);
+	__m128i px = _mm_loadu_si128((const __m128i *)src);
+	*vr = _mm_mul_ps(_mm_cvtepi32_ps(_mm_and_si128(px, mask)), vf1);
+	*vg = _mm_mul_ps(_mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(px, 8), mask)), vf1);
+	*vb = _mm_mul_ps(_mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(px, 16), mask)), vf1);
+}
+
+static inline __m128 sse_dist_box(__m128 cx, __m128 cy, __m128 cz, __m128 dx, __m128 dy, __m128 dz, __m128 x, __m128 y, __m128 z)
+{
+	__m128 ax = _mm_mul_ps(sse_fabs_ps(_mm_sub_ps(x, cx)), dx);
+	__m128 ay = _mm_mul_ps(sse_fabs_ps(_mm_sub_ps(y, cy)), dy);
+	__m128 az = _mm_mul_ps(sse_fabs_ps(_mm_sub_ps(z, cz)), dz);
+	__m128 r = _mm_max_ps(_mm_max_ps(ax, ay), az);
+	return _mm_mul_ps(r, r);
+}
+
+static inline __m128 sse_dist_eli(__m128 cx, __m128 cy, __m128 cz, __m128 dx, __m128 dy, __m128 dz, __m128 x, __m128 y, __m128 z)
+{
+	__m128 ax = _mm_mul_ps(_mm_sub_ps(x, cx), dx);
+	__m128 ay = _mm_mul_ps(_mm_sub_ps(y, cy), dy);
+	__m128 az = _mm_mul_ps(_mm_sub_ps(z, cz), dz);
+	return _mm_add_ps(_mm_add_ps(_mm_mul_ps(ax, ax), _mm_mul_ps(ay, ay)), _mm_mul_ps(az, az));
+}
+
+static inline __m128 sse_dist_oct(__m128 cx, __m128 cy, __m128 cz, __m128 dx, __m128 dy, __m128 dz, __m128 x, __m128 y, __m128 z)
+{
+	__m128 ax = _mm_mul_ps(sse_fabs_ps(_mm_sub_ps(x, cx)), dx);
+	__m128 ay = _mm_mul_ps(sse_fabs_ps(_mm_sub_ps(y, cy)), dy);
+	__m128 az = _mm_mul_ps(sse_fabs_ps(_mm_sub_ps(z, cz)), dz);
+	__m128 r = _mm_add_ps(_mm_add_ps(ax, ay), az);
+	return _mm_mul_ps(r, r);
+}
+
+static inline __m128 sse_edge(__m128 dd, __m128 vislp, int thr)
+{
+	const __m128 vone = _mm_set1_ps(1.0f);
+	const __m128 vzero = _mm_setzero_ps();
+	switch (thr) {
+	case 0: /* thres */
+		return _mm_and_ps(_mm_cmplt_ps(dd, vone), vone);
+	case 1: { /* fat */
+		__m128 d2 = _mm_mul_ps(dd, dd);
+		__m128 a = _mm_mul_ps(d2, d2);
+		__m128 mask = _mm_cmplt_ps(a, vone);
+		return _mm_and_ps(mask, _mm_sub_ps(vone, a));
+	}
+	case 2: { /* norm */
+		__m128 a = _mm_mul_ps(dd, dd);
+		__m128 mask = _mm_cmplt_ps(a, vone);
+		return _mm_and_ps(mask, _mm_sub_ps(vone, a));
+	}
+	case 3: { /* skiny */
+		__m128 mask = _mm_cmplt_ps(dd, vone);
+		return _mm_and_ps(mask, _mm_sub_ps(vone, dd));
+	}
+	case 4: { /* slope */
+		__m128 lt = _mm_cmplt_ps(dd, vone);
+		__m128 sl = _mm_sub_ps(vone, _mm_mul_ps(vislp, _mm_sub_ps(dd, vone)));
+		__m128 a = _mm_or_ps(_mm_and_ps(lt, vone), _mm_andnot_ps(lt, sl));
+		return _mm_max_ps(a, vzero);
+	}
 	default:
-		break;
+		return vzero;
+	}
+}
+#endif
+
+static void sel_rgb_tile(const uint32_t *in, float *aout, int count,
+                         float kr, float kg, float kb,
+                         float ddx, float ddy, float ddz,
+                         float islp, int ss, int thr)
+{
+	int i = 0;
+#if defined(__SSE2__)
+	const __m128 vkr = _mm_set1_ps(kr), vkg = _mm_set1_ps(kg), vkb = _mm_set1_ps(kb);
+	const __m128 vdx = _mm_set1_ps(ddx), vdy = _mm_set1_ps(ddy), vdz = _mm_set1_ps(ddz);
+	const __m128 vislp = _mm_set1_ps(islp);
+
+	if (ss == 0) {
+		for (; i + 3 < count; i += 4) {
+			__m128 vr, vg, vb;
+			unpack_4px_rgb_ps(in + i, &vr, &vg, &vb);
+			__m128 dd = sse_dist_box(vkr, vkg, vkb, vdx, vdy, vdz, vr, vg, vb);
+			_mm_storeu_ps(aout + i, sse_edge(dd, vislp, thr));
+		}
+	} else if (ss == 1) {
+		for (; i + 3 < count; i += 4) {
+			__m128 vr, vg, vb;
+			unpack_4px_rgb_ps(in + i, &vr, &vg, &vb);
+			__m128 dd = sse_dist_eli(vkr, vkg, vkb, vdx, vdy, vdz, vr, vg, vb);
+			_mm_storeu_ps(aout + i, sse_edge(dd, vislp, thr));
+		}
+	} else if (ss == 2) {
+		for (; i + 3 < count; i += 4) {
+			__m128 vr, vg, vb;
+			unpack_4px_rgb_ps(in + i, &vr, &vg, &vb);
+			__m128 dd = sse_dist_oct(vkr, vkg, vkb, vdx, vdy, vdz, vr, vg, vb);
+			_mm_storeu_ps(aout + i, sse_edge(dd, vislp, thr));
+		}
+	}
+#endif
+	const float f1 = 1.0f / 256.0f;
+	for (; i < count; i++) {
+		uint32_t px = in[i];
+		float r = f1 * (float)(px & 0xFFu);
+		float g = f1 * (float)((px >> 8) & 0xFFu);
+		float b = f1 * (float)((px >> 16) & 0xFFu);
+		float dd = 0.0f;
+		if (ss == 0) dd = dist_box(kr, kg, kb, ddx, ddy, ddz, r, g, b);
+		else if (ss == 1) dd = dist_eli(kr, kg, kb, ddx, ddy, ddz, r, g, b);
+		else if (ss == 2) dd = dist_oct(kr, kg, kb, ddx, ddy, ddz, r, g, b);
+		switch (thr) {
+		case 0: aout[i] = thres(dd); break;
+		case 1: aout[i] = fat(dd); break;
+		case 2: aout[i] = norm(dd); break;
+		case 3: aout[i] = skiny(dd); break;
+		case 4: aout[i] = slope(dd, islp); break;
+		default: aout[i] = 0.0f; break;
+		}
 	}
 }
 
-//----------------------------------------------------------
-//ABI selection
-//d = deltas (size of subspace)
-//n = nudges
-//ss = subspace shape [0..2] box, ellipsoid, octahedron
-//thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
-//avoids switch () inside inner loop for speed - this means
-//a big, repetitive switch statement outside....
-static void sel_abi(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
+static void sel_abi_tile(const uint32_t *in, float *aout, int count,
+                         float ka, float kb, float ki, float k32,
+                         float dda, float ddb, float ddi,
+                         float islp, int ss, int thr)
 {
-	float ka,kb,ki,k32,dd;
-	int i,s;
-	float dda,ddb,ddi,sa,sb,si;
-	float islp;
-	
-	dda = (d.x!=0) ? 1.0/d.x : 1.0E6; 
-	ddb = (d.y!=0) ? 1.0/d.y : 1.0E6;
-	ddi = (d.z!=0) ? 1.0/d.z : 1.0E6;
-	
-	//convert key to ABI and add nudge
-	k32=sqrtf(3.0)/2.0;
-	ka=key.r-0.5*key.g-0.5*key.b+n.x;
-	kb=k32*(key.g-key.b)+n.y;
-	ki=0.3333*(key.r+key.g+key.b)+n.z;
-	
-	islp = (slp>0.000001) ? 0.2/slp : 200000.0;
-	
-	s=10*ss+thr;	//to avoid nested switch statements
-	
-	switch (s)
-	{
-	case 0:		//box, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = thres(dd);
+	int i = 0;
+	const float f1 = 1.0f / 256.0f;
+#if defined(__SSE2__)
+	const __m128 vka = _mm_set1_ps(ka), vkb = _mm_set1_ps(kb), vki = _mm_set1_ps(ki);
+	const __m128 vda = _mm_set1_ps(dda), vdb = _mm_set1_ps(ddb), vdi = _mm_set1_ps(ddi);
+	const __m128 vk32 = _mm_set1_ps(k32);
+	const __m128 vhalf = _mm_set1_ps(0.5f);
+	const __m128d vthird = _mm_set1_pd(0.3333);
+	const __m128 vislp = _mm_set1_ps(islp);
+
+	for (; i + 3 < count; i += 4) {
+		__m128 vr, vg, vb;
+		unpack_4px_rgb_ps(in + i, &vr, &vg, &vb);
+		__m128 sa = _mm_sub_ps(_mm_sub_ps(vr, _mm_mul_ps(vhalf, vg)), _mm_mul_ps(vhalf, vb));
+		__m128 sb = _mm_mul_ps(vk32, _mm_sub_ps(vg, vb));
+		__m128 sum = _mm_add_ps(_mm_add_ps(vr, vg), vb);
+		__m128 si_lo = _mm_cvtpd_ps(_mm_mul_pd(vthird, _mm_cvtps_pd(sum)));
+		__m128 si_hi = _mm_cvtpd_ps(_mm_mul_pd(vthird, _mm_cvtps_pd(_mm_movehl_ps(sum, sum))));
+		__m128 si = _mm_movelh_ps(si_lo, si_hi);
+		__m128 dd;
+		if (ss == 0) dd = sse_dist_box(vka, vkb, vki, vda, vdb, vdi, sa, sb, si);
+		else if (ss == 1) dd = sse_dist_eli(vka, vkb, vki, vda, vdb, vdi, sa, sb, si);
+		else dd = sse_dist_oct(vka, vkb, vki, vda, vdb, vdi, sa, sb, si);
+		_mm_storeu_ps(aout + i, sse_edge(dd, vislp, thr));
+	}
+#endif
+	for (; i < count; i++) {
+		uint32_t px = in[i];
+		float r = f1 * (float)(px & 0xFFu);
+		float g = f1 * (float)((px >> 8) & 0xFFu);
+		float b = f1 * (float)((px >> 16) & 0xFFu);
+		float sa, sb, si, dd = 0.0f;
+		rgb2abi(k32, r, g, b, &sa, &sb, &si);
+		if (ss == 0) dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
+		else if (ss == 1) dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
+		else if (ss == 2) dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
+		switch (thr) {
+		case 0: aout[i] = thres(dd); break;
+		case 1: aout[i] = fat(dd); break;
+		case 2: aout[i] = norm(dd); break;
+		case 3: aout[i] = skiny(dd); break;
+		case 4: aout[i] = slope(dd, islp); break;
+		default: aout[i] = 0.0f; break;
 		}
-		break;
-	case 1:		//box, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 2:		//box, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 3:		//box, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 4:		//box, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_box(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-		
-	case 10:	//ellipsoid, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 11:	//ellipsoid, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 12:	//ellipsoid, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 13:	//ellipsoid, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 14:	//ellipsoid, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_eli(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-		
-	case 20:	//octahedron, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 21:	//octahedron, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 22:	//octahedron, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 23:	//octahedron, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 24:	//octahedron, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			rgb2abi(k32,slika[i].r,slika[i].g,slika[i].b,&sa,&sb,&si);
-			dd = dist_oct(ka, kb, ki, dda, ddb, ddi, sa, sb, si);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-	default:
-		break;
 	}
 }
 
-//----------------------------------------------------------
-//HCI selection
-//d = deltas (size of subspace)
-//n = nudges
-//ss = subspace shape [0..2] box, ellipsoid, octahedron
-//thr:  0=thresholded  1=linear fat  2=lin norm  3=lin skiny
-//avoids switch () inside inner loop for speed - this means
-//a big, repetitive switch statement outside....
-static void sel_hci(float_rgba *slika, int w, int h, float_rgba key, triplet d, triplet n, float slp, int ss, int thr)
+static void sel_hci_tile(const uint32_t *in, float *aout, int count,
+                         float kh, float kc, float ki, float ipi2, float k32,
+                         float ddh, float ddc, float ddi,
+                         float islp, int ss, int thr)
 {
-	float ka,kb,ki,kh,kc,k32,dd;
-	int i,s;
-	float ddh,ddc,ddi,sh,sc,si,ipi2;
-	float islp;
-	
-	ipi2=0.5/PI;
-	ddh = (d.x!=0) ? 1.0/d.x : 1.0E6; 
-	ddc = (d.y!=0) ? 1.0/d.y : 1.0E6;
-	ddi = (d.z!=0) ? 1.0/d.z : 1.0E6;
-	
-	//convert key to HCI and add nudge
-	k32=sqrtf(3.0)/2.0;
-	ka=key.r-0.5*key.g-0.5*key.b;
-	kb=k32*(key.g-key.b);
-	ki=0.3333*(key.r+key.g+key.b)+n.z;
-	kh=atan2f(kb,ka)*ipi2+n.x;
-	kc=hypotf(ka,kb)+n.y;
-	
-	islp = (slp>0.000001) ? 0.2/slp : 200000.0;
-	
-	s=10*ss+thr;	//to avoid nested switch statements
-	
-	switch (s)
-	{
-	case 0:		//box, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = thres(dd);
+	const float f1 = 1.0f / 256.0f;
+	for (int i = 0; i < count; i++) {
+		uint32_t px = in[i];
+		float r = f1 * (float)(px & 0xFFu);
+		float g = f1 * (float)((px >> 8) & 0xFFu);
+		float b = f1 * (float)((px >> 16) & 0xFFu);
+		float sh, sc, si, dd = 0.0f;
+		rgb2hci(ipi2, k32, r, g, b, &sh, &sc, &si);
+		if (ss == 0) dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
+		else if (ss == 1) dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
+		else if (ss == 2) dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
+		switch (thr) {
+		case 0: aout[i] = thres(dd); break;
+		case 1: aout[i] = fat(dd); break;
+		case 2: aout[i] = norm(dd); break;
+		case 3: aout[i] = skiny(dd); break;
+		case 4: aout[i] = slope(dd, islp); break;
+		default: aout[i] = 0.0f; break;
 		}
-		break;
-	case 1:		//box, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 2:		//box, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 3:		//box, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 4:		//box, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_box_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-		
-	case 10:	//ellipsoid, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 11:	//ellipsoid, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 12:	//ellipsoid, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 13:	//ellipsoid, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 14:	//ellipsoid, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_eli_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-		
-	case 20:	//octahedron, thresholded
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = thres(dd);
-		}
-		break;
-	case 21:	//octahedron, linear fat
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = fat(dd);
-		}
-		break;
-	case 22:	//octahedron, linear normal
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = norm(dd);
-		}
-		break;
-	case 23:	//octahedron, linear skiny
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = skiny(dd);
-		}
-		break;
-	case 24:	//octahedron, linear slope
-		for (i=0;i<w*h;i++)
-		{
-			rgb2hci(ipi2,k32,slika[i].r,slika[i].g,slika[i].b,&sh,&sc,&si);
-			dd = dist_oct_c(kh, kc, ki, ddh, ddc, ddi, sh, sc, si);
-			slika[i].a = slope(dd, islp);
-		}
-		break;
-	default:
-		break;
 	}
 }
 
 //----------------------------------------
-//struktura za instanco efekta
 typedef struct
 {
 	int h;
@@ -668,15 +405,11 @@ typedef struct
 	int op;
 } inst;
 
-//-----------------------------------------------------
-//stretch [0...1] to parameter range [min...max] linear
 static float map_value_forward(double v, float min, float max)
 {
 	return min+(max-min)*v;
 }
 
-//-----------------------------------------------------
-//collapse from parameter range [min...max] to [0...1] linear
 static double map_value_backward(float v, float min, float max)
 {
 	return (v-min)/(max-min);
@@ -685,21 +418,17 @@ static double map_value_backward(float v, float min, float max)
 //***********************************************
 // OBVEZNE FREI0R FUNKCIJE
 
-//-----------------------------------------------
 int f0r_init()
 {
 	return 1;
 }
 
-//------------------------------------------------
 void f0r_deinit()
 {
 }
 
-//-----------------------------------------------
 void f0r_get_plugin_info(f0r_plugin_info_t* info)
 {
-	
 	info->name="select0r";
 	info->author="Marko Cebokli";
 	info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
@@ -711,7 +440,6 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
 	info->explanation="Color based alpha selection";
 }
 
-//--------------------------------------------------
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
 	switch(param_index)
@@ -769,7 +497,6 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 	}
 }
 
-//----------------------------------------------
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
 	inst *in;
@@ -794,13 +521,11 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 	return (f0r_instance_t)in;
 }
 
-//---------------------------------------------------
 void f0r_destruct(f0r_instance_t instance)
 {
 	free(instance);
 }
 
-//-----------------------------------------------------
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_index)
 {
 	inst *p;
@@ -845,32 +570,30 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
 		p->slp=tmpf;
 		break;
 	case 6:		//subspace
-		tmpi = map_value_forward(*(double*)parm, 0.0, 2.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 2.9999);
 		if (p->subsp != tmpi) chg=1;
 		p->subsp = tmpi;
 		break;
 	case 7:		//shape
-		tmpi = map_value_forward(*(double*)parm, 0.0, 2.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 2.9999);
 		if (p->sshape != tmpi) chg=1;
 		p->sshape = tmpi;
 		break;
 	case 8:		//edge mode
-		tmpi = map_value_forward(*(double*)parm, 0.0, 4.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 4.9999);
 		if (p->soft != tmpi) chg=1;
 		p->soft = tmpi;
 		break;
 	case 9:		//operation
-		tmpi = map_value_forward(*(double*)parm, 0.0, 4.9999); //N-0.0001		if ((tmpi<0)||(tmpi>2.0)) break;
+		tmpi = map_value_forward(*(double*)parm, 0.0, 4.9999);
 		if (p->op != tmpi) chg=1;
 		p->op = tmpi;
 		break;
 	}
 	
 	if (chg==0) return;
-	
 }
 
-//--------------------------------------------------
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 	inst *p;
@@ -917,125 +640,175 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 	inst *in;
-	float_rgba key;
-	triplet d,n;
-	int i;
-	uint32_t t;
-	uint8_t *cin, *cout;
-	float f1=1.0/256.0;
-	uint8_t a1,a2;
-	float_rgba *sl;
-
 	assert(instance);
 	in=(inst*)instance;
-	
-	key.r=in->col.r;
-	key.g=in->col.g;
-	key.b=in->col.b;
-	key.a=1.0;
-	d.x=in->del1;
-	d.y=in->del2;
-	d.z=in->del3;
-	n.x=in->nud1;
-	n.y=in->nud2;
-	n.z=in->nud3;
-	
-	//convert to float
-	sl = calloc(in->w * in->h, sizeof(float_rgba));
-	cin=(uint8_t *)inframe;
-	for (i=0;i<in->h*in->w;i++)
-	{
-		sl[i].r=f1*(float)*cin++;
-		sl[i].g=f1*(float)*cin++;
-		sl[i].b=f1*(float)*cin++;
-		cin++;
-	}
-	
-	//make the selection
-	switch (in->subsp)
-	{
-	case 0:
-		sel_rgb(sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
-		break;
-	case 1:
-		sel_abi(sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
-		break;
-	case 2:
-		sel_hci(sl, in->w, in->h, key, d, n, in->slp, in->sshape, in->soft);
-		break;
-	default:
-		break;
-	}
-	
-	//invert selection if required
-	if (in->inv==1)
-		for (i=0;i<in->h*in->w;i++)
-			sl[i].a = 1.0 - sl[i].a;
-	
-	//apply alpha
-	cin=(uint8_t *)inframe;
-	cout=(uint8_t *)outframe;
-	switch (in->op)
-	{
-	case 0:		//write on clear
-		for (i=0;i<in->h*in->w;i++)
-		{
-			*cout++ = *cin++;	//copy R
-			*cout++ = *cin++;	//copy G
-			*cout++ = *cin++;	//copy B
-			*cout++ = (uint8_t)(sl[i].a*255.0);
-			cin++;
-		}
-		break;
-	case 1:		//max
-		for (i=0;i<in->h*in->w;i++)
-		{
-			*cout++ = *cin++;	//copy R
-			*cout++ = *cin++;	//copy G
-			*cout++ = *cin++;	//copy B
-			a1 = *cin++;
-			a2 = (uint8_t)(sl[i].a*255.0);
-			*cout++ = (a1>a2) ? a1 : a2;
-		}
-		break;
-	case 2:		//min
-		for (i=0;i<in->h*in->w;i++)
-		{
-			*cout++ = *cin++;	//copy R
-			*cout++ = *cin++;	//copy G
-			*cout++ = *cin++;	//copy B
-			a1 = *cin++;
-			a2 = (uint8_t)(sl[i].a*255.0);
-			*cout++ = (a1<a2) ? a1 : a2;
-		}
-		break;
-	case 3:		//add
-		for (i=0;i<in->h*in->w;i++)
-		{
-			*cout++ = *cin++;	//copy R
-			*cout++ = *cin++;	//copy G
-			*cout++ = *cin++;	//copy B
-			a1 = *cin++;
-			a2 = (uint8_t)(sl[i].a*255.0);
-			t=(uint32_t)a1+(uint32_t)a2;
-			*cout++ = (t<=255) ? (uint8_t)t : 255;
-		}
-		break;
-	case 4:		//subtract
-		for (i=0;i<in->h*in->w;i++)
-		{
-			*cout++ = *cin++;	//copy R
-			*cout++ = *cin++;	//copy G
-			*cout++ = *cin++;	//copy B
-			a1 = *cin++;
-			a2 = (uint8_t)(sl[i].a*255.0);
-			*cout++ = (a1>a2) ? a1-a2 : 0;
-		}
-		break;
-	default:
-		break;
-	}
-	free(sl);
-}
 
-//**********************************************************
+	const int total = in->w * in->h;
+	const float kr = in->col.r, kg = in->col.g, kb = in->col.b;
+	const float d1 = (in->del1 != 0.0f) ? (float)(1.0 / in->del1) : 1.0E6f;
+	const float d2 = (in->del2 != 0.0f) ? (float)(1.0 / in->del2) : 1.0E6f;
+	const float d3 = (in->del3 != 0.0f) ? (float)(1.0 / in->del3) : 1.0E6f;
+	const float islp = (in->slp > 0.000001f) ? (float)(0.2 / in->slp) : 200000.0f;
+
+	const float k32 = (float)(sqrtf(3.0f) / 2.0);
+	const float ipi2 = (float)(0.5 / PI);
+
+	float c1 = 0.0f, c2 = 0.0f, c3 = 0.0f;
+	if (in->subsp == 0) {
+		c1 = kr + in->nud1;
+		c2 = kg + in->nud2;
+		c3 = kb + in->nud3;
+	} else if (in->subsp == 1) {
+		c1 = (float)(kr - 0.5 * kg - 0.5 * kb + in->nud1);
+		c2 = k32 * (kg - kb) + in->nud2;
+		c3 = (float)(0.3333 * (kr + kg + kb) + in->nud3);
+	} else if (in->subsp == 2) {
+		float ka = (float)(kr - 0.5 * kg - 0.5 * kb);
+		float kbb = k32 * (kg - kb);
+		c1 = atan2f(kbb, ka) * ipi2 + in->nud1;
+		c2 = hypotf(ka, kbb) + in->nud2;
+		c3 = (float)(0.3333 * (kr + kg + kb) + in->nud3);
+	}
+
+	float a_tile[SELECT0R_TILE];
+
+	for (int base = 0; base < total; base += SELECT0R_TILE) {
+		int cnt = total - base;
+		if (cnt > SELECT0R_TILE) cnt = SELECT0R_TILE;
+		const uint32_t *src = inframe + base;
+		uint32_t *dst = outframe + base;
+
+		switch (in->subsp) {
+		case 0:
+			sel_rgb_tile(src, a_tile, cnt, c1, c2, c3, d1, d2, d3, islp, in->sshape, in->soft);
+			break;
+		case 1:
+			sel_abi_tile(src, a_tile, cnt, c1, c2, c3, k32, d1, d2, d3, islp, in->sshape, in->soft);
+			break;
+		case 2:
+			sel_hci_tile(src, a_tile, cnt, c1, c2, c3, ipi2, k32, d1, d2, d3, islp, in->sshape, in->soft);
+			break;
+		default:
+			for (int k = 0; k < cnt; k++) a_tile[k] = 0.0f;
+			break;
+		}
+
+		if (in->inv == 1) {
+			int k = 0;
+#if defined(__SSE2__)
+			const __m128 vone = _mm_set1_ps(1.0f);
+			for (; k + 3 < cnt; k += 4) {
+				__m128 va = _mm_loadu_ps(a_tile + k);
+				_mm_storeu_ps(a_tile + k, _mm_sub_ps(vone, va));
+			}
+#endif
+			for (; k < cnt; k++) {
+				a_tile[k] = (float)(1.0 - a_tile[k]);
+			}
+		}
+
+		switch (in->op) {
+		case 0: { /* write on clear */
+			int k = 0;
+#if defined(__SSE2__)
+			const __m128 v255 = _mm_set1_ps(255.0f);
+			const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+			for (; k + 3 < cnt; k += 4) {
+				__m128i px = _mm_loadu_si128((const __m128i *)(src + k));
+				__m128i a2 = _mm_cvttps_epi32(_mm_mul_ps(_mm_loadu_ps(a_tile + k), v255));
+				__m128i res = _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_slli_epi32(a2, 24));
+				_mm_storeu_si128((__m128i *)(dst + k), res);
+			}
+#endif
+			for (; k < cnt; k++) {
+				uint32_t a2 = (uint32_t)(uint8_t)(a_tile[k] * 255.0);
+				dst[k] = (src[k] & 0x00FFFFFFu) | (a2 << 24);
+			}
+			break;
+		}
+		case 1: { /* max */
+			int k = 0;
+#if defined(__SSE2__)
+			const __m128 v255 = _mm_set1_ps(255.0f);
+			const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+			for (; k + 3 < cnt; k += 4) {
+				__m128i px = _mm_loadu_si128((const __m128i *)(src + k));
+				__m128i a2 = _mm_slli_epi32(_mm_cvttps_epi32(_mm_mul_ps(_mm_loadu_ps(a_tile + k), v255)), 24);
+				__m128i mx = _mm_max_epu8(px, a2);
+				__m128i res = _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, mx));
+				_mm_storeu_si128((__m128i *)(dst + k), res);
+			}
+#endif
+			for (; k < cnt; k++) {
+				uint32_t a1 = src[k] >> 24;
+				uint32_t a2 = (uint8_t)(a_tile[k] * 255.0);
+				dst[k] = (src[k] & 0x00FFFFFFu) | (((a1 > a2) ? a1 : a2) << 24);
+			}
+			break;
+		}
+		case 2: { /* min */
+			int k = 0;
+#if defined(__SSE2__)
+			const __m128 v255 = _mm_set1_ps(255.0f);
+			const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+			for (; k + 3 < cnt; k += 4) {
+				__m128i px = _mm_loadu_si128((const __m128i *)(src + k));
+				__m128i a2 = _mm_slli_epi32(_mm_cvttps_epi32(_mm_mul_ps(_mm_loadu_ps(a_tile + k), v255)), 24);
+				__m128i mn = _mm_min_epu8(px, a2);
+				__m128i res = _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, mn));
+				_mm_storeu_si128((__m128i *)(dst + k), res);
+			}
+#endif
+			for (; k < cnt; k++) {
+				uint32_t a1 = src[k] >> 24;
+				uint32_t a2 = (uint8_t)(a_tile[k] * 255.0);
+				dst[k] = (src[k] & 0x00FFFFFFu) | (((a1 < a2) ? a1 : a2) << 24);
+			}
+			break;
+		}
+		case 3: { /* add */
+			int k = 0;
+#if defined(__SSE2__)
+			const __m128 v255 = _mm_set1_ps(255.0f);
+			const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+			for (; k + 3 < cnt; k += 4) {
+				__m128i px = _mm_loadu_si128((const __m128i *)(src + k));
+				__m128i a2 = _mm_slli_epi32(_mm_cvttps_epi32(_mm_mul_ps(_mm_loadu_ps(a_tile + k), v255)), 24);
+				__m128i ad = _mm_adds_epu8(px, a2);
+				__m128i res = _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, ad));
+				_mm_storeu_si128((__m128i *)(dst + k), res);
+			}
+#endif
+			for (; k < cnt; k++) {
+				uint32_t a1 = src[k] >> 24;
+				uint32_t a2 = (uint8_t)(a_tile[k] * 255.0);
+				uint32_t t = a1 + a2;
+				dst[k] = (src[k] & 0x00FFFFFFu) | (((t <= 255u) ? t : 255u) << 24);
+			}
+			break;
+		}
+		case 4: { /* subtract */
+			int k = 0;
+#if defined(__SSE2__)
+			const __m128 v255 = _mm_set1_ps(255.0f);
+			const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+			for (; k + 3 < cnt; k += 4) {
+				__m128i px = _mm_loadu_si128((const __m128i *)(src + k));
+				__m128i a2 = _mm_slli_epi32(_mm_cvttps_epi32(_mm_mul_ps(_mm_loadu_ps(a_tile + k), v255)), 24);
+				__m128i sb = _mm_subs_epu8(px, a2);
+				__m128i res = _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, sb));
+				_mm_storeu_si128((__m128i *)(dst + k), res);
+			}
+#endif
+			for (; k < cnt; k++) {
+				uint32_t a1 = src[k] >> 24;
+				uint32_t a2 = (uint8_t)(a_tile[k] * 255.0);
+				dst[k] = (src[k] & 0x00FFFFFFu) | (((a1 > a2) ? (a1 - a2) : 0u) << 24);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
