@@ -25,84 +25,107 @@
 
 class equaliz0r : public frei0r::filter
 {
-  // Look-up tables for equaliz0r values.
-  unsigned char rlut[256];
-  unsigned char glut[256];
-  unsigned char blut[256];
+  // Pre-shifted look-up tables for equaliz0r values.
+  uint32_t rlut[256];
+  uint32_t glut[256];
+  uint32_t blut[256];
   
-  // Intensity histograms.
-  unsigned int rhist[256];
-  unsigned int ghist[256];
-  unsigned int bhist[256];
+  // 4-way banked intensity histograms to eliminate store-to-load forwarding stalls.
+  unsigned int rhist[4][256];
+  unsigned int ghist[4][256];
+  unsigned int bhist[4][256];
 
   void updateLookUpTables(const uint32_t* in)
   {
-    unsigned int size = width*height;
-    
-    // First pass : build histograms.
+    const unsigned int total = width * height;
     
     // Reset histograms.
-    memset(rhist, 0, 256*sizeof(unsigned int));
-    memset(ghist, 0, 256*sizeof(unsigned int));
-    memset(bhist, 0, 256*sizeof(unsigned int));
+    memset(rhist, 0, sizeof(rhist));
+    memset(ghist, 0, sizeof(ghist));
+    memset(bhist, 0, sizeof(bhist));
 
-    // Update histograms.
-    const unsigned char *in_ptr = (const unsigned char*) in;
-    for (unsigned int i=0; i<size; ++i)
+    // First pass : build histograms (4-way banked, 4 pixels per iteration).
+    unsigned int i = 0;
+    for (; i + 3 < total; i += 4)
     {
-      // update 'em
-      rhist[*in_ptr++]++;
-      ghist[*in_ptr++]++;
-      bhist[*in_ptr++]++;
-      in_ptr++; // skip alpha
+      uint32_t p0 = in[i];
+      uint32_t p1 = in[i + 1];
+      uint32_t p2 = in[i + 2];
+      uint32_t p3 = in[i + 3];
+
+      rhist[0][p0 & 0xffu]++;
+      ghist[0][(p0 >> 8) & 0xffu]++;
+      bhist[0][(p0 >> 16) & 0xffu]++;
+
+      rhist[1][p1 & 0xffu]++;
+      ghist[1][(p1 >> 8) & 0xffu]++;
+      bhist[1][(p1 >> 16) & 0xffu]++;
+
+      rhist[2][p2 & 0xffu]++;
+      ghist[2][(p2 >> 8) & 0xffu]++;
+      bhist[2][(p2 >> 16) & 0xffu]++;
+
+      rhist[3][p3 & 0xffu]++;
+      ghist[3][(p3 >> 8) & 0xffu]++;
+      bhist[3][(p3 >> 16) & 0xffu]++;
+    }
+    for (; i < total; ++i)
+    {
+      uint32_t p = in[i];
+      rhist[0][p & 0xffu]++;
+      ghist[0][(p >> 8) & 0xffu]++;
+      bhist[0][(p >> 16) & 0xffu]++;
     }
 
-    // Second pass : update look-up tables.
-    in_ptr = (const unsigned char*) in;
-
-    // Cumulative intensities of histograms.
-    unsigned int
-      rcum = 0,
-      gcum = 0,
-      bcum = 0;
-      
-    for (int i=0; i<256; ++i)
+    // Second pass : merge banks and build pre-shifted look-up tables.
+    unsigned int rcum = 0, gcum = 0, bcum = 0;
+    for (int k = 0; k < 256; ++k)
     {
-      // update cumulatives
-      rcum += rhist[i];
-      gcum += ghist[i];
-      bcum += bhist[i];
-      
-      // update 'em
-      rlut[i] = CLAMP0255( (rcum << 8) / size ); // = 256 * rcum / size
-      glut[i] = CLAMP0255( (gcum << 8) / size ); // = 256 * gcum / size
-      blut[i] = CLAMP0255( (bcum << 8) / size ); // = 256 * bcum / size
-      
-      in_ptr++; // skip alpha
-    }
+      rcum += rhist[0][k] + rhist[1][k] + rhist[2][k] + rhist[3][k];
+      gcum += ghist[0][k] + ghist[1][k] + ghist[2][k] + ghist[3][k];
+      bcum += bhist[0][k] + bhist[1][k] + bhist[2][k] + bhist[3][k];
 
+      rlut[k] = (uint32_t)CLAMP0255((rcum << 8) / total);
+      glut[k] = (uint32_t)CLAMP0255((gcum << 8) / total) << 8;
+      blut[k] = (uint32_t)CLAMP0255((bcum << 8) / total) << 16;
+    }
   }
   
 public:
   equaliz0r(unsigned int width, unsigned int height)
   {
+    (void)width;
+    (void)height;
   }
   
   virtual void update(double time,
                       uint32_t* out,
                       const uint32_t* in)
   {
-    std::copy(in, in + width*height, out);
+    (void)time;
     updateLookUpTables(in);
-    unsigned int size = width*height;
-    const unsigned char *in_ptr = (const unsigned char*) in;
-    unsigned char *out_ptr = (unsigned char*) out;
-    for (unsigned int i=0; i<size; ++i)
+    const unsigned int total = width * height;
+    const uint32_t* lr = rlut;
+    const uint32_t* lg = glut;
+    const uint32_t* lb = blut;
+
+    unsigned int i = 0;
+    for (; i + 3 < total; i += 4)
     {
-      *out_ptr++ = rlut[*in_ptr++];
-      *out_ptr++ = glut[*in_ptr++];
-      *out_ptr++ = blut[*in_ptr++];
-      *out_ptr++ = *in_ptr++; // copy alpha
+      uint32_t p0 = in[i];
+      uint32_t p1 = in[i + 1];
+      uint32_t p2 = in[i + 2];
+      uint32_t p3 = in[i + 3];
+
+      out[i]     = lr[p0 & 0xffu] | lg[(p0 >> 8) & 0xffu] | lb[(p0 >> 16) & 0xffu] | (p0 & 0xff000000u);
+      out[i + 1] = lr[p1 & 0xffu] | lg[(p1 >> 8) & 0xffu] | lb[(p1 >> 16) & 0xffu] | (p1 & 0xff000000u);
+      out[i + 2] = lr[p2 & 0xffu] | lg[(p2 >> 8) & 0xffu] | lb[(p2 >> 16) & 0xffu] | (p2 & 0xff000000u);
+      out[i + 3] = lr[p3 & 0xffu] | lg[(p3 >> 8) & 0xffu] | lb[(p3 >> 16) & 0xffu] | (p3 & 0xff000000u);
+    }
+    for (; i < total; ++i)
+    {
+      uint32_t p = in[i];
+      out[i] = lr[p & 0xffu] | lg[(p >> 8) & 0xffu] | lb[(p >> 16) & 0xffu] | (p & 0xff000000u);
     }
   }
 };
