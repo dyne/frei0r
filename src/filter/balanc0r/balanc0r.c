@@ -543,6 +543,9 @@ typedef struct balanc0r_instance
 	double temperature;
 	double	green;
 	float mr, mg, mb;
+	unsigned char lut_r[256];
+	unsigned char lut_g[256];
+	unsigned char lut_b[256];
 } balanc0r_instance_t;
 
 int f0r_init()
@@ -616,6 +619,12 @@ static void setRGBmult(balanc0r_instance_t *o)
 	o->mr /= mi;
 	o->mg /= mi;
 	o->mb /= mi;
+
+	for (int i = 0; i < 256; ++i) {
+		o->lut_r[i] = CLAMP0255((int)(i * o->mr));
+		o->lut_g[i] = CLAMP0255((int)(i * o->mg));
+		o->lut_b[i] = CLAMP0255((int)(i * o->mb));
+	}
 }
 
 void f0r_set_param_value(f0r_instance_t instance, 
@@ -693,14 +702,16 @@ void f0r_update(f0r_instance_t instance, double time,
 {
 	assert(instance);
 	balanc0r_instance_t* inst = (balanc0r_instance_t*)instance;
-	unsigned int         len  = inst->width * inst->height + 1;
-	unsigned char*       dst = (unsigned char*)outframe;
-	const unsigned char* src = (unsigned char*)inframe;
+	unsigned int         len  = inst->width * inst->height;
+	const unsigned char* lr = inst->lut_r;
+	const unsigned char* lg = inst->lut_g;
+	const unsigned char* lb = inst->lut_b;
 
-	while (--len) {
-		*dst++ = CLAMP0255(*src++ * inst->mr);
-		*dst++ = CLAMP0255(*src++ * inst->mg);
-		*dst++ = CLAMP0255(*src++ * inst->mb);
-		*dst++ = *src++;  // copy alpha
+	for (unsigned int i = 0; i < len; ++i) {
+		uint32_t px = inframe[i];
+		outframe[i] = (uint32_t)lr[px & 0xFFu]
+		            | ((uint32_t)lg[(px >> 8) & 0xFFu] << 8)
+		            | ((uint32_t)lb[(px >> 16) & 0xFFu] << 16)
+		            | (px & 0xFF000000u);
 	}
 }
