@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
 #include "frei0r.h"
 #include "frei0r/math.h"
 
@@ -115,7 +119,7 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   assert(instance);
   posterize_instance_t* inst = (posterize_instance_t*)instance;
-  unsigned int len = inst->width * inst->height;
+  size_t len = (size_t)inst->width * inst->height;
 
   // convert input value 0.0-1.0 to int value 2-50
   double levelsInput = inst->levels * 48.0;
@@ -125,31 +129,98 @@ void f0r_update(f0r_instance_t instance, double time,
   // Prevent division by zero
   if (numLevels < 2) numLevels = 2;
 
-  // create levels table
-  unsigned char levels[256];
-  int i;
-  for (i = 0; i < 256; i++)
+  size_t idx = 0;
+
+#if defined(__SSE2__)
   {
-		  levels[i] = 255 * (numLevels*i / 256) / (numLevels-1);
+    const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+    const __m128i a_mask = _mm_set1_epi32((int)0xFF000000u);
+
+    if (numLevels == 2)
+    {
+      const __m128i sign_flip = _mm_set1_epi8((char)0x80);
+      const __m128i thr_m1 = _mm_set1_epi8((char)(127 ^ 0x80));
+      for (; idx + 4 <= len; idx += 4)
+      {
+        __m128i px = _mm_loadu_si128((const __m128i*)(inframe + idx));
+        __m128i mask = _mm_cmpgt_epi8(_mm_xor_si128(px, sign_flip), thr_m1);
+        __m128i res = _mm_or_si128(_mm_and_si128(mask, rgb_mask), _mm_and_si128(px, a_mask));
+        _mm_storeu_si128((__m128i*)(outframe + idx), res);
+      }
+    }
+    else
+    {
+      int d = numLevels - 1;
+      int shift = 0;
+      unsigned int mult = 0;
+      int found = 0;
+      for (shift = 0; shift < 8; shift++)
+      {
+        unsigned int m = (1u << (16 + shift)) / (unsigned int)d + 1u;
+        if (m > 65535u) continue;
+        int ok = 1;
+        int k;
+        for (k = 0; k < numLevels; k++)
+        {
+          if ((((unsigned int)(k * 255) * m) >> (16 + shift)) != (unsigned int)((255 * k) / d))
+          {
+            ok = 0;
+            break;
+          }
+        }
+        if (ok)
+        {
+          mult = m;
+          found = 1;
+          break;
+        }
+      }
+
+      if (found)
+      {
+        const __m128i zero = _mm_setzero_si128();
+        const __m128i v_nl = _mm_set1_epi16((short)numLevels);
+        const __m128i v_255 = _mm_set1_epi16(255);
+        const __m128i v_m = _mm_set1_epi16((short)mult);
+
+        for (; idx + 4 <= len; idx += 4)
+        {
+          __m128i px = _mm_loadu_si128((const __m128i*)(inframe + idx));
+          __m128i lo = _mm_unpacklo_epi8(px, zero);
+          __m128i hi = _mm_unpackhi_epi8(px, zero);
+
+          lo = _mm_srli_epi16(_mm_mullo_epi16(lo, v_nl), 8);
+          hi = _mm_srli_epi16(_mm_mullo_epi16(hi, v_nl), 8);
+
+          lo = _mm_srli_epi16(_mm_mulhi_epu16(_mm_mullo_epi16(lo, v_255), v_m), shift);
+          hi = _mm_srli_epi16(_mm_mulhi_epu16(_mm_mullo_epi16(hi, v_255), v_m), shift);
+
+          __m128i packed = _mm_packus_epi16(lo, hi);
+          __m128i res = _mm_or_si128(_mm_and_si128(packed, rgb_mask), _mm_and_si128(px, a_mask));
+          _mm_storeu_si128((__m128i*)(outframe + idx), res);
+        }
+      }
+    }
   }
+#endif
 
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-  unsigned char r,g,b = 0;
-  while (len--)
+  if (idx < len)
   {
-    r = *src++;
-    g = *src++;
-    b = *src++;
+    unsigned char levels[256];
+    int i;
+    for (i = 0; i < 256; i++)
+    {
+      levels[i] = 255 * (numLevels * i / 256) / (numLevels - 1);
+    }
 
-    r = levels[r];
-    g = levels[g];
-    b = levels[b];
-
-    *dst++ = r;
-    *dst++ = g;
-    *dst++ = b;
-    *dst++ = *src++;//copy alpha
+    unsigned char* dst = (unsigned char*)(outframe + idx);
+    const unsigned char* src = (const unsigned char*)(inframe + idx);
+    for (; idx < len; idx++)
+    {
+      *dst++ = levels[*src++];
+      *dst++ = levels[*src++];
+      *dst++ = levels[*src++];
+      *dst++ = *src++; // copy alpha
+    }
   }
 }
-
