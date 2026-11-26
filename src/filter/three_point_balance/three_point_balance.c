@@ -35,6 +35,10 @@ typedef struct three_point_balance_instance
   f0r_param_color_t whiteColor;
   double splitPreview;
   double srcPosition;
+  uint8_t mapRed[256];
+  uint8_t mapGreen[256];
+  uint8_t mapBlue[256];
+  int lutDirty;
 } three_point_balance_instance_t;
 
 int f0r_init()
@@ -105,6 +109,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->whiteColor.b = 1;
   inst->splitPreview = 1;
   inst->srcPosition = 1;
+  inst->lutDirty = 1;
   return (f0r_instance_t)inst;
 }
 
@@ -123,12 +128,15 @@ void f0r_set_param_value(f0r_instance_t instance,
   {
 	case 0:
 	  inst->blackColor = *((f0r_param_color_t *)param);
+	  inst->lutDirty = 1;
 	  break;
 	case 1:
 	  inst->grayColor = *((f0r_param_color_t *)param);
+	  inst->lutDirty = 1;
 	  break;
 	case 2:
 	  inst->whiteColor = *((f0r_param_color_t *)param);
+	  inst->lutDirty = 1;
 	  break;
 	case 3:
 	  inst->splitPreview = *((double *)param);
@@ -165,7 +173,7 @@ void f0r_get_param_value(f0r_instance_t instance,
   }
 }
 
-static double* gaussSLESolve(size_t size, double* A) {
+static void gaussSLESolve(int size, double* A, double* solution) {
 	int extSize = size + 1;
 	//direct way: transform matrix A to triangular form
 	for(int row = 0; row < size; row++) {
@@ -191,20 +199,16 @@ static double* gaussSLESolve(size_t size, double* A) {
 		}
 	}
 	//backward way: find solution from last to first
-	double *solution = (double*)calloc(size, sizeof(double));
 	for(int i = size - 1; i >= 0; i--) {
-		solution[i] = A[i * extSize + size];// 
+		solution[i] = A[i * extSize + size];
 		for(int j = size - 1; j > i; j--) {
 			solution[i] -= solution[j] * A[i * extSize + j];
 		}
 	}
-	return solution;
 }
 
-
-
-static double* calcParabolaCoeffs(double* points) {
-  double *m = (double*)calloc(3 * 4, sizeof(double));
+static void calcParabolaCoeffs(const double* points, double* coeffs) {
+  double m[3 * 4];
   for(int i = 0; i < 3; i++) {
 	int offset = i * 2;
 	m[i * 4] = points[offset] * points[offset];
@@ -212,13 +216,56 @@ static double* calcParabolaCoeffs(double* points) {
 	m[i * 4 + 2] = 1;
 	m[i * 4 + 3] = points[offset + 1];
   }
-  double *coeffs = gaussSLESolve(3, m);
-  free(m);
-  return coeffs;
+  gaussSLESolve(3, m, coeffs);
 }
 
-static double parabola(double x, double* coeffs) {
+static inline double parabola(double x, const double* coeffs) {
   return (coeffs[0] * x + coeffs[1]) * x + coeffs[2];
+}
+
+static void rebuild_luts(three_point_balance_instance_t* inst) {
+  double redPoints[6] = {inst->blackColor.r, 0, inst->grayColor.r, 0.5, inst->whiteColor.r, 1};
+  double greenPoints[6] = {inst->blackColor.g, 0, inst->grayColor.g, 0.5, inst->whiteColor.g, 1};
+  double bluePoints[6] = {inst->blackColor.b, 0, inst->grayColor.b, 0.5, inst->whiteColor.b, 1};
+  double redCoeffs[3], greenCoeffs[3], blueCoeffs[3];
+  calcParabolaCoeffs(redPoints, redCoeffs);
+  calcParabolaCoeffs(greenPoints, greenCoeffs);
+  calcParabolaCoeffs(bluePoints, blueCoeffs);
+
+  for(int i = 0; i < 256; i++) {
+	double w = parabola(i / 255., redCoeffs);
+	inst->mapRed[i] = (uint8_t)(int)(CLAMP(w, 0, 1) * 255);
+	w = parabola(i / 255., greenCoeffs);
+	inst->mapGreen[i] = (uint8_t)(int)(CLAMP(w, 0, 1) * 255);
+	w = parabola(i / 255., blueCoeffs);
+	inst->mapBlue[i] = (uint8_t)(int)(CLAMP(w, 0, 1) * 255);
+  }
+  inst->lutDirty = 0;
+}
+
+static inline void apply_lut_span(const uint32_t* src, uint32_t* dst, size_t count,
+                                  const uint8_t* mapR, const uint8_t* mapG, const uint8_t* mapB)
+{
+  size_t i = 0;
+  for (; i + 3 < count; i += 4) {
+    uint32_t p0 = src[i];
+    uint32_t p1 = src[i + 1];
+    uint32_t p2 = src[i + 2];
+    uint32_t p3 = src[i + 3];
+    dst[i]     = (uint32_t)mapR[p0 & 0xFFu] | ((uint32_t)mapG[(p0 >> 8) & 0xFFu] << 8)
+               | ((uint32_t)mapB[(p0 >> 16) & 0xFFu] << 16) | (p0 & 0xFF000000u);
+    dst[i + 1] = (uint32_t)mapR[p1 & 0xFFu] | ((uint32_t)mapG[(p1 >> 8) & 0xFFu] << 8)
+               | ((uint32_t)mapB[(p1 >> 16) & 0xFFu] << 16) | (p1 & 0xFF000000u);
+    dst[i + 2] = (uint32_t)mapR[p2 & 0xFFu] | ((uint32_t)mapG[(p2 >> 8) & 0xFFu] << 8)
+               | ((uint32_t)mapB[(p2 >> 16) & 0xFFu] << 16) | (p2 & 0xFF000000u);
+    dst[i + 3] = (uint32_t)mapR[p3 & 0xFFu] | ((uint32_t)mapG[(p3 >> 8) & 0xFFu] << 8)
+               | ((uint32_t)mapB[(p3 >> 16) & 0xFFu] << 16) | (p3 & 0xFF000000u);
+  }
+  for (; i < count; i++) {
+    uint32_t p = src[i];
+    dst[i] = (uint32_t)mapR[p & 0xFFu] | ((uint32_t)mapG[(p >> 8) & 0xFFu] << 8)
+           | ((uint32_t)mapB[(p >> 16) & 0xFFu] << 16) | (p & 0xFF000000u);
+  }
 }
 
 void f0r_update(f0r_instance_t instance, double time,
@@ -226,56 +273,40 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   assert(instance);
   three_point_balance_instance_t* inst = (three_point_balance_instance_t*)instance;
-  
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
 
-  int mapRed[256];
-  int mapGreen[256];
-  int mapBlue[256];
-
-  double redPoints[6] = {inst->blackColor.r, 0, inst->grayColor.r, 0.5, inst->whiteColor.r, 1};
-  double greenPoints[6] = {inst->blackColor.g, 0, inst->grayColor.g, 0.5, inst->whiteColor.g, 1};
-  double bluePoints[6] = {inst->blackColor.b, 0, inst->grayColor.b, 0.5, inst->whiteColor.b, 1};
-  double *redCoeffs = calcParabolaCoeffs(redPoints);
-  double *greenCoeffs = calcParabolaCoeffs(greenPoints);
-  double *blueCoeffs = calcParabolaCoeffs(bluePoints);
-
-  //building map for values from 0 to 255
-  for(int i = 0; i < 256; i++) {
-	double w = parabola(i / 255., redCoeffs);
-	mapRed[i] = CLAMP(w, 0, 1) * 255;
-	w = parabola(i / 255., greenCoeffs);
-	mapGreen[i] = CLAMP(w, 0, 1) * 255;
-	w = parabola(i / 255., blueCoeffs);
-	mapBlue[i] = CLAMP(w, 0, 1) * 255;
+  if (inst->lutDirty) {
+    rebuild_luts(inst);
   }
-  free(redCoeffs);
-  free(greenCoeffs);
-  free(blueCoeffs);
 
-  for(int j = 0; j < inst->width; j++) {
-	int copyPixel = inst->splitPreview && ((inst->srcPosition && j < inst->width / 2) || (!inst->srcPosition && j >= inst->width / 2));
-	for(int i = 0; i < inst->height; i++) {
-	  int offset = (i * inst->width + j) * 4;
-	  if (copyPixel) {
-		dst[offset] = src[offset];
-		offset++;
-		dst[offset] = src[offset];
-		offset++;
-		dst[offset] = src[offset];
-		offset++;
-	  } else {
-		dst[offset] = mapRed[src[offset]];
-		offset++;
-		dst[offset] = mapGreen[src[offset]];
-		offset++;
-		dst[offset] = mapBlue[src[offset]];
-		offset++;
-	  }
-	  dst[offset] = src[offset]; // copy alpha
-	  offset++;
-	}
+  const uint8_t* mapR = inst->mapRed;
+  const uint8_t* mapG = inst->mapGreen;
+  const uint8_t* mapB = inst->mapBlue;
+  unsigned int w = inst->width;
+  unsigned int h = inst->height;
+
+  if (!inst->splitPreview) {
+    apply_lut_span(inframe, outframe, (size_t)w * h, mapR, mapG, mapB);
+  } else {
+    unsigned int half = w / 2;
+    unsigned int rest = w - half;
+    if (inst->srcPosition) {
+      for (unsigned int y = 0; y < h; y++) {
+        const uint32_t* srow = inframe + (size_t)y * w;
+        uint32_t* drow = outframe + (size_t)y * w;
+        if (drow != srow) {
+          memcpy(drow, srow, (size_t)half * sizeof(uint32_t));
+        }
+        apply_lut_span(srow + half, drow + half, rest, mapR, mapG, mapB);
+      }
+    } else {
+      for (unsigned int y = 0; y < h; y++) {
+        const uint32_t* srow = inframe + (size_t)y * w;
+        uint32_t* drow = outframe + (size_t)y * w;
+        apply_lut_span(srow, drow, half, mapR, mapG, mapB);
+        if (drow != srow) {
+          memcpy(drow + half, srow + half, (size_t)rest * sizeof(uint32_t));
+        }
+      }
+    }
   }
-  
 }
