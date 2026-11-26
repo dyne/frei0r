@@ -32,6 +32,9 @@ typedef struct gamma_instance
   unsigned int height;
   double gamma; /* the gamma value [0, 1] */
   unsigned char lut[256]; /* look-up table */
+  uint32_t lut_r[256];
+  uint32_t lut_g[256];
+  uint32_t lut_b[256];
 } gamma_instance_t;
 
 /* Updates the look-up-table. */
@@ -44,6 +47,13 @@ static void update_lut(gamma_instance_t *inst)
   lut[0] = 0;
   for (i=1; i<256; ++i)
     lut[i] = CLAMP0255( ROUND(255.0 * pow( (double)i / 255.0, inv_gamma ) ) );
+  for (i=0; i<256; ++i)
+  {
+    uint32_t v = lut[i];
+    inst->lut_r[i] = v;
+    inst->lut_g[i] = v << 8;
+    inst->lut_b[i] = v << 16;
+  }
 }
 
 int f0r_init()
@@ -136,14 +146,13 @@ void f0r_update(f0r_instance_t instance, double time,
   gamma_instance_t* inst = (gamma_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
   
-  unsigned char* lut = inst->lut;
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-  while (len--)
+  const uint32_t* lr = inst->lut_r;
+  const uint32_t* lg = inst->lut_g;
+  const uint32_t* lb = inst->lut_b;
+  const unsigned char* src = (const unsigned char*)inframe;
+  for (unsigned int i = 0; i < len; ++i)
   {
-    *dst++ = lut[*src++];
-    *dst++ = lut[*src++];
-    *dst++ = lut[*src++];
-    *dst++ = *src++;// copy alpha
+    outframe[i] = lr[src[0]] | lg[src[1]] | lb[src[2]] | ((uint32_t)src[3] << 24);
+    src += 4;
   }
 }
