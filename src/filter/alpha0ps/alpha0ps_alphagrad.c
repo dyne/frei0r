@@ -23,33 +23,27 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 */
 
-
-//compile: gcc -c -fPIC -Wall alphagrad.c -o alphagrad.o
-//link: gcc -shared -o alphagrad.so alphagrad.o
-
 #include <stdio.h>
 #include <frei0r.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <assert.h>
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 
-
-
-//----------------------------------------
-//struktura za instanco efekta
 typedef struct
 {
 int h;
 int w;
 
 float poz,wdt,tilt,min,max;
-uint32_t *gr8;
+uint8_t *gr8;
 int op;
 
 } inst;
 
-//-----------------------------------------------------
-//RGBA8888 little endian
 static void fill_grad(inst *in)
 {
 int i,j;
@@ -62,64 +56,59 @@ wd=in->wdt*in->w;
 
 if (in->min==in->max)
 	{
-	for (i=0;i<in->h*in->w;i++)
-		in->gr8[i]=(((uint32_t)(in->min*255.0))<<24)&0xFF000000;
+	uint8_t v = (uint8_t)(uint32_t)(in->min*255.0);
+	memset(in->gr8, v, (size_t)in->h*in->w);
 	return;
 	}
 
+float half_wd = wd / 2.0f;
+float range = in->max - in->min;
 for (i=0;i<in->h;i++)
+	{
+	float row_base = (i-in->h/2)*ct - po;
+	uint8_t *row = in->gr8 + (size_t)i * in->w;
 	for (j=0;j<in->w;j++)
 		{
-		d=(i-in->h/2)*ct+(j-in->w/2)*st-po;
-		if (fabsf(d)>wd/2.0)
+		d=row_base+(j-in->w/2)*st;
+		if (fabsf(d)>half_wd)
 			{
-			if (d>0.0)
+			if (d>0.0f)
 				a=in->min;
 			else
 				a=in->max;
 			}
 		else
 			{
-			if (d>wd/2.0) d=wd/2.0;
-			a = in->min+(wd/2.0-d) / wd*(in->max-in->min);
+			if (d>half_wd) d=half_wd;
+			a = in->min+(wd/2.0-d) / wd*range;
 			}
 		a=255.0*a;
-		in->gr8[i*in->w+j] = (((uint32_t)a)<<24)&0xFF000000;
+		row[j] = (uint8_t)(uint32_t)a;
 		}
+	}
 }
 
-//-----------------------------------------------------
-//stretch [0...1] to parameter range [min...max] linear
 static float map_value_forward(double v, float min, float max)
 {
 return min+(max-min)*v;
 }
 
-//-----------------------------------------------------
-//collapse from parameter range [min...max] to [0...1] linear
 static double map_value_backward(float v, float min, float max)
 {
 return (v-min)/(max-min);
 }
 
-//***********************************************
-// OBVEZNE FREI0R FUNKCIJE
-
-//-----------------------------------------------
 int f0r_init()
 {
 return 1;
 }
 
-//------------------------------------------------
 void f0r_deinit()
 {
 }
 
-//-----------------------------------------------
 void f0r_get_plugin_info(f0r_plugin_info_t* info)
 {
-
 info->name="alphagrad";
 info->author="Marko Cebokli";
 info->plugin_type=F0R_PLUGIN_TYPE_FILTER;
@@ -131,7 +120,6 @@ info->num_params=6;
 info->explanation="Fills alpha channel with a gradient";
 }
 
-//--------------------------------------------------
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
 switch(param_index)
@@ -169,7 +157,6 @@ switch(param_index)
 	}
 }
 
-//----------------------------------------------
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
 inst *in;
@@ -178,32 +165,28 @@ in=calloc(1,sizeof(inst));
 in->w=width;
 in->h=height;
 
-in->poz=0.5;
-in->wdt=0.5;
-in->tilt=0.0;
-in->min=0.0;
-in->max=1.0;
+in->poz=0.5f;
+in->wdt=0.5f;
+in->tilt=0.0f;
+in->min=0.0f;
+in->max=1.0f;
 in->op=0;
 
-in->gr8 = (uint32_t*)calloc(in->w*in->h, sizeof(uint32_t));
+in->gr8 = (uint8_t*)calloc((size_t)in->w*in->h, sizeof(uint8_t));
 
 fill_grad(in);
 
 return (f0r_instance_t)in;
 }
 
-//---------------------------------------------------
 void f0r_destruct(f0r_instance_t instance)
 {
-inst *in;
-
-in=(inst*)instance;
+inst *in = (inst*)instance;
 
 free(in->gr8);
 free(instance);
 }
 
-//-----------------------------------------------------
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_index)
 {
 inst *p;
@@ -216,34 +199,33 @@ chg=0;
 switch(param_index)
 	{
 	case 0:
-                tmpf=*((double*)parm);
+		tmpf=*((double*)parm);
 		if (tmpf!=p->poz) chg=1;
 		p->poz=tmpf;
 		break;
 	case 1:
-                tmpf=*((double*)parm);
+		tmpf=*((double*)parm);
 		if (tmpf!=p->wdt) chg=1;
 		p->wdt=tmpf;
 		break;
 	case 2:
-                tmpf=map_value_forward(*((double*)parm), -3.15, 3.15);
+		tmpf=map_value_forward(*((double*)parm), -3.15f, 3.15f);
 		if (tmpf!=p->tilt) chg=1;
 		p->tilt=tmpf;
 		break;
 	case 3:
-                tmpf=*((double*)parm);
+		tmpf=*((double*)parm);
 		if (tmpf!=p->min) chg=1;
 		p->min=tmpf;
 		break;
 	case 4:
-                tmpf=*((double*)parm);
+		tmpf=*((double*)parm);
 		if (tmpf!=p->max) chg=1;
 		p->max=tmpf;
 		break;
 	case 5:
-                tmpi=map_value_forward(*((double*)parm), 0.0, 4.9999);
-                if (p->op != tmpi) chg=1;
-                p->op=tmpi;
+		tmpi=map_value_forward(*((double*)parm), 0.0f, 4.9999f);
+		p->op=tmpi;
 		break;
 	}
 
@@ -252,7 +234,6 @@ if (chg==0) return;
 fill_grad(p);
 }
 
-//--------------------------------------------------
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
 inst *p;
@@ -262,75 +243,139 @@ p=(inst*)instance;
 switch(param_index)
 	{
 	case 0:
-                *((double*)param)=p->poz;
+		*((double*)param)=p->poz;
 		break;
 	case 1:
-                *((double*)param)=p->wdt;
+		*((double*)param)=p->wdt;
 		break;
 	case 2:
-                *((double*)param)=map_value_backward(p->tilt, -3.15, 3.15);
+		*((double*)param)=map_value_backward(p->tilt, -3.15f, 3.15f);
 		break;
 	case 3:
-                *((double*)param)=p->min;
+		*((double*)param)=p->min;
 		break;
 	case 4:
-                *((double*)param)=p->max;
+		*((double*)param)=p->max;
 		break;
 	case 5:
-                *((double*)param)=map_value_backward(p->op, 0.0, 4.9999);
+		*((double*)param)=map_value_backward(p->op, 0.0f, 4.9999f);
 		break;
 	}
 }
 
-//-------------------------------------------------
+#if defined(__SSE2__)
+static inline __m128i load_4_alpha_shifted(const uint8_t *gr)
+{
+	uint32_t g4;
+	memcpy(&g4, gr, sizeof(g4));
+	__m128i v = _mm_cvtsi32_si128((int)g4);
+	v = _mm_unpacklo_epi8(v, _mm_setzero_si128());
+	v = _mm_unpacklo_epi16(v, _mm_setzero_si128());
+	return _mm_slli_epi32(v, 24);
+}
+#endif
+
 //RGBA8888 little endian
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 inst *in;
-int i;
-uint32_t t;
+int i = 0;
 
 assert(instance);
 in=(inst*)instance;
+const int n = in->h * in->w;
+const uint8_t *gr = in->gr8;
 
 switch (in->op)
 	{
 	case 0:		//write on clear
-		for (i=0;i<in->h*in->w;i++)
-			outframe[i] = (inframe[i]&0x00FFFFFF) | in->gr8[i];
+#if defined(__SSE2__)
+		{
+		const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+		for (; i + 3 < n; i += 4) {
+			__m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+			__m128i a = load_4_alpha_shifted(gr + i);
+			_mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), a));
+		}
+		}
+#endif
+		for (; i < n; i++)
+			outframe[i] = (inframe[i] & 0x00FFFFFFu) | ((uint32_t)gr[i] << 24);
 		break;
 	case 1:		//max
-		for (i=0;i<in->h*in->w;i++)
-			{
-			t=((inframe[i]&0xFF000000)>in->gr8[i]) ? inframe[i]&0xFF000000 : in->gr8[i];
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
-			}
+#if defined(__SSE2__)
+		{
+		const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+		for (; i + 3 < n; i += 4) {
+			__m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+			__m128i a = load_4_alpha_shifted(gr + i);
+			__m128i mx = _mm_max_epu8(px, a);
+			_mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, mx)));
+		}
+		}
+#endif
+		for (; i < n; i++) {
+			uint32_t a1 = inframe[i] >> 24;
+			uint32_t a2 = gr[i];
+			outframe[i] = (inframe[i] & 0x00FFFFFFu) | (((a1 > a2) ? a1 : a2) << 24);
+		}
 		break;
 	case 2:		//min
-		for (i=0;i<in->h*in->w;i++)
-			{
-			t=((inframe[i]&0xFF000000)<in->gr8[i]) ? inframe[i]&0xFF000000 : in->gr8[i];
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
-			}
+#if defined(__SSE2__)
+		{
+		const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+		for (; i + 3 < n; i += 4) {
+			__m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+			__m128i a = load_4_alpha_shifted(gr + i);
+			__m128i mn = _mm_min_epu8(px, a);
+			_mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, mn)));
+		}
+		}
+#endif
+		for (; i < n; i++) {
+			uint32_t a1 = inframe[i] >> 24;
+			uint32_t a2 = gr[i];
+			outframe[i] = (inframe[i] & 0x00FFFFFFu) | (((a1 < a2) ? a1 : a2) << 24);
+		}
 		break;
 	case 3:		//add
-		for (i=0;i<in->h*in->w;i++)
-			{
-			t=((inframe[i]&0xFF000000)>>1)+(in->gr8[i]>>1);
-			t = (t>0x7F800000) ? 0xFF000000 : t<<1;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
-			}
+#if defined(__SSE2__)
+		{
+		const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+		for (; i + 3 < n; i += 4) {
+			__m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+			__m128i a = load_4_alpha_shifted(gr + i);
+			__m128i ad = _mm_adds_epu8(px, a);
+			_mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, ad)));
+		}
+		}
+#endif
+		for (; i < n; i++) {
+			uint32_t t = (inframe[i] >> 24) + gr[i];
+			if (t > 255u) t = 255u;
+			outframe[i] = (inframe[i] & 0x00FFFFFFu) | (t << 24);
+		}
 		break;
 	case 4:		//subtract
-		for (i=0;i<in->h*in->w;i++)
-			{
-			t= ((inframe[i]&0xFF000000)>in->gr8[i]) ? (inframe[i]&0xFF000000)-in->gr8[i] : 0;
-			outframe[i] = (inframe[i]&0x00FFFFFF) | t;
-			}
+#if defined(__SSE2__)
+		{
+		const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+		for (; i + 3 < n; i += 4) {
+			__m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+			__m128i a = load_4_alpha_shifted(gr + i);
+			__m128i sb = _mm_subs_epu8(px, a);
+			_mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, sb)));
+		}
+		}
+#endif
+		for (; i < n; i++) {
+			uint32_t a1 = inframe[i] >> 24;
+			uint32_t a2 = gr[i];
+			uint32_t t = (a1 > a2) ? (a1 - a2) : 0u;
+			outframe[i] = (inframe[i] & 0x00FFFFFFu) | (t << 24);
+		}
 		break;
 	default:
 		break;
 	}
 }
-
-//**********************************************************
