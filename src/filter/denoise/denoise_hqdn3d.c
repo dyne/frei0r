@@ -43,9 +43,9 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 //----------------------------------------
 typedef struct {
         int Coefs[4][512*16];
-        unsigned int *Line;
-	unsigned short *Frame[3];
-}vf_priv_s;
+        unsigned int *Line;      /* interleaved [3 * width] */
+	unsigned short *Frame;   /* interleaved [3 * width * height] */
+} vf_priv_s;
 
 //----------------------------------------
 //struktura za instanco efekta
@@ -56,152 +56,252 @@ int w;
 
 double LumSpac,LumTmp;
 vf_priv_s vps;
-
-unsigned char *Rplani,*Gplani,*Bplani,*Rplano,*Gplano,*Bplano;
 } inst;
 
 
 //========================================================
 //functions LowPassMul, deNoiseTemporal, deNoiseSpacial,
-//deNoise and PrecalaCoefs  are from Mplayer "hqdn3d" filter
+//deNoise and PrecalcCoefs are from Mplayer "hqdn3d" filter
 //by Daniel Moreno <comac@comac.darktech.org>
 
-static inline unsigned int LowPassMul(unsigned int PrevMul, unsigned int CurrMul, int* Coef){
-//    int dMul= (PrevMul&0xFFFFFF)-(CurrMul&0xFFFFFF);
-    int dMul= PrevMul-CurrMul;
-    unsigned int d=((dMul+0x10007FF)>>12);
-    return CurrMul + Coef[d];
+static inline unsigned int LowPassMul(unsigned int PrevMul, unsigned int CurrMul, const int* Coef){
+    int dMul = (int)(PrevMul - CurrMul);
+    unsigned int d = ((unsigned int)(dMul + 0x10007FF) >> 12);
+    return CurrMul + (unsigned int)Coef[d];
 }
 
-static void deNoiseTemporal(
-                    unsigned char *Frame,        // mpi->planes[x]
-                    unsigned char *FrameDest,    // dmpi->planes[x]
+static void deNoiseTemporalRGB(
+                    const uint32_t *inframe,
+                    uint32_t *outframe,
                     unsigned short *FrameAnt,
-                    int W, int H, int sStride, int dStride,
-                    int *Temporal)
+                    int W, int H,
+                    const int *Temporal)
 {
-    long X, Y;
-    unsigned int PixelDst;
+    size_t n = (size_t)W * H;
+    size_t i;
+    for (i = 0; i < n; i++) {
+        uint32_t px = inframe[i];
+        unsigned short *fa = FrameAnt + i * 3;
 
-    for (Y = 0; Y < H; Y++){
-        for (X = 0; X < W; X++){
-            PixelDst = LowPassMul(FrameAnt[X]<<8, Frame[X]<<16, Temporal);
-            FrameAnt[X] = ((PixelDst+0x1000007F)>>8);
-            FrameDest[X]= ((PixelDst+0x10007FFF)>>16);
-        }
-        Frame += sStride;
-        FrameDest += dStride;
-        FrameAnt += W;
+        unsigned int dstR = LowPassMul((unsigned int)fa[0] << 8, (px & 0xFFu) << 16, Temporal);
+        unsigned int dstG = LowPassMul((unsigned int)fa[1] << 8, ((px >> 8) & 0xFFu) << 16, Temporal);
+        unsigned int dstB = LowPassMul((unsigned int)fa[2] << 8, ((px >> 16) & 0xFFu) << 16, Temporal);
+
+        fa[0] = (unsigned short)((dstR + 0x1000007Fu) >> 8);
+        fa[1] = (unsigned short)((dstG + 0x1000007Fu) >> 8);
+        fa[2] = (unsigned short)((dstB + 0x1000007Fu) >> 8);
+
+        outframe[i] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                    | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                    | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                    | (px & 0xFF000000u);
     }
 }
 
-static void deNoiseSpacial(
-                    unsigned char *Frame,        // mpi->planes[x]
-                    unsigned char *FrameDest,    // dmpi->planes[x]
-                    unsigned int *LineAnt,       // vf->priv->Line (width bytes)
-                    int W, int H, int sStride, int dStride,
-                    int *Horizontal, int *Vertical)
+static void deNoiseSpacialRGB(
+                    const uint32_t *inframe,
+                    uint32_t *outframe,
+                    unsigned int *LineAnt,
+                    int W, int H,
+                    const int *Horizontal, const int *Vertical)
 {
-    long X, Y;
-    long sLineOffs = 0, dLineOffs = 0;
-    unsigned int PixelAnt;
-    unsigned int PixelDst;
+    int X, Y;
+    unsigned int antR, antG, antB;
 
     /* First pixel has no left nor top neighbor. */
-    PixelDst = LineAnt[0] = PixelAnt = Frame[0]<<16;
-    FrameDest[0]= ((PixelDst+0x10007FFF)>>16);
-
-    /* First line has no top neighbor, only left. */
-    for (X = 1; X < W; X++){
-        PixelDst = LineAnt[X] = LowPassMul(PixelAnt, Frame[X]<<16, Horizontal);
-        FrameDest[X]= ((PixelDst+0x10007FFF)>>16);
+    {
+        uint32_t px = inframe[0];
+        LineAnt[0] = antR = (px & 0xFFu) << 16;
+        LineAnt[1] = antG = ((px >> 8) & 0xFFu) << 16;
+        LineAnt[2] = antB = ((px >> 16) & 0xFFu) << 16;
+        outframe[0] = (((antR + 0x10007FFFu) >> 16) & 0xFFu)
+                    | ((((antG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                    | ((((antB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                    | (px & 0xFF000000u);
     }
 
-    for (Y = 1; Y < H; Y++){
-	unsigned int PixelAnt;
-	sLineOffs += sStride, dLineOffs += dStride;
-        /* First pixel on each line doesn't have previous pixel */
-        PixelAnt = Frame[sLineOffs]<<16;
-        PixelDst = LineAnt[0] = LowPassMul(LineAnt[0], PixelAnt, Vertical);
-        FrameDest[dLineOffs]= ((PixelDst+0x10007FFF)>>16);
+    /* First line has no top neighbor, only left. */
+    for (X = 1; X < W; X++) {
+        uint32_t px = inframe[X];
+        unsigned int dstR = LineAnt[X * 3 + 0] = LowPassMul(antR, (px & 0xFFu) << 16, Horizontal);
+        unsigned int dstG = LineAnt[X * 3 + 1] = LowPassMul(antG, ((px >> 8) & 0xFFu) << 16, Horizontal);
+        unsigned int dstB = LineAnt[X * 3 + 2] = LowPassMul(antB, ((px >> 16) & 0xFFu) << 16, Horizontal);
+        outframe[X] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                    | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                    | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                    | (px & 0xFF000000u);
+    }
 
-        for (X = 1; X < W; X++){
-            unsigned int PixelDst;
-            /* The rest are normal */
-            PixelAnt = LowPassMul(PixelAnt, Frame[sLineOffs+X]<<16, Horizontal);
-            PixelDst = LineAnt[X] = LowPassMul(LineAnt[X], PixelAnt, Vertical);
-            FrameDest[dLineOffs+X]= ((PixelDst+0x10007FFF)>>16);
+    for (Y = 1; Y < H; Y++) {
+        const uint32_t *in_row = inframe + (size_t)Y * W;
+        uint32_t *out_row = outframe + (size_t)Y * W;
+
+        /* First pixel on each line doesn't have previous pixel */
+        {
+            uint32_t px = in_row[0];
+            antR = (px & 0xFFu) << 16;
+            antG = ((px >> 8) & 0xFFu) << 16;
+            antB = ((px >> 16) & 0xFFu) << 16;
+            unsigned int dstR = LineAnt[0] = LowPassMul(LineAnt[0], antR, Vertical);
+            unsigned int dstG = LineAnt[1] = LowPassMul(LineAnt[1], antG, Vertical);
+            unsigned int dstB = LineAnt[2] = LowPassMul(LineAnt[2], antB, Vertical);
+            out_row[0] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                       | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                       | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                       | (px & 0xFF000000u);
+        }
+
+        for (X = 1; X < W; X++) {
+            uint32_t px = in_row[X];
+            unsigned int *la = LineAnt + X * 3;
+            antR = LowPassMul(antR, (px & 0xFFu) << 16, Horizontal);
+            antG = LowPassMul(antG, ((px >> 8) & 0xFFu) << 16, Horizontal);
+            antB = LowPassMul(antB, ((px >> 16) & 0xFFu) << 16, Horizontal);
+
+            unsigned int dstR = la[0] = LowPassMul(la[0], antR, Vertical);
+            unsigned int dstG = la[1] = LowPassMul(la[1], antG, Vertical);
+            unsigned int dstB = la[2] = LowPassMul(la[2], antB, Vertical);
+
+            out_row[X] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                       | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                       | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                       | (px & 0xFF000000u);
         }
     }
 }
 
-static void deNoise(unsigned char *Frame,        // mpi->planes[x]
-                    unsigned char *FrameDest,    // dmpi->planes[x]
-                    unsigned int *LineAnt,      // vf->priv->Line (width bytes)
-		    unsigned short **FrameAntPtr,
-                    int W, int H, int sStride, int dStride,
-                    int *Horizontal, int *Vertical, int *Temporal)
+static void deNoiseRGB(const uint32_t *inframe,
+                       uint32_t *outframe,
+                       unsigned int *LineAnt,
+                       unsigned short **FrameAntPtr,
+                       int W, int H,
+                       const int *Horizontal, const int *Vertical, const int *Temporal)
 {
-    long X, Y;
-    long sLineOffs = 0, dLineOffs = 0;
-    unsigned int PixelAnt;
-    unsigned int PixelDst;
-    unsigned short* FrameAnt=(*FrameAntPtr);
+    int X, Y;
+    unsigned short *FrameAnt = *FrameAntPtr;
 
-    if(!FrameAnt){
-	(*FrameAntPtr)=FrameAnt=malloc(W*H*sizeof(unsigned short));
-	for (Y = 0; Y < H; Y++){
-	    unsigned short* dst=&FrameAnt[Y*W];
-	    unsigned char* src=Frame+Y*sStride;
-	    for (X = 0; X < W; X++) dst[X]=src[X]<<8;
-	}
+    if (!FrameAnt) {
+        size_t n = (size_t)W * H;
+        size_t i;
+        *FrameAntPtr = FrameAnt = (unsigned short*)malloc(n * 3 * sizeof(unsigned short));
+        for (i = 0; i < n; i++) {
+            uint32_t px = inframe[i];
+            FrameAnt[i * 3 + 0] = (unsigned short)((px & 0xFFu) << 8);
+            FrameAnt[i * 3 + 1] = (unsigned short)(((px >> 8) & 0xFFu) << 8);
+            FrameAnt[i * 3 + 2] = (unsigned short)(((px >> 16) & 0xFFu) << 8);
+        }
     }
 
-    if(!Horizontal[0] && !Vertical[0]){
-        deNoiseTemporal(Frame, FrameDest, FrameAnt,
-                        W, H, sStride, dStride, Temporal);
+    if (!Horizontal[0] && !Vertical[0]) {
+        deNoiseTemporalRGB(inframe, outframe, FrameAnt, W, H, Temporal);
         return;
     }
-    if(!Temporal[0]){
-        deNoiseSpacial(Frame, FrameDest, LineAnt,
-                       W, H, sStride, dStride, Horizontal, Vertical);
+    if (!Temporal[0]) {
+        deNoiseSpacialRGB(inframe, outframe, LineAnt, W, H, Horizontal, Vertical);
         return;
     }
 
     /* First pixel has no left nor top neighbor. Only previous frame */
-    LineAnt[0] = PixelAnt = Frame[0]<<16;
-    PixelDst = LowPassMul(FrameAnt[0]<<8, PixelAnt, Temporal);
-    FrameAnt[0] = ((PixelDst+0x1000007F)>>8);
-    FrameDest[0]= ((PixelDst+0x10007FFF)>>16);
+    unsigned int antR, antG, antB;
+    {
+        uint32_t px = inframe[0];
+        LineAnt[0] = antR = (px & 0xFFu) << 16;
+        LineAnt[1] = antG = ((px >> 8) & 0xFFu) << 16;
+        LineAnt[2] = antB = ((px >> 16) & 0xFFu) << 16;
 
-    /* First line has no top neighbor. Only left one for each pixel and
-     * last frame */
-    for (X = 1; X < W; X++){
-        LineAnt[X] = PixelAnt = LowPassMul(PixelAnt, Frame[X]<<16, Horizontal);
-        PixelDst = LowPassMul(FrameAnt[X]<<8, PixelAnt, Temporal);
-        FrameAnt[X] = ((PixelDst+0x1000007F)>>8);
-        FrameDest[X]= ((PixelDst+0x10007FFF)>>16);
+        unsigned int dstR = LowPassMul((unsigned int)FrameAnt[0] << 8, antR, Temporal);
+        unsigned int dstG = LowPassMul((unsigned int)FrameAnt[1] << 8, antG, Temporal);
+        unsigned int dstB = LowPassMul((unsigned int)FrameAnt[2] << 8, antB, Temporal);
+
+        FrameAnt[0] = (unsigned short)((dstR + 0x1000007Fu) >> 8);
+        FrameAnt[1] = (unsigned short)((dstG + 0x1000007Fu) >> 8);
+        FrameAnt[2] = (unsigned short)((dstB + 0x1000007Fu) >> 8);
+
+        outframe[0] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                    | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                    | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                    | (px & 0xFF000000u);
     }
 
-    for (Y = 1; Y < H; Y++){
-	unsigned int PixelAnt;
-	unsigned short* LinePrev=&FrameAnt[Y*W];
-	sLineOffs += sStride, dLineOffs += dStride;
-        /* First pixel on each line doesn't have previous pixel */
-        PixelAnt = Frame[sLineOffs]<<16;
-        LineAnt[0] = LowPassMul(LineAnt[0], PixelAnt, Vertical);
-	PixelDst = LowPassMul(LinePrev[0]<<8, LineAnt[0], Temporal);
-        LinePrev[0] = ((PixelDst+0x1000007F)>>8);
-        FrameDest[dLineOffs]= ((PixelDst+0x10007FFF)>>16);
+    /* First line has no top neighbor. Only left one for each pixel and last frame */
+    for (X = 1; X < W; X++) {
+        uint32_t px = inframe[X];
+        unsigned int *la = LineAnt + X * 3;
+        unsigned short *fa = FrameAnt + X * 3;
 
-        for (X = 1; X < W; X++){
-            unsigned int PixelDst;
-            /* The rest are normal */
-            PixelAnt = LowPassMul(PixelAnt, Frame[sLineOffs+X]<<16, Horizontal);
-            LineAnt[X] = LowPassMul(LineAnt[X], PixelAnt, Vertical);
-	    PixelDst = LowPassMul(LinePrev[X]<<8, LineAnt[X], Temporal);
-            LinePrev[X] = ((PixelDst+0x1000007F)>>8);
-            FrameDest[dLineOffs+X]= ((PixelDst+0x10007FFF)>>16);
+        la[0] = antR = LowPassMul(antR, (px & 0xFFu) << 16, Horizontal);
+        la[1] = antG = LowPassMul(antG, ((px >> 8) & 0xFFu) << 16, Horizontal);
+        la[2] = antB = LowPassMul(antB, ((px >> 16) & 0xFFu) << 16, Horizontal);
+
+        unsigned int dstR = LowPassMul((unsigned int)fa[0] << 8, antR, Temporal);
+        unsigned int dstG = LowPassMul((unsigned int)fa[1] << 8, antG, Temporal);
+        unsigned int dstB = LowPassMul((unsigned int)fa[2] << 8, antB, Temporal);
+
+        fa[0] = (unsigned short)((dstR + 0x1000007Fu) >> 8);
+        fa[1] = (unsigned short)((dstG + 0x1000007Fu) >> 8);
+        fa[2] = (unsigned short)((dstB + 0x1000007Fu) >> 8);
+
+        outframe[X] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                    | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                    | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                    | (px & 0xFF000000u);
+    }
+
+    for (Y = 1; Y < H; Y++) {
+        const uint32_t *in_row = inframe + (size_t)Y * W;
+        uint32_t *out_row = outframe + (size_t)Y * W;
+        unsigned short *LinePrev = FrameAnt + (size_t)Y * W * 3;
+
+        /* First pixel on each line doesn't have previous pixel */
+        {
+            uint32_t px = in_row[0];
+            antR = (px & 0xFFu) << 16;
+            antG = ((px >> 8) & 0xFFu) << 16;
+            antB = ((px >> 16) & 0xFFu) << 16;
+
+            unsigned int vR = LineAnt[0] = LowPassMul(LineAnt[0], antR, Vertical);
+            unsigned int vG = LineAnt[1] = LowPassMul(LineAnt[1], antG, Vertical);
+            unsigned int vB = LineAnt[2] = LowPassMul(LineAnt[2], antB, Vertical);
+
+            unsigned int dstR = LowPassMul((unsigned int)LinePrev[0] << 8, vR, Temporal);
+            unsigned int dstG = LowPassMul((unsigned int)LinePrev[1] << 8, vG, Temporal);
+            unsigned int dstB = LowPassMul((unsigned int)LinePrev[2] << 8, vB, Temporal);
+
+            LinePrev[0] = (unsigned short)((dstR + 0x1000007Fu) >> 8);
+            LinePrev[1] = (unsigned short)((dstG + 0x1000007Fu) >> 8);
+            LinePrev[2] = (unsigned short)((dstB + 0x1000007Fu) >> 8);
+
+            out_row[0] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                       | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                       | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                       | (px & 0xFF000000u);
+        }
+
+        for (X = 1; X < W; X++) {
+            uint32_t px = in_row[X];
+            unsigned int *la = LineAnt + X * 3;
+            unsigned short *lp = LinePrev + X * 3;
+
+            antR = LowPassMul(antR, (px & 0xFFu) << 16, Horizontal);
+            antG = LowPassMul(antG, ((px >> 8) & 0xFFu) << 16, Horizontal);
+            antB = LowPassMul(antB, ((px >> 16) & 0xFFu) << 16, Horizontal);
+
+            unsigned int vR = la[0] = LowPassMul(la[0], antR, Vertical);
+            unsigned int vG = la[1] = LowPassMul(la[1], antG, Vertical);
+            unsigned int vB = la[2] = LowPassMul(la[2], antB, Vertical);
+
+            unsigned int dstR = LowPassMul((unsigned int)lp[0] << 8, vR, Temporal);
+            unsigned int dstG = LowPassMul((unsigned int)lp[1] << 8, vG, Temporal);
+            unsigned int dstB = LowPassMul((unsigned int)lp[2] << 8, vB, Temporal);
+
+            lp[0] = (unsigned short)((dstR + 0x1000007Fu) >> 8);
+            lp[1] = (unsigned short)((dstG + 0x1000007Fu) >> 8);
+            lp[2] = (unsigned short)((dstB + 0x1000007Fu) >> 8);
+
+            out_row[X] = (((dstR + 0x10007FFFu) >> 16) & 0xFFu)
+                       | ((((dstG + 0x10007FFFu) >> 16) & 0xFFu) << 8)
+                       | ((((dstB + 0x10007FFFu) >> 16) & 0xFFu) << 16)
+                       | (px & 0xFF000000u);
         }
     }
 }
@@ -302,13 +402,7 @@ in->h=height;
 
 in->LumSpac=4;
 in->LumTmp=6;
-in->vps.Line=calloc(width,sizeof(int));
-in->Rplani=calloc(width*height,sizeof(unsigned char));
-in->Gplani=calloc(width*height,sizeof(unsigned char));
-in->Bplani=calloc(width*height,sizeof(unsigned char));
-in->Rplano=calloc(width*height,sizeof(unsigned char));
-in->Gplano=calloc(width*height,sizeof(unsigned char));
-in->Bplano=calloc(width*height,sizeof(unsigned char));
+in->vps.Line=calloc((size_t)width * 3, sizeof(unsigned int));
 
 PrecalcCoefs(in->vps.Coefs[0],in->LumSpac);
 PrecalcCoefs(in->vps.Coefs[1],in->LumTmp);
@@ -324,15 +418,7 @@ inst *in;
 in=(inst*)instance;
 
 free(in->vps.Line);
-free(in->vps.Frame[0]);
-free(in->vps.Frame[1]);
-free(in->vps.Frame[2]);
-free(in->Rplani);
-free(in->Gplani);
-free(in->Bplani);
-free(in->Rplano);
-free(in->Gplano);
-free(in->Bplano);
+free(in->vps.Frame);
 
 free(instance);
 }
@@ -390,31 +476,10 @@ switch(param_index)
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
 inst *in;
-int i;
 
 assert(instance);
 in=(inst*)instance;
 
-//Frei0r works with packed color, Mplayer with planar color
-//I decided to copy data rather than modify the hqdn3d functions
-//this takes some time, but future inmprovements in hqdn3d
-//functions can be simply copied here without modification
-
-for (i=0;i<(in->w*in->h);i++)	//copy to planar
-	{
-	in->Rplani[i]=inframe[i]&255;
-	in->Gplani[i]=(inframe[i]>>8)&255;
-	in->Bplani[i]=(inframe[i]>>16)&255;
-	}
-
-deNoise(in->Rplani, in->Rplano, in->vps.Line, &in->vps.Frame[0], in->w, in->h, in->w, in->w, in->vps.Coefs[0], in->vps.Coefs[0], in->vps.Coefs[1]);
-deNoise(in->Gplani, in->Gplano, in->vps.Line, &in->vps.Frame[1], in->w, in->h, in->w, in->w, in->vps.Coefs[0], in->vps.Coefs[0], in->vps.Coefs[1]);
-deNoise(in->Bplani, in->Bplano, in->vps.Line, &in->vps.Frame[2], in->w, in->h, in->w, in->w, in->vps.Coefs[0], in->vps.Coefs[0], in->vps.Coefs[1]);
-
-for (i=0;i<(in->w*in->h);i++)	//copy to packed, preserve alpha
-	{
-	outframe[i]=((uint32_t)in->Rplano[i])|((uint32_t)in->Gplano[i]<<8)|((uint32_t)in->Bplano[i]<<16)|(inframe[i]&0xFF000000);
-	}
-
-
+deNoiseRGB(inframe, outframe, in->vps.Line, &in->vps.Frame, in->w, in->h,
+           in->vps.Coefs[0], in->vps.Coefs[0], in->vps.Coefs[1]);
 }
