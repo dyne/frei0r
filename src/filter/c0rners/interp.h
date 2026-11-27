@@ -42,6 +42,10 @@
 #include <math.h>
 #include <stdio.h>	/* za debug printoute */
 #include <inttypes.h>
+#include <string.h>
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 
 //--------------------------------------------------------
 //pointer to an interpolating function
@@ -82,27 +86,7 @@ static void remap(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned c
 //  map = za vsak pixel izs pove, kje ga vzamemo is vhs
 //  bgc = background color
 //  interp = kazalec na interpolacijsko funkcijo
-static void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, uint32_t bgc, interpp interp)
-{
-	int i,j;
-	float x,y;
-
-	for (i=0;i<ho;i++)
-		for (j=0;j<wo;j++)
-		{
-		x=map[2*(wo*i+j)];
-		y=map[2*(wo*i+j)+1];
-		if (x>0)
-			interp(vhs,wi,hi,x,y,&izs[4*(wo*i+j)]);
-		else	//background fill
-		{
-			izs[4*(wo*i+j)]=bgc;
-			izs[4*(wo*i+j)+1]=bgc>>8;
-			izs[4*(wo*i+j)+2]=bgc>>16;
-			izs[4*(wo*i+j)+3]=bgc>>24;
-		}
-	}
-}
+static void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, uint32_t bgc, interpp interp);
 
 //**************************************
 //HERE BEGIN THE INTERPOLATION FUNCTIONS
@@ -868,4 +852,262 @@ static int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, uns
 	v[3]=pp3;
 
 	return 0;
+}
+
+static inline int interp_fast_floorf(float x)
+{
+	int i = (int)x;
+	return (x < (float)i) ? (i - 1) : i;
+}
+
+static inline int interp_fast_ceilf(float x)
+{
+	int i = (int)x;
+	return (x > (float)i) ? (i + 1) : i;
+}
+
+static inline int interp_fast_roundf_pos(float x)
+{
+	int i = (int)x;
+	return (x - (float)i >= 0.5f) ? (i + 1) : i;
+}
+
+#if defined(__SSE2__)
+static inline __m128 interp_load_rgba_f32(const unsigned char *p, __m128i zero)
+{
+	uint32_t u;
+	memcpy(&u, p, 4);
+	__m128i v = _mm_cvtsi32_si128((int)u);
+	v = _mm_unpacklo_epi8(v, zero);
+	v = _mm_unpacklo_epi16(v, zero);
+	return _mm_cvtepi32_ps(v);
+}
+
+static inline void interp_store_rgba_f32_u8(unsigned char *dst, __m128 v)
+{
+	__m128i vi = _mm_cvttps_epi32(v);
+	vi = _mm_and_si128(vi, _mm_set1_epi32(0xFF));
+	__m128i v16 = _mm_packs_epi32(vi, vi);
+	__m128i v8 = _mm_packus_epi16(v16, v16);
+	uint32_t u = (uint32_t)_mm_cvtsi128_si32(v8);
+	memcpy(dst, &u, 4);
+}
+#endif
+
+static void remap32(int wi, int hi, int wo, int ho, unsigned char *vhs, unsigned char *izs, float *map, uint32_t bgc, interpp interp)
+{
+	size_t n = (size_t)wo * ho;
+	size_t idx;
+	uint32_t *dst32 = (uint32_t*)izs;
+	const uint32_t *src32 = (const uint32_t*)vhs;
+
+	if (interp == interpNN_b32)
+	{
+		for (idx = 0; idx < n; idx++)
+		{
+			float x = map[2 * idx];
+			if (x > 0.0f)
+			{
+				float y = map[2 * idx + 1];
+				int ix = interp_fast_roundf_pos(x);
+				int iy = (y >= 0.0f) ? interp_fast_roundf_pos(y) : (int)roundf(y);
+				dst32[idx] = src32[ix + iy * wi];
+			}
+			else
+			{
+				dst32[idx] = bgc;
+			}
+		}
+		return;
+	}
+
+#if defined(__SSE2__)
+	if (interp == interpBL_b32)
+	{
+		const __m128i zero = _mm_setzero_si128();
+		for (idx = 0; idx < n; idx++)
+		{
+			float x = map[2 * idx];
+			if (x > 0.0f)
+			{
+				float y = map[2 * idx + 1];
+				int m = interp_fast_floorf(x);
+				int ny = interp_fast_floorf(y);
+				const unsigned char *r0 = vhs + 4 * (ny * wi + m);
+				const unsigned char *r1 = r0 + 4 * wi;
+
+				__m128 p00 = interp_load_rgba_f32(r0, zero);
+				__m128 p10 = interp_load_rgba_f32(r0 + 4, zero);
+				__m128 p01 = interp_load_rgba_f32(r1, zero);
+				__m128 p11 = interp_load_rgba_f32(r1 + 4, zero);
+
+				__m128 fx = _mm_set1_ps(x - (float)m);
+				__m128 fy = _mm_set1_ps(y - (float)ny);
+
+				__m128 a = _mm_add_ps(p00, _mm_mul_ps(_mm_sub_ps(p10, p00), fx));
+				__m128 b = _mm_add_ps(p01, _mm_mul_ps(_mm_sub_ps(p11, p01), fx));
+				__m128 res = _mm_add_ps(a, _mm_mul_ps(_mm_sub_ps(b, a), fy));
+				interp_store_rgba_f32_u8(izs + 4 * idx, res);
+			}
+			else
+			{
+				dst32[idx] = bgc;
+			}
+		}
+		return;
+	}
+
+	if (interp == interpBC_b32)
+	{
+		const __m128i zero = _mm_setzero_si128();
+		const __m128 c0 = _mm_setzero_ps();
+		const __m128 c255 = _mm_set1_ps(255.0f);
+		const __m128 c256 = _mm_set1_ps(256.0f);
+		const int stride = 4 * wi;
+
+		for (idx = 0; idx < n; idx++)
+		{
+			float x = map[2 * idx];
+			if (x > 0.0f)
+			{
+				float y = map[2 * idx + 1];
+				int m = interp_fast_ceilf(x) - 2; if (m < 0) m = 0; if ((m + 5) > wi) m = wi - 4;
+				int ny = interp_fast_ceilf(y) - 2; if (ny < 0) ny = 0; if ((ny + 5) > hi) ny = hi - 4;
+
+				const unsigned char *base = vhs + 4 * (ny * wi + m);
+				__m128 p1[4], p2[4], p3[4], p4[4];
+				int i, j;
+				for (i = 0; i < 4; i++)
+				{
+					const unsigned char *row = base + i * stride;
+					p1[i] = interp_load_rgba_f32(row, zero);
+					p2[i] = interp_load_rgba_f32(row + 4, zero);
+					p3[i] = interp_load_rgba_f32(row + 8, zero);
+					p4[i] = interp_load_rgba_f32(row + 12, zero);
+				}
+
+				for (j = 1; j < 4; j++)
+				{
+					float fj = (float)j;
+					for (i = 3; i >= j; i--)
+					{
+						__m128 k = _mm_set1_ps((y - (float)i - (float)ny) / fj);
+						p1[i] = _mm_add_ps(p1[i], _mm_mul_ps(k, _mm_sub_ps(p1[i], p1[i - 1])));
+						p2[i] = _mm_add_ps(p2[i], _mm_mul_ps(k, _mm_sub_ps(p2[i], p2[i - 1])));
+						p3[i] = _mm_add_ps(p3[i], _mm_mul_ps(k, _mm_sub_ps(p3[i], p3[i - 1])));
+						p4[i] = _mm_add_ps(p4[i], _mm_mul_ps(k, _mm_sub_ps(p4[i], p4[i - 1])));
+					}
+				}
+
+				__m128 p[4] = { p1[3], p2[3], p3[3], p4[3] };
+				for (j = 1; j < 4; j++)
+				{
+					float fj = (float)j;
+					for (i = 3; i >= j; i--)
+					{
+						__m128 k = _mm_set1_ps((x - (float)i - (float)m) / fj);
+						p[i] = _mm_add_ps(p[i], _mm_mul_ps(k, _mm_sub_ps(p[i], p[i - 1])));
+					}
+				}
+
+				__m128 res = p[3];
+				res = _mm_max_ps(res, c0);
+				__m128 gt256 = _mm_cmpgt_ps(res, c256);
+				res = _mm_or_ps(_mm_and_ps(gt256, c255), _mm_andnot_ps(gt256, res));
+				interp_store_rgba_f32_u8(izs + 4 * idx, res);
+			}
+			else
+			{
+				dst32[idx] = bgc;
+			}
+		}
+		return;
+	}
+
+	if (interp == interpBC2_b32)
+	{
+		const __m128i zero = _mm_setzero_si128();
+		const __m128 c0 = _mm_setzero_ps();
+		const __m128 c255 = _mm_set1_ps(255.0f);
+		const __m128 c256 = _mm_set1_ps(256.0f);
+		const int stride = 4 * wi;
+
+		for (idx = 0; idx < n; idx++)
+		{
+			float x = map[2 * idx];
+			if (x > 0.0f)
+			{
+				float y = map[2 * idx + 1];
+				int m = interp_fast_ceilf(x) - 2; if (m < 0) m = 0; if ((m + 5) > wi) m = wi - 4;
+				int ny = interp_fast_ceilf(y) - 2; if (ny < 0) ny = 0; if ((ny + 5) > hi) ny = hi - 4;
+
+				float xx, wy[4], wx[4];
+				xx = y - ny;     wy[0] = (float)((-0.75 * (xx - 5.0) * xx - 6.0) * xx + 3.0);
+				xx = xx - 1.0f;  wy[1] = (float)((1.25 * xx - 2.25) * xx * xx + 1.0);
+				xx = 1.0f - xx;  wy[2] = (float)((1.25 * xx - 2.25) * xx * xx + 1.0);
+				xx = xx + 1.0f;  wy[3] = (float)((-0.75 * (xx - 5.0) * xx - 6.0) * xx + 3.0);
+
+				xx = x - m;      wx[0] = (float)((-0.75 * (xx - 5.0) * xx - 6.0) * xx + 3.0);
+				xx = xx - 1.0f;  wx[1] = (float)((1.25 * xx - 2.25) * xx * xx + 1.0);
+				xx = 1.0f - xx;  wx[2] = (float)((1.25 * xx - 2.25) * xx * xx + 1.0);
+				xx = xx + 1.0f;  wx[3] = (float)((-0.75 * (xx - 5.0) * xx - 6.0) * xx + 3.0);
+
+				__m128 vwy0 = _mm_set1_ps(wy[0]);
+				__m128 vwy1 = _mm_set1_ps(wy[1]);
+				__m128 vwy2 = _mm_set1_ps(wy[2]);
+				__m128 vwy3 = _mm_set1_ps(wy[3]);
+
+				const unsigned char *r0 = vhs + 4 * (ny * wi + m);
+				const unsigned char *r1 = r0 + stride;
+				const unsigned char *r2 = r1 + stride;
+				const unsigned char *r3 = r2 + stride;
+
+				__m128 p0 = _mm_mul_ps(vwy0, interp_load_rgba_f32(r0, zero));
+				p0 = _mm_add_ps(p0, _mm_mul_ps(vwy1, interp_load_rgba_f32(r1, zero)));
+				p0 = _mm_add_ps(p0, _mm_mul_ps(vwy2, interp_load_rgba_f32(r2, zero)));
+				p0 = _mm_add_ps(p0, _mm_mul_ps(vwy3, interp_load_rgba_f32(r3, zero)));
+
+				__m128 p1 = _mm_mul_ps(vwy0, interp_load_rgba_f32(r0 + 4, zero));
+				p1 = _mm_add_ps(p1, _mm_mul_ps(vwy1, interp_load_rgba_f32(r1 + 4, zero)));
+				p1 = _mm_add_ps(p1, _mm_mul_ps(vwy2, interp_load_rgba_f32(r2 + 4, zero)));
+				p1 = _mm_add_ps(p1, _mm_mul_ps(vwy3, interp_load_rgba_f32(r3 + 4, zero)));
+
+				__m128 p2 = _mm_mul_ps(vwy0, interp_load_rgba_f32(r0 + 8, zero));
+				p2 = _mm_add_ps(p2, _mm_mul_ps(vwy1, interp_load_rgba_f32(r1 + 8, zero)));
+				p2 = _mm_add_ps(p2, _mm_mul_ps(vwy2, interp_load_rgba_f32(r2 + 8, zero)));
+				p2 = _mm_add_ps(p2, _mm_mul_ps(vwy3, interp_load_rgba_f32(r3 + 8, zero)));
+
+				__m128 p3 = _mm_mul_ps(vwy0, interp_load_rgba_f32(r0 + 12, zero));
+				p3 = _mm_add_ps(p3, _mm_mul_ps(vwy1, interp_load_rgba_f32(r1 + 12, zero)));
+				p3 = _mm_add_ps(p3, _mm_mul_ps(vwy2, interp_load_rgba_f32(r2 + 12, zero)));
+				p3 = _mm_add_ps(p3, _mm_mul_ps(vwy3, interp_load_rgba_f32(r3 + 12, zero)));
+
+				__m128 res = _mm_mul_ps(_mm_set1_ps(wx[0]), p0);
+				res = _mm_add_ps(res, _mm_mul_ps(_mm_set1_ps(wx[1]), p1));
+				res = _mm_add_ps(res, _mm_mul_ps(_mm_set1_ps(wx[2]), p2));
+				res = _mm_add_ps(res, _mm_mul_ps(_mm_set1_ps(wx[3]), p3));
+
+				res = _mm_max_ps(res, c0);
+				__m128 gt256 = _mm_cmpgt_ps(res, c256);
+				res = _mm_or_ps(_mm_and_ps(gt256, c255), _mm_andnot_ps(gt256, res));
+				interp_store_rgba_f32_u8(izs + 4 * idx, res);
+			}
+			else
+			{
+				dst32[idx] = bgc;
+			}
+		}
+		return;
+	}
+#endif
+
+	for (idx = 0; idx < n; idx++)
+	{
+		float x = map[2 * idx];
+		float y = map[2 * idx + 1];
+		if (x > 0.0f)
+			interp(vhs, wi, hi, x, y, izs + 4 * idx);
+		else
+			dst32[idx] = bgc;
+	}
 }

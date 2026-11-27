@@ -33,8 +33,42 @@ typedef struct lenscorrection_instance
   double correctionnearcenter;
   double correctionnearedges;
   double brightness;
+  int32_t *map;
+  int map_dirty;
 } lenscorrection_instance_t;
 
+
+static void rebuild_map(lenscorrection_instance_t* inst)
+{
+	int w = (int)inst->width;
+	int h = (int)inst->height;
+	double normallise_radius_sq = 4.0 / (inst->width * inst->width + inst->height * inst->height);
+	double xcenter = inst->width * inst->xcenter;
+	double ycenter = inst->height * inst->ycenter;
+	double mult_sq = (inst->correctionnearcenter - 0.5);
+	double mult_qd = (inst->correctionnearedges - 0.5);
+	int32_t *map = inst->map;
+	int x, y;
+
+	for (y = 0; y < h; y++) {
+		double off_y = y - ycenter;
+		double off_y2 = off_y * off_y;
+		int32_t *row = map + (size_t)y * w;
+		for (x = 0; x < w; x++) {
+			double off_x = x - xcenter;
+			double radius_sq = ((off_x * off_x) + off_y2) * normallise_radius_sq;
+			double radius_mult = radius_sq * mult_sq + radius_sq * radius_sq * mult_qd + 1.0;
+			int sx = (int)(xcenter + radius_mult * off_x);
+			int sy = (int)(ycenter + radius_mult * off_y);
+			if (sx < 0 || sy < 0 || sx >= w || sy >= h) {
+				row[x] = -1;
+			} else {
+				row[x] = sx + sy * w;
+			}
+		}
+	}
+	inst->map_dirty = 0;
+}
 
 int f0r_init()
 {
@@ -99,11 +133,15 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->correctionnearcenter = 0.5;
   inst->correctionnearedges = 0.5;
   inst->brightness = 0.5;
+  inst->map = (int32_t*)malloc((size_t)width * height * sizeof(int32_t));
+  inst->map_dirty = 1;
   return (f0r_instance_t)inst;
 }
 
 void f0r_destruct(f0r_instance_t instance)
 {
+  lenscorrection_instance_t* inst = (lenscorrection_instance_t*)instance;
+  free(inst->map);
   free(instance);
 }
 
@@ -118,19 +156,19 @@ void f0r_set_param_value(f0r_instance_t instance,
 		double val;
 		case 0:
 			val = *((double*)param);
-			inst->xcenter = val;
+			if (val != inst->xcenter) { inst->xcenter = val; inst->map_dirty = 1; }
 			break;
 		case 1:
 			val = *((double*)param);
-			inst->ycenter = val;
+			if (val != inst->ycenter) { inst->ycenter = val; inst->map_dirty = 1; }
 			break;
 		case 2:
 			val = *((double*)param);
-			inst->correctionnearcenter = val;
+			if (val != inst->correctionnearcenter) { inst->correctionnearcenter = val; inst->map_dirty = 1; }
 			break;
 		case 3:
 			val = *((double*)param);
-			inst->correctionnearedges = val;
+			if (val != inst->correctionnearedges) { inst->correctionnearedges = val; inst->map_dirty = 1; }
 			break;
 		case 4:
 			val = *((double*)param);
@@ -168,81 +206,18 @@ void f0r_get_param_value(f0r_instance_t instance,
 void f0r_update(f0r_instance_t instance, double time,
 		const uint32_t* inframe, uint32_t* outframe)
 {
-	//Algorithm fetched from Krita
-	int x, y;
 	assert(instance);
 	lenscorrection_instance_t* inst = (lenscorrection_instance_t*)instance;
 
-	double xcenter = inst->xcenter;
-	double ycenter = inst->ycenter;
-	double correctionnearcenter = inst->correctionnearcenter;
-	double correctionnearedges = inst->correctionnearedges;
-	/* double brightness = inst->brightness; */
-
-	double normallise_radius_sq = 4.0 / (inst->width * inst->width + inst->height * inst->height );
-	xcenter = inst->width * xcenter;
-	ycenter = inst->height * ycenter;
-	double mult_sq = ( correctionnearcenter - 0.5 );
-	double mult_qd = ( correctionnearedges - 0.5);
-
-	for ( y = 0; y < inst->height; y++ ) {
-		for ( x = 0; x < inst->width; x++ ) {
-			double off_x = x - xcenter;
-			double off_y = y - ycenter;
-			double radius_sq = ( (off_x * off_x) + (off_y * off_y) ) * normallise_radius_sq;
-
-			double radius_mult = radius_sq * mult_sq + radius_sq * radius_sq * mult_qd;
-			/* double mag = radius_mult; */
-			radius_mult += 1.0;
-			double srcX = xcenter + radius_mult * off_x;
-			double srcY = ycenter + radius_mult * off_y;
-
-			/* double brighten = 1.0 + mag * brightness; */
-				// Disabled to avoid compiler warnings
-			
-			int sx;
-			int sy;
-			sx = srcX;
-			sy = srcY;
-			if ( sx < 0 || sy < 0 || sx >= inst->width || sy >= inst->height ) {
-				outframe[x + y * inst->width] =	0x00000000;
-				continue;
-			}
-			//FIXME: interpolate pixel!!
-			outframe[x + y * inst->width] = inframe[sx + sy * inst->width];
-		}
+	if (inst->map_dirty) {
+		rebuild_map(inst);
 	}
-}
 
-static uint32_t interpolate_pixel( uint8_t* frame, int w, int h, double x, double y ) {
-/*
-	+--+--+
-	|  |  |
-	+--+--+
-	|  |  |
-	+--+--+
-
-
-	0.5 is full pixel value
-
-	0.25 interpolate to left pixel
-	0.75 interpolate to right pixel
-*/
-
-/*  //Disabled to avoid warnings when compiling
-double xoff = x - floor(x);
-
-int xc = (int)floor(x);
-int yc = (int)floor(y);
-
-int i = (xc+yc*w)*4;
-uint8_t color1_r = (uint8_t)( xoff * frame[i] + ( 1.0 - xoff ) * frame[i] );
-uint8_t color1_g = (uint8_t)( xoff * frame[i+1] + ( 1.0 - xoff ) * frame[i+1] );
-uint8_t color1_b = (uint8_t)( xoff * frame[i+2] + ( 1.0 - xoff ) * frame[i+2] );
-uint8_t color1_a = (uint8_t)( xoff * frame[i+3] + ( 1.0 - xoff ) * frame[i+3] );
-*/
-
-
-
-return 0;
+	size_t len = (size_t)inst->width * inst->height;
+	const int32_t *map = inst->map;
+	size_t i;
+	for (i = 0; i < len; i++) {
+		int32_t idx = map[i];
+		outframe[i] = (idx >= 0) ? inframe[idx] : 0x00000000;
+	}
 }
