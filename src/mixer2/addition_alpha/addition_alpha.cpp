@@ -22,6 +22,10 @@
 #include "frei0r.hpp"
 #include "frei0r/math.h"
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
 #define NBYTES 4
 #define ALPHA 3
 
@@ -32,11 +36,6 @@ class addition_alpha : public frei0r::mixer2
 public:
   addition_alpha(unsigned int width, unsigned int height)
   {
-    // initialize look-up table
-    for (int i = 0; i < 256; i++)
-      add_lut[i] = i;
-  	for (int i = 256; i <= 510; i++)
-      add_lut[i] = 255;
   }
 
   /**
@@ -53,30 +52,51 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
-    const uint8_t *A = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *B = reinterpret_cast<const uint8_t*>(in2);
-    uint8_t *D = reinterpret_cast<uint8_t*>(out);
-    uint32_t sizeCounter = size;
-            
-    uint32_t b;
-  
-    while (sizeCounter--)
+    const uint8_t* __restrict__ A = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t* __restrict__ B = reinterpret_cast<const uint8_t*>(in2);
+    uint8_t* __restrict__ D = reinterpret_cast<uint8_t*>(out);
+    const size_t total_bytes = static_cast<size_t>(size) * NBYTES;
+    size_t i = 0;
+
+#if defined(__SSE2__)
+    const __m128i zero = _mm_setzero_si128();
+    const __m128i alpha_255 = _mm_set1_epi32(static_cast<int>(0xFF000000u));
+    for (; i + 16 <= total_bytes; i += 16)
       {
-        for (b = 0; b < ALPHA; b++)
-          D[b] = add_lut[A[b] + ((B[b]*B[ALPHA])>>8)];
-        
-        D[ALPHA] = 255;
-        A += NBYTES;
-        B += NBYTES;
-        D += NBYTES;
+        const __m128i va = _mm_loadu_si128(reinterpret_cast<const __m128i*>(A + i));
+        const __m128i vb = _mm_loadu_si128(reinterpret_cast<const __m128i*>(B + i));
+
+        const __m128i b_lo = _mm_unpacklo_epi8(vb, zero);
+        const __m128i b_hi = _mm_unpackhi_epi8(vb, zero);
+
+        const __m128i ba_lo = _mm_shufflelo_epi16(
+            _mm_shufflehi_epi16(b_lo, _MM_SHUFFLE(3, 3, 3, 3)),
+            _MM_SHUFFLE(3, 3, 3, 3));
+        const __m128i ba_hi = _mm_shufflelo_epi16(
+            _mm_shufflehi_epi16(b_hi, _MM_SHUFFLE(3, 3, 3, 3)),
+            _MM_SHUFFLE(3, 3, 3, 3));
+
+        const __m128i scaled_lo = _mm_srli_epi16(_mm_mullo_epi16(b_lo, ba_lo), 8);
+        const __m128i scaled_hi = _mm_srli_epi16(_mm_mullo_epi16(b_hi, ba_hi), 8);
+        const __m128i scaled = _mm_packus_epi16(scaled_lo, scaled_hi);
+
+        const __m128i res = _mm_or_si128(_mm_adds_epu8(va, scaled), alpha_255);
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(D + i), res);
+      }
+#endif
+
+    for (; i < total_bytes; i += NBYTES)
+      {
+        const uint32_t ba = B[i + ALPHA];
+        for (uint32_t b = 0; b < ALPHA; b++)
+          {
+            const uint32_t sum = static_cast<uint32_t>(A[i + b]) + ((B[i + b] * ba) >> 8);
+            D[i + b] = static_cast<uint8_t>(sum > 255u ? 255u : sum);
+          }
+        D[i + ALPHA] = 255;
       }
   }
-  
-private:
-  static uint8_t add_lut[511]; // look-up table storing values to do a quick MAX of two values when you know you add two unsigned chars
 };
-
-uint8_t addition_alpha::add_lut[511];
 
 } // namespace
 
