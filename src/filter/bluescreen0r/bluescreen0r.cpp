@@ -31,6 +31,11 @@
 #include <emmintrin.h>
 #define BLUESCREEN0R_USE_SSE2 1
 #endif
+#if defined(__GNUC__) || defined(__clang__)
+#define BLUESCREEN0R_LIKELY(x) __builtin_expect(!!(x), 1)
+#else
+#define BLUESCREEN0R_LIKELY(x) (x)
+#endif
 
 
 class bluescreen0r : public frei0r::filter
@@ -123,7 +128,7 @@ public:
 				__m128i in_band = _mm_and_si128(lt_dist, gt_dist2);
 
 				int band_mask = _mm_movemask_ps(_mm_castsi128_ps(in_band));
-				if (__builtin_expect(band_mask == 0, 1)) {
+				if (BLUESCREEN0R_LIKELY(band_mask == 0)) {
 					__m128i alpha = _mm_andnot_si128(lt_dist, _mm_and_si128(px, v_alpha_mask));
 					alpha = _mm_xor_si128(alpha, v_alpha_xor);
 					__m128i res = _mm_or_si128(_mm_and_si128(px, v_rgb_mask), alpha);
