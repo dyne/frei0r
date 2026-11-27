@@ -20,6 +20,8 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include <assert.h>
 
 #include "frei0r.h"
@@ -32,36 +34,6 @@ typedef struct rgbsplit0r_instance
     int shiftY;
 
 } rgbsplit0r_instance_t;
-
-
-inline static void rgbsplit0r_extract_color(uint32_t *pixelIn, uint32_t *pixelOut,
-                                            short int colorIndex)
-{
-    uint8_t *pxIn  = (uint8_t *)pixelIn,
-            *pxOut = (uint8_t *)pixelOut;
-
-    switch (colorIndex)
-    {
-        case 0 :
-            pxOut[0] = pxIn[0];
-            pxOut[1] = 0;
-            pxOut[2] = 0;
-            break;
-
-        case 1 :
-            pxOut[1] = pxIn[1];
-            pxOut[0] = 0;
-            pxOut[2] = 0;
-            break;
-
-        case 2 :
-            pxOut[2] = pxIn[2];
-            pxOut[1] = 0;
-            pxOut[0] = 0;
-            break;
-    }
-    pxOut[3] = pxIn[3];
-}
 
 int f0r_init()
 {
@@ -120,7 +92,7 @@ void f0r_destruct(f0r_instance_t instance)
 }
 
 void f0r_set_param_value(f0r_instance_t instance,
-			 f0r_param_t param, int param_index)
+                         f0r_param_t param, int param_index)
 {
     assert(instance);
     rgbsplit0r_instance_t *inst = (rgbsplit0r_instance_t*)instance;
@@ -161,7 +133,7 @@ void f0r_set_param_value(f0r_instance_t instance,
 }
 
 void f0r_get_param_value(f0r_instance_t instance,
-			f0r_param_t param, int param_index)
+                         f0r_param_t param, int param_index)
 {
 
     assert(instance);
@@ -194,46 +166,89 @@ void f0r_get_param_value(f0r_instance_t instance,
 
 }
 
+static inline void rgbsplit_border_px(uint32_t* __restrict__ drow,
+                                      const uint32_t* __restrict__ g_row,
+                                      const uint32_t* __restrict__ b_base,
+                                      const uint32_t* __restrict__ r_base,
+                                      int x, int w, int sx)
+{
+    uint32_t out = g_row[x] & 0xFF00FF00u;
+    int bx = x - sx;
+    if (b_base && (unsigned int)bx < (unsigned int)w)
+        out |= b_base[bx] & 0xFFFF0000u;
+    int rx = x + sx;
+    if (r_base && (unsigned int)rx < (unsigned int)w)
+        out |= r_base[rx] & 0xFF0000FFu;
+    drow[x] = out;
+}
 
 void f0r_update(f0r_instance_t instance, double time,
-		const uint32_t* src, uint32_t* dst)
+                const uint32_t* src, uint32_t* dst)
 {
+    (void)time;
     assert(instance);
     rgbsplit0r_instance_t* inst = (rgbsplit0r_instance_t*)instance;
-    int x, y;
+    const int w = (int)inst->width;
+    const int h = (int)inst->height;
+    const int sx = inst->shiftX;
+    const int sy = inst->shiftY;
 
-    for (y = 0; y < (int)inst->height; y++)
-        for (x = 0; x < (int)inst->width; x++)
+    if (sx == 0 && sy == 0)
+    {
+        memcpy(dst, src, (size_t)w * (size_t)h * sizeof(uint32_t));
+        return;
+    }
+
+    const int abs_sx = (sx < 0) ? -sx : sx;
+    const int x_start = (abs_sx < w) ? abs_sx : w;
+    int x_end = (w > abs_sx) ? (w - abs_sx) : 0;
+    if (x_end < x_start) x_end = x_start;
+
+    for (int y = 0; y < h; ++y)
+    {
+        const int by = y - sy;
+        const int ry = y + sy;
+        const uint32_t* __restrict__ g_row = src + (size_t)y * w;
+        const uint32_t* __restrict__ b_base = ((unsigned int)by < (unsigned int)h) ? (src + (size_t)by * w) : NULL;
+        const uint32_t* __restrict__ r_base = ((unsigned int)ry < (unsigned int)h) ? (src + (size_t)ry * w) : NULL;
+        uint32_t* __restrict__ drow = dst + (size_t)y * w;
+
+        for (int x = 0; x < x_start; ++x)
+            rgbsplit_border_px(drow, g_row, b_base, r_base, x, w, sx);
+
+        if (x_start < x_end)
         {
-            uint32_t pxR = 0, pxG = 0, pxB = 0;
-
-            int blue_x = x - inst->shiftX;
-            int blue_y = y - inst->shiftY;
-            int red_x = x + inst->shiftX;
-            int red_y = y + inst->shiftY;
-
-            // First make a blue layer shifted back
-            if (blue_x >= 0 && blue_y >= 0 &&
-                blue_x < (int)inst->width && blue_y < (int)inst->height)
+            if (b_base && r_base)
             {
-                rgbsplit0r_extract_color((uint32_t *)(src +
-                    blue_x + blue_y * inst->width),
-                    &pxB, 2);
+                const uint32_t* __restrict__ b_ptr = b_base - sx;
+                const uint32_t* __restrict__ r_ptr = r_base + sx;
+                for (int x = x_start; x < x_end; ++x)
+                    drow[x] = (g_row[x] & 0xFF00FF00u)
+                            | (b_ptr[x] & 0xFFFF0000u)
+                            | (r_ptr[x] & 0xFF0000FFu);
             }
-
-            // The red layer is shifted forward
-            if (red_x >= 0 && red_y >= 0 &&
-                red_x < (int)inst->width && red_y < (int)inst->height)
+            else if (b_base)
             {
-                rgbsplit0r_extract_color((uint32_t *)(src +
-                    red_x + red_y * inst->width),
-                    &pxR, 0);
+                const uint32_t* __restrict__ b_ptr = b_base - sx;
+                for (int x = x_start; x < x_end; ++x)
+                    drow[x] = (g_row[x] & 0xFF00FF00u)
+                            | (b_ptr[x] & 0xFFFF0000u);
             }
-
-            // Green layer is on its place
-            rgbsplit0r_extract_color((uint32_t *)(src + x + (y*inst->width)),
-                    &pxG, 1);
-
-            *(dst + x + (y*inst->width)) = (pxG | pxB | pxR);
+            else if (r_base)
+            {
+                const uint32_t* __restrict__ r_ptr = r_base + sx;
+                for (int x = x_start; x < x_end; ++x)
+                    drow[x] = (g_row[x] & 0xFF00FF00u)
+                            | (r_ptr[x] & 0xFF0000FFu);
+            }
+            else
+            {
+                for (int x = x_start; x < x_end; ++x)
+                    drow[x] = g_row[x] & 0xFF00FF00u;
+            }
         }
+
+        for (int x = x_end; x < w; ++x)
+            rgbsplit_border_px(drow, g_row, b_base, r_base, x, w, sx);
+    }
 }
