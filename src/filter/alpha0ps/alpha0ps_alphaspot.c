@@ -23,21 +23,16 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 
 */
 
-
-//compile: gcc -c -fPIC -Wall alphaspot.c -o alphaspot.o
-//link: gcc -shared -o alphaspot.so alphaspot.o
-
-//#include <stdio.h>
 #include <frei0r.h>
 #include <frei0r/math.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 
-
-//----------------------------------------
-//struktura za instanco efekta
 typedef struct
 {
     int h;
@@ -50,9 +45,6 @@ typedef struct
 
 } inst;
 
-
-//----------------------------------------------------------
-//general (rotated) rectangle with soft border
 static void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
@@ -87,8 +79,6 @@ static void gen_rec_s(uint8_t* sl, int w, int h, float siz1, float siz2, float t
     }
 }
 
-//----------------------------------------------------------
-//general (rotated) ellipse with soft border
 static void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
@@ -106,7 +96,7 @@ static void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float t
             d2 = (i-pozy)*ct-(j-pozx)*st;
             d = hypotf(d1*is1,d2*is2);
 
-            db = d;	//neenakomeren rob!!!
+            db = d;
 
             if (d > 1.0f) {
                 g = min;
@@ -122,8 +112,6 @@ static void gen_eli_s(uint8_t* sl, int w, int h, float siz1, float siz2, float t
     }
 }
 
-//----------------------------------------------------------
-//general (rotated) triangle with soft border
 static void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
@@ -167,8 +155,6 @@ static void gen_tri_s(uint8_t* sl, int w, int h, float siz1, float siz2, float t
     }
 }
 
-//----------------------------------------------------------
-//general (rotated) diamond shape with soft border
 static void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float tilt, float pozx, float pozy, float min, float max, float wb)
 {
     int i,j;
@@ -200,7 +186,6 @@ static void gen_dia_s(uint8_t* sl, int w, int h, float siz1, float siz2, float t
     }
 }
 
-//-----------------------------------------------------
 static void draw(inst *in)
 {
     switch (in->shp)
@@ -222,38 +207,27 @@ static void draw(inst *in)
     }
 }
 
-//-----------------------------------------------------
-//stretch [0...1] to parameter range [min...max] linear
 static float map_value_forward(double v, float min, float max)
 {
     return min+(max-min)*v;
 }
 
-//-----------------------------------------------------
-//collapse from parameter range [min...max] to [0...1] linear
 static double map_value_backward(float v, float min, float max)
 {
     return (v-min)/(max-min);
 }
 
-//***********************************************
-// MANDATORY FREI0R FUNCTIONS
-
-//-----------------------------------------------
 int f0r_init()
 {
     return 1;
 }
 
-//------------------------------------------------
 void f0r_deinit()
 {
 }
 
-//-----------------------------------------------
 void f0r_get_plugin_info(f0r_plugin_info_t* info)
 {
-
     info->name = "alphaspot";
     info->author = "Marko Cebokli";
     info->plugin_type = F0R_PLUGIN_TYPE_FILTER;
@@ -265,7 +239,6 @@ void f0r_get_plugin_info(f0r_plugin_info_t* info)
     info->explanation = "Draws simple shapes into the alpha channel";
 }
 
-//--------------------------------------------------
 void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 {
     switch(param_index) {
@@ -322,7 +295,6 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
     }
 }
 
-//----------------------------------------------
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
     inst *in;
@@ -342,25 +314,21 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
     in->max = 1.0f;
     in->op = 0;
 
-    in->gr8 = calloc(in->w*in->h, sizeof(*in->gr8));
+    in->gr8 = calloc((size_t)in->w*in->h, sizeof(*in->gr8));
 
     draw(in);
 
     return (f0r_instance_t)in;
 }
 
-//---------------------------------------------------
 void f0r_destruct(f0r_instance_t instance)
 {
-    inst *in;
-
-    in = (inst*) instance;
+    inst *in = (inst*) instance;
 
     free(in->gr8);
     free(instance);
 }
 
-//-----------------------------------------------------
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_index)
 {
     inst *p;
@@ -418,7 +386,6 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
         break;
     case 9:
         tmpi = map_value_forward(*((double*)parm), 0.0f, 4.9999f);
-        if (p->op != tmpi) chg = 1;
         p->op = tmpi;
         break;
     }
@@ -426,15 +393,11 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t parm, int param_in
     if (chg == 0) return;
 
     draw(p);
-
 }
 
-//--------------------------------------------------
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index)
 {
-    inst *p;
-
-    p=(inst*)instance;
+    inst *p = (inst*)instance;
 
     switch(param_index) {
     case 0:
@@ -470,45 +433,121 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
     }
 }
 
-//-------------------------------------------------
+#if defined(__SSE2__)
+static inline __m128i load_4_alpha_shifted(const uint8_t *gr)
+{
+    uint32_t g4;
+    memcpy(&g4, gr, sizeof(g4));
+    __m128i v = _mm_cvtsi32_si128((int)g4);
+    v = _mm_unpacklo_epi8(v, _mm_setzero_si128());
+    v = _mm_unpacklo_epi16(v, _mm_setzero_si128());
+    return _mm_slli_epi32(v, 24);
+}
+#endif
+
 void f0r_update(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
 {
     inst *in;
-    int i;
-    uint8_t *inp = (uint8_t*) inframe;
-    uint8_t *outp = (uint8_t*) outframe;
+    int i = 0;
 
     assert(instance);
     in = (inst*)instance;
-    memcpy(outframe, inframe, sizeof(*inframe) * in->w * in->h);
+    const int n = in->h * in->w;
+    const uint8_t *gr = in->gr8;
 
     switch (in->op) {
     case 0:		//write on clear
-        for (i = 0; i < in->h*in->w; i++) {
-            outp[4*i+3] = in->gr8[i];
+#if defined(__SSE2__)
+        {
+        const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+        for (; i + 3 < n; i += 4) {
+            __m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+            __m128i a = load_4_alpha_shifted(gr + i);
+            _mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), a));
+        }
+        }
+#endif
+        for (; i < n; i++) {
+            outframe[i] = (inframe[i] & 0x00FFFFFFu) | ((uint32_t)gr[i] << 24);
         }
         break;
     case 1:		//max
-        for (i = 0; i < in->h*in->w; i++) {
-            outp[4*i+3] = (inp[4*i+3] > in->gr8[i]) ? inp[4*i+3] : in->gr8[i];
+#if defined(__SSE2__)
+        {
+        const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+        for (; i + 3 < n; i += 4) {
+            __m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+            __m128i a = load_4_alpha_shifted(gr + i);
+            __m128i mx = _mm_max_epu8(px, a);
+            _mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, mx)));
+        }
+        }
+#endif
+        for (; i < n; i++) {
+            uint32_t a1 = inframe[i] >> 24;
+            uint32_t a2 = gr[i];
+            outframe[i] = (inframe[i] & 0x00FFFFFFu) | (((a1 > a2) ? a1 : a2) << 24);
         }
         break;
     case 2:		//min
-        for (i = 0; i < in->h*in->w; i++) {
-            outp[4*i+3] = (inp[4*i+3] < in->gr8[i]) ? inp[4*i+3] : in->gr8[i];
+#if defined(__SSE2__)
+        {
+        const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+        for (; i + 3 < n; i += 4) {
+            __m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+            __m128i a = load_4_alpha_shifted(gr + i);
+            __m128i mn = _mm_min_epu8(px, a);
+            _mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, mn)));
+        }
+        }
+#endif
+        for (; i < n; i++) {
+            uint32_t a1 = inframe[i] >> 24;
+            uint32_t a2 = gr[i];
+            outframe[i] = (inframe[i] & 0x00FFFFFFu) | (((a1 < a2) ? a1 : a2) << 24);
         }
         break;
     case 3:		//add
-        for (i = 0;i < in->h*in->w; i++) {
-            outp[4*i+3] = MAX255(inp[4*i+3] + in->gr8[i]);
+#if defined(__SSE2__)
+        {
+        const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+        for (; i + 3 < n; i += 4) {
+            __m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+            __m128i a = load_4_alpha_shifted(gr + i);
+            __m128i ad = _mm_adds_epu8(px, a);
+            _mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, ad)));
+        }
+        }
+#endif
+        for (; i < n; i++) {
+            uint32_t t = (inframe[i] >> 24) + gr[i];
+            if (t > 255u) t = 255u;
+            outframe[i] = (inframe[i] & 0x00FFFFFFu) | (t << 24);
         }
         break;
     case 4:		//subtract
-        for (i = 0; i < in->h*in->w; i++) {
-            outp[4*i+3] = (inp[4*i+3] > in->gr8[i]) ? inp[4*i+3] - in->gr8[i] : 0;
+#if defined(__SSE2__)
+        {
+        const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+        for (; i + 3 < n; i += 4) {
+            __m128i px = _mm_loadu_si128((const __m128i *)(inframe + i));
+            __m128i a = load_4_alpha_shifted(gr + i);
+            __m128i sb = _mm_subs_epu8(px, a);
+            _mm_storeu_si128((__m128i *)(outframe + i), _mm_or_si128(_mm_and_si128(px, rgb_mask), _mm_andnot_si128(rgb_mask, sb)));
+        }
+        }
+#endif
+        for (; i < n; i++) {
+            uint32_t a1 = inframe[i] >> 24;
+            uint32_t a2 = gr[i];
+            uint32_t t = (a1 > a2) ? (a1 - a2) : 0u;
+            outframe[i] = (inframe[i] & 0x00FFFFFFu) | (t << 24);
         }
         break;
     default:
+        if (outframe != inframe) {
+            memcpy(outframe, inframe, (size_t)n * sizeof(uint32_t));
+        }
         break;
     }
 }
