@@ -1,5 +1,8 @@
 #include "frei0r.h"
 #include <stdlib.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 #include <assert.h>
 
 typedef struct blackwhite_instance
@@ -59,19 +62,32 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   assert(instance);
   blackwhite_instance_t* inst = (blackwhite_instance_t*)instance;
-  unsigned int w = inst->width;
-  unsigned int h = inst->height;
-  unsigned int x,y;
-  
-  uint32_t* dst = outframe;
-  const uint32_t* src = inframe;
-  for(y=h;y>0;--y)
-      for(x=w;x>0;--x,++src,++dst)
-	{
-	  int tmpbw;
-	  unsigned char* tmpc = (unsigned char*)src;
-	  tmpbw = (tmpc[0] + tmpc[1] + tmpc[2]) / 3;
-	  *dst = (tmpc[3] << 24) | (tmpbw << 16) | (tmpbw << 8) | tmpbw;
-	}
+  unsigned int len = inst->width * inst->height;
+  unsigned int i = 0;
+
+#ifdef __SSE2__
+  __m128i vFF = _mm_set1_epi32(0x000000FF);
+  __m128i vDiv3 = _mm_set1_epi16(21846);
+  __m128i vAlphaMask = _mm_set1_epi32((int)0xFF000000u);
+  for (; i + 3 < len; i += 4)
+  {
+    __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+    __m128i r = _mm_and_si128(px, vFF);
+    __m128i g = _mm_and_si128(_mm_srli_epi32(px, 8), vFF);
+    __m128i b = _mm_and_si128(_mm_srli_epi32(px, 16), vFF);
+    __m128i sum = _mm_add_epi16(_mm_add_epi16(r, g), b);
+    __m128i avg = _mm_mulhi_epu16(sum, vDiv3);
+    __m128i rgb = _mm_or_si128(avg, _mm_or_si128(_mm_slli_epi32(avg, 8), _mm_slli_epi32(avg, 16)));
+    __m128i res = _mm_or_si128(rgb, _mm_and_si128(px, vAlphaMask));
+    _mm_storeu_si128((__m128i*)(outframe + i), res);
+  }
+#endif
+
+  for (; i < len; ++i)
+  {
+    const unsigned char* tmpc = (const unsigned char*)(inframe + i);
+    unsigned int tmpbw = ((unsigned int)tmpc[0] + tmpc[1] + tmpc[2]) / 3u;
+    outframe[i] = ((uint32_t)tmpc[3] << 24) | (tmpbw << 16) | (tmpbw << 8) | tmpbw;
+  }
 }
 

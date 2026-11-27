@@ -1,4 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 #include <assert.h>
 
 #include "frei0r.h"
@@ -61,17 +65,21 @@ void f0r_update(f0r_instance_t instance, double time,
   assert(instance);
   inverter_instance_t* inst = (inverter_instance_t*)instance;
   unsigned int pixels = inst->width * inst->height;
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (const unsigned char*)inframe;
+  /* Endian-independent RGBA byte mask: invert R, G, B (255 - x == x ^ 0xFF), preserve A. */
+  static const unsigned char mask_bytes[4] = { 0xFF, 0xFF, 0xFF, 0x00 };
+  uint32_t mask;
+  memcpy(&mask, mask_bytes, sizeof(mask));
 
-  /* RGBA channels are ordered bytes, not uint32_t bit fields. */
-  while (pixels--) {
-    dst[0] = 255 - src[0];
-    dst[1] = 255 - src[1];
-    dst[2] = 255 - src[2];
-    dst[3] = src[3];
-    src += 4;
-    dst += 4;
+  unsigned int i = 0;
+#ifdef __SSE2__
+  __m128i vMask = _mm_set1_epi32((int)mask);
+  for (; i + 3 < pixels; i += 4) {
+    __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+    _mm_storeu_si128((__m128i*)(outframe + i), _mm_xor_si128(px, vMask));
+  }
+#endif
+  for (; i < pixels; ++i) {
+    outframe[i] = inframe[i] ^ mask;
   }
 }
 
