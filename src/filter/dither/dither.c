@@ -23,6 +23,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <assert.h>
 #include <math.h>
 
@@ -129,8 +130,8 @@ static int ditherCluster8Matrix[] = {
 		 56, 32, 24, 23, 22, 31, 35, 53, 71, 95,103,104,105, 96, 92, 74,
 		 62, 55, 47, 37, 36, 46, 54, 61, 65, 72, 80, 90, 91, 81, 73, 66 };
 
-static int matrixSizes[] = {4, 16, 16, 16, 36, 64, 256, 36, 64, 256};
-static int* matrixes[] = {ditherMagic2x2Matrix, ditherMagic4x4Matrix, ditherOrdered4x4Matrix,
+static const int matrixDims[] = {2, 4, 4, 4, 6, 8, 16, 6, 8, 16};
+static const int* matrixes[] = {ditherMagic2x2Matrix, ditherMagic4x4Matrix, ditherOrdered4x4Matrix,
                   ditherLines4x4Matrix, dither90Halftone6x6Matrix, ditherOrdered6x6Matrix, 
                   ditherOrdered8x8Matrix, ditherCluster3Matrix, ditherCluster4Matrix, ditherCluster8Matrix};
 
@@ -182,14 +183,14 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index)
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
 {
-	dither_instance_t* inst = (dither_instance_t*)calloc(1, sizeof(*inst));
-	inst->width = width; 
+  dither_instance_t* inst = (dither_instance_t*)calloc(1, sizeof(*inst));
+  inst->width = width; 
   inst->height = height;
-	inst->levels = 5.0 / 48.0;// input range 0.0 - 1.0 will be interpreted as levels range 2 - 50
+  inst->levels = 5.0 / 48.0;// input range 0.0 - 1.0 will be interpreted as levels range 2 - 50
   inst->matrixid = 1.0; // input range 0.0 - 1.0 will be interpreted as matrixid 0 - 9
                         // e.g. values 0.0, 0.12, 0.23, 0.34, 0.45, 0.56, 0.67, 0.78, 0.89, 1.0
                         // will select matrixes 0 to 9
-	return (f0r_instance_t)inst;
+  return (f0r_instance_t)inst;
 }
 
 void f0r_destruct(f0r_instance_t instance)
@@ -231,14 +232,24 @@ void f0r_get_param_value(f0r_instance_t instance,
   }
 }
 
+/* Packed LUT entry: bits 0..7 = lo, bits 8..15 = hi, bits 16..23 = mod */
+static inline uint32_t dither_px(uint32_t px, uint32_t v, const uint32_t* __restrict__ lut)
+{
+  uint32_t er = lut[px & 0xFFu];
+  uint32_t eg = lut[(px >> 8) & 0xFFu];
+  uint32_t eb = lut[(px >> 16) & 0xFFu];
+  uint32_t ro = (er >> (((er >> 16) > v) << 3)) & 0xFFu;
+  uint32_t go = (eg >> (((eg >> 16) > v) << 3)) & 0xFFu;
+  uint32_t bo = (eb >> (((eb >> 16) > v) << 3)) & 0xFFu;
+  return ro | (go << 8) | (bo << 16) | (px & 0xFF000000u);
+}
+
 void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
-  //init and get params
+  (void)time;
   assert(instance);
   dither_instance_t* inst = (dither_instance_t*)instance;
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
 
   double levelsInput = inst->levels * 48.0;
   levelsInput = CLAMP(levelsInput, 0.0, 48.0) + 2.0;
@@ -247,56 +258,56 @@ void f0r_update(f0r_instance_t instance, double time,
   double matrixIdInput = inst->matrixid * 9.0;
   matrixIdInput = CLAMP(matrixIdInput, 0.0, 9.0);
   int matrixid = (int)matrixIdInput;
-  int* matrix = matrixes[matrixid];
-  int matrixLength = matrixSizes[matrixid];
+  const int* matrix = matrixes[matrixid];
+  const unsigned int dim = (unsigned int)matrixDims[matrixid];
 
-  // init look-ups
-	int rows, cols;
-  rows = cols = (int)sqrt(matrixLength);
-  int *map = (int *) malloc(levels * sizeof(int));
-  int i,v;
-	for (i = 0; i < levels; i++)
+  uint8_t map[52];
+  for (int i = 0; i < levels; ++i)
   {
-		v = 255 * i / (levels-1);
-		map[i] = v;
-	}
-
-	int div[256];
-	int mod[256];
-	int rc = (rows * cols + 1);
-	for (i = 0; i < 256; i++)
-  {
-		div[i] = (levels-1) * i / 256;
-		mod[i] = i * rc /256;
-	}
-
-  // filter image
-  unsigned int width = inst->width;
-  unsigned int height = inst->height;
-  unsigned int x,y,col,row;
-  unsigned char r, g, b;
-  for (y = 0; y < height; ++y)
-  {
-      for (x=0; x < width; ++x)
-      {
-        r = *src++;
-        g = *src++;
-        b = *src++;
-
-	      col = x % cols;
-	      row = y % rows;
-
-	      v = matrix[ row * cols + col];
-	      r = map[mod[r] > v ? div[r] + 1 : div[r]];
-		    g = map[mod[g] > v ? div[g] + 1 : div[g]];
-		    b = map[mod[b] > v ? div[b] + 1 : div[b]];
-
-        *dst++ = r;
-        *dst++ = g;
-        *dst++ = b;
-        *dst++ = *src++;//copy alpha
-      }
+    map[i] = (uint8_t)(255 * i / (levels - 1));
   }
 
-  free(map);
+  /* 1 KB packed L1-resident LUT: [mod:8 | hi:8 | lo:8] */
+  uint32_t lut[256];
+  const int rc = (int)(dim * dim + 1);
+  for (int i = 0; i < 256; ++i)
+  {
+    int d = (levels - 1) * i / 256;
+    uint32_t lo = map[d];
+    uint32_t hi = map[d + 1];
+    uint32_t md = (uint32_t)(i * rc / 256);
+    lut[i] = lo | (hi << 8) | (md << 16);
+  }
+
+  const unsigned int width = inst->width;
+  const unsigned int height = inst->height;
+  const uint32_t* __restrict__ src = inframe;
+  uint32_t* __restrict__ dst = outframe;
+
+  unsigned int row = 0;
+  for (unsigned int y = 0; y < height; ++y)
+  {
+    const int* mrow = matrix + (size_t)row * dim;
+    uint32_t mvals[16];
+    for (unsigned int c = 0; c < dim; ++c)
+      mvals[c] = (uint32_t)mrow[c];
+
+    const uint32_t* __restrict__ srow = src + (size_t)y * width;
+    uint32_t* __restrict__ drow = dst + (size_t)y * width;
+
+    unsigned int x = 0;
+    for (; x + dim <= width; x += dim)
+    {
+      for (unsigned int c = 0; c < dim; ++c)
+      {
+        drow[x + c] = dither_px(srow[x + c], mvals[c], lut);
+      }
+    }
+    for (unsigned int c = 0; x + c < width; ++c)
+    {
+      drow[x + c] = dither_px(srow[x + c], mvals[c], lut);
+    }
+
+    if (++row == dim) row = 0;
+  }
 }
