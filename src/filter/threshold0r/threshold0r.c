@@ -21,6 +21,10 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
 #include "frei0r.h"
 
 typedef struct threshold0r_instance
@@ -137,12 +141,50 @@ void f0r_update(f0r_instance_t instance, double time,
 {
   assert(instance);
   threshold0r_instance_t* inst = (threshold0r_instance_t*)instance;
-  unsigned int len = inst->width * inst->height;
+  size_t len = (size_t)inst->width * inst->height;
+  size_t i = 0;
+
+#if defined(__SSE2__)
+  {
+    const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+    const __m128i a_mask = _mm_set1_epi32((int)0xFF000000u);
+    unsigned char thresh = inst->threshold;
+
+    if (thresh == 0xff)
+    {
+      for (; i + 4 <= len; i += 4)
+      {
+        __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+        _mm_storeu_si128((__m128i*)(outframe + i), _mm_and_si128(px, a_mask));
+      }
+    }
+    else if (thresh == 0x00)
+    {
+      for (; i + 4 <= len; i += 4)
+      {
+        __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+        _mm_storeu_si128((__m128i*)(outframe + i), _mm_or_si128(px, rgb_mask));
+      }
+    }
+    else
+    {
+      const __m128i sign_flip = _mm_set1_epi8((char)0x80);
+      const __m128i thr_m1 = _mm_set1_epi8((char)((thresh - 1) ^ 0x80));
+      for (; i + 4 <= len; i += 4)
+      {
+        __m128i px = _mm_loadu_si128((const __m128i*)(inframe + i));
+        __m128i mask = _mm_cmpgt_epi8(_mm_xor_si128(px, sign_flip), thr_m1);
+        __m128i res = _mm_or_si128(_mm_and_si128(mask, rgb_mask), _mm_and_si128(px, a_mask));
+        _mm_storeu_si128((__m128i*)(outframe + i), res);
+      }
+    }
+  }
+#endif
 
   unsigned char* lut = inst->lut;
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-  while (len--)
+  unsigned char* dst = (unsigned char*)(outframe + i);
+  const unsigned char* src = (const unsigned char*)(inframe + i);
+  for (; i < len; i++)
   {
     *dst++ = lut[*src++];
     *dst++ = lut[*src++];

@@ -83,7 +83,22 @@ int i,j,p;
 uint32_t m[8];
 
 for (i=1;i<h-1;i++)
-    for (j=1;j<w-1;j++)
+    {
+    j=1;
+#if defined(__SSE2__)
+    for (;j<=w-5;j+=4)
+	{
+	__m128i v[5];
+	p=i*w+j;
+	v[0]=_mm_loadu_si128((const __m128i*)&vs[p-w]);
+	v[1]=_mm_loadu_si128((const __m128i*)&vs[p-1]);
+	v[2]=_mm_loadu_si128((const __m128i*)&vs[p]);
+	v[3]=_mm_loadu_si128((const __m128i*)&vs[p+1]);
+	v[4]=_mm_loadu_si128((const __m128i*)&vs[p+w]);
+	_mm_storeu_si128((__m128i*)&is[p], median5_sse2(v));
+	}
+#endif
+    for (;j<w-1;j++)
 	{
 	p=i*w+j;
 
@@ -92,6 +107,7 @@ for (i=1;i<h-1;i++)
 
 	is[p]=median5(m);
 	}
+    }
 }
 
 //------------------------------------------------------------
@@ -104,7 +120,26 @@ int i,j,p;
 uint32_t m[16];
 
 for (i=1;i<h-1;i++)
-    for (j=1;j<w-1;j++)
+    {
+    j=1;
+#if defined(__SSE2__)
+    for (;j<=w-5;j+=4)
+	{
+	__m128i v[9];
+	p=i*w+j;
+	v[0]=_mm_loadu_si128((const __m128i*)&vs[p-w-1]);
+	v[1]=_mm_loadu_si128((const __m128i*)&vs[p-w]);
+	v[2]=_mm_loadu_si128((const __m128i*)&vs[p-w+1]);
+	v[3]=_mm_loadu_si128((const __m128i*)&vs[p-1]);
+	v[4]=_mm_loadu_si128((const __m128i*)&vs[p]);
+	v[5]=_mm_loadu_si128((const __m128i*)&vs[p+1]);
+	v[6]=_mm_loadu_si128((const __m128i*)&vs[p+w-1]);
+	v[7]=_mm_loadu_si128((const __m128i*)&vs[p+w]);
+	v[8]=_mm_loadu_si128((const __m128i*)&vs[p+w+1]);
+	_mm_storeu_si128((__m128i*)&is[p], median9_sse2(v));
+	}
+#endif
+    for (;j<w-1;j++)
 	{
 	p=i*w+j;
 
@@ -114,6 +149,7 @@ for (i=1;i<h-1;i++)
 
 	is[p]=median9(m);
 	}
+    }
 }
 
 //------------------------------------------------------------
@@ -126,7 +162,30 @@ int i,j,p;
 uint32_t m[8],mm[4];
 
 for (i=1;i<h-1;i++)
-    for (j=1;j<w-1;j++)
+    {
+    j=1;
+#if defined(__SSE2__)
+    for (;j<=w-5;j+=4)
+	{
+	__m128i v[5], vv[3];
+	p=i*w+j;
+	v[0]=_mm_loadu_si128((const __m128i*)&vs[p-w-1]);
+	v[1]=_mm_loadu_si128((const __m128i*)&vs[p-w+1]);
+	v[2]=_mm_loadu_si128((const __m128i*)&vs[p]);
+	v[3]=_mm_loadu_si128((const __m128i*)&vs[p+w-1]);
+	v[4]=_mm_loadu_si128((const __m128i*)&vs[p+w+1]);
+	vv[0]=median5_sse2(v);
+	vv[1]=_mm_loadu_si128((const __m128i*)&vs[p]);
+	v[0]=_mm_loadu_si128((const __m128i*)&vs[p-w]);
+	v[1]=_mm_loadu_si128((const __m128i*)&vs[p-1]);
+	v[2]=vv[1];
+	v[3]=_mm_loadu_si128((const __m128i*)&vs[p+1]);
+	v[4]=_mm_loadu_si128((const __m128i*)&vs[p+w]);
+	vv[2]=median5_sse2(v);
+	_mm_storeu_si128((__m128i*)&is[p], median3_sse2(vv));
+	}
+#endif
+    for (;j<w-1;j++)
 	{
 	p=i*w+j;
 
@@ -140,6 +199,7 @@ for (i=1;i<h-1;i++)
 
 	is[p]=median3(mm);
 	}
+    }
 }
 
 //------------------------------------------------------------
@@ -152,7 +212,30 @@ int i,j,p;
 uint32_t m[16];
 
 for (i=2;i<h-2;i++)
-    for (j=2;j<w-2;j++)
+    {
+    j=2;
+#if defined(__SSE2__)
+    for (;j<=w-6;j+=4)
+	{
+	__m128i v[13];
+	p=i*w+j;
+	v[0]=_mm_loadu_si128((const __m128i*)&vs[p-2*w]);
+	v[1]=_mm_loadu_si128((const __m128i*)&vs[p-w-1]);
+	v[2]=_mm_loadu_si128((const __m128i*)&vs[p-w]);
+	v[3]=_mm_loadu_si128((const __m128i*)&vs[p-w+1]);
+	v[4]=_mm_loadu_si128((const __m128i*)&vs[p-2]);
+	v[5]=_mm_loadu_si128((const __m128i*)&vs[p-1]);
+	v[6]=_mm_loadu_si128((const __m128i*)&vs[p]);
+	v[7]=_mm_loadu_si128((const __m128i*)&vs[p+1]);
+	v[8]=_mm_loadu_si128((const __m128i*)&vs[p+2]);
+	v[9]=_mm_loadu_si128((const __m128i*)&vs[p+w-1]);
+	v[10]=_mm_loadu_si128((const __m128i*)&vs[p+w]);
+	v[11]=_mm_loadu_si128((const __m128i*)&vs[p+w+1]);
+	v[12]=_mm_loadu_si128((const __m128i*)&vs[p+2*w]);
+	_mm_storeu_si128((__m128i*)&is[p], median13_sse2(v));
+	}
+#endif
+    for (;j<w-2;j++)
 	{
 	p=i*w+j;
 	m[0]=vs[p-2*w]; m[1]=vs[p-w-1]; m[2]=vs[p-w];
@@ -163,6 +246,7 @@ for (i=2;i<h-2;i++)
 
 	is[p]=median13(m);
 	}
+    }
 }
 
 //------------------------------------------------------------
@@ -175,7 +259,42 @@ int i,j,p;
 uint32_t m[32];
 
 for (i=2;i<h-2;i++)
-    for (j=2;j<w-2;j++)
+    {
+    j=2;
+#if defined(__SSE2__)
+    for (;j<=w-6;j+=4)
+	{
+	__m128i v[25];
+	p=i*w+j;
+	v[0]=_mm_loadu_si128((const __m128i*)&vs[p-2*w-2]);
+	v[1]=_mm_loadu_si128((const __m128i*)&vs[p-2*w-1]);
+	v[2]=_mm_loadu_si128((const __m128i*)&vs[p-2*w]);
+	v[3]=_mm_loadu_si128((const __m128i*)&vs[p-2*w+1]);
+	v[4]=_mm_loadu_si128((const __m128i*)&vs[p-2*w+2]);
+	v[5]=_mm_loadu_si128((const __m128i*)&vs[p-w-2]);
+	v[6]=_mm_loadu_si128((const __m128i*)&vs[p-w-1]);
+	v[7]=_mm_loadu_si128((const __m128i*)&vs[p-w]);
+	v[8]=_mm_loadu_si128((const __m128i*)&vs[p-w+1]);
+	v[9]=_mm_loadu_si128((const __m128i*)&vs[p-w+2]);
+	v[10]=_mm_loadu_si128((const __m128i*)&vs[p-2]);
+	v[11]=_mm_loadu_si128((const __m128i*)&vs[p-1]);
+	v[12]=_mm_loadu_si128((const __m128i*)&vs[p]);
+	v[13]=_mm_loadu_si128((const __m128i*)&vs[p+1]);
+	v[14]=_mm_loadu_si128((const __m128i*)&vs[p+2]);
+	v[15]=_mm_loadu_si128((const __m128i*)&vs[p+w-2]);
+	v[16]=_mm_loadu_si128((const __m128i*)&vs[p+w-1]);
+	v[17]=_mm_loadu_si128((const __m128i*)&vs[p+w]);
+	v[18]=_mm_loadu_si128((const __m128i*)&vs[p+w+1]);
+	v[19]=_mm_loadu_si128((const __m128i*)&vs[p+w+2]);
+	v[20]=_mm_loadu_si128((const __m128i*)&vs[p+2*w-2]);
+	v[21]=_mm_loadu_si128((const __m128i*)&vs[p+2*w-1]);
+	v[22]=_mm_loadu_si128((const __m128i*)&vs[p+2*w]);
+	v[23]=_mm_loadu_si128((const __m128i*)&vs[p+2*w+1]);
+	v[24]=_mm_loadu_si128((const __m128i*)&vs[p+2*w+2]);
+	_mm_storeu_si128((__m128i*)&is[p], median25_sse2(v));
+	}
+#endif
+    for (;j<w-2;j++)
 	{
 	p=i*w+j;
 
@@ -191,6 +310,7 @@ for (i=2;i<h-2;i++)
 
 	is[p]=median25(m);
 	}
+    }
 }
 
 
@@ -198,10 +318,20 @@ for (i=2;i<h-2;i++)
 //temporal 3 frames
 static void temp3(uint32_t *s1, uint32_t *s2, uint32_t *s3, int w, int h, uint32_t *is)
 {
-int i;
+int i = 0, n = w * h;
 uint32_t m[32];
 
-for (i=0;i<w*h;i++)
+#if defined(__SSE2__)
+for (; i <= n - 4; i += 4)
+    {
+    __m128i v[3];
+    v[0]=_mm_loadu_si128((const __m128i*)&s1[i]);
+    v[1]=_mm_loadu_si128((const __m128i*)&s2[i]);
+    v[2]=_mm_loadu_si128((const __m128i*)&s3[i]);
+    _mm_storeu_si128((__m128i*)&is[i], median3_sse2(v));
+    }
+#endif
+for (; i < n; i++)
     {
     m[0]=s1[i]; m[1]=s2[i]; m[2]=s3[i];
     is[i]=median3(m);
@@ -213,15 +343,26 @@ for (i=0;i<w*h;i++)
 //temporal 5 frames
 static void temp5(uint32_t *s1, uint32_t *s2, uint32_t *s3, uint32_t *s4, uint32_t *s5, int w, int h, uint32_t *is)
 {
-int i;
+int i = 0, n = w * h;
 uint32_t m[32];
 
-for (i=0;i<w*h;i++)
+#if defined(__SSE2__)
+for (; i <= n - 4; i += 4)
+    {
+    __m128i v[5];
+    v[0]=_mm_loadu_si128((const __m128i*)&s1[i]);
+    v[1]=_mm_loadu_si128((const __m128i*)&s2[i]);
+    v[2]=_mm_loadu_si128((const __m128i*)&s3[i]);
+    v[3]=_mm_loadu_si128((const __m128i*)&s4[i]);
+    v[4]=_mm_loadu_si128((const __m128i*)&s5[i]);
+    _mm_storeu_si128((__m128i*)&is[i], median5_sse2(v));
+    }
+#endif
+for (; i < n; i++)
     {
     m[0]=s1[i]; m[1]=s2[i]; m[2]=s3[i]; m[3]=s4[i]; m[4]=s5[i];
     is[i]=median5(m);
     }
-  
 }
 
 
@@ -596,7 +737,24 @@ switch (in->type)
 		break;
 	}
 //COPY ALPHA
-for (i = 3; i < 4 * in->w * in->h; i += 4)
-	cout[i]=cin[i];
+{
+int npix = in->w * in->h;
+i = 0;
+#if defined(__SSE2__)
+{
+const __m128i rgb_mask = _mm_set1_epi32(0x00FFFFFF);
+const __m128i a_mask = _mm_set1_epi32((int)0xFF000000u);
+for (; i <= npix - 4; i += 4)
+	{
+	__m128i vo = _mm_loadu_si128((const __m128i*)&outframe[i]);
+	__m128i vi = _mm_loadu_si128((const __m128i*)&inframe[i]);
+	__m128i vr = _mm_or_si128(_mm_and_si128(vo, rgb_mask), _mm_and_si128(vi, a_mask));
+	_mm_storeu_si128((__m128i*)&outframe[i], vr);
+	}
+}
+#endif
+for (; i < npix; i++)
+	cout[4 * i + 3] = cin[4 * i + 3];
+}
 
 }

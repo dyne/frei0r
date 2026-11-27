@@ -20,6 +20,22 @@
 #include "frei0r.hpp"
 #include "frei0r/math.h"
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
+#if defined(__SSE2__)
+#include <emmintrin.h>
+
+static inline __m128i abs_epi16_sse2(__m128i x)
+{
+  __m128i sign = _mm_srai_epi16(x, 15);
+  return _mm_sub_epi16(_mm_xor_si128(x, sign), sign);
+}
+#endif
+
+struct HueChannelLUT {
+  double w[3];
+};
 
 class edgeglow : public frei0r::filter
 {
@@ -29,6 +45,16 @@ public:
   double lupscale;
   double lredscale;
 
+  unsigned char *sobel_l_row;
+  HueChannelLUT hue_lut[361];
+
+  static double calc_w(float t)
+  {
+    if (t < 1. / 6.) return 6. * (double)t;
+    if (t < 0.5) return 1.0;
+    if (t < 2. / 3.) return 6. * (2. / 3. - (double)t);
+    return 0.0;
+  }
 
   edgeglow(unsigned int width, unsigned int height)
   {
@@ -38,143 +64,251 @@ public:
     register_param(lthresh, "lthresh", "threshold for edge lightening");
     register_param(lupscale, "lupscale", "multiplier for upscaling edge brightness");
     register_param(lredscale, "lredscale", "multiplier for downscaling non-edge brightness");
+
+    sobel_l_row = (unsigned char*)malloc(width > 0 ? width : 1);
+    for (unsigned int h = 0; h <= 360; ++h)
+    {
+      float hk = (float)h / 360.;
+      float tr = hk + 1. / 3.;
+      float tg = hk;
+      float tb = hk - 1. / 3.;
+      if (tr > 1.) tr -= 1.;
+      if (tb < 0.) tb += 1.;
+      hue_lut[h].w[0] = calc_w(tr);
+      hue_lut[h].w[1] = calc_w(tg);
+      hue_lut[h].w[2] = calc_w(tb);
+    }
+  }
+
+  ~edgeglow()
+  {
+    free(sobel_l_row);
   }
   
   virtual void update(double time,
                       uint32_t* out,
                       const uint32_t* in)
   {
-    std::copy(in, in + width*height, out);
-    for (unsigned int y=1; y<height-1; ++y)
+    if (width == 0 || height == 0) return;
+    if (width < 3 || height < 3) {
+      memcpy(out, in, (size_t)width * height * sizeof(uint32_t));
+      return;
+    }
+
+    // Copy border rows
+    memcpy(out, in, (size_t)width * sizeof(uint32_t));
+    memcpy(out + (size_t)(height - 1) * width,
+           in + (size_t)(height - 1) * width,
+           (size_t)width * sizeof(uint32_t));
+
+    const float lt = (float)(lthresh * 255.);
+    const double upscale = lupscale;
+    const double redscale = lredscale;
+    const double one_minus_red = 1. - redscale;
+    const bool has_red = (redscale > 0.);
+
+#if defined(__SSE2__)
+    const __m128i zero = _mm_setzero_si128();
+#endif
+
+    for (unsigned int y = 1; y < height - 1; ++y)
     {
-      for (unsigned int x=1; x<width-1; ++x)
+      const uint32_t *r0 = in + (size_t)(y - 1) * width;
+      const uint32_t *r1 = in + (size_t)y * width;
+      const uint32_t *r2 = in + (size_t)(y + 1) * width;
+      uint32_t *dst = out + (size_t)y * width;
+
+      dst[0] = r1[0];
+      dst[width - 1] = r1[width - 1];
+
+      // Step 1: Compute Sobel lightness l = (max(R,G,B) + min(R,G,B)) >> 1 for the row
+      unsigned int x = 1;
+#if defined(__SSE2__)
+      for (; x + 4 <= width - 1; x += 4)
       {
-        // XXX faut eviter le * width en y allant par rangee
-        unsigned char *p1 = (unsigned char *)&in[(y-1)*width+(x-1)];
-        unsigned char *p2 = (unsigned char *)&in[(y-1)*width+x];
-        unsigned char *p3 = (unsigned char *)&in[(y-1)*width+(x+1)];
-        unsigned char *p4 = (unsigned char *)&in[y*width+(x-1)];
-        unsigned char *p6 = (unsigned char *)&in[y*width+(x+1)];
-        unsigned char *p7 = (unsigned char *)&in[(y+1)*width+(x-1)];
-        unsigned char *p8 = (unsigned char *)&in[(y+1)*width+x];
-        unsigned char *p9 = (unsigned char *)&in[(y+1)*width+(x+1)];
-        
-        unsigned char *g = (unsigned char *)&out[y*width+x];
-        
-        for (int i=0; i<3; ++i)
-          g[i] = CLAMP0255(
-                           abs(p1[i] + p2[i]*2 + p3[i] - p7[i] - p8[i]*2 - p9[i]) +
-                           abs(p3[i] + p6[i]*2 + p9[i] - p1[i] - p4[i]*2 - p7[i]) );
+        __m128i v1 = _mm_loadu_si128((const __m128i*)(r0 + x - 1));
+        __m128i v2 = _mm_loadu_si128((const __m128i*)(r0 + x));
+        __m128i v3 = _mm_loadu_si128((const __m128i*)(r0 + x + 1));
+        __m128i v4 = _mm_loadu_si128((const __m128i*)(r1 + x - 1));
+        __m128i v6 = _mm_loadu_si128((const __m128i*)(r1 + x + 1));
+        __m128i v7 = _mm_loadu_si128((const __m128i*)(r2 + x - 1));
+        __m128i v8 = _mm_loadu_si128((const __m128i*)(r2 + x));
+        __m128i v9 = _mm_loadu_si128((const __m128i*)(r2 + x + 1));
 
+        __m128i p1l = _mm_unpacklo_epi8(v1, zero);
+        __m128i p2l = _mm_unpacklo_epi8(v2, zero);
+        __m128i p3l = _mm_unpacklo_epi8(v3, zero);
+        __m128i p4l = _mm_unpacklo_epi8(v4, zero);
+        __m128i p6l = _mm_unpacklo_epi8(v6, zero);
+        __m128i p7l = _mm_unpacklo_epi8(v7, zero);
+        __m128i p8l = _mm_unpacklo_epi8(v8, zero);
+        __m128i p9l = _mm_unpacklo_epi8(v9, zero);
 
-	unsigned char *p5 = (unsigned char *)&in[y*width+x];
+        __m128i gyl = _mm_sub_epi16(
+          _mm_add_epi16(_mm_add_epi16(p1l, p3l), _mm_slli_epi16(p2l, 1)),
+          _mm_add_epi16(_mm_add_epi16(p7l, p9l), _mm_slli_epi16(p8l, 1)));
+        __m128i gxl = _mm_sub_epi16(
+          _mm_add_epi16(_mm_add_epi16(p3l, p9l), _mm_slli_epi16(p6l, 1)),
+          _mm_add_epi16(_mm_add_epi16(p1l, p7l), _mm_slli_epi16(p4l, 1)));
+        __m128i magl = _mm_add_epi16(abs_epi16_sse2(gyl), abs_epi16_sse2(gxl));
 
-        g[3] = p5[3]; // copy alpha
+        __m128i p1h = _mm_unpackhi_epi8(v1, zero);
+        __m128i p2h = _mm_unpackhi_epi8(v2, zero);
+        __m128i p3h = _mm_unpackhi_epi8(v3, zero);
+        __m128i p4h = _mm_unpackhi_epi8(v4, zero);
+        __m128i p6h = _mm_unpackhi_epi8(v6, zero);
+        __m128i p7h = _mm_unpackhi_epi8(v7, zero);
+        __m128i p8h = _mm_unpackhi_epi8(v8, zero);
+        __m128i p9h = _mm_unpackhi_epi8(v9, zero);
 
-	float lt;
+        __m128i gyh = _mm_sub_epi16(
+          _mm_add_epi16(_mm_add_epi16(p1h, p3h), _mm_slli_epi16(p2h, 1)),
+          _mm_add_epi16(_mm_add_epi16(p7h, p9h), _mm_slli_epi16(p8h, 1)));
+        __m128i gxh = _mm_sub_epi16(
+          _mm_add_epi16(_mm_add_epi16(p3h, p9h), _mm_slli_epi16(p6h, 1)),
+          _mm_add_epi16(_mm_add_epi16(p1h, p7h), _mm_slli_epi16(p4h, 1)));
+        __m128i magh = _mm_add_epi16(abs_epi16_sse2(gyh), abs_epi16_sse2(gxh));
 
-	// calculate "lightness"
-	unsigned char R=g[0];
-	unsigned char G=g[1];
-	unsigned char B=g[2];
+        __m128i sob = _mm_packus_epi16(magl, magh);
+        alignas(16) unsigned char sb[16];
+        _mm_store_si128((__m128i*)sb, sob);
 
-	unsigned char max=R;
-	if (G>max) max=G;
-	if (B>max) max=B;
+        for (int k = 0; k < 4; ++k)
+        {
+          unsigned char R = sb[k * 4 + 0];
+          unsigned char G = sb[k * 4 + 1];
+          unsigned char B = sb[k * 4 + 2];
+          unsigned char mx = R > G ? R : G;
+          if (B > mx) mx = B;
+          unsigned char mn = R < G ? R : G;
+          if (B < mn) mn = B;
+          sobel_l_row[x + k] = (unsigned char)((mx + mn) >> 1);
+        }
+      }
+#endif
+      for (; x < width - 1; ++x)
+      {
+        const unsigned char *p1 = (const unsigned char *)&r0[x - 1];
+        const unsigned char *p2 = (const unsigned char *)&r0[x];
+        const unsigned char *p3 = (const unsigned char *)&r0[x + 1];
+        const unsigned char *p4 = (const unsigned char *)&r1[x - 1];
+        const unsigned char *p6 = (const unsigned char *)&r1[x + 1];
+        const unsigned char *p7 = (const unsigned char *)&r2[x - 1];
+        const unsigned char *p8 = (const unsigned char *)&r2[x];
+        const unsigned char *p9 = (const unsigned char *)&r2[x + 1];
 
-	unsigned char min=R;
-	if (G<min) min=G;
-	if (B<min) min=B;
+        unsigned char g0 = CLAMP0255(
+          abs(p1[0] + p2[0]*2 + p3[0] - p7[0] - p8[0]*2 - p9[0]) +
+          abs(p3[0] + p6[0]*2 + p9[0] - p1[0] - p4[0]*2 - p7[0]));
+        unsigned char g1 = CLAMP0255(
+          abs(p1[1] + p2[1]*2 + p3[1] - p7[1] - p8[1]*2 - p9[1]) +
+          abs(p3[1] + p6[1]*2 + p9[1] - p1[1] - p4[1]*2 - p7[1]));
+        unsigned char g2 = CLAMP0255(
+          abs(p1[2] + p2[2]*2 + p3[2] - p7[2] - p8[2]*2 - p9[2]) +
+          abs(p3[2] + p6[2]*2 + p9[2] - p1[2] - p4[2]*2 - p7[2]));
 
-	unsigned char l=(unsigned char) (((float)max+(float)min)/2.);
+        unsigned char mx = g0 > g1 ? g0 : g1;
+        if (g2 > mx) mx = g2;
+        unsigned char mn = g0 < g1 ? g0 : g1;
+        if (g2 < mn) mn = g2;
+        sobel_l_row[x] = (unsigned char)((mx + mn) >> 1);
+      }
 
+      // Step 2: Apply HSL lightness adjustment
+      for (x = 1; x < width - 1; ++x)
+      {
+        unsigned char l = sobel_l_row[x];
+        const unsigned char *p5 = (const unsigned char *)&r1[x];
+        unsigned char *g = (unsigned char *)&dst[x];
 
+        if (!has_red && !(l > lt))
+        {
+          dst[x] = r1[x];
+          continue;
+        }
 
-	// convert in and out to HSL, add L value of out
-	
-	unsigned int h;
-	float s;
-	
-	R=p5[0];
-	G=p5[1];
-	B=p5[2];
-	
-	max=R;
-	if (G>max) max=G;
-	if (B>max) max=B;
-	
-	min=R;
-	if (G<min) min=G;
-	if (B<min) min=B;
-	
+        unsigned char R = p5[0];
+        unsigned char G = p5[1];
+        unsigned char B = p5[2];
+        unsigned char mx = R > G ? R : G;
+        if (B > mx) mx = B;
+        unsigned char mn = R < G ? R : G;
+        if (B < mn) mn = B;
 
-	if (l>(lt=lthresh*255.)) {
-	  // if lightness > threshold, we add it to the lightness of the original
-	  l=CLAMP0255((int32_t)((float)l*lupscale+((float)max+(float)min)/2.));
-	}
-	// otherwise reduce
-	else if (lredscale>0.) {
-	  l=((float)max+(float)min)/2.*(1.-lredscale);
-	}
+        double half_sum = ((float)mx + (float)mn) * 0.5;
+        if (l > lt)
+        {
+          l = CLAMP0255((int32_t)((float)l * upscale + half_sum));
+        }
+        else
+        {
+          l = (unsigned char)(half_sum * one_minus_red);
+        }
 
-	if (lredscale>0.||l>lt) {
-	  if (max==min) {
-	    h=0;
-	    s=0.;
-	  }
-	  else {
-	    if (max==R) {
-	      h=(unsigned int)(60.*((float)G-(float)B)/((float)max-(float)min));
-	      if (G<B) h+=360;
-	    }
-	    else {
-	      if (max==G) h=(unsigned int)(60.*((float)B-(float)R)/((float)max-(float)min)+120.);
-	      else h=(unsigned int)(60.*(float)(R-G)/float(max-min)+240.);
-	    }
-	    
-	    if (l<=0.5) s=((float)max-(float)min)/((float)max+(float)min);
-	    else s=((float)max-(float)min)/(2.-((float)max+(float)min));
-	  }
-	  
-	  
-	  // convert back to RGB
-	  
-	  float q;
-	  
-	  if (l<0.5) q=l*(1.+s);
-	  else q=l+s-(l*s);
-	  
-	  float p=2.*l-q;
-	  
-	  float hk=(float)h/360.;
-	  
-	  float tr=hk+1./3.;
-	  float tg=hk;
-	  float tb=hk-1./3.;
-	  
-	  if (tr>1.) tr-=1.;
-	  if (tb<0.) tb+=1.;
-	  
-	  if (tr<1./6.) g[0]=CLAMP0255(p+((q-p)*6.*tr));
-	  else if (tr<0.5) g[0]=CLAMP0255((int32_t)q);
-	  else if (tr<2./3.) g[0]=CLAMP0255(p+((q-p)*6.*(2./3.-tr)));
-	  else g[0]=CLAMP0255((int32_t)p);
-	  
-	  if (tg<1./6.) g[1]=CLAMP0255(p+((q-p)*6.*tg));
-	  else if (tg<0.5) g[1]=CLAMP0255((int32_t)q);
-	  else if (tg<2./3.) g[1]=CLAMP0255(p+((q-p)*6.*(2./3.-tg)));
-	  else g[1]=CLAMP0255((int32_t)p);
-	  
-	  if (tb<1./6.) g[2]=CLAMP0255(p+((q-p)*6.*tb));
-	  else if (tb<0.5) g[2]=CLAMP0255((int32_t)q);
-	  else if (tb<2./3.) g[2]=CLAMP0255(p+((q-p)*6.*(2./3.-tb)));
-	  else g[2]=CLAMP0255((int32_t)p);
-	}
-	else {
-	  g[0]=p5[0];
-	  g[1]=p5[1];
-	  g[2]=p5[2];
-	}
+        if (has_red || l > lt)
+        {
+          g[3] = p5[3];
+          if (l == 0)
+          {
+            g[0] = 0;
+            g[1] = 0;
+            g[2] = 0;
+            continue;
+          }
+          if (mx == mn)
+          {
+            g[0] = l;
+            g[1] = l;
+            g[2] = l;
+            continue;
+          }
+
+          int diff_i = (int)mx - (int)mn;
+          int num = (mx == R) ? ((int)G - (int)B) : ((mx == G) ? ((int)B - (int)R) : ((int)R - (int)G));
+          double off = (mx == R) ? 0.0 : ((mx == G) ? 120.0 : 240.0);
+          unsigned int h = (unsigned int)(60.0 * (double)num / (double)diff_i + off) + ((mx == R && G < B) ? 360u : 0u);
+          float s = (float)((double)diff_i / (2.0 - ((double)mx + (double)mn)));
+          float fl = (float)l;
+          float q = fl + s - (fl * s);
+          float p = 2.f * fl - q;
+
+          if (h <= 360)
+          {
+            const double *w = hue_lut[h].w;
+            double qp = (double)(q - p);
+            g[0] = CLAMP0255((double)p + qp * w[0]);
+            g[1] = CLAMP0255((double)p + qp * w[1]);
+            g[2] = CLAMP0255((double)p + qp * w[2]);
+          }
+          else
+          {
+            float hk = (float)h / 360.;
+            float tr = hk + 1. / 3.;
+            float tg = hk;
+            float tb = hk - 1. / 3.;
+            if (tr > 1.) tr -= 1.;
+            if (tb < 0.) tb += 1.;
+
+            if (tr < 1./6.) g[0] = CLAMP0255(p + ((q - p) * 6. * tr));
+            else if (tr < 0.5) g[0] = CLAMP0255((int32_t)q);
+            else if (tr < 2./3.) g[0] = CLAMP0255(p + ((q - p) * 6. * (2./3. - tr)));
+            else g[0] = CLAMP0255((int32_t)p);
+
+            if (tg < 1./6.) g[1] = CLAMP0255(p + ((q - p) * 6. * tg));
+            else if (tg < 0.5) g[1] = CLAMP0255((int32_t)q);
+            else if (tg < 2./3.) g[1] = CLAMP0255(p + ((q - p) * 6. * (2./3. - tg)));
+            else g[1] = CLAMP0255((int32_t)p);
+
+            if (tb < 1./6.) g[2] = CLAMP0255(p + ((q - p) * 6. * tb));
+            else if (tb < 0.5) g[2] = CLAMP0255((int32_t)q);
+            else if (tb < 2./3.) g[2] = CLAMP0255(p + ((q - p) * 6. * (2./3. - tb)));
+            else g[2] = CLAMP0255((int32_t)p);
+          }
+        }
+        else
+        {
+          dst[x] = r1[x];
+        }
       }
     }
   }
