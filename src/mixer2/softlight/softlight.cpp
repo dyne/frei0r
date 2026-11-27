@@ -42,28 +42,44 @@ public:
               const uint32_t* in1,
               const uint32_t* in2)
   {
-    const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
-    uint8_t *dst = reinterpret_cast<uint8_t*>(out);
-    uint32_t sizeCounter = size;
-            
-    uint32_t b, tmpS, tmpM, tmp1, tmp2, tmp3;
-  
-    while (sizeCounter--)
+    const uint8_t *__restrict__ src1 = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t *__restrict__ src2 = reinterpret_cast<const uint8_t*>(in2);
+    uint8_t *__restrict__ dst = reinterpret_cast<uint8_t*>(out);
+    uint32_t i = 0;
+    for (; i + 16 <= size; i += 16)
       {
-        for (b = 0; b < ALPHA; b++)
+        const uint8_t *__restrict__ s1 = src1 + i * 4;
+        const uint8_t *__restrict__ s2 = src2 + i * 4;
+        uint8_t *__restrict__ d = dst + i * 4;
+        for (int k = 0; k < 64; ++k)
           {
-            /* Mix multiply and screen */
-            tmpM = INT_MULT(src1[b], src2[b], tmpM);
-            tmpS = 255 - INT_MULT((255 - src1[b]), (255 - src2[b]), tmp1);
-            dst[b] = INT_MULT((255 - src1[b]), tmpM, tmp2) + INT_MULT(src1[b], tmpS, tmp3);
+            uint32_t a = s1[k];
+            uint32_t b = s2[k];
+            uint32_t inv_a = 255u - a;
+            uint32_t t0 = a * b + 0x80u;
+            uint32_t tmpM = ((t0 >> 8) + t0) >> 8;
+            uint32_t t1 = inv_a * (255u - b) + 0x80u;
+            uint32_t tmpS = 255u - (((t1 >> 8) + t1) >> 8);
+            uint32_t t2 = inv_a * tmpM + 0x80u;
+            uint32_t t3 = a * tmpS + 0x80u;
+            d[k] = (uint8_t)((((t2 >> 8) + t2) >> 8) + (((t3 >> 8) + t3) >> 8));
           }
-  
-        dst[ALPHA] = MIN(src1[ALPHA], src2[ALPHA]);
-  
-        src1 += NBYTES;
-        src2 += NBYTES;
-        dst += NBYTES;
+        for (int p = 0; p < 16; ++p)
+          d[p * 4 + 3] = s1[p * 4 + 3] < s2[p * 4 + 3] ? s1[p * 4 + 3] : s2[p * 4 + 3];
+      }
+    for (; i < size; ++i)
+      {
+        const uint8_t *s1 = src1 + i * 4;
+        const uint8_t *s2 = src2 + i * 4;
+        uint8_t *d = dst + i * 4;
+        uint32_t tmpS, tmpM, tmp1, tmp2, tmp3;
+        for (uint32_t b = 0; b < ALPHA; b++)
+          {
+            tmpM = INT_MULT(s1[b], s2[b], tmpM);
+            tmpS = 255 - INT_MULT((255 - s1[b]), (255 - s2[b]), tmp1);
+            d[b] = INT_MULT((255 - s1[b]), tmpM, tmp2) + INT_MULT(s1[b], tmpS, tmp3);
+          }
+        d[ALPHA] = MIN(s1[ALPHA], s2[ALPHA]);
       }
   }
   

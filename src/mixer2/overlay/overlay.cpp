@@ -52,30 +52,41 @@ public:
       return;
     }
 
-    const uint8_t *src1 = reinterpret_cast<const uint8_t*>(in1);
-    const uint8_t *src2 = reinterpret_cast<const uint8_t*>(in2);
-    uint8_t *dst = reinterpret_cast<uint8_t*>(out);
-    uint32_t sizeCounter = size;
-
-    // Validate size
-    if (sizeCounter == 0) {
+    const uint8_t *__restrict__ src1 = reinterpret_cast<const uint8_t*>(in1);
+    const uint8_t *__restrict__ src2 = reinterpret_cast<const uint8_t*>(in2);
+    uint8_t *__restrict__ dst = reinterpret_cast<uint8_t*>(out);
+    uint32_t n = size;
+    if (n == 0) {
       return;
     }
 
-    uint32_t b, tmp, tmpM;
-
-    while (sizeCounter--)
+    uint32_t i = 0;
+    for (; i + 16 <= n; i += 16)
       {
-        for (b = 0; b < ALPHA; b++)
+        const uint8_t *__restrict__ s1 = src1 + i * 4;
+        const uint8_t *__restrict__ s2 = src2 + i * 4;
+        uint8_t *__restrict__ d = dst + i * 4;
+        for (int k = 0; k < 64; ++k)
           {
-            dst[b] = INT_MULT(src1[b], src1[b] + INT_MULT(2 * src2[b], 255 - src1[b], tmpM), tmp);
+            uint32_t a = s1[k];
+            uint32_t b = s2[k];
+            uint32_t tm = (2u * b) * (255u - a) + 0x80u;
+            uint32_t m = ((tm >> 8) + tm) >> 8;
+            uint32_t t = a * (a + m) + 0x80u;
+            d[k] = (uint8_t)(((t >> 8) + t) >> 8);
           }
-
-        dst[ALPHA] = MIN(src1[ALPHA], src2[ALPHA]);
-
-        src1 += NBYTES;
-        src2 += NBYTES;
-        dst += NBYTES;
+        for (int p = 0; p < 16; ++p)
+          d[p * 4 + 3] = s1[p * 4 + 3] < s2[p * 4 + 3] ? s1[p * 4 + 3] : s2[p * 4 + 3];
+      }
+    for (; i < n; ++i)
+      {
+        const uint8_t *s1 = src1 + i * 4;
+        const uint8_t *s2 = src2 + i * 4;
+        uint8_t *d = dst + i * 4;
+        uint32_t tmp, tmpM;
+        for (uint32_t b = 0; b < ALPHA; b++)
+          d[b] = INT_MULT(s1[b], s1[b] + INT_MULT(2 * s2[b], 255 - s1[b], tmpM), tmp);
+        d[ALPHA] = MIN(s1[ALPHA], s2[ALPHA]);
       }
   }
   
