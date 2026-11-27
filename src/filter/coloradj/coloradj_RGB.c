@@ -33,6 +33,9 @@ Copyright (C) 2010  Marko Cebokli    http://lea.hamradio.si/~s57uuu
 #include <assert.h>
 
 #include <frei0r.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
 //------------------------------------------------------
 //computes x to the power p
@@ -127,14 +130,16 @@ static void make_lut2(float r, float g, float b, lut_s *lut, int norm, int cm)
 int i;
 float rr,gg,bb,gama,l;
 
+float gama_r=map_value_forward_log(r,3.0,0.3333);
+float gama_g=map_value_forward_log(g,3.0,0.3333);
+float gama_b=map_value_forward_log(b,3.0,0.3333);
+(void)gama;
+
 for (i=0;i<256;i++)
 	{
-	gama=map_value_forward_log(r,3.0,0.3333);
-	rr=255.0*pwr((float)i/255.0,gama);
-	gama=map_value_forward_log(g,3.0,0.3333);
-	gg=255.0*pwr((float)i/255.0,gama);
-	gama=map_value_forward_log(b,3.0,0.3333);
-	bb=255.0*pwr((float)i/255.0,gama);
+	rr=255.0*pwr((float)i/255.0,gama_r);
+	gg=255.0*pwr((float)i/255.0,gama_g);
+	bb=255.0*pwr((float)i/255.0,gama_b);
 
 	if (norm==1)
 		{
@@ -185,11 +190,15 @@ static void make_lut3(float r, float g, float b, lut_s *lut, int norm, int cm)
 int i;
 float rr,gg,bb,l;
 
+float mult_r=map_value_forward_log(r,0.3333,3.0);
+float mult_g=map_value_forward_log(g,0.3333,3.0);
+float mult_b=map_value_forward_log(b,0.3333,3.0);
+
 for (i=0;i<256;i++)
 	{
-	rr=(float)i*map_value_forward_log(r,0.3333,3.0);
-	gg=(float)i*map_value_forward_log(g,0.3333,3.0);
-	bb=(float)i*map_value_forward_log(b,0.3333,3.0);
+	rr=(float)i*mult_r;
+	gg=(float)i*mult_g;
+	bb=(float)i*mult_b;
 
 	if (norm==1)
 		{
@@ -234,31 +243,78 @@ for (i=0;i<256;i++)
 
 //----------------------------------------------------
 //F0R_COLOR_MODEL_RGBA8888  little endian
+static inline uint32_t div255_exact(uint32_t x)
+{
+	return (x + 1u + (x >> 8)) >> 8;
+}
+
 static void apply_lut(const uint32_t* inframe, uint32_t* outframe, int size, lut_s *lut, int ac)
 {
+const unsigned char *lr = lut->r;
+const unsigned char *lg = lut->g;
+const unsigned char *lb = lut->b;
 int i;
-uint32_t r,g,b,a;
 
 if (ac==0)
 	{
 	for (i=0;i<size;i++)
 		{
-		outframe[i] = lut->r[inframe[i]&255];
-		outframe[i] = outframe[i] + ((lut->g[(inframe[i]>>8)&255])<<8);
-		outframe[i] = outframe[i] + ((lut->b[(inframe[i]>>16)&255])<<16);
-		outframe[i] = outframe[i] + (inframe[i]&0xFF000000);
+		uint32_t px = inframe[i];
+		outframe[i] = (uint32_t)lr[px & 255u]
+		            | ((uint32_t)lg[(px >> 8) & 255u] << 8)
+		            | ((uint32_t)lb[(px >> 16) & 255u] << 16)
+		            | (px & 0xFF000000u);
 		}
 	}
 else		//alpha controlled
 	{
-	for (i=0;i<size;i++)
+	i = 0;
+#ifdef __SSE2__
+	__m128i vZero = _mm_setzero_si128();
+	__m128i v255 = _mm_set1_epi16(255);
+	__m128i vOne = _mm_set1_epi16(1);
+	__m128i vAlphaMask = _mm_set1_epi32((int)0xFF000000u);
+	__m128i vRgbMask = _mm_set1_epi32(0x00FFFFFF);
+	for (; i + 1 < size; i += 2)
 		{
-		a=(inframe[i]>>24)&255;
-		r = (255-a)*(inframe[i]&255) + a*lut->r[inframe[i]&255];
-		g = (255-a)*((inframe[i]>>8)&255) + a*lut->g[(inframe[i]>>8)&255];
-		b = (255-a)*((inframe[i]>>16)&255) + a*lut->b[(inframe[i]>>16)&255];
-		outframe[i] = r/255 + ((g/255)<<8) + ((b/255)<<16);
-		outframe[i] = outframe[i] + (inframe[i]&0xFF000000);
+		uint32_t p0 = inframe[i];
+		uint32_t p1 = inframe[i + 1];
+		uint32_t l0 = (uint32_t)lr[p0 & 255u]
+		            | ((uint32_t)lg[(p0 >> 8) & 255u] << 8)
+		            | ((uint32_t)lb[(p0 >> 16) & 255u] << 16);
+		uint32_t l1 = (uint32_t)lr[p1 & 255u]
+		            | ((uint32_t)lg[(p1 >> 8) & 255u] << 8)
+		            | ((uint32_t)lb[(p1 >> 16) & 255u] << 16);
+		__m128i vSrc8 = _mm_loadl_epi64((const __m128i *)(inframe + i));
+		__m128i vLut8 = _mm_set_epi32(0, 0, (int)l1, (int)l0);
+		__m128i vSrc16 = _mm_unpacklo_epi8(vSrc8, vZero);
+		__m128i vLut16 = _mm_unpacklo_epi8(vLut8, vZero);
+		/* Broadcast alpha of each pixel across its 4 16-bit lanes */
+		__m128i vA16 = _mm_shufflelo_epi16(vSrc16, 0xFF);
+		vA16 = _mm_shufflehi_epi16(vA16, 0xFF);
+		__m128i vIA16 = _mm_sub_epi16(v255, vA16);
+		__m128i vSum = _mm_add_epi16(_mm_mullo_epi16(vIA16, vSrc16),
+		                             _mm_mullo_epi16(vA16, vLut16));
+		__m128i vDiv = _mm_srli_epi16(_mm_add_epi16(_mm_add_epi16(vSum, vOne),
+		                                            _mm_srli_epi16(vSum, 8)), 8);
+		__m128i vOut8 = _mm_packus_epi16(vDiv, vZero);
+		vOut8 = _mm_or_si128(_mm_and_si128(vOut8, vRgbMask),
+		                     _mm_and_si128(vSrc8, vAlphaMask));
+		_mm_storel_epi64((__m128i *)(outframe + i), vOut8);
+		}
+#endif
+	for (;i<size;i++)
+		{
+		uint32_t px = inframe[i];
+		uint32_t a = px >> 24;
+		uint32_t ia = 255u - a;
+		uint32_t sr = px & 255u;
+		uint32_t sg = (px >> 8) & 255u;
+		uint32_t sb = (px >> 16) & 255u;
+		uint32_t r = div255_exact(ia * sr + a * lr[sr]);
+		uint32_t g = div255_exact(ia * sg + a * lg[sg]);
+		uint32_t b = div255_exact(ia * sb + a * lb[sb]);
+		outframe[i] = r | (g << 8) | (b << 16) | (px & 0xFF000000u);
 		}
 	}
 }
