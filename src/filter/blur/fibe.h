@@ -144,7 +144,7 @@ static void rep(float v1, float v2, float c, float *i1, float *i2, int n,  float
 //loops rearanged for more locality (better cache hit ratio)
 //outer (vertical) loop 2x unroll to break dependency chain
 //simplified indexes
-static void fibe1o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba *s, int w, int h, float a, int ec)
+static void fibe1o_8(const uint32_t* restrict inframe, uint32_t* restrict outframe, float_rgba *restrict s, int w, int h, float a, int ec)
 {
     int i,j;
     float b,g,g4,avg,avg1,cr,cg,cb,g4a,g4b;
@@ -461,7 +461,7 @@ static void fibe1o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba *s,
             s[i+p].r=g4a*cr+g4b*(s[i+p].r-cr);
             s[i+p].g=g4a*cg+g4b*(s[i+p].g-cg);
             s[i+p].b=g4a*cb+g4b*(s[i+p].b-cb);
-            outframe[p+i]=((uint32_t)s[p+i].r&0xFF) + (((uint32_t)s[p+i].g&0xFF)<<8) + (((uint32_t)s[p+i].b&0xFF)<<16);
+            outframe[p+i]=((uint32_t)s[p+i].r&0xFF) | (((uint32_t)s[p+i].g&0xFF)<<8) | (((uint32_t)s[p+i].b&0xFF)<<16) | (inframe[p+i]&0xFF000000u);
         }
     }
     else
@@ -471,19 +471,25 @@ static void fibe1o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba *s,
             s[j+p].r=g4b*s[j+p].r;	//rep V
             s[j+p].g=g4b*s[j+p].g;
             s[j+p].b=g4b*s[j+p].b;
-            outframe[p+j]=((uint32_t)s[p+j].r&0xFF) + (((uint32_t)s[p+j].g&0xFF)<<8) + (((uint32_t)s[p+j].b&0xFF)<<16);
+            outframe[p+j]=((uint32_t)s[p+j].r&0xFF) | (((uint32_t)s[p+j].g&0xFF)<<8) | (((uint32_t)s[p+j].b&0xFF)<<16) | (inframe[p+j]&0xFF000000u);
         }
     }
 
     for (i=h-2;i>=0;i--)	//po vrsticah navzgor
     {
-        p=i*w; pw=p+w;
+        float_rgba *restrict r0 = &s[i*w];
+        const float_rgba *restrict r1 = &s[(i+1)*w];
+        const uint32_t *restrict inr = &inframe[i*w];
+        uint32_t *restrict outr = &outframe[i*w];
         for (j=0;j<w;j++)	//po stolpcih
         {
-            s[p+j].r=a*s[pw+j].r+g4*s[p+j].r;
-            s[p+j].g=a*s[pw+j].g+g4*s[p+j].g;
-            s[p+j].b=a*s[pw+j].b+g4*s[p+j].b;
-            outframe[p+j]=((uint32_t)s[p+j].r&0xFF) + (((uint32_t)s[p+j].g&0xFF)<<8) + (((uint32_t)s[p+j].b&0xFF)<<16);
+            float vr = a*r1[j].r + g4*r0[j].r;
+            float vg = a*r1[j].g + g4*r0[j].g;
+            float vb = a*r1[j].b + g4*r0[j].b;
+            r0[j].r = vr;
+            r0[j].g = vg;
+            r0[j].b = vb;
+            outr[j] = ((uint32_t)vr&0xFF) | (((uint32_t)vg&0xFF)<<8) | (((uint32_t)vb&0xFF)<<16) | (inr[j]&0xFF000000u);
         }
     }
 
@@ -493,7 +499,7 @@ static void fibe1o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba *s,
 // 2-tap IIR v stirih smereh   a only verzija, a0=1.0
 //desno kompenzacijo izracuna direktno (rdx,rsx,rcx)
 //optimized for speed
-static void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[], int w, int h, float a1, float a2,  float rd1, float rd2, float rs1, float rs2, float rc1, float rc2, int ec)
+static void fibe2o_8(const uint32_t* restrict inframe, uint32_t* restrict outframe, float_rgba *restrict s, int w, int h, float a1, float a2,  float rd1, float rd2, float rs1, float rs2, float rc1, float rc2, int ec)
 {
     float cr,cg,cb,g,g4,avg,gavg,avgg,iavg;
     float_rgba rep1,rep2;
@@ -713,14 +719,23 @@ static void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[]
             s[jw+i].b=g4*s[jw+i].b-a1*s[jw+i-1].b-a2*s[jw+i-2].b;
         }
 
-        for (i=avg;i<w-avg;i++)	//tja  (s retvorbo)
         {
-            s[jw+i].r=(float)(inframe[jw+i]&0xFF);
-            s[jw+i].g=(float)((inframe[jw+i]&0xFF00)>>8);
-            s[jw+i].b=(float)((inframe[jw+i]&0xFF0000)>>16);
-            s[jw+i].r=g4*s[jw+i].r-a1*s[jw+i-1].r-a2*s[jw+i-2].r;
-            s[jw+i].g=g4*s[jw+i].g-a1*s[jw+i-1].g-a2*s[jw+i-2].g;
-            s[jw+i].b=g4*s[jw+i].b-a1*s[jw+i-1].b-a2*s[jw+i-2].b;
+            float_rgba *restrict row = &s[jw];
+            const uint32_t *restrict inr = &inframe[jw];
+            float r1 = row[EDGEAVG-1].r, r2 = row[EDGEAVG-2].r;
+            float g1 = row[EDGEAVG-1].g, g2 = row[EDGEAVG-2].g;
+            float b1 = row[EDGEAVG-1].b, b2 = row[EDGEAVG-2].b;
+            for (i=EDGEAVG;i<w-EDGEAVG;i++)	//tja  (s retvorbo)
+            {
+                uint32_t px = inr[i];
+                float r0 = g4*(float)(px&0xFF) - a1*r1 - a2*r2;
+                float g0 = g4*(float)((px>>8)&0xFF) - a1*g1 - a2*g2;
+                float b0 = g4*(float)((px>>16)&0xFF) - a1*b1 - a2*b2;
+                row[i].r = r0; row[i].g = g0; row[i].b = b0;
+                r2 = r1; r1 = r0;
+                g2 = g1; g1 = g0;
+                b2 = b1; b1 = b0;
+            }
         }
 
         for (i=w-avg;i<w;i++)	//tja  (ze pretv. desno)
@@ -754,15 +769,28 @@ static void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[]
         s[jww-2].g=s[jww-2].g-a1*s[jww-1].g-a2*rep1.g;
         s[jww-2].b=s[jww-2].b-a1*s[jww-1].b-a2*rep1.b;
 
-        for (i=w-3;i>=0;i--)	//po stolpcih
-        { //nazaj
-            s[jw+i].r=s[jw+i].r-a1*s[jw+i+1].r-a2*s[jw+i+2].r;
-            s[jw+i].g=s[jw+i].g-a1*s[jw+i+1].g-a2*s[jw+i+2].g;
-            s[jw+i].b=s[jw+i].b-a1*s[jw+i+1].b-a2*s[jw+i+2].b;
-            //dol
-            s[jw+i+2].r=s[jw+i+2].r-a1*s[jw-w+i+2].r-a2*s[jw-w-w+i+2].r;
-            s[jw+i+2].g=s[jw+i+2].g-a1*s[jw-w+i+2].g-a2*s[jw-w-w+i+2].g;
-            s[jw+i+2].b=s[jw+i+2].b-a1*s[jw-w+i+2].b-a2*s[jw-w-w+i+2].b;
+        {
+            float_rgba *restrict row = &s[jw];
+            const float_rgba *restrict row1 = &s[jw-w];
+            const float_rgba *restrict row2 = &s[jw-2*w];
+            float r1 = row[w-2].r, r2 = row[w-1].r;
+            float g1 = row[w-2].g, g2 = row[w-1].g;
+            float b1 = row[w-2].b, b2 = row[w-1].b;
+            for (i=w-3;i>=0;i--)	//po stolpcih
+            { //nazaj
+                float r0 = row[i].r - a1*r1 - a2*r2;
+                float g0 = row[i].g - a1*g1 - a2*g2;
+                float b0 = row[i].b - a1*b1 - a2*b2;
+                //dol (on i+2, using r2/g2/b2 before overwrite)
+                row[i+2].r = r2 - a1*row1[i+2].r - a2*row2[i+2].r;
+                row[i+2].g = g2 - a1*row1[i+2].g - a2*row2[i+2].g;
+                row[i+2].b = b2 - a1*row1[i+2].b - a2*row2[i+2].b;
+                r2 = r1; r1 = r0;
+                g2 = g1; g1 = g0;
+                b2 = b1; b1 = b0;
+            }
+            row[1].r = r2; row[1].g = g2; row[1].b = b2;
+            row[0].r = r1; row[0].g = g1; row[0].b = b1;
         }
 
         //se leva stolpca dol
@@ -818,7 +846,7 @@ static void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[]
         if (s[j+h1w].g<0.0) s[j+h1w].g=0.0;
         if (s[j+h1w].b>255) s[j+h1w].b=255.0;
         if (s[j+h1w].b<0.0) s[j+h1w].b=0.0;
-        outframe[j+h1w]=((uint32_t)s[j+h1w].r&0xFF) + (((uint32_t)s[j+h1w].g&0xFF)<<8) + (((uint32_t)s[j+h1w].b&0xFF)<<16);
+        outframe[j+h1w]=((uint32_t)s[j+h1w].r&0xFF) | (((uint32_t)s[j+h1w].g&0xFF)<<8) | (((uint32_t)s[j+h1w].b&0xFF)<<16) | (inframe[j+h1w]&0xFF000000u);
         s[j+h2w].r=s[j+h2w].r-a1*s[j+h1w].r-a2*rep1.r;
         s[j+h2w].g=s[j+h2w].g-a1*s[j+h1w].g-a2*rep1.g;
         s[j+h2w].b=s[j+h2w].b-a1*s[j+h1w].b-a2*rep1.b;
@@ -828,25 +856,29 @@ static void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[]
         if (s[j+h2w].g<0.0) s[j+h2w].g=0.0;
         if (s[j+h2w].b>255) s[j+h2w].b=255.0;
         if (s[j+h2w].b<0.0) s[j+h2w].b=0.0;
-        outframe[j+h2w]=((uint32_t)s[j+h2w].r&0xFF) + (((uint32_t)s[j+h2w].g&0xFF)<<8) + (((uint32_t)s[j+h2w].b&0xFF)<<16);
+        outframe[j+h2w]=((uint32_t)s[j+h2w].r&0xFF) | (((uint32_t)s[j+h2w].g&0xFF)<<8) | (((uint32_t)s[j+h2w].b&0xFF)<<16) | (inframe[j+h2w]&0xFF000000u);
     }
 
     //ostale vrstice
     for (i=h-3;i>=0;i--)		//gor
     {
-        iw=i*w; i1w=iw+w; i2w=i1w+w;
+        float_rgba *restrict r0 = &s[i*w];
+        const float_rgba *restrict r1 = &s[(i+1)*w];
+        const float_rgba *restrict r2 = &s[(i+2)*w];
+        const uint32_t *restrict inr = &inframe[i*w];
+        uint32_t *restrict outr = &outframe[i*w];
         for (j=0;j<w;j++)
         {
-            s[j+iw].r=s[j+iw].r-a1*s[j+i1w].r-a2*s[j+i2w].r;
-            s[j+iw].g=s[j+iw].g-a1*s[j+i1w].g-a2*s[j+i2w].g;
-            s[j+iw].b=s[j+iw].b-a1*s[j+i1w].b-a2*s[j+i2w].b;
-            if (s[j+iw].r>255) s[j+iw].r=255.0;
-            if (s[j+iw].r<0.0) s[j+iw].r=0.0;
-            if (s[j+iw].g>255) s[j+iw].g=255.0;
-            if (s[j+iw].g<0.0) s[j+iw].g=0.0;
-            if (s[j+iw].b>255) s[j+iw].b=255.0;
-            if (s[j+iw].b<0.0) s[j+iw].b=0.0;
-            outframe[j+iw]=((uint32_t)s[j+iw].r&0xFF) + (((uint32_t)s[j+iw].g&0xFF)<<8) + (((uint32_t)s[j+iw].b&0xFF)<<16);
+            float vr = r0[j].r - a1*r1[j].r - a2*r2[j].r;
+            float vg = r0[j].g - a1*r1[j].g - a2*r2[j].g;
+            float vb = r0[j].b - a1*r1[j].b - a2*r2[j].b;
+            vr = vr > 255.0f ? 255.0f : (vr < 0.0f ? 0.0f : vr);
+            vg = vg > 255.0f ? 255.0f : (vg < 0.0f ? 0.0f : vg);
+            vb = vb > 255.0f ? 255.0f : (vb < 0.0f ? 0.0f : vb);
+            r0[j].r = vr;
+            r0[j].g = vg;
+            r0[j].b = vb;
+            outr[j] = ((uint32_t)vr&0xFF) | (((uint32_t)vg&0xFF)<<8) | (((uint32_t)vb&0xFF)<<16) | (inr[j]&0xFF000000u);
         }
     }
 
@@ -857,83 +889,106 @@ static void fibe2o_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[]
 //a only verzija, a0=1.0
 //edge efekt na desni kompenzira tako, da racuna 256 vzorcev
 //cez rob in in gre potem nazaj
-static void fibe3_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[], int w, int h, float a1, float a2, float a3, int ec)
+static void fibe3_8(const uint32_t* restrict inframe, uint32_t* restrict outframe,
+                    float_rgba *restrict s, float_rgba *restrict lb, float_rgba *restrict bot_avg,
+                    int w, int h, float a1, float a2, float a3, int ec)
 {
     float cr,cg,cb,g,g4;
     int i,j;
     const float avg = EDGEAVG; // how many samples for average at edge comp
     const int cez = 256; // how many samples go right
-    float_rgba *lb = malloc((MAX(w, h) + cez) * sizeof(*lb));
 
     g=1.0/(1.0+a1+a2+a3); g4=1.0/g/g/g/g;
 
     for (j=0;j<h;j++)	//po vrsticah
     {
-        cr=0.0;cg=0.0;cb=0.0;
+        float_rgba *restrict row = &s[j*w];
+        const uint32_t *restrict inr = &inframe[j*w];
+        cr=0.0f;cg=0.0f;cb=0.0f;
         if (ec!=0)
         {	//edge comp (popvprecje prvih)
-            for (i=0;i<avg;i++)
+            for (i=0;i<EDGEAVG;i++)
             {
-                s[j*w+i].r=(float)(inframe[j*w+i]&0xFF);
-                s[j*w+i].g=(float)((inframe[j*w+i]&0xFF00)>>8);
-                s[j*w+i].b=(float)((inframe[j*w+i]&0xFF0000)>>16);
-                cr=cr+s[j*w+i].r;
-                cg=cg+s[j*w+i].g;
-                cb=cb+s[j*w+i].b;
+                uint32_t px = inr[i];
+                row[i].r=(float)(px&0xFF);
+                row[i].g=(float)((px>>8)&0xFF);
+                row[i].b=(float)((px>>16)&0xFF);
+                cr=cr+row[i].r;
+                cg=cg+row[i].g;
+                cb=cb+row[i].b;
             }
             cr=g4*cr/avg; cg=g4*cg/avg; cb=g4*cb/avg;
         }
         else
-            for (i=0;i<avg;i++)
+            for (i=0;i<EDGEAVG;i++)
             {
-                s[j*w+i].r=(float)(inframe[j*w+i]&0xFF);
-                s[j*w+i].g=(float)((inframe[j*w+i]&0xFF00)>>8);
-                s[j*w+i].b=(float)((inframe[j*w+i]&0xFF0000)>>16);
+                uint32_t px = inr[i];
+                row[i].r=(float)(px&0xFF);
+                row[i].g=(float)((px>>8)&0xFF);
+                row[i].b=(float)((px>>16)&0xFF);
             }
-        lb[0].r=g4*s[j*w].r-(a1+a2+a3)*g*cr;
-        lb[0].g=g4*s[j*w].g-(a1+a2+a3)*g*cg;
-        lb[0].b=g4*s[j*w].b-(a1+a2+a3)*g*cb;
-        lb[1].r=g4*s[j*w+1].r-a1*lb[0].r-(a2+a3)*g*cr;
-        lb[1].g=g4*s[j*w+1].g-a1*lb[0].g-(a2+a3)*g*cg;
-        lb[1].b=g4*s[j*w+1].b-a1*lb[0].b-(a2+a3)*g*cb;
-        lb[2].r=g4*s[j*w+2].r-a1*lb[1].r-a2*lb[0].r-a3*g*cr;
-        lb[2].g=g4*s[j*w+2].g-a1*lb[1].g-a2*lb[0].g-a3*g*cg;
-        lb[2].b=g4*s[j*w+2].b-a1*lb[1].b-a2*lb[0].b-a3*g*cb;
+        lb[0].r=g4*row[0].r-(a1+a2+a3)*g*cr;
+        lb[0].g=g4*row[0].g-(a1+a2+a3)*g*cg;
+        lb[0].b=g4*row[0].b-(a1+a2+a3)*g*cb;
+        lb[1].r=g4*row[1].r-a1*lb[0].r-(a2+a3)*g*cr;
+        lb[1].g=g4*row[1].g-a1*lb[0].g-(a2+a3)*g*cg;
+        lb[1].b=g4*row[1].b-a1*lb[0].b-(a2+a3)*g*cb;
+        lb[2].r=g4*row[2].r-a1*lb[1].r-a2*lb[0].r-a3*g*cr;
+        lb[2].g=g4*row[2].g-a1*lb[1].g-a2*lb[0].g-a3*g*cg;
+        lb[2].b=g4*row[2].b-a1*lb[1].b-a2*lb[0].b-a3*g*cb;
 
-        for (i=3;i<avg;i++)	//tja  (ze pretvorjeni)
+        float r1 = lb[2].r, r2 = lb[1].r, r3 = lb[0].r;
+        float g1 = lb[2].g, g2 = lb[1].g, g3 = lb[0].g;
+        float b1 = lb[2].b, b2 = lb[1].b, b3 = lb[0].b;
+
+        for (i=3;i<EDGEAVG;i++)	//tja  (ze pretvorjeni)
         {
-            lb[i].r=g4*s[j*w+i].r-a1*lb[i-1].r-a2*lb[i-2].r-a3*lb[i-3].r;
-            lb[i].g=g4*s[j*w+i].g-a1*lb[i-1].g-a2*lb[i-2].g-a3*lb[i-3].g;
-            lb[i].b=g4*s[j*w+i].b-a1*lb[i-1].b-a2*lb[i-2].b-a3*lb[i-3].b;
+            float r0=g4*row[i].r-a1*r1-a2*r2-a3*r3;
+            float g0=g4*row[i].g-a1*g1-a2*g2-a3*g3;
+            float b0=g4*row[i].b-a1*b1-a2*b2-a3*b3;
+            lb[i].r=r0; lb[i].g=g0; lb[i].b=b0;
+            r3=r2; r2=r1; r1=r0;
+            g3=g2; g2=g1; g1=g0;
+            b3=b2; b2=b1; b1=b0;
         }
 
-        for (i=avg;i<w;i++)	//tja  (s pretvorbo)
+        for (i=EDGEAVG;i<w;i++)	//tja  (s pretvorbo)
         {
-            s[j*w+i].r=(float)(inframe[j*w+i]&0xFF);
-            s[j*w+i].g=(float)((inframe[j*w+i]&0xFF00)>>8);
-            s[j*w+i].b=(float)((inframe[j*w+i]&0xFF0000)>>16);
-            lb[i].r=g4*s[j*w+i].r-a1*lb[i-1].r-a2*lb[i-2].r-a3*lb[i-3].r;
-            lb[i].g=g4*s[j*w+i].g-a1*lb[i-1].g-a2*lb[i-2].g-a3*lb[i-3].g;
-            lb[i].b=g4*s[j*w+i].b-a1*lb[i-1].b-a2*lb[i-2].b-a3*lb[i-3].b;
+            uint32_t px = inr[i];
+            float ir=(float)(px&0xFF);
+            float ig=(float)((px>>8)&0xFF);
+            float ib=(float)((px>>16)&0xFF);
+            row[i].r=ir; row[i].g=ig; row[i].b=ib;
+            float r0=g4*ir-a1*r1-a2*r2-a3*r3;
+            float g0=g4*ig-a1*g1-a2*g2-a3*g3;
+            float b0=g4*ib-a1*b1-a2*b2-a3*b3;
+            lb[i].r=r0; lb[i].g=g0; lb[i].b=b0;
+            r3=r2; r2=r1; r1=r0;
+            g3=g2; g2=g1; g1=g0;
+            b3=b2; b2=b1; b1=b0;
         }
 
-        cr=0.0;cg=0.0;cb=0.0;
+        cr=0.0f;cg=0.0f;cb=0.0f;
         if (ec!=0)
         {	//edge comp
-            for (i=w-avg;i<w;i++)
+            for (i=w-EDGEAVG;i<w;i++)
             {
-                cr=cr+s[j*w+i].r;
-                cg=cg+s[j*w+i].g;
-                cb=cb+s[j*w+i].b;
+                cr=cr+row[i].r;
+                cg=cg+row[i].g;
+                cb=cb+row[i].b;
             }
             cr=g4*cr/avg; cg=g4*cg/avg; cb=g4*cb/avg;
         }
 
         for (i=w;i<(w+cez);i++)	//naprej cez rob
         {
-            lb[i].r=cr-a1*lb[i-1].r-a2*lb[i-2].r-a3*lb[i-3].r;
-            lb[i].g=cr-a1*lb[i-1].g-a2*lb[i-2].g-a3*lb[i-3].g;
-            lb[i].b=cr-a1*lb[i-1].b-a2*lb[i-2].b-a3*lb[i-3].b;
+            float r0=cr-a1*r1-a2*r2-a3*r3;
+            float g0=cr-a1*g1-a2*g2-a3*g3;
+            float b0=cr-a1*b1-a2*b2-a3*b3;
+            lb[i].r=r0; lb[i].g=g0; lb[i].b=b0;
+            r3=r2; r2=r1; r1=r0;
+            g3=g2; g2=g1; g1=g0;
+            b3=b2; b2=b1; b1=b0;
         }
         //nazaj do roba
         lb[w+cez-2].r=lb[w+cez-2].r-a1*lb[w+cez-1].r;
@@ -942,111 +997,206 @@ static void fibe3_8(const uint32_t* inframe, uint32_t* outframe, float_rgba s[],
         lb[w+cez-3].r=lb[w+cez-3].r-a1*lb[w+cez-2].r-a2*lb[w+cez-1].r;
         lb[w+cez-3].g=lb[w+cez-3].g-a1*lb[w+cez-2].g-a2*lb[w+cez-1].g;
         lb[w+cez-3].b=lb[w+cez-3].b-a1*lb[w+cez-2].b-a2*lb[w+cez-1].b;
+        r1=lb[w+cez-3].r; r2=lb[w+cez-2].r; r3=lb[w+cez-1].r;
+        g1=lb[w+cez-3].g; g2=lb[w+cez-2].g; g3=lb[w+cez-1].g;
+        b1=lb[w+cez-3].b; b2=lb[w+cez-2].b; b3=lb[w+cez-1].b;
         for (i=(w+cez-4);i>=w;i--)
         {
-            lb[i].r=lb[i].r-a1*lb[i+1].r-a2*lb[i+2].r-a3*lb[i+3].r;
-            lb[i].g=lb[i].g-a1*lb[i+1].g-a2*lb[i+2].g-a3*lb[i+3].g;
-            lb[i].b=lb[i].b-a1*lb[i+1].b-a2*lb[i+2].b-a3*lb[i+3].b;
+            float r0=lb[i].r-a1*r1-a2*r2-a3*r3;
+            float g0=lb[i].g-a1*g1-a2*g2-a3*g3;
+            float b0=lb[i].b-a1*b1-a2*b2-a3*b3;
+            lb[i].r=r0; lb[i].g=g0; lb[i].b=b0;
+            r3=r2; r2=r1; r1=r0;
+            g3=g2; g2=g1; g1=g0;
+            b3=b2; b2=b1; b1=b0;
         }
 
-        s[j*w+w-1].r=lb[w-1].r-a1*lb[w].r-a2*lb[w+1].r-a3*lb[w+2].r;
-        s[j*w+w-1].g=lb[w-1].g-a1*lb[w].g-a2*lb[w+1].g-a3*lb[w+2].g;
-        s[j*w+w-1].b=lb[w-1].b-a1*lb[w].b-a2*lb[w+1].b-a3*lb[w+2].b;
-        s[j*w+w-2].r=lb[w-2].r-a1*s[j*w+w-1].r-a2*lb[w].r-a3*lb[w+1].r;
-        s[j*w+w-2].g=lb[w-2].g-a1*s[j*w+w-1].g-a2*lb[w].g-a3*lb[w+1].g;
-        s[j*w+w-2].b=lb[w-2].b-a1*s[j*w+w-1].b-a2*lb[w].b-a3*lb[w+1].b;
-        s[j*w+w-3].r=lb[w-3].r-a1*s[j*w+w-2].r-a2*s[j*w+w-1].r-a3*lb[w].r;
-        s[j*w+w-3].g=lb[w-3].g-a1*s[j*w+w-2].g-a2*s[j*w+w-1].g-a3*lb[w].g;
-        s[j*w+w-3].b=lb[w-3].b-a1*s[j*w+w-2].b-a2*s[j*w+w-1].b-a3*lb[w].b;
+        row[w-1].r=lb[w-1].r-a1*lb[w].r-a2*lb[w+1].r-a3*lb[w+2].r;
+        row[w-1].g=lb[w-1].g-a1*lb[w].g-a2*lb[w+1].g-a3*lb[w+2].g;
+        row[w-1].b=lb[w-1].b-a1*lb[w].b-a2*lb[w+1].b-a3*lb[w+2].b;
+        row[w-2].r=lb[w-2].r-a1*row[w-1].r-a2*lb[w].r-a3*lb[w+1].r;
+        row[w-2].g=lb[w-2].g-a1*row[w-1].g-a2*lb[w].g-a3*lb[w+1].g;
+        row[w-2].b=lb[w-2].b-a1*row[w-1].b-a2*lb[w].b-a3*lb[w+1].b;
+        row[w-3].r=lb[w-3].r-a1*row[w-2].r-a2*row[w-1].r-a3*lb[w].r;
+        row[w-3].g=lb[w-3].g-a1*row[w-2].g-a2*row[w-1].g-a3*lb[w].g;
+        row[w-3].b=lb[w-3].b-a1*row[w-2].b-a2*row[w-1].b-a3*lb[w].b;
 
+        r1=row[w-3].r; r2=row[w-2].r; r3=row[w-1].r;
+        g1=row[w-3].g; g2=row[w-2].g; g3=row[w-1].g;
+        b1=row[w-3].b; b2=row[w-2].b; b3=row[w-1].b;
         for (i=w-4;i>=0;i--)		//nazaj
         {
-            s[j*w+i].r=lb[i].r-a1*s[j*w+i+1].r-a2*s[j*w+i+2].r-a3*s[j*w+i+3].r;
-            s[j*w+i].g=lb[i].g-a1*s[j*w+i+1].g-a2*s[j*w+i+2].g-a3*s[j*w+i+3].g;
-            s[j*w+i].b=lb[i].b-a1*s[j*w+i+1].b-a2*s[j*w+i+2].b-a3*s[j*w+i+3].b;
+            float r0=lb[i].r-a1*r1-a2*r2-a3*r3;
+            float g0=lb[i].g-a1*g1-a2*g2-a3*g3;
+            float b0=lb[i].b-a1*b1-a2*b2-a3*b3;
+            row[i].r=r0; row[i].g=g0; row[i].b=b0;
+            r3=r2; r2=r1; r1=r0;
+            g3=g2; g2=g1; g1=g0;
+            b3=b2; b2=b1; b1=b0;
         }
     }	//po vrsticah
 
-    for (j=0;j<w;j++)	//po stolpcih
+    // Vertical pass in row-major order for L1/L2 cache locality and auto-vectorization.
+    // Precompute bottom edge averages before the downward pass overwrites s[].
+    if (ec != 0)
     {
-        cr=0.0;cg=0.0;cb=0.0;
-        if (ec!=0)
-        {	//edge comp (popvprecje prvih)
-            for (i=0;i<avg;i++)
-            {
-                cr=cr+s[j+w*i].r;
-                cg=cg+s[j+w*i].g;
-                cb=cb+s[j+w*i].b;
+        for (j = 0; j < w; j++) {
+            bot_avg[j].r = 0.0f;
+            bot_avg[j].g = 0.0f;
+            bot_avg[j].b = 0.0f;
+        }
+        for (i = h - EDGEAVG; i < h; i++) {
+            const float_rgba *restrict ri = &s[i * w];
+            for (j = 0; j < w; j++) {
+                bot_avg[j].r += ri[j].r;
+                bot_avg[j].g += ri[j].g;
+                bot_avg[j].b += ri[j].b;
             }
-            cr=cr/avg; cg=cg/avg; cb=cb/avg;
         }
-        lb[0].r=s[j].r-(a1+a2+a3)*g*cr;
-        lb[0].g=s[j].g-(a1+a2+a3)*g*cg;
-        lb[0].b=s[j].b-(a1+a2+a3)*g*cb;
-        lb[1].r=s[j+w].r-a1*lb[0].r-(a2+a3)*g*cr;
-        lb[1].g=s[j+w].g-a1*lb[0].g-(a2+a3)*g*cg;
-        lb[1].b=s[j+w].b-a1*lb[0].b-(a2+a3)*g*cb;
-        lb[2].r=s[j+2*w].r-a1*lb[1].r-a2*lb[0].r-a3*g*cr;
-        lb[2].g=s[j+2*w].g-a1*lb[1].g-a2*lb[0].g-a3*g*cg;
-        lb[2].b=s[j+2*w].b-a1*lb[1].b-a2*lb[0].b-a3*g*cb;
+        for (j = 0; j < w; j++) {
+            bot_avg[j].r /= avg;
+            bot_avg[j].g /= avg;
+            bot_avg[j].b /= avg;
+        }
+    }
 
-        for (i=3;i<h;i++)		//dol
+    // Top edge compensation & initialize rows 0, 1, 2
+    {
+        float_rgba *restrict r0 = &s[0];
+        float_rgba *restrict r1 = &s[w];
+        float_rgba *restrict r2 = &s[2 * w];
+        const float k0 = (a1 + a2 + a3) * g;
+        const float k1 = (a2 + a3) * g;
+        const float k2 = a3 * g;
+        if (ec != 0)
         {
-            lb[i].r=s[j+w*i].r-a1*lb[i-1].r-a2*lb[i-2].r-a3*lb[i-3].r;
-            lb[i].g=s[j+w*i].g-a1*lb[i-1].g-a2*lb[i-2].g-a3*lb[i-3].g;
-            lb[i].b=s[j+w*i].b-a1*lb[i-1].b-a2*lb[i-2].b-a3*lb[i-3].b;
-        }
-
-        cr=0.0;cg=0.0;cb=0.0;
-        if (ec!=0)
-        {	//edge comp
-            for (i=h-avg;i<h;i++)
-            {
-                cr=cr+s[j+w*i].r;
-                cg=cg+s[j+w*i].g;
-                cb=cb+s[j+w*i].b;
+            for (j = 0; j < w; j++) {
+                cr = 0.0f; cg = 0.0f; cb = 0.0f;
+                for (i = 0; i < EDGEAVG; i++) {
+                    cr += s[j + w * i].r;
+                    cg += s[j + w * i].g;
+                    cb += s[j + w * i].b;
+                }
+                cr /= avg; cg /= avg; cb /= avg;
+                r0[j].r = r0[j].r - k0 * cr;
+                r0[j].g = r0[j].g - k0 * cg;
+                r0[j].b = r0[j].b - k0 * cb;
+                r1[j].r = r1[j].r - a1 * r0[j].r - k1 * cr;
+                r1[j].g = r1[j].g - a1 * r0[j].g - k1 * cg;
+                r1[j].b = r1[j].b - a1 * r0[j].b - k1 * cb;
+                r2[j].r = r2[j].r - a1 * r1[j].r - a2 * r0[j].r - k2 * cr;
+                r2[j].g = r2[j].g - a1 * r1[j].g - a2 * r0[j].g - k2 * cg;
+                r2[j].b = r2[j].b - a1 * r1[j].b - a2 * r0[j].b - k2 * cb;
             }
-            cr=cr/avg; cg=cg/avg; cb=cb/avg;
         }
-
-        for (i=h;i<(h+cez);i++)	//naprej cez rob
+        else
         {
-            lb[i].r=cr-a1*lb[i-1].r-a2*lb[i-2].r-a3*lb[i-3].r;
-            lb[i].g=cg-a1*lb[i-1].g-a2*lb[i-2].g-a3*lb[i-3].g;
-            lb[i].b=cb-a1*lb[i-1].b-a2*lb[i-2].b-a3*lb[i-3].b;
+            for (j = 0; j < w; j++) {
+                r1[j].r = r1[j].r - a1 * r0[j].r;
+                r1[j].g = r1[j].g - a1 * r0[j].g;
+                r1[j].b = r1[j].b - a1 * r0[j].b;
+                r2[j].r = r2[j].r - a1 * r1[j].r - a2 * r0[j].r;
+                r2[j].g = r2[j].g - a1 * r1[j].g - a2 * r0[j].g;
+                r2[j].b = r2[j].b - a1 * r1[j].b - a2 * r0[j].b;
+            }
         }
-        //nazaj do roba
-        lb[h+cez-2].r=lb[h+cez-2].r-a1*lb[h+cez-1].r;
-        lb[h+cez-2].g=lb[h+cez-2].g-a1*lb[h+cez-1].g;
-        lb[h+cez-2].b=lb[h+cez-2].b-a1*lb[h+cez-1].b;
-        lb[h+cez-3].r=lb[h+cez-3].r-a1*lb[h+cez-2].r-a2*lb[h+cez-1].r;
-        lb[h+cez-3].g=lb[h+cez-3].g-a1*lb[h+cez-2].g-a2*lb[h+cez-1].g;
-        lb[h+cez-3].b=lb[h+cez-3].b-a1*lb[h+cez-2].b-a2*lb[h+cez-1].b;
-        for (i=(h+cez-4);i>=h;i--)
+    }
+
+    // Downward pass (row-major, contiguous)
+    for (i = 3; i < h; i++)
+    {
+        float_rgba *restrict r0 = &s[i * w];
+        const float_rgba *restrict r1 = &s[(i - 1) * w];
+        const float_rgba *restrict r2 = &s[(i - 2) * w];
+        const float_rgba *restrict r3 = &s[(i - 3) * w];
+        for (j = 0; j < w; j++)
         {
-            lb[i].r=lb[i].r-a1*lb[i+1].r-a2*lb[i+2].r-a3*lb[i+3].r;
-            lb[i].g=lb[i].g-a1*lb[i+1].g-a2*lb[i+2].g-a3*lb[i+3].g;
-            lb[i].b=lb[i].b-a1*lb[i+1].b-a2*lb[i+2].b-a3*lb[i+3].b;
+            r0[j].r = r0[j].r - a1 * r1[j].r - a2 * r2[j].r - a3 * r3[j].r;
+            r0[j].g = r0[j].g - a1 * r1[j].g - a2 * r2[j].g - a3 * r3[j].g;
+            r0[j].b = r0[j].b - a1 * r1[j].b - a2 * r2[j].b - a3 * r3[j].b;
         }
+    }
 
-        s[j+(h-1)*w].r=lb[h-1].r-a1*lb[h].r-a2*lb[h+1].r-a3*lb[h+2].r;
-        s[j+(h-1)*w].g=lb[h-1].g-a1*lb[h].g-a2*lb[h+1].g-a3*lb[h+2].g;
-        s[j+(h-1)*w].b=lb[h-1].b-a1*lb[h].b-a2*lb[h+1].b-a3*lb[h+2].b;
-        s[j+(h-2)*w].r=lb[h-2].r-a1*s[j+(h-1)*w].r-a2*lb[h].r-a3*lb[h+1].r;
-        s[j+(h-2)*w].g=lb[h-2].g-a1*s[j+(h-1)*w].g-a2*lb[h].g-a3*lb[h+1].g;
-        s[j+(h-2)*w].b=lb[h-2].b-a1*s[j+(h-1)*w].b-a2*lb[h].b-a3*lb[h+1].b;
-        s[j+(h-3)*w].r=lb[h-3].r-a1*s[j+(h-2)*w].r-a2*s[j+(h-1)*w].r-a3*lb[h].r;
-        s[j+(h-3)*w].g=lb[h-3].g-a1*s[j+(h-2)*w].g-a2*s[j+(h-1)*w].g-a3*lb[h].g;
-        s[j+(h-3)*w].b=lb[h-3].b-a1*s[j+(h-2)*w].b-a2*s[j+(h-1)*w].b-a3*lb[h].b;
-
-        for (i=h-4;i>=0;i--)		//gor
+    // Bottom edge wraparound (L1-resident 259-element tail per column)
+    {
+        float_rgba tail[259];
+        float_rgba *restrict rh1 = &s[(h - 1) * w];
+        float_rgba *restrict rh2 = &s[(h - 2) * w];
+        float_rgba *restrict rh3 = &s[(h - 3) * w];
+        for (j = 0; j < w; j++)
         {
-            s[j+w*i].r=lb[i].r-a1*s[j+w*(i+1)].r-a2*s[j+w*(i+2)].r-a3*s[j+w*(i+3)].r;
-            s[j+w*i].g=lb[i].g-a1*s[j+w*(i+1)].g-a2*s[j+w*(i+2)].g-a3*s[j+w*(i+3)].g;
-            s[j+w*i].b=lb[i].b-a1*s[j+w*(i+1)].b-a2*s[j+w*(i+2)].b-a3*s[j+w*(i+3)].b;
-            outframe[j+w*i]=((uint32_t)s[j+w*i].r&0xFF) + (((uint32_t)s[j+w*i].g&0xFF)<<8) + (((uint32_t)s[j+w*i].b&0xFF)<<16);
-        }
-    }	//po stolpcih
+            cr = ec ? bot_avg[j].r : 0.0f;
+            cg = ec ? bot_avg[j].g : 0.0f;
+            cb = ec ? bot_avg[j].b : 0.0f;
 
-    free(lb);
+            tail[0] = rh3[j];
+            tail[1] = rh2[j];
+            tail[2] = rh1[j];
+
+            float r1 = tail[2].r, r2 = tail[1].r, r3 = tail[0].r;
+            float g1 = tail[2].g, g2 = tail[1].g, g3 = tail[0].g;
+            float b1 = tail[2].b, b2 = tail[1].b, b3 = tail[0].b;
+            for (i = 3; i < 3 + cez; i++)
+            {
+                float r0 = cr - a1 * r1 - a2 * r2 - a3 * r3;
+                float g0 = cg - a1 * g1 - a2 * g2 - a3 * g3;
+                float b0 = cb - a1 * b1 - a2 * b2 - a3 * b3;
+                tail[i].r = r0; tail[i].g = g0; tail[i].b = b0;
+                r3 = r2; r2 = r1; r1 = r0;
+                g3 = g2; g2 = g1; g1 = g0;
+                b3 = b2; b2 = b1; b1 = b0;
+            }
+            tail[3 + cez - 2].r -= a1 * tail[3 + cez - 1].r;
+            tail[3 + cez - 2].g -= a1 * tail[3 + cez - 1].g;
+            tail[3 + cez - 2].b -= a1 * tail[3 + cez - 1].b;
+            tail[3 + cez - 3].r = tail[3 + cez - 3].r - a1 * tail[3 + cez - 2].r - a2 * tail[3 + cez - 1].r;
+            tail[3 + cez - 3].g = tail[3 + cez - 3].g - a1 * tail[3 + cez - 2].g - a2 * tail[3 + cez - 1].g;
+            tail[3 + cez - 3].b = tail[3 + cez - 3].b - a1 * tail[3 + cez - 2].b - a2 * tail[3 + cez - 1].b;
+            r1 = tail[3 + cez - 3].r; r2 = tail[3 + cez - 2].r; r3 = tail[3 + cez - 1].r;
+            g1 = tail[3 + cez - 3].g; g2 = tail[3 + cez - 2].g; g3 = tail[3 + cez - 1].g;
+            b1 = tail[3 + cez - 3].b; b2 = tail[3 + cez - 2].b; b3 = tail[3 + cez - 1].b;
+            for (i = 3 + cez - 4; i >= 3; i--)
+            {
+                float r0 = tail[i].r - a1 * r1 - a2 * r2 - a3 * r3;
+                float g0 = tail[i].g - a1 * g1 - a2 * g2 - a3 * g3;
+                float b0 = tail[i].b - a1 * b1 - a2 * b2 - a3 * b3;
+                tail[i].r = r0; tail[i].g = g0; tail[i].b = b0;
+                r3 = r2; r2 = r1; r1 = r0;
+                g3 = g2; g2 = g1; g1 = g0;
+                b3 = b2; b2 = b1; b1 = b0;
+            }
+
+            rh1[j].r = tail[2].r - a1 * tail[3].r - a2 * tail[4].r - a3 * tail[5].r;
+            rh1[j].g = tail[2].g - a1 * tail[3].g - a2 * tail[4].g - a3 * tail[5].g;
+            rh1[j].b = tail[2].b - a1 * tail[3].b - a2 * tail[4].b - a3 * tail[5].b;
+            rh2[j].r = tail[1].r - a1 * rh1[j].r - a2 * tail[3].r - a3 * tail[4].r;
+            rh2[j].g = tail[1].g - a1 * rh1[j].g - a2 * tail[3].g - a3 * tail[4].g;
+            rh2[j].b = tail[1].b - a1 * rh1[j].b - a2 * tail[3].b - a3 * tail[4].b;
+            rh3[j].r = tail[0].r - a1 * rh2[j].r - a2 * rh1[j].r - a3 * tail[3].r;
+            rh3[j].g = tail[0].g - a1 * rh2[j].g - a2 * rh1[j].g - a3 * tail[3].g;
+            rh3[j].b = tail[0].b - a1 * rh2[j].b - a2 * rh1[j].b - a3 * tail[3].b;
+        }
+    }
+
+    // Upward pass (row-major, contiguous) + pack RGBA with fused alpha
+    for (i = h - 4; i >= 0; i--)
+    {
+        float_rgba *restrict r0 = &s[i * w];
+        const float_rgba *restrict r1 = &s[(i + 1) * w];
+        const float_rgba *restrict r2 = &s[(i + 2) * w];
+        const float_rgba *restrict r3 = &s[(i + 3) * w];
+        const uint32_t *restrict inr = &inframe[i * w];
+        uint32_t *restrict outr = &outframe[i * w];
+        for (j = 0; j < w; j++)
+        {
+            float vr = r0[j].r - a1 * r1[j].r - a2 * r2[j].r - a3 * r3[j].r;
+            float vg = r0[j].g - a1 * r1[j].g - a2 * r2[j].g - a3 * r3[j].g;
+            float vb = r0[j].b - a1 * r1[j].b - a2 * r2[j].b - a3 * r3[j].b;
+            r0[j].r = vr;
+            r0[j].g = vg;
+            r0[j].b = vb;
+            outr[j] = ((uint32_t)vr & 0xFF) | (((uint32_t)vg & 0xFF) << 8) |
+                      (((uint32_t)vb & 0xFF) << 16) | (inr[j] & 0xFF000000u);
+        }
+    }
 }
