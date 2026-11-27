@@ -68,7 +68,26 @@ typedef struct levels_instance
   enum ChannelChoice channel;
   char showHistogram;
   enum HistogramPosChoice histogramPosition;
+  unsigned char map[256];
+  int mapDirty;
 } levels_instance_t;
+
+static void update_levels_map(levels_instance_t *inst)
+{
+  double inScale = inst->inputMax != inst->inputMin ? inst->inputMax - inst->inputMin : 1.0;
+  double exp = inst->gamma == 0 ? 1.0 : 1.0 / inst->gamma;
+  double outScale = inst->outputMax - inst->outputMin;
+
+  for (int i = 0; i < 256; i++) {
+    double v = i / 255.0 - inst->inputMin;
+    if (v < 0.0) {
+      v = 0.0;
+    }
+    double w = pow(v / inScale, exp) * outScale + inst->outputMin;
+    inst->map[i] = (unsigned char)CLAMP0255(lrintf(w * 255.0));
+  }
+  inst->mapDirty = 0;
+}
 
 int f0r_init()
 {
@@ -151,6 +170,7 @@ f0r_instance_t f0r_construct(unsigned int width, unsigned int height)
   inst->channel = CHANNEL_LUMA;
   inst->showHistogram = 1;
   inst->histogramPosition = POS_BOTTOM_RIGHT;
+  inst->mapDirty = 1;
   return (f0r_instance_t)inst;
 }
 
@@ -174,18 +194,23 @@ void f0r_set_param_value(f0r_instance_t instance,
     break;
   case PARAM_INPUT_MIN:
     inst->inputMin =  *((f0r_param_double *)param);
+    inst->mapDirty = 1;
     break;
   case PARAM_INPUT_MAX:
     inst->inputMax =  *((f0r_param_double *)param);
+    inst->mapDirty = 1;
     break;
   case PARAM_GAMMA:
     inst->gamma = *((f0r_param_double *)param) * 4;
+    inst->mapDirty = 1;
     break;
   case PARAM_OUTPUT_MIN:
     inst->outputMin = *((f0r_param_double *)param);
+    inst->mapDirty = 1;
     break;
   case PARAM_OUTPUT_MAX:
     inst->outputMax = *((f0r_param_double *)param);
+    inst->mapDirty = 1;
     break;
   case PARAM_SHOW_HISTOGRAM:
     inst->showHistogram = *((f0r_param_bool *)param);
@@ -237,76 +262,118 @@ void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe)
 {
   assert(instance);
+  (void)time;
   levels_instance_t* inst = (levels_instance_t*)instance;
   unsigned int len = inst->width * inst->height;
   unsigned int maxHisto = 0;
 
-  unsigned char* dst = (unsigned char*)outframe;
-  const unsigned char* src = (unsigned char*)inframe;
-  int r, g, b;
-
-  double levels[256];
-  unsigned int map[256];
-
-  double inScale = inst->inputMax != inst->inputMin?inst->inputMax - inst->inputMin:1;
-  double exp = inst->gamma == 0?1:1/inst->gamma;
-  double outScale = inst->outputMax - inst->outputMin;
-
-  for(int i = 0; i < 256; i++) {
-	double v = i / 255. - inst->inputMin;
-	if (v < 0.0) {
-		v = 0.0;
-	}
-	double w = pow(v / inScale, exp) * outScale + inst->outputMin;
-	map[i] = CLAMP0255(lrintf(w * 255.0));
+  if (inst->mapDirty) {
+    update_levels_map(inst);
   }
 
-  if (inst->showHistogram)
-	for(int i = 0; i < 256; i++)
-	  levels[i] = 0;
+  const unsigned char *restrict map = inst->map;
+  unsigned char *restrict dst = (unsigned char*)outframe;
+  const unsigned char *restrict src = (const unsigned char*)inframe;
+  unsigned int levels[256];
 
-  while (len--)
-  {
-	r = *src++;
-	g = *src++;
-	b = *src++;
+  if (!inst->showHistogram) {
+    switch (inst->channel) {
+    case CHANNEL_RED:
+      for (unsigned int i = 0; i < len; i++) {
+        dst[0] = map[src[0]];
+        dst[1] = src[1];
+        dst[2] = src[2];
+        dst[3] = src[3];
+        src += 4; dst += 4;
+      }
+      break;
+    case CHANNEL_GREEN:
+      for (unsigned int i = 0; i < len; i++) {
+        dst[0] = src[0];
+        dst[1] = map[src[1]];
+        dst[2] = src[2];
+        dst[3] = src[3];
+        src += 4; dst += 4;
+      }
+      break;
+    case CHANNEL_BLUE:
+      for (unsigned int i = 0; i < len; i++) {
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = map[src[2]];
+        dst[3] = src[3];
+        src += 4; dst += 4;
+      }
+      break;
+    case CHANNEL_LUMA:
+      for (unsigned int i = 0; i < len; i++) {
+        dst[0] = map[src[0]];
+        dst[1] = map[src[1]];
+        dst[2] = map[src[2]];
+        dst[3] = src[3];
+        src += 4; dst += 4;
+      }
+      break;
+    }
+    return;
+  }
 
-	if (inst->showHistogram) {
-	  int intensity =
-	    inst->channel == CHANNEL_RED?r:
-	    inst->channel == CHANNEL_GREEN?g:
-	    inst->channel == CHANNEL_BLUE?b:
-	        CLAMP0255(b * .114 + g * .587 + r * .299);
-	  int index = CLAMP0255(intensity);
-	  levels[index]++;
-	  if (levels[index] > maxHisto)
-		maxHisto = levels[index];
-	}
+  for (int i = 0; i < 256; i++)
+    levels[i] = 0;
 
-	switch (inst->channel) {
-	case CHANNEL_RED:
-	  *dst++ = map[r];
-	  *dst++ = g;
-	  *dst++ = b;
-	  break;
-	case CHANNEL_GREEN:
-	  *dst++ = r;
-	  *dst++ = map[g];
-	  *dst++ = b;
-	  break;
-	case CHANNEL_BLUE:
-	  *dst++ = r;
-	  *dst++ = g;
-	  *dst++ = map[b];
-	  break;
-	case CHANNEL_LUMA:
-	  *dst++ = map[r];
-	  *dst++ = map[g];
-	  *dst++ = map[b];
-	  break;
-	}
+  switch (inst->channel) {
+  case CHANNEL_RED:
+    for (unsigned int i = 0; i < len; i++) {
+      unsigned int r = src[0];
+      levels[r]++;
+      dst[0] = map[r];
+      dst[1] = src[1];
+      dst[2] = src[2];
+      dst[3] = src[3];
+      src += 4; dst += 4;
+    }
+    break;
+  case CHANNEL_GREEN:
+    for (unsigned int i = 0; i < len; i++) {
+      unsigned int g = src[1];
+      levels[g]++;
+      dst[0] = src[0];
+      dst[1] = map[g];
+      dst[2] = src[2];
+      dst[3] = src[3];
+      src += 4; dst += 4;
+    }
+    break;
+  case CHANNEL_BLUE:
+    for (unsigned int i = 0; i < len; i++) {
+      unsigned int b = src[2];
+      levels[b]++;
+      dst[0] = src[0];
+      dst[1] = src[1];
+      dst[2] = map[b];
+      dst[3] = src[3];
+      src += 4; dst += 4;
+    }
+    break;
+  case CHANNEL_LUMA:
+    for (unsigned int i = 0; i < len; i++) {
+      unsigned int r = src[0];
+      unsigned int g = src[1];
+      unsigned int b = src[2];
+      unsigned int luma = (unsigned int)(int)(b * .114 + g * .587 + r * .299);
+      levels[luma]++;
+      dst[0] = map[r];
+      dst[1] = map[g];
+      dst[2] = map[b];
+      dst[3] = src[3];
+      src += 4; dst += 4;
+    }
+    break;
+  }
 
-	*dst++ = *src++;  // copy alpha
+  for (int i = 0; i < 256; i++) {
+    if (levels[i] > maxHisto)
+      maxHisto = levels[i];
   }
   if (inst->showHistogram) {
 	dst = (unsigned char *)outframe;
