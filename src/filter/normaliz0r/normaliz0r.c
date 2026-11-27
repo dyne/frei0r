@@ -18,60 +18,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * Normalize video (aka histogram stretching, contrast stretching).
- * See: https://en.wikipedia.org/wiki/Normalization_(image_processing)
- *
- * For each channel of each frame, the filter computes the input range and maps
- * it linearly to the user-specified output range.  The output range defaults
- * to the full dynamic range from pure black to pure white.
- *
- * The filter can apply temporal smoothing to the input range to reduce rapid
- * changes in brightness (flickering) caused by small dark or bright objects
- * entering or leaving the scene.  This effect is similar to the auto-exposure
- * on a video camera.
- *
- * The filter can normalize the R,G,B channels independently, which may cause
- * color shifting, or link them together as a single channel, which prevents
- * color shifting.  More precisely, linked normalization preserves hues (as
- * defined in HSV/HSL color spaces) while independent normalization does not.
- * Independent normalization can be used to remove color casts, such as the
- * blue cast from underwater video, restoring more natural colors.  The filter
- * can also combine independent and linked normalization in any ratio.
- *
- * Finally the overall strength of the filter can be adjusted, from no effect
- * to full normalization.
- *
- * The 5 user parameters are:
- *   BlackPt,   Colors which define the output range.  The minimum input value
- *   WhitePt    is mapped to the BlackPt.  The maximum input value is mapped to
- *              the WhitePt.  The defaults are black and white respectively.
- *              Specifying white for BlackPt and black for WhitePt will give
- *              color-inverted, normalized video.  Shades of grey can be used
- *              to reduce the dynamic range (contrast). Specifying saturated
- *              colors here can create some interesting effects.
- *
- *   Smoothing  The amount of temporal smoothing.  The parameter is converted
- *              into a number of frames N in the range [1,MAX_HISTORY_LEN], and
- *              the minimum and maximum input value of each channel are then
- *              smoothed using a rolling average over the last N frames.
- *              Defaults to 0.0 (no temporal smoothing).
- *
- *   Independence
- *              Controls the ratio of independent (color shifting) channel
- *              normalization to linked (color preserving) normalization.  0.0
- *              is fully linked, 1.0 is fully independent.  Defaults to fully
- *              independent.
- *
- *   Strength   Overall strength of the filter.  1.0 is full strength.  0.0 is
- *              a rather expensive no-op.  Values in between can give a gentle
- *              boost to low-contrast video without creating an artificial
- *              over-processed look.  The default is full strength.
- */
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#if defined(__SSE2__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#include <emmintrin.h>
+#define NORMALIZ0R_USE_SSE2 1
+#endif
 
 #include "frei0r.h"
 #include "frei0r/math.h"
@@ -239,9 +193,11 @@ void
 f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
             uint32_t* outframe)
 {
+  (void)time;
   assert(instance);
   normaliz0r_instance_t* inst = (normaliz0r_instance_t*)instance;
   int c;
+  const unsigned int num_pixels = (unsigned int)inst->num_pixels;
 
   // Per-extrema, per-channel local variables.
   struct
@@ -255,35 +211,67 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
   // (min.in) and maximum (max.in) values present in the channel.
   {
     const uint8_t *in = (const uint8_t*)inframe;
+    uint8_t min0 = in[0], max0 = in[0];
+    uint8_t min1 = in[1], max1 = in[1];
+    uint8_t min2 = in[2], max2 = in[2];
+    unsigned int i = 0;
 
-#define INIT(c)     (min[c].in = max[c].in = in[c])
-#define EXTEND(c)   (min[c].in = MIN(min[c].in, in[c])), \
-                    (max[c].in = MAX(max[c].in, in[c]))
-    INIT(0);
-    INIT(1);
-    INIT(2);
-    in += 4;
-    // Process (num_pixels - 1), as we used the first pixel to initialize
-    unsigned int num_pixels = inst->num_pixels - 1;
-    while (num_pixels--)
+#ifdef NORMALIZ0R_USE_SSE2
+    if (num_pixels >= 8)
     {
-      EXTEND(0);
-      EXTEND(1);
-      EXTEND(2);
-      in += 4;
+      __m128i vmin0 = _mm_loadu_si128((const __m128i*)inframe);
+      __m128i vmax0 = vmin0;
+      __m128i vmin1 = _mm_loadu_si128((const __m128i*)(inframe + 4));
+      __m128i vmax1 = vmin1;
+      for (i = 8; i + 7 < num_pixels; i += 8)
+      {
+        __m128i v0 = _mm_loadu_si128((const __m128i*)(inframe + i));
+        __m128i v1 = _mm_loadu_si128((const __m128i*)(inframe + i + 4));
+        vmin0 = _mm_min_epu8(vmin0, v0);
+        vmax0 = _mm_max_epu8(vmax0, v0);
+        vmin1 = _mm_min_epu8(vmin1, v1);
+        vmax1 = _mm_max_epu8(vmax1, v1);
+      }
+      __m128i vmin = _mm_min_epu8(vmin0, vmin1);
+      __m128i vmax = _mm_max_epu8(vmax0, vmax1);
+      /* Reduce 4 pixels (16 bytes) -> 2 pixels -> 1 pixel */
+      vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 8));
+      vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 4));
+      vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 8));
+      vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 4));
+      uint32_t mn = (uint32_t)_mm_cvtsi128_si32(vmin);
+      uint32_t mx = (uint32_t)_mm_cvtsi128_si32(vmax);
+      min0 = (uint8_t)(mn & 0xffu);
+      min1 = (uint8_t)((mn >> 8) & 0xffu);
+      min2 = (uint8_t)((mn >> 16) & 0xffu);
+      max0 = (uint8_t)(mx & 0xffu);
+      max1 = (uint8_t)((mx >> 8) & 0xffu);
+      max2 = (uint8_t)((mx >> 16) & 0xffu);
     }
+#endif
+
+    for (; i < num_pixels; i++)
+    {
+      const uint8_t *p = in + (size_t)i * 4;
+      if (p[0] < min0) min0 = p[0];
+      if (p[0] > max0) max0 = p[0];
+      if (p[1] < min1) min1 = p[1];
+      if (p[1] > max1) max1 = p[1];
+      if (p[2] < min2) min2 = p[2];
+      if (p[2] > max2) max2 = p[2];
+    }
+    min[0].in = min0; max[0].in = max0;
+    min[1].in = min1; max[1].in = max1;
+    min[2].in = min2; max[2].in = max2;
   }
 
   // Next, for each channel, push min.in and max.in into their respective
   // histories, to determine the min.smoothed and max.smoothed for this frame.
   {
     int history_idx = inst->frame_num % inst->history_len;
-    // Assume the history is not yet full; num_history_vals is the number of
-    // frames received so far including the current frame.
     int num_history_vals = inst->frame_num + 1;
     if (inst->frame_num >= inst->history_len)
     {
-      //The history is full; drop oldest value and cap num_history_vals.
       for (c = 0; c < 3; c++)
       {
         inst->min[c].history_sum -= inst->min[c].history[history_idx];
@@ -291,8 +279,6 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
       }
       num_history_vals = inst->history_len;
     }
-    // For each extremum, update history_sum and calculate smoothed value as
-    // the rolling average of the history entries.
     for (c = 0; c < 3; c++)
     {
       inst->min[c].history_sum += (inst->min[c].history[history_idx] = min[c].in);
@@ -302,9 +288,6 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
     }
   }
 
-  // Determine the input range for linked normalization.  This is simply the
-  // minimum of the per-channel minimums, and the maximum of the per-channel
-  // maximums.
   float rgb_min_smoothed = min[0].smoothed;
   float rgb_max_smoothed = max[0].smoothed;
   rgb_min_smoothed = MIN(rgb_min_smoothed, min[1].smoothed);
@@ -313,71 +296,71 @@ f0r_update (f0r_instance_t instance, double time, const uint32_t* inframe,
   rgb_max_smoothed = MAX(rgb_max_smoothed, max[2].smoothed);
 
   // Now, process each channel to determine the input and output range and
-  // build the lookup tables.
-  uint8_t lut[3][256];
+  // build pre-shifted lookup tables.
+  uint32_t lut[3][256];
+  int is_identity = 1;
   for (c = 0; c < 3; c++)
   {
-    // Adjust the input range for this channel [min.smoothed,max.smoothed] by
-    // mixing in the correct proportion of the linked normalization input range
-    // [rgb_min_smoothed,rgb_max_smoothed].
+    const unsigned int shift = (unsigned int)c * 8u;
     min[c].smoothed = (min[c].smoothed * inst->independence)
         + (rgb_min_smoothed * (1.0 - inst->independence));
     max[c].smoothed = (max[c].smoothed * inst->independence)
         + (rgb_max_smoothed * (1.0 - inst->independence));
 
-    // Calculate the output range [min.out,max.out] as a ratio of the full-
-    // strength output range [min.param,max.param] and the original input
-    // range [min.in,max.in], based on the user-specified filter strength.
     min[c].out = (inst->min[c].param * inst->strength)
         + ((float)min[c].in * (1.0 - inst->strength));
     max[c].out = (inst->max[c].param * inst->strength)
         + ((float)max[c].in * (1.0 - inst->strength));
 
-    // Now, build a lookup table which linearly maps the adjusted input range
-    // [min.smoothed,max.smoothed] to the output range [min.out,max.out].
-    // Perform the linear interpolation for each x:
-    //     lut[x] = (int)(float(x - min.smoothed) * scale + max.out + 0.5)
-    // where scale = (max.out - min.out) / (max.smoothed - min.smoothed)
     if (min[c].smoothed == max[c].smoothed)
     {
-      // There is no dynamic range to expand.  No mapping for this channel.
-      int in_val;
-      for (in_val = min[c].in; in_val <= max[c].in; in_val++)
-        lut[c][in_val] = min[c].out;
+      uint8_t ov = (uint8_t)min[c].out;
+      for (int in_val = min[c].in; in_val <= max[c].in; in_val++)
+      {
+        if (ov != in_val) is_identity = 0;
+        lut[c][in_val] = (uint32_t)ov << shift;
+      }
     }
     else
     {
-      // We must set lookup values for all values in the original input range
-      // [min.in,max.in].  Since the original input range may be larger than
-      // [min.smoothed,max.smoothed], some output values may fall outside the
-      // [0,255] dynamic range.  We need to CLAMP() them.
       float scale = (max[c].out - min[c].out) / (max[c].smoothed - min[c].smoothed);
-      int in_val;
-      for (in_val = min[c].in; in_val <= max[c].in; in_val++)
+      for (int in_val = min[c].in; in_val <= max[c].in; in_val++)
       {
         int out_val = ROUND((in_val - min[c].smoothed) * scale + min[c].out);
-        lut[c][in_val] = CLAMP(out_val, 0, 255);
+        uint8_t ov = (uint8_t)CLAMP(out_val, 0, 255);
+        if (ov != in_val) is_identity = 0;
+        lut[c][in_val] = (uint32_t)ov << shift;
       }
     }
   }
 
-  // Finally, process the pixels of the input frame using the lookup tables.
-  // Copy alpha as-is.
+  if (is_identity)
   {
-    const uint8_t *in = (const uint8_t*)inframe;
-    uint8_t *out = (uint8_t*)outframe;
-
-#define MAP(c)      (out[c] = lut[c][in[c]])
-
-    unsigned int num_pixels = inst->num_pixels;
-    while (num_pixels--)
+    if (outframe != inframe)
+      memcpy(outframe, inframe, (size_t)num_pixels * sizeof(uint32_t));
+  }
+  else
+  {
+    const uint32_t *l0 = lut[0];
+    const uint32_t *l1 = lut[1];
+    const uint32_t *l2 = lut[2];
+    unsigned int i = 0;
+    for (; i + 3 < num_pixels; i += 4)
     {
-      MAP(0);
-      MAP(1);
-      MAP(2);
-      out[3] = in[3];  // copy alpha
-      in += 4;
-      out += 4;
+      uint32_t p0 = inframe[i];
+      uint32_t p1 = inframe[i + 1];
+      uint32_t p2 = inframe[i + 2];
+      uint32_t p3 = inframe[i + 3];
+
+      outframe[i]     = l0[p0 & 0xffu] | l1[(p0 >> 8) & 0xffu] | l2[(p0 >> 16) & 0xffu] | (p0 & 0xff000000u);
+      outframe[i + 1] = l0[p1 & 0xffu] | l1[(p1 >> 8) & 0xffu] | l2[(p1 >> 16) & 0xffu] | (p1 & 0xff000000u);
+      outframe[i + 2] = l0[p2 & 0xffu] | l1[(p2 >> 8) & 0xffu] | l2[(p2 >> 16) & 0xffu] | (p2 & 0xff000000u);
+      outframe[i + 3] = l0[p3 & 0xffu] | l1[(p3 >> 8) & 0xffu] | l2[(p3 >> 16) & 0xffu] | (p3 & 0xff000000u);
+    }
+    for (; i < num_pixels; i++)
+    {
+      uint32_t p = inframe[i];
+      outframe[i] = l0[p & 0xffu] | l1[(p >> 8) & 0xffu] | l2[(p >> 16) & 0xffu] | (p & 0xff000000u);
     }
   }
 
